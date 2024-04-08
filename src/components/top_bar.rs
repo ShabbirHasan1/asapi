@@ -6,7 +6,7 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
-use crate::app_state::AppState;
+use crate::app_state::{AppState, ViewType};
 use crate::common::fs::{async_save_state, load_state, save_state};
 use crate::common::internationalization::{I18n, I18nOptions};
 use eframe::egui;
@@ -119,6 +119,26 @@ impl AppTopBar {
             });
 
             // --> Aquí ponemos botones de la barra <--
+            ui.horizontal(|ui| {
+                let http_btn =
+                    ui.selectable_value(&mut app_state.selected_view, ViewType::Http, "Http");
+                http_btn.context_menu(|ui| {
+                    if ui
+                        .add(egui::Button::new(i18n.top_http_toggle_sidebar))
+                        .clicked()
+                    {
+                        app_state.http.show_sidebar = !app_state.http.show_sidebar;
+                        ui.close_menu();
+                    }
+                });
+
+                if http_btn.clicked() {
+                    let cloned_state = app_state.clone();
+                    rt.spawn(async move {
+                        let _ = async_save_state(&cloned_state, FILE_NAME).await;
+                    });
+                }
+            })
         });
     }
 }
