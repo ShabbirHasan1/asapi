@@ -9,7 +9,8 @@
 pub mod components;
 pub mod methods;
 mod performance;
-pub mod requests;
+pub mod request;
+pub mod state;
 pub mod swagger;
 pub mod view;
-pub mod workspaces;
+pub mod workspace;

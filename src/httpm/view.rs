@@ -15,39 +15,15 @@ use tokio::sync::mpsc::{self, Receiver, Sender};
 
 use super::components::body_params::BodyParams;
 use super::components::header_params::HeaderParams;
-use super::performance::view::HttpPerformanceView;
 use super::methods::HttpMethod;
-use super::requests::api_request;
+use super::request::api_request;
+use super::state::{HttpLocalState, HttpPanel};
 use super::workspace::{Request, Workspace};
 
-use crate::app_state::{save_state, AppState};
-use crate::utils::internatiolization::I18n;
-use crate::utils::syntax_highlighting::{highlight, CodeTheme};
-
-
-#[derive(Eq, PartialEq)]
-enum HttpPanel {
-    Regular,
-    Performance,
-}
-
-impl Default for HttpPanel {
-    fn default() -> Self {
-        HttpPanel::Regular
-    }
-}
-
-#[derive(Default)]
-struct HttpLocalState {
-    selected_request_idx: Option<usize>,
-    has_request_some_change: bool,
-    selected_request_action: Option<String>,
-    response_headers: HeaderMap,
-    show_hide_json_response: bool,
-    has_been_updated: bool,
-    panel: HttpPanel,
-    performance_panel: HttpPerformanceView,
-}
+use crate::app_state::AppState;
+use crate::common::fs::save_state;
+use crate::common::internationalization::I18n;
+use crate::common::syntax_highlighting::{highlight, CodeTheme};
 
 pub struct HttpView {
     tx: Sender<(String, HeaderMap)>,

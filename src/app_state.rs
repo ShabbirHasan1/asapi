@@ -8,16 +8,17 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::common::internationalization::I18nOptions;
+use crate::httpm::workspace::Workspace;
+use crate::{common::internationalization::I18nOptions, httpm::state::HttpAppState};
 
 #[derive(Clone, Deserialize, Serialize, Copy, PartialEq, Debug)]
 pub enum ViewType {
-    None,
+    Http,
 }
 
 impl Default for ViewType {
     fn default() -> Self {
-        ViewType::None
+        ViewType::Http
     }
 }
 
@@ -33,6 +34,7 @@ pub struct AppState {
     pub app_config: AppConfig,
     pub selected_view: ViewType,
     pub show_settings: bool,
+    pub http: HttpAppState,
 }
 
 impl Default for AppState {
@@ -41,6 +43,11 @@ impl Default for AppState {
             app_config: AppConfig::default(),
             selected_view: ViewType::default(),
             show_settings: false,
+            http: HttpAppState {
+                show_sidebar: true,
+                workspaces: vec![Workspace::default()],
+                current_workspace_idx: 0,
+            },
         }
     }
 }

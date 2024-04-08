@@ -7,4 +7,4 @@
 // -------------------------------------------------------------------------
 
 mod components;
-pub mod http_performance_component;
+pub mod view;

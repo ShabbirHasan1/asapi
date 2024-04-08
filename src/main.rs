@@ -9,6 +9,7 @@
 mod app_state;
 mod common;
 mod components;
+mod httpm;
 
 fn main() {
     println!("Hello, world!");
