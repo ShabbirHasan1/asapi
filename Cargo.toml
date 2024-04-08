@@ -1,8 +1,37 @@
 [package]
 name = "asapi"
-version = "0.1.0"
+# + Versiones mayores, porque entiendo que es casi una nueva aplicación
+# + Versiones menores, nuevo conector
+# + Versiones terciarias, mejoras/bugs
+# + Versiones preestablecias a seguir
+#   0.2.0 -> sqlx
+#   0.3.0 -> mongo <<== AQUÍ ESTAMOS
+#   0.3.1 -> mejora kafka
+#   0.3.2 -> mejora http rendimiento
+#   0.3.3 -> mejora redis
+version = "0.3.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[profile.dev]
+debug = 0
+opt-level = 1
+strip = "debuginfo"
+
+[profile.dev.build-override]
+opt-level = 3
 
 [dependencies]
+# Dependencias generales u ortogonales a todo el proyecto.
+egui-dynamic = { version = "0.1.0", path = "egui-dynamic", package = "egui-dynamic" }
+
+eframe="0.26.2"
+egui_extras = "0.26.2"
+egui_json_tree = "0.4.0"
+# tokio[full] porque al final entre rt/sync/fs/io necesito casi todas.
+tokio = { version = "1.37.0", features = ["full"] }
+serde = "1.0.197"
+chrono = { version = "0.4.37", features = ["serde"] }
+uuid = "1.8.0"
+serde_json = "1.0.115"
+# Necesario para common/syntax_highlighting, puede ser útil intetar usarlo en más sitios.
+enum-map = { version = "2.7.3", features = ["serde"] }

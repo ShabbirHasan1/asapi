@@ -6,10 +6,4 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
-mod app_state;
-mod common;
-mod components;
-
-fn main() {
-    println!("Hello, world!");
-}
+pub mod top_bar;
