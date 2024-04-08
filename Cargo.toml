@@ -28,6 +28,7 @@ egui-dynamic = { version = "0.1.0", path = "egui-dynamic", package = "egui-dynam
 
 eframe="0.26.2"
 egui_extras = "0.26.2"
+futures = "0.3.30" # Para lanzar futuros a los que esperar en rendimiento y Mongo.
 egui_json_tree = "0.4.0"
 # tokio[full] porque al final entre rt/sync/fs/io necesito casi todas.
 tokio = { version = "1.37.0", features = ["full"] }
@@ -42,3 +43,4 @@ enum-map = { version = "2.7.3", features = ["serde"] }
 # Módulo HTTP
 # ---------------------------------------------------------------------------
 reqwest = { version = "0.11.27", features = ["json"] }
+egui_plot = "0.26.2" # Para gráficas en panel de rendimiento.

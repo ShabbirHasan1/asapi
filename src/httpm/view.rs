@@ -464,7 +464,7 @@ impl HttpView {
                 };
                 ui.horizontal(|ui| {
                     ui.label("Parse JSON Response");
-                    ui.add(crate::widgets::toggle_switch::toggle(
+                    ui.add(crate::components::toggle_switch::toggle(
                         &mut self.state.show_hide_json_response,
                     ));
                     if !self.response.is_empty() && ui.button("Copy Response").clicked() {

@@ -6,10 +6,11 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
-use crate::http_module::methods::HttpMethod;
 use eframe::egui;
 use egui_json_tree::JsonTree;
 use serde_json::Value as JsonValue;
+
+use crate::httpm::methods::HttpMethod;
 
 #[derive(Default)]
 pub struct BodyParams {

@@ -16,13 +16,13 @@ use tokio::runtime::Runtime;
 use tokio::sync::mpsc::{self, Receiver, Sender};
 use tokio::sync::Semaphore;
 
-use super::components::params::Params;
 use crate::httpm::methods::HttpMethod;
-use crate::httpm::requests::api_request;
-use crate::httpm::workspaces::Request;
+use crate::httpm::request::api_request;
+use crate::httpm::workspace::Request;
 use crate::common::generator::{Gen, SimpleRGen};
-use crate::common::internatiolization::I18n;
+use crate::common::internationalization::I18n;
 
+use super::components::params::Params;
 
 #[derive(Default)]
 pub struct HttpPerformanceState {
