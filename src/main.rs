@@ -14,9 +14,11 @@
 mod app_state;
 mod common;
 mod components;
+mod kafkam;
 
 // Usos/importaciones necesarios.
 use eframe::egui;
+use kafkam::view::KafkaView;
 use std::fs::{self, OpenOptions};
 
 use common::internationalization::language_selector;
@@ -34,6 +36,7 @@ pub struct Asapi {
     top_bar: AppTopBar,
     app_state: AppState,
     rt: tokio::runtime::Runtime,
+    kafka: KafkaView,
 }
 
 impl Asapi {
@@ -73,6 +76,7 @@ impl Asapi {
                 .enable_all()
                 .build()
                 .unwrap(),
+            kafka: KafkaView::default(),
         }
     }
 }
@@ -96,7 +100,9 @@ impl eframe::App for Asapi {
         });
 
         match self.app_state.selected_view {
-            ViewType::None => todo!(),
+            ViewType::Kafka => self
+                .kafka
+                .update(ctx, _frame, &mut self.app_state, &self.rt, &i18n),
         }
     }
 }

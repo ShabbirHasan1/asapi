@@ -8,16 +8,16 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::common::internationalization::I18nOptions;
+use crate::{common::internationalization::I18nOptions, kafkam::state::KafkaAppState};
 
 #[derive(Clone, Deserialize, Serialize, Copy, PartialEq, Debug)]
 pub enum ViewType {
-    None,
+    Kafka,
 }
 
 impl Default for ViewType {
     fn default() -> Self {
-        ViewType::None
+        ViewType::Kafka
     }
 }
 
@@ -33,6 +33,7 @@ pub struct AppState {
     pub app_config: AppConfig,
     pub selected_view: ViewType,
     pub show_settings: bool,
+    pub kafka: KafkaAppState,
 }
 
 impl Default for AppState {
@@ -41,6 +42,7 @@ impl Default for AppState {
             app_config: AppConfig::default(),
             selected_view: ViewType::default(),
             show_settings: false,
+            kafka: KafkaAppState::default(),
         }
     }
 }
