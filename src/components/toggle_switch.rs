@@ -4,7 +4,6 @@
 //! This is meant to be read as a tutorial, hence the plethora of comments.
 
 use eframe::egui;
-// use crate::egui;
 
 /// iOS-style toggle switch:
 ///

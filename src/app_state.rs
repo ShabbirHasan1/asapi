@@ -13,6 +13,7 @@ use crate::httpm::state::HttpAppState;
 use crate::httpm::workspace::Workspace;
 use crate::mysqlm::state::MySqlAppState;
 use crate::pgm::state::PgAppState;
+use crate::redism::state::RedisAppState;
 use crate::sqlitem::state::SQLiteAppState;
 
 #[derive(Clone, Deserialize, Serialize, Copy, PartialEq, Debug)]
@@ -21,6 +22,7 @@ pub enum ViewType {
     Pg,
     MySql,
     SQLite,
+    Redis,
 }
 
 impl Default for ViewType {
@@ -45,6 +47,7 @@ pub struct AppState {
     pub pg: PgAppState,
     pub mysql: MySqlAppState,
     pub sqlite: SQLiteAppState,
+    pub redis: RedisAppState,
 }
 
 impl Default for AppState {
@@ -61,6 +64,7 @@ impl Default for AppState {
             pg: PgAppState::default(),
             mysql: MySqlAppState::default(),
             sqlite: SQLiteAppState::default(),
+            redis: RedisAppState::default(),
         }
     }
 }

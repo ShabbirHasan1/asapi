@@ -34,7 +34,7 @@ impl AppTopBar {
         ui: &mut egui::Ui,
         rt: &Runtime,
         app_state: &mut AppState,
-        i18n: I18n,
+        i18n: &I18n,
     ) {
         const FILE_NAME: &str = "asapi_workspaces.json";
         if self.is_export_confirmation_open {
@@ -43,7 +43,7 @@ impl AppTopBar {
             // .title_bar(false) // Sin botón de cerrar ni título, pero no llamando al método open no se crea
                 .collapsible(false)
                 .show(ctx, |ui| {
-                    ui.label(i18n.top_export_warning);
+                    ui.label(&i18n.top_export_warning);
                     ui.horizontal(|ui| {
                         if ui.button("Exportar").clicked() {
                             let _ = save_state(app_state, FILE_NAME);
@@ -72,7 +72,7 @@ impl AppTopBar {
                 app_state.app_config.dark_theme = !app_state.app_config.dark_theme;
             }
 
-            egui::Window::new(i18n.top_menu_config)
+            egui::Window::new(&i18n.top_menu_config)
                 .open(&mut self.show_settings)
                 .vscroll(true)
                 .show(ctx, |ui| {
@@ -102,12 +102,12 @@ impl AppTopBar {
                     ui.separator();
                 }
 
-                if ui.add(egui::Button::new(i18n.top_export_json_state)).clicked() {
+                if ui.add(egui::Button::new(&i18n.top_export_json_state)).clicked() {
                     self.is_export_confirmation_open = true;
                     ui.close_menu();
                 }
                 if ui
-                    .add(egui::Button::new(i18n.top_import_json_state))
+                    .add(egui::Button::new(&i18n.top_import_json_state))
                     .clicked()
                 {
                     *app_state = match load_state(FILE_NAME) {
@@ -119,12 +119,13 @@ impl AppTopBar {
             });
 
             // --> Aquí ponemos botones de la barra <--
+
             ui.horizontal(|ui| {
                 let http_btn =
                     ui.selectable_value(&mut app_state.selected_view, ViewType::Http, "Http");
                 http_btn.context_menu(|ui| {
                     if ui
-                        .add(egui::Button::new(i18n.top_http_toggle_sidebar))
+                        .add(egui::Button::new(&i18n.top_http_toggle_sidebar))
                         .clicked()
                     {
                         app_state.http.show_sidebar = !app_state.http.show_sidebar;
@@ -135,14 +136,14 @@ impl AppTopBar {
                     .selectable_value(&mut app_state.selected_view, ViewType::Pg, "Postgres");
                 pg_btn.context_menu(|ui| {
                     if ui
-                        .add(egui::Button::new(i18n.top_pg_toggle_sidebar_connections))
+                        .add(egui::Button::new(&i18n.top_pg_toggle_sidebar_connections))
                         .clicked()
                     {
                         app_state.pg.show_sidebar = !app_state.pg.show_sidebar;
                         ui.close_menu();
                     }
-                    if ui.checkbox(&mut app_state.pg.performance_table, i18n.pg_performance_table)
-                        .on_hover_text(i18n.pg_info_performance_table).clicked() {
+                    if ui.checkbox(&mut app_state.pg.performance_table, &i18n.pg_performance_table)
+                        .on_hover_text(&i18n.pg_info_performance_table).clicked() {
                             ui.close_menu();
                         }
                 });
@@ -150,36 +151,46 @@ impl AppTopBar {
                 let mysql_btn =
                     ui.selectable_value(&mut app_state.selected_view, ViewType::MySql, "MySql/MariaDB");
                 mysql_btn.context_menu(|ui| {
-                    if ui.add(egui::Button::new(i18n.top_mysql_toggle_sidebar_connections))
+                    if ui.add(egui::Button::new(&i18n.top_mysql_toggle_sidebar_connections))
                         .clicked() {
                             app_state.mysql.show_sidebar = !app_state.mysql.show_sidebar;
                             ui.close_menu();
                         }
-                    if ui.checkbox(&mut app_state.mysql.performance_table, i18n.mysql_performance_table)
-                        .on_hover_text(i18n.mysql_info_performance_table).clicked() {
+                    if ui.checkbox(&mut app_state.mysql.performance_table, &i18n.mysql_performance_table)
+                        .on_hover_text(&i18n.mysql_info_performance_table).clicked() {
                             ui.close_menu();
                         }
                 });
                 let sqlite_btn =
                     ui.selectable_value(&mut app_state.selected_view, ViewType::SQLite, "SQLite");
                 sqlite_btn.context_menu(|ui| {
-                    if ui.add(egui::Button::new(i18n.top_sqlite_toggle_sidebar_connections))
+                    if ui.add(egui::Button::new(&i18n.top_sqlite_toggle_sidebar_connections))
                         .clicked() {
                             app_state.sqlite.show_sidebar = !app_state.sqlite.show_sidebar;
                             ui.close_menu();
                         }
-                    if ui.checkbox(&mut app_state.sqlite.performance_table, i18n.sqlite_performance_table)
-                        .on_hover_text(i18n.sqlite_info_performance_table).clicked() {
+                    if ui.checkbox(&mut app_state.sqlite.performance_table, &i18n.sqlite_performance_table)
+                        .on_hover_text(&i18n.sqlite_info_performance_table).clicked() {
                             ui.close_menu();
                         }
                 });
-
+                    let redis_btn = ui
+                        .selectable_value(&mut app_state.selected_view, ViewType::Redis, "Redis");
+                    redis_btn.context_menu(|ui| {
+                        if ui
+                            .add(egui::Button::new(&i18n.top_redis_toggle_sidebar))
+                            .clicked()
+                        {
+                            app_state.redis.show_sidebar = !app_state.redis.show_sidebar;
+                            ui.close_menu();
+                        }
+                    });
                 if http_btn.clicked()
                     || pg_btn.clicked()
                     || mysql_btn.clicked()
-                    || sqlite_btn.clicked() {
+                    || sqlite_btn.clicked()
+                    ||  redis_btn.clicked() {
                         let cloned_state = app_state.clone();
-
                         rt.spawn(async move {
                             let _ = async_save_state(&cloned_state, FILE_NAME).await;
                         });

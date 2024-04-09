@@ -50,3 +50,8 @@ sqlx = { version = "0.7.4", features = [ "runtime-tokio", "tls-native-tls", "sql
 egui-file-dialog = "0.4.0" # Para buscar archivo de sqlite.
 regex = "1.10.4"           # Para extraer la acción que se correponse con la consulta escrita.
 rust_decimal = "1.35.0"    # Tipos decimales en mysql.
+
+# ---------------------------------------------------------------------------
+# Redis
+# ---------------------------------------------------------------------------
+redis = { version = "0.1.0", path = "redis-dynamic", package = "redis-dynamic" }
