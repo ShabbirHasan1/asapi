@@ -6,11 +6,13 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
-use std::error::Error;
 use mongodb::{
     options::{ClientOptions, ResolverConfig},
     Client,
 };
+use std::error::Error;
+
+use crate::info;
 
 use super::state::MongoConnectionDefinition;
 
@@ -44,7 +46,7 @@ impl MongoConnection {
                 self.client = Some(con);
             }
             Err(err) => {
-                println!("{:?}", err);
+                info!("{:?}", err);
                 self.client = None;
             }
         }
@@ -68,7 +70,7 @@ pub async fn connect(
 ) -> Result<Client, Box<dyn Error>> {
     let protocol = if is_srv { "mongodb+srv" } else { "mongodb" };
     let uri = format!("{protocol}://{user}:{password}@{host}:{port}/?retryWrites=true&w=majority");
-    println!("Trying to connect to {uri}");
+    info!("Trying to connect to {uri}");
     let options =
         ClientOptions::parse_with_resolver_config(&uri, ResolverConfig::cloudflare()).await?;
     let client = Client::with_options(options)?;

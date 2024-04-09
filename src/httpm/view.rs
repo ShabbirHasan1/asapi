@@ -24,6 +24,7 @@ use crate::app_state::AppState;
 use crate::common::fs::save_state;
 use crate::common::internationalization::I18n;
 use crate::common::syntax_highlighting::{highlight, CodeTheme};
+use crate::info;
 
 pub struct HttpView {
     tx: Sender<(String, HeaderMap)>,
@@ -87,9 +88,9 @@ impl HttpView {
                     state.http.workspaces[state.http.current_workspace_idx].requests[idx].clone();
                 self.state.selected_request_idx = Some(idx);
                 self.method = request.method;
-                self.url = request.url.clone();
-                self.body.params = request.body_params.clone();
-                self.headers.params = request.headers_params.clone();
+                self.url = request.url;
+                self.body.params = request.body_params;
+                self.headers.params = request.headers_params;
                 self.state.has_request_some_change = false;
             }
             self.state.has_been_updated = true;
@@ -100,10 +101,10 @@ impl HttpView {
             self.state.response_headers = tuple.1;
             self.request_allowed = true;
         }
-        let events = ctx.input(|i| i.events.clone());
+        let events: Vec<egui::Event> = ctx.input(|i| i.events.clone());
         for event in &events {
             if let egui::Event::Paste(pasted_text) = event {
-                println!("{}", pasted_text);
+                info!("{}", pasted_text);
             }
         }
 
@@ -169,7 +170,7 @@ impl HttpView {
 
                     if selectable_value.clicked() {
                         // Acciones cuando se selecciona un espacio de trabajo
-                        println!(
+                        info!(
                             "CLICK  current_idx: {}, idx: {}",
                             state.http.current_workspace_idx, idx
                         );
@@ -200,7 +201,7 @@ impl HttpView {
                             body_params: self.body.params.clone(),
                             headers_params: self.headers.params.clone(),
                         };
-                        println!("{:?}", new_request);
+                        info!("{:?}", new_request);
                         current_workspace.requests.push(new_request);
                         self.state.has_request_some_change = false;
                         self.state.selected_request_idx = None;
@@ -288,7 +289,7 @@ impl HttpView {
                                         self.headers.params = request.headers_params.clone();
                                         self.response.clear();
                                         self.state.has_request_some_change = false;
-                                        println!("{} {}", idx, state.http.current_workspace_idx);
+                                        info!("{} {}", idx, state.http.current_workspace_idx);
                                     }
                                     buttons.push(button);
                                 });

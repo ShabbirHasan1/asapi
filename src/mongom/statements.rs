@@ -44,9 +44,9 @@
 
 //             // ESTO PARA PONER EN EL CLIENTE
 //             match action {
-//                 Action::NONE => println!("wrong action"),
+//                 Action::NONE => info!("wrong action"),
 //                 _ => {
-//                     println!("Action: {:?}", action);
+//                     info!("Action: {:?}", action);
 //                 }
 //             }
 
@@ -86,7 +86,7 @@
 //     //             result.push((row.get::<usize, String>(0), row.get::<usize, String>(1)));
 //     //         }
 //     //     }
-//     //     Err(e) => println!("{:?}", e),
+//     //     Err(e) => info!("{:?}", e),
 //     // }
 
 //     result
@@ -121,10 +121,10 @@
 //     // let _action = extract_stmt_action(stmt);
 
 //     // if let Some(ref mut client) = *local_state.conn {
-//     //     println!("Statement: {}", stmt);
+//     //     info!("Statement: {}", stmt);
 
 //     //     // let query_results = client.query(stmt, &[]);
-//     //     // println!("RESULTS: {:?}", query_results);
+//     //     // info!("RESULTS: {:?}", query_results);
 
 //     //     // match query_results {
 //     //     //     Ok(rows) => {
@@ -148,7 +148,7 @@
 //     //     //         }
 //     //     //         match action {
 //     //     //             Action::NONE => {
-//     //     //                 // println!("ru_statement :: wrong action");
+//     //     //                 // info!("ru_statement :: wrong action");
 //     //     //                 local_state.last_response = None;
 //     //     //             }
 //     //     //             Action::INSERT(t_name) | Action::UPDATE(t_name) | Action::DELETE(t_name) => {
@@ -158,21 +158,21 @@
 //     //     //                     .collect::<Vec<_>>();
 //     //     //                 local_state.current_table_columns = columns;
 //     //     //                 local_state.current_table_data = rows;
-//     //     //                 println!(
+//     //     //                 info!(
 //     //     //                     "Len after deleting: {}",
 //     //     //                     local_state.current_table_data.len()
 //     //     //                 );
 //     //     //                 local_state.last_response = None;
 //     //     //             }
 //     //     //             Action::SELECT(_) => {
-//     //     //                 println!("run_statement :: No extra select to do");
+//     //     //                 info!("run_statement :: No extra select to do");
 //     //     //                 local_state.last_response = None;
 //     //     //             }
 //     //     //         }
 //     //     //     }
 //     //     //     Err(e) => {
 //     //     //         let msg = format!("{:?}", e);
-//     //     //         println!("{msg}");
+//     //     //         info!("{msg}");
 //     //     //         local_state.last_response = Some(msg);
 //     //     //     }
 //     //     // }

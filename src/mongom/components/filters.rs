@@ -142,11 +142,8 @@ impl MongoView {
                         );
                         self.state.last_error = None;
 
-                        println!();
                         info!("{:?}", &self.state.filters);
-                        println!();
                         info!("{:?}", build_mongo_query(&self.state.filters));
-                        println!();
                         pprint_bson(&build_mongo_query(&self.state.filters));
 
                         // Al añadir sin más no modificamos el padre.

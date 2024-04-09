@@ -55,7 +55,7 @@ impl Default for SimpleRGen {
         // y así de forma sucesiva. Podemos meter algo más de random usando gen_bool para
         // probar a hacer una cosa u otra, gen_in_range para limitar alguno, etc.
         let (_, s) = SimpleRGen::new_with_seed(seed).gen_i64();
-        // println!("New seed: {seed}, new random {a}");
+        // info!("New seed: {seed}, new random {a}");
         s
     }
 }
@@ -382,7 +382,7 @@ impl Gen<String, fn(&SimpleRGen) -> (String, SimpleRGen)> {
     //             let mut acc = String::default();
     //             let mut t: Option<SimpleRGen> = None;
     //             for _ in 0..len {
-    //                 // println!("{idx}");
+    //                 // info!("{idx}");
     //                 let (a, ri) = match t {
     //                     Some(t) => t.gen_in_range(0, 255),
     //                     _ => rng.gen_in_range(0, 255),
@@ -399,7 +399,7 @@ impl Gen<String, fn(&SimpleRGen) -> (String, SimpleRGen)> {
     //     pub fn gen_string() -> Gen<String, fn(&SimpleRGen) -> (String, SimpleRGen)> {
     //         Gen::new(move |rng| {
     //             let (a, s) = Gen::gen_in_range(1, 100).run(rng);
-    //             println!("max len {a}");
+    //             info!("max len {a}");
     //             Gen::gen_string_with_len(a as usize).run(&s)
     //         })
     //     }

@@ -11,6 +11,8 @@ use reqwest::{Client, Response};
 use serde_json::Value as JsonValue;
 use std::str::FromStr;
 
+use crate::info;
+
 use super::methods::HttpMethod;
 
 pub async fn api_request(
@@ -29,7 +31,7 @@ pub async fn api_request(
                 .map(|(k, v)| (k.clone(), serde_json::from_str(v).unwrap_or_default()))
                 .collect();
             let body = JsonValue::Object(json_map);
-            println!("{:?}", body);
+            info!("{:?}", body);
             client
                 .request(method.to_reqwest_method(), url)
                 .headers(headers_map)
@@ -44,7 +46,7 @@ pub async fn api_request(
                 .map(|(k, v)| (k.clone(), serde_json::from_str(v).unwrap_or_default()))
                 .collect();
             let body = JsonValue::Object(json_map);
-            println!("{:?}", body);
+            info!("{:?}", body);
             client
                 .request(method.to_reqwest_method(), url)
                 .headers(headers_map)
@@ -82,11 +84,11 @@ fn get_headers(vs: &Vec<(String, String)>) -> HeaderMap {
                 headers.insert(name, value);
             }
             _ => {
-                println!("Error for {key}: {value}");
+                info!("Error for {key}: {value}");
             }
         };
     }
-    println!("{:?}", headers);
+    info!("{:?}", headers);
 
     headers
 }

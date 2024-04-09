@@ -26,6 +26,8 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
 
+use crate::{error, info};
+
 // =================================
 // Dominio
 // =================================
@@ -56,7 +58,7 @@ impl Kafka {
         match client.fetch_metadata(None, Duration::from_secs(20)) {
             Ok(metadata) => Some(metadata), // topics_info(&metadata);
             Err(err) => {
-                println!("{:?}", err);
+                error!("{:?}", err);
                 None
             }
         }
@@ -82,15 +84,15 @@ impl KafkaAdmin {
 
         match client.inner().fetch_metadata(None, Duration::from_secs(20)) {
             Ok(metadata) => {
-                println!("Cluster information:");
-                println!("  Broker count: {}", metadata.brokers().len());
-                println!("  Topics count: {}", metadata.topics().len());
-                println!("  Metadata broker name: {}", metadata.orig_broker_name());
-                println!("  Metadata broker id: {}\n", metadata.orig_broker_id());
+                info!("Cluster information:");
+                info!("  Broker count: {}", metadata.brokers().len());
+                info!("  Topics count: {}", metadata.topics().len());
+                info!("  Metadata broker name: {}", metadata.orig_broker_name());
+                info!("  Metadata broker id: {}\n", metadata.orig_broker_id());
 
-                println!("Brokers:");
+                info!("Brokers:");
                 for broker in metadata.brokers() {
-                    println!(
+                    info!(
                         "  Id: {}  Host: {}:{}  ",
                         broker.id(),
                         broker.host(),
@@ -98,11 +100,11 @@ impl KafkaAdmin {
                     );
                 }
 
-                println!("\nTopics:");
+                info!("\nTopics:");
                 for topic in metadata.topics() {
-                    println!("  Topic: {}  Err: {:?}", topic.name(), topic.error());
+                    info!("  Topic: {}  Err: {:?}", topic.name(), topic.error());
                     for partition in topic.partitions() {
-                        println!(
+                        info!(
                             "     Partition: {}  Leader: {}  Replicas: {:?}  ISR: {:?}  Err: {:?}",
                             partition.id(),
                             partition.leader(),
@@ -123,7 +125,7 @@ impl KafkaAdmin {
                                     Duration::from_secs(1),
                                 )
                                 .unwrap_or((-1, -1));
-                            println!(
+                            info!(
                                 "       Low watermark: {}  High watermark: {} (difference: {})",
                                 low,
                                 high,
@@ -134,11 +136,11 @@ impl KafkaAdmin {
                     }
                     // if fetch_offsets {
                     if true {
-                        println!("     Total message count: {}", message_count);
+                        info!("     Total message count: {}", message_count);
                     }
                 }
             }
-            Err(err) => println!("{:?}", err),
+            Err(err) => info!("{:?}", err),
         }
     }
 }
@@ -153,7 +155,7 @@ pub struct CustomProducerContext;
 impl ClientContext for CustomProducerContext {
     fn stats(&self, statistics: Statistics) {
         // Procesar las estadísticas aquí
-        println!("Received statistics: {:?}", statistics);
+        info!("Received statistics: {:?}", statistics);
     }
 }
 
@@ -193,7 +195,7 @@ impl KafkaProducer {
 
 // run_producer_loop(producer, running);
 
-// println!("Shutting down");
+// info!("Shutting down");
 // }
 
 // =================================
@@ -208,15 +210,15 @@ impl ClientContext for CustomContext {}
 
 impl ConsumerContext for CustomContext {
     fn pre_rebalance(&self, rebalance: &Rebalance) {
-        println!("Pre rebalance {:?}", rebalance);
+        info!("Pre rebalance {:?}", rebalance);
     }
 
     fn post_rebalance(&self, rebalance: &Rebalance) {
-        println!("Post rebalance {:?}", rebalance);
+        info!("Post rebalance {:?}", rebalance);
     }
 
     fn commit_callback(&self, result: KafkaResult<()>, _offsets: &TopicPartitionList) {
-        println!("Committing offsets: {:?}", result);
+        info!("Committing offsets: {:?}", result);
     }
 }
 
@@ -230,7 +232,7 @@ impl ClientContext for StatsContext {
         // let stats_json: Value = serde_json::from_str(&statistics.to_json()).unwrap();
 
         // Aquí puedes procesar las estadísticas como prefieras
-        println!("Statistics JSON: {statistics:?}");
+        info!("Statistics JSON: {statistics:?}");
     }
 }
 
@@ -301,13 +303,13 @@ impl KafkaConsumer {
             .expect("Can't subscribe to specified topics");
 
         loop {
-            println!("Waiting for message");
+            info!("Waiting for message");
             match consumer.recv().await {
-                Err(e) => println!("Kafka error: {}", e),
+                Err(e) => info!("Kafka error: {}", e),
                 Ok(m) => {
                     let payload = match m.payload_view::<str>() {
                         None => {
-                            println!("No result");
+                            info!("No result");
                             ""
                         }
                         Some(Ok(s)) => {
@@ -333,11 +335,11 @@ impl KafkaConsumer {
                             s
                         }
                         Some(Err(e)) => {
-                            println!("Error while deserializing message payload: {:?}", e);
+                            info!("Error while deserializing message payload: {:?}", e);
                             ""
                         }
                     };
-                    println!("key: '{:?}', payload: '{}', topic: {}, partition: {}, offset: {}, timestamp: {:?}",
+                    info!("key: '{:?}', payload: '{}', topic: {}, partition: {}, offset: {}, timestamp: {:?}",
                     m.key(), payload, m.topic(), m.partition(), m.offset(), m.timestamp());
 
                     // --> Para extraer cabeceras (esta API ya ha cambiado respecto a la documentación) <--
@@ -346,10 +348,10 @@ impl KafkaConsumer {
                         let len = headers.count();
                         for idx in 0..len - 1 {
                             let opt_header = headers.try_get(idx);
-                            // println!("  Header {:#?}: {:?}", header.key, header.value);
+                            // info!("  Header {:#?}: {:?}", header.key, header.value);
                             match opt_header {
                                 Some(header) => {
-                                    println!("  Header {:#?}: {:?}", header.key, header.value);
+                                    info!("  Header {:#?}: {:?}", header.key, header.value);
                                 }
                                 None => (),
                             }
@@ -377,13 +379,13 @@ impl KafkaConsumer {
 }
 
 // fn topics_info(metadata: &Metadata) -> i64 {
-//     println!("\nTopics:");
+//     info!("\nTopics:");
 //     let mut message_count = 0;
 
 //     for topic in metadata.topics() {
-//         println!("  Topic: {}  Err: {:?}", topic.name(), topic.error());
+//         info!("  Topic: {}  Err: {:?}", topic.name(), topic.error());
 //         for partition in topic.partitions() {
-//             println!(
+//             info!(
 //                 "     Partition: {}  Leader: {}  Replicas: {:?}  ISR: {:?}  Err: {:?}",
 //                 partition.id(),
 //                 partition.leader(),
@@ -400,7 +402,7 @@ impl KafkaConsumer {
 //                 let (low, high) = consumer
 //                     .fetch_watermarks(topic.name(), partition.id(), Duration::from_secs(1))
 //                     .unwrap_or((-1, -1));
-//                 println!(
+//                 info!(
 //                     "       Low watermark: {}  High watermark: {} (difference: {})",
 //                     low,
 //                     high,
@@ -411,7 +413,7 @@ impl KafkaConsumer {
 //         }
 //         // if fetch_offsets {
 //         if true {
-//             println!("     Total message count: {}", message_count);
+//             info!("     Total message count: {}", message_count);
 //         }
 //     }
 

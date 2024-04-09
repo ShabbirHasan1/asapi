@@ -11,7 +11,7 @@ use super::{
     state::{Cluster, KafkaAppState, KafkaLocalState},
 };
 use crate::{
-    app_state::AppState, kafkam::state::KafkaPanel, common::internationalization::I18n,
+    app_state::AppState, common::internationalization::I18n, info, kafkam::state::KafkaPanel,
 };
 use eframe::egui;
 use egui_extras::{Column, TableBuilder};
@@ -62,7 +62,7 @@ impl KafkaView {
         while let Ok(msg) = self.state.rx.try_recv() {
             match msg {
                 KafkaMessage::Str(data) => {
-                    println!("Receiving data: {data:?}");
+                    info!("Receiving data: {data:?}");
                 }
                 KafkaMessage::ClusterMetadata((idx, mtd)) => {
                     self.state.clusters_metadata.insert(idx, Some(mtd));
@@ -133,7 +133,7 @@ impl KafkaView {
                                         // let running = Arc::new(AtomicBool::new(true));
                                         // // flag::register_usize(SIGINT, Arc::clone(&running), 0).unwrap();
                                         // run_producer_loop(stats_producer, running);
-                                        // println!("Closing stats_producer");
+                                        // info!("Closing stats_producer");
                                         // });
                                     }
                                 }
@@ -185,7 +185,7 @@ impl KafkaView {
                                         Arc::clone(&data),
                                     )
                                     .await;
-                                    println!("After <-- should never arrive here");
+                                    info!("After <-- should never arrive here");
                                 });
                             }
                         });
@@ -340,7 +340,7 @@ impl KafkaView {
 
 fn show_topics_metadata_info(ui: &mut egui::Ui, metadata: &Metadata) {
     for topic in metadata.topics() {
-        // println!("  Topic: {}  Err: {:?}", topic.name(), topic.error());
+        // info!("  Topic: {}  Err: {:?}", topic.name(), topic.error());
         ui.heading(topic.name());
         for partition in topic.partitions() {
             ui.label(format!(

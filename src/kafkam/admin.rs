@@ -11,6 +11,8 @@ use rdkafka::client::DefaultClientContext;
 use rdkafka::config::ClientConfig;
 use std::time::Duration;
 
+use crate::info;
+
 pub struct KafkaAdmin {}
 
 impl KafkaAdmin {
@@ -27,9 +29,9 @@ impl KafkaAdmin {
             .expect("Error al fetch metadata");
 
         for topic in metadata.topics() {
-            println!("Topic: {}", topic.name());
+            info!("Topic: {}", topic.name());
             for partition in topic.partitions() {
-                println!("  Partition: {}", partition.id());
+                info!("  Partition: {}", partition.id());
                 // Aquí puedes agregar más lógica para obtener detalles sobre cada partición
             }
         }

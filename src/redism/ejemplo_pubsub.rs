@@ -45,7 +45,7 @@
 //             match payload.as_ref() {
 //                 "10" => ControlFlow::Break(()),
 //                 a => {
-//                     println!("Channel '{}' received '{}'.", ch, a);
+//                     info!("Channel '{}' received '{}'.", ch, a);
 //                     ControlFlow::Continue
 //                 }
 //             }
@@ -61,7 +61,7 @@
 
 //         for x in 0..11 {
 //             thread::sleep(Duration::from_millis(500));
-//             println!("Publish {} to boo.", x);
+//             info!("Publish {} to boo.", x);
 //             let _: () = conn.publish("boo", x).unwrap();
 //         }
 //     });
