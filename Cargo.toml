@@ -35,3 +35,8 @@ uuid = "1.8.0"
 serde_json = "1.0.115"
 # Necesario para common/syntax_highlighting, puede ser útil intetar usarlo en más sitios.
 enum-map = { version = "2.7.3", features = ["serde"] }
+
+# ---------------------------------------------------------------------------
+# Redis
+# ---------------------------------------------------------------------------
+redis = { version = "0.1.0", path = "redis-dynamic", package = "redis-dynamic" }
