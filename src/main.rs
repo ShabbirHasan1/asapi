@@ -6,19 +6,30 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
+/// Punto de entrada a la apliación.
+///
+/// Donde se define el struct Asapi, sus implementaciones y aquellas instancias
+/// que forman parte de su estado.
+// Añadimos módulos para que se carguen en el proyecto.
 mod app_state;
 mod common;
 mod components;
 mod httpm;
+mod mysqlm;
+mod pgm;
+mod sqlitem;
+mod sqlx_common;
 
+// Usos/importaciones necesarios.
 use eframe::egui;
 use std::fs::{self, OpenOptions};
+
+use common::internationalization::language_selector;
+use components::top_bar::AppTopBar;
 
 use crate::app_state::{AppState, ViewType};
 use crate::common::fs::load_state;
 use crate::httpm::view::HttpView;
-use common::internationalization::language_selector;
-use components::top_bar::AppTopBar;
 
 /// Struct con los atributos que podemos pasar a cualquier parte de la apliación.
 ///
