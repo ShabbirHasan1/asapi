@@ -467,7 +467,6 @@ impl PgType {
 
     pub fn from_string(s: &str) -> Self {
         match s.to_ascii_uppercase().as_str() {
-            "UUID" => PgType::Uuid,
             "BOOL" => PgType::Bool,
             "BYTEA" => PgType::Bytea,
             "\"CHAR\"" => PgType::Char,
