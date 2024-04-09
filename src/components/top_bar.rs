@@ -6,12 +6,13 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
-use crate::app_state::{AppState, ViewType};
-use crate::common::fs::{async_save_state, load_state, save_state};
-use crate::common::internationalization::{I18n, I18nOptions};
 use eframe::egui;
 use tokio;
 use tokio::runtime::Runtime;
+
+use crate::app_state::{AppState, ViewType};
+use crate::common::fs::{async_save_state, load_state, save_state};
+use crate::common::internationalization::{I18n, I18nOptions};
 
 pub struct AppTopBar {
     show_settings: bool,
@@ -135,6 +136,17 @@ impl AppTopBar {
                         ui.close_menu();
                     }
                 });
+                let kafka_btn =
+                    ui.selectable_value(&mut app_state.selected_view, ViewType::Kafka, "Kafka");
+                kafka_btn.context_menu(|ui| {
+                    if ui
+                        .add(egui::Button::new(&i18n.top_kafka_toggle_sidebar_cluster))
+                        .clicked()
+                    {
+                        app_state.kafka.show_sidebar = !app_state.kafka.show_sidebar;
+                        ui.close_menu();
+                    }
+                });
                 let pg_btn =
                     ui.selectable_value(&mut app_state.selected_view, ViewType::Pg, "Postgres");
                 pg_btn.context_menu(|ui| {
@@ -153,6 +165,7 @@ impl AppTopBar {
                         .on_hover_text(&i18n.pg_info_performance_table)
                         .clicked()
                     {
+                        app_state.pg.show_sidebar = !app_state.pg.show_sidebar;
                         ui.close_menu();
                     }
                 });
@@ -224,7 +237,9 @@ impl AppTopBar {
                     ui.selectable_value(&mut app_state.selected_view, ViewType::Mongo, "Mongo");
                 mongo_btn.context_menu(|ui| {
                     if ui
-                        .add(egui::Button::new(&i18n.top_mongo_toggle_sidebar_connections))
+                        .add(egui::Button::new(
+                            &i18n.top_mongo_toggle_sidebar_connections,
+                        ))
                         .clicked()
                     {
                         app_state.mongo.show_sidebar = !app_state.mongo.show_sidebar;
@@ -238,13 +253,14 @@ impl AppTopBar {
                     || sqlite_btn.clicked()
                     || mongo_btn.clicked()
                     || redis_btn.clicked()
+                    || kafka_btn.clicked()
                 {
                     let cloned_state = app_state.clone();
                     rt.spawn(async move {
                         let _ = async_save_state(&cloned_state, FILE_NAME).await;
                     });
                 }
-            })
+            });
         });
     }
 }

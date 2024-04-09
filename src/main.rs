@@ -15,6 +15,7 @@ mod app_state;
 mod common;
 mod components;
 mod httpm;
+mod kafkam;
 mod mongom;
 mod mysqlm;
 mod pgm;
@@ -24,15 +25,16 @@ mod sqlx_common;
 
 // Usos/importaciones necesarios.
 use eframe::egui;
+use kafkam::view::KafkaView;
 use mongom::view::MongoView;
 use mysqlm::view::MySqlView;
 use pgm::view::PostgresView;
 use redism::view::RedisView;
 use sqlitem::view::SQLiteView;
-use std::fs::{self, OpenOptions};
 
 use common::internationalization::language_selector;
 use components::top_bar::AppTopBar;
+use std::fs::{self, OpenOptions};
 
 use crate::app_state::{AppState, ViewType};
 use crate::common::fs::load_state;
@@ -53,6 +55,7 @@ pub struct Asapi {
     mysql: MySqlView,
     redis: RedisView,
     mongo: MongoView,
+    kafka: KafkaView,
 }
 
 impl Asapi {
@@ -98,6 +101,7 @@ impl Asapi {
             sqlite: SQLiteView::default(),
             redis: RedisView::default(),
             mongo: MongoView::default(),
+            kafka: KafkaView::default(),
         }
     }
 }
@@ -139,6 +143,9 @@ impl eframe::App for Asapi {
                 .update(ctx, _frame, &mut self.app_state, &self.rt, &i18n),
             ViewType::Mongo => self
                 .mongo
+                .update(ctx, _frame, &mut self.app_state, &self.rt, &i18n),
+            ViewType::Kafka => self
+                .kafka
                 .update(ctx, _frame, &mut self.app_state, &self.rt, &i18n),
         }
     }

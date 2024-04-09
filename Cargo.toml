@@ -61,3 +61,8 @@ redis = { version = "0.1.0", path = "redis-dynamic", package = "redis-dynamic" }
 # ----------------------------------------------------------------
 bson = { version = "2.9.0", features = ["chrono-0_4"] }
 mongodb = "2.8.2" # Por defecto ya lleva `tokio`.
+
+# ---------------------------------------------------------------------------
+# Kafka
+# ---------------------------------------------------------------------------
+rdkafka = { version = "0.36.2", features = ["cmake-build"] }

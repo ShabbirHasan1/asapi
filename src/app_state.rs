@@ -11,6 +11,7 @@ use serde::{Deserialize, Serialize};
 use crate::common::internationalization::I18nOptions;
 use crate::httpm::state::HttpAppState;
 use crate::httpm::workspace::Workspace;
+use crate::kafkam::state::KafkaAppState;
 use crate::mongom::state::MongoAppState;
 use crate::mysqlm::state::MySqlAppState;
 use crate::pgm::state::PgAppState;
@@ -25,6 +26,7 @@ pub enum ViewType {
     SQLite,
     Redis,
     Mongo,
+    Kafka,
 }
 
 impl Default for ViewType {
@@ -51,6 +53,7 @@ pub struct AppState {
     pub sqlite: SQLiteAppState,
     pub redis: RedisAppState,
     pub mongo: MongoAppState,
+    pub kafka: KafkaAppState,
 }
 
 impl Default for AppState {
@@ -69,6 +72,7 @@ impl Default for AppState {
             sqlite: SQLiteAppState::default(),
             redis: RedisAppState::default(),
             mongo: MongoAppState::default(),
+            kafka: KafkaAppState::default(),
         }
     }
 }
