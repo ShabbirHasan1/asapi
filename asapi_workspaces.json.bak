@@ -1,0 +1,414 @@
+{
+  "app_config": {
+    "version": 0,
+    "dark_theme": false,
+    "language": "ES"
+  },
+  "selected_view": "Mongo",
+  "show_settings": false,
+  "http": {
+    "show_sidebar": true,
+    "workspaces": [
+      {
+        "id": 0,
+        "name": "Node Platform",
+        "requests": [
+          {
+            "name": "/fitosat/api/v1/project",
+            "method": "Get",
+            "url": "http://localhost:2015/fitosat/project/api/v1/9c892526-21d4-437d-a49b-ae1eb5414d60",
+            "body_params": [],
+            "headers_params": [
+              [
+                "ferlola",
+                "etsia"
+              ]
+            ]
+          },
+          {
+            "name": "/pipeline/api/v1",
+            "method": "Put",
+            "url": "http://localhost:2015/fitosat/pipeline/api/v1",
+            "body_params": [
+              [
+                "status",
+                "\"odm.created'"
+              ],
+              [
+                "odm_info",
+                "{\"name\":\"3a80144a-a1dc-44c9-ac03-e6e887edbd7c\",\"uuid\":\"3a80144a-a1dc-44c9-ac03-e6e887edbd7c\",\"status\":{\"code\":40},\"options\":[],\"progress\":100,\"dateCreated\":1707152226597,\"imagesCount\":210,\"processingTime\":516572}"
+              ],
+              [
+                "pipelineId",
+                "\"3a80144a-a1dc-44c9-ac03-e6e887edbd7c\""
+              ]
+            ],
+            "headers_params": [
+              [
+                "ferlola",
+                "etsia"
+              ]
+            ]
+          },
+          {
+            "name": "/fitosat/subplot/api/v1/crop",
+            "method": "Get",
+            "url": "http://localhost:2015/fitosat/subplot/api/v1/crop",
+            "body_params": [],
+            "headers_params": [
+              [
+                "ferlola",
+                "etsia"
+              ]
+            ]
+          },
+          {
+            "name": "/fitosat/subplot/api/v1/soil",
+            "method": "Get",
+            "url": "http://localhost:2015/fitosat/subplot/api/v1/soil",
+            "body_params": [],
+            "headers_params": [
+              [
+                "ferlola",
+                "etsia"
+              ]
+            ]
+          },
+          {
+            "name": "/fitosat/subplot/api/v1/project/:project-id",
+            "method": "Get",
+            "url": "http://localhost:2015/fitosat/subplot/api/v1/project/2efa8127-fb47-4bd8-a52f-0c14517744d2",
+            "body_params": [],
+            "headers_params": [
+              [
+                "ferlola",
+                "etsia"
+              ]
+            ]
+          }
+        ],
+        "show_options": false
+      },
+      {
+        "id": 1,
+        "name": "Scala Platform",
+        "requests": [
+          {
+            "name": "/products/project/:projectid",
+            "method": "Get",
+            "url": "http://localhost:8808/products/project/44133baa-77f8-439f-997f-c5c9a9e7a259",
+            "body_params": [],
+            "headers_params": []
+          },
+          {
+            "name": "/sentinel/api/v1/:spId",
+            "method": "Get",
+            "url": "http://localhost:8808/sentinel/api/v1/45d6addf-598f-4442-8c4b-2b1ba494233a",
+            "body_params": [],
+            "headers_params": []
+          },
+          {
+            "name": "/sentinel/api/v1",
+            "method": "Get",
+            "url": "http://localhost:8808/sentinel/api/v1",
+            "body_params": [],
+            "headers_params": [
+              [
+                "ferlola",
+                "flopez"
+              ]
+            ]
+          },
+          {
+            "name": "/sentinel/api/v1/debug",
+            "method": "Put",
+            "url": "http://localhost:8808/sentinel/api/v1/debug",
+            "body_params": [
+              [
+                "name",
+                "\"Nombre prueba\""
+              ],
+              [
+                "id",
+                "\"cd8dea2d-3b27-4c83-aee3-33ad08c00693\""
+              ],
+              [
+                "date",
+                "\"2024-01-09\""
+              ],
+              [
+                "path",
+                "\"foo\""
+              ]
+            ],
+            "headers_params": []
+          },
+          {
+            "name": "/sentinel/api/v1/create",
+            "method": "Put",
+            "url": "http://localhost:8808/sentinel/api/v1/create",
+            "body_params": [
+              [
+                "name",
+                "\"Nombre prueba\""
+              ],
+              [
+                "id",
+                "\"cd8dea2d-3b27-4c83-aee3-33ad08c00693\""
+              ],
+              [
+                "date",
+                "\"2024-01-09T11:00:00Z\""
+              ],
+              [
+                "path",
+                "\"foo\""
+              ]
+            ],
+            "headers_params": [
+              [
+                "ferlola",
+                "etsia"
+              ]
+            ]
+          },
+          {
+            "name": "/sentinel/api/v1/:productId",
+            "method": "Delete",
+            "url": "http://localhost:8808/sentinel/api/v1/aa8dea2d-3b27-4c83-aee3-33ad08c00693",
+            "body_params": [
+              [
+                "name",
+                "\"Nombre prueba\""
+              ],
+              [
+                "id",
+                "\"aa8dea2d-3b27-4c83-aee3-33ad08c00693\""
+              ],
+              [
+                "date",
+                "\"2024-01-09T11:00:00Z\""
+              ],
+              [
+                "path",
+                "\"foo\""
+              ]
+            ],
+            "headers_params": []
+          },
+          {
+            "name": "/sentinel/api/v1/:productId",
+            "method": "Put",
+            "url": "http://localhost:8808/sentinel/api/v1/cd8dea2d-3b27-4c83-aee3-33ad08c00693",
+            "body_params": [
+              [
+                "id",
+                "\"cd8dea2d-3b27-4c83-aee3-33ad08c00693\""
+              ],
+              [
+                "path",
+                "\"/path/to\""
+              ]
+            ],
+            "headers_params": []
+          },
+          {
+            "name": "/project/api/v1/:prId",
+            "method": "Get",
+            "url": "http://localhost:8808/project/api/v1/44133baa-77f8-439f-997f-c5c9a9e7a259",
+            "body_params": [],
+            "headers_params": []
+          },
+          {
+            "name": "/project/api/v1",
+            "method": "Get",
+            "url": "http://localhost:8808/project/api/v1",
+            "body_params": [],
+            "headers_params": []
+          },
+          {
+            "name": "/sentinel/api/v1",
+            "method": "Get",
+            "url": "http://localhost:8808/sentinel/api/v1",
+            "body_params": [],
+            "headers_params": []
+          },
+          {
+            "name": "http://localhost:8808/sentinel/api/v1/create",
+            "method": "Put",
+            "url": "http://localhost:8808/sentinel/api/v1/create",
+            "body_params": [
+              [
+                "name",
+                "\"Nombre prueba\""
+              ],
+              [
+                "id",
+                "\"cd8dea2d-3b27-4c83-aee3-33ad08c00693\""
+              ],
+              [
+                "date",
+                "\"2024-01-09T11:00:00Z\""
+              ],
+              [
+                "path",
+                "\"foo\""
+              ]
+            ],
+            "headers_params": [
+              [
+                "ferlola",
+                "etsia"
+              ]
+            ]
+          }
+        ],
+        "show_options": false
+      },
+      {
+        "id": 2,
+        "name": "httpbin",
+        "requests": [
+          {
+            "name": "https://httpbin.org/put",
+            "method": "Put",
+            "url": "https://httpbin.org/put",
+            "body_params": [
+              [
+                "id",
+                "\"cd8dea2d-3b27-4c83-aee3-33ad08c0069\""
+              ],
+              [
+                "name",
+                "\"Nombre de prueba\""
+              ],
+              [
+                "date",
+                "\"2024-01-10\""
+              ],
+              [
+                "path",
+                "\"foo\""
+              ]
+            ],
+            "headers_params": []
+          },
+          {
+            "name": "https://httpbin.org/post",
+            "method": "Post",
+            "url": "https://httpbin.org/post",
+            "body_params": [
+              [
+                "id",
+                "\"cd8dea2d-3b27-4c83-aee3-33ad08c0069\""
+              ],
+              [
+                "name",
+                "\"Nombre de prueba\""
+              ],
+              [
+                "date",
+                "\"2024-01-10\""
+              ]
+            ],
+            "headers_params": []
+          }
+        ],
+        "show_options": false
+      },
+      {
+        "id": 3,
+        "name": "Python Platform",
+        "requests": [
+          {
+            "name": "http://localhost:2015/nc/available_indexes",
+            "method": "Get",
+            "url": "http://localhost:2015/nc/available_indexes",
+            "body_params": [],
+            "headers_params": [
+              [
+                "ferlola",
+                "etsia"
+              ]
+            ]
+          }
+        ],
+        "show_options": false
+      }
+    ],
+    "current_workspace_idx": 0
+  },
+  "pg": {
+    "show_sidebar": true,
+    "performance_table": false,
+    "connections": [
+      {
+        "host": "localhost",
+        "port": "5432",
+        "user": "postgres",
+        "password": "password",
+        "dbname": "fitosat"
+      },
+      {
+        "host": "localhost",
+        "port": "5432",
+        "user": "postgres",
+        "password": "password",
+        "dbname": "fitosat"
+      }
+    ]
+  },
+  "mongo": {
+    "show_sidebar": true,
+    "performance_table": false,
+    "connections": [{
+      "host": "localhost",
+      "port": "27017",
+      "user": "root",
+      "password": "password",
+      "is_srv": false
+    }]
+  },
+  "mysql": {
+    "show_sidebar": true,
+    "performance_table": false,
+    "connections": [
+      {
+        "host": "localhost",
+        "port": "3306",
+        "user": "user",
+        "password": "password",
+        "dbname": "mydatabase"
+      }
+    ]
+  },
+  "redis": {
+    "show_sidebar": true,
+    "host": "localhost",
+    "port": "6379"
+  },
+  "kafka": {
+    "show_sidebar": true,
+    "clusters": [
+      {
+        "name": "Clúster Local",
+        "host": "localhost",
+        "port": "9095"
+      },
+      {
+        "name": "",
+        "host": "",
+        "port": ""
+      }
+    ]
+  },
+  "sqlite": {
+    "show_sidebar": true,
+    "performance_table": false,
+    "connections": [
+      {
+        "path": "/home/nando/projects/gui-apps/asapi/sqlite-ddbb/db.sqlite3"
+      }
+    ]
+  }
+}
