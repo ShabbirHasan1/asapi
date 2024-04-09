@@ -6,13 +6,14 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
-use crate::utils::{
-    generator::{Gen, SimpleRGen},
-    traits::Runner,
-};
 use chrono::DateTime;
 use chrono::Utc;
 use std::marker::PhantomData;
+
+use crate::common::{
+    generator::{Gen, SimpleRGen},
+    traits::Runner,
+};
 
 // No aporta mucho tenerlo aquí, pero por no repetirlo mucho.
 pub struct GenericGenerator<T> {

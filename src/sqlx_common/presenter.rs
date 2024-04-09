@@ -8,10 +8,11 @@
 
 use std::marker::PhantomData;
 
-use super::state::SqlDataGenState;
-use crate::utils::traits::ShowVec;
 use regex::Regex;
 use sqlx::{Column, Database, Row, TypeInfo};
+
+use super::state::SqlDataGenState;
+use crate::common::traits::ShowVec;
 
 #[derive(Debug, PartialEq)]
 pub enum Action {

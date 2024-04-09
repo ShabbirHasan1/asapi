@@ -6,12 +6,13 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
-use super::state::{QuerySort, SqlState, SqlxMessage};
-use super::traits::Show;
 use eframe::egui;
 use egui_extras::{Column, TableBuilder, TableRow};
 use tokio::runtime::Runtime;
 use tokio::sync::mpsc::Sender;
+
+use super::state::{QuerySort, SqlState, SqlxMessage};
+use super::traits::Show;
 
 pub struct RegularTable;
 pub struct PerformanceTable;

@@ -6,12 +6,13 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
-use crate::{
-    sqlx_module::state::{SqlState, SqlxMessage},
-    utils::internatiolization::I18n,
-};
 use eframe::egui;
 use std::sync::mpsc::Sender;
+
+use crate::{
+    sqlx_module::state::{SqlState, SqlxMessage},
+    utils::internationalization::I18n,
+};
 
 pub struct TableContextMenu;
 

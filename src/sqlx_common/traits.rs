@@ -6,8 +6,9 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
-use super::state::SqlState;
 use eframe::egui;
+
+use super::state::SqlState;
 
 pub trait Show {
     fn show(ui: &mut egui::Ui, state: &mut SqlState);

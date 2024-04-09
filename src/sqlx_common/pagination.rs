@@ -6,8 +6,9 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
-use super::{state::SqlState, traits::Show};
 use eframe::egui;
+
+use super::{state::SqlState, traits::Show};
 
 pub struct Paginator {}
 
