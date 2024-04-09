@@ -5,13 +5,14 @@
 // This file is confidential and only available to authorized individuals
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
-use super::pg_type::PgType;
-use crate::sqlx_module::data_generation::GenericGenerator;
-use crate::utils::generator::{Gen, SimpleRGen};
-use crate::utils::traits::Runner as _;
 use chrono::NaiveDateTime;
 use chrono::{DateTime, Utc};
 use chrono::{NaiveDate, NaiveTime};
+
+use super::pg_type::PgType;
+use crate::common::generator::{Gen, SimpleRGen};
+use crate::common::traits::Runner as _;
+use crate::sqlx_common::data_generation::GenericGenerator;
 
 pub fn generate_pg_value(data_type: &PgType) -> String {
     match data_type {

@@ -5,6 +5,10 @@
 // This file is confidential and only available to authorized individuals
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
+use eframe::egui;
+use sqlx::postgres::PgRow;
+use sqlx::Postgres;
+use tokio::runtime::Runtime;
 
 use super::components::sidenav::PostgresSideNav;
 use super::data_generation::generate_pg_value;
@@ -13,20 +17,15 @@ use super::pg_type::PgType;
 use super::presenter::run_statement_with_delete_control;
 use super::state::{PgAppState, PostgresState};
 use crate::app_state::AppState;
-use crate::sqlx_module::components::window_generator::GeneratorWindow;
-use crate::sqlx_module::components::window_insertion::InsertionWindow;
-use crate::sqlx_module::pagination::Paginator;
-use crate::sqlx_module::presenter::SqlPresenter;
-use crate::sqlx_module::state::{QuerySort, SqlxMessage};
-use crate::sqlx_module::table::{PerformanceTable, RegularTable};
-use crate::sqlx_module::traits::{Presenter, Show};
-use crate::utils::internatiolization::I18n;
-use crate::utils::syntax_highlighting::{highlight, CodeTheme};
-use crate::utils::wrap_with_single_quote;
-use eframe::egui;
-use sqlx::postgres::PgRow;
-use sqlx::Postgres;
-use tokio::runtime::Runtime;
+use crate::sqlx_common::components::window_generator::GeneratorWindow;
+use crate::sqlx_common::components::window_insertion::InsertionWindow;
+use crate::sqlx_common::pagination::Paginator;
+use crate::sqlx_common::presenter::SqlPresenter;
+use crate::sqlx_common::state::{QuerySort, SqlxMessage};
+use crate::sqlx_common::table::{PerformanceTable, RegularTable};
+use crate::sqlx_common::traits::{Presenter, Show};
+use crate::common::internationalization::I18n;
+use crate::common::syntax_highlighting::{highlight, CodeTheme};
 
 pub struct PostgresView {
     state: PostgresState,

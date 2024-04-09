@@ -7,16 +7,16 @@
 // -------------------------------------------------------------------------
 
 use crate::{
-    mysql_module::{
+    mysqlm::{
         components::contextual_menus::TableInfo,
         presenter,
         state::{MySqlAppState, MySqlState},
     },
-    sqlx_module::{
+    sqlx_common::{
         components::context_menus::TableContextMenu,
         state::{QuerySort, SqlConnectionDefinition, SqlxMessage},
     },
-    utils::internatiolization::I18n,
+    common::internationalization::I18n,
 };
 use eframe::egui;
 use egui_extras::{Size, StripBuilder};

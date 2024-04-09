@@ -5,15 +5,15 @@
 // This file is confidential and only available to authorized individuals
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
-use super::mysql_type::MySqlType;
-use crate::sqlx_module::data_generation::GenericGenerator;
-use crate::utils::generator::{Gen, SimpleRGen};
-use crate::utils::traits::Runner as _;
-use crate::utils::wrap_with_single_quote;
 use chrono::NaiveDateTime;
 use chrono::{DateTime, Utc};
 use chrono::{NaiveDate, NaiveTime};
 use rust_decimal::Decimal;
+
+use super::mysql_type::MySqlType;
+use crate::common::generator::{Gen, SimpleRGen};
+use crate::common::traits::Runner as _;
+use crate::sqlx_common::data_generation::GenericGenerator;
 
 // pub fn generate_mysql_value_from_type_info(ty: &MySqlTypeInfo) -> String {
 //     ty_to_type(ty).map_or("NULL".to_string(), |t| generate_mysql_value(&t))

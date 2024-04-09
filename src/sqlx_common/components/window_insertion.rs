@@ -5,17 +5,19 @@
 // This file is confidential and only available to authorized individuals
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
-use crate::{
-    sqlx_module::{
-        presenter::create_columns_string,
-        state::{SqlState, SqlxMessage},
-    },
-    utils::{internatiolization::I18n, wrap_with_single_quote},
-};
+
 use eframe::egui;
 use sqlx::Database;
 use std::fmt::Debug;
 use std::marker::PhantomData;
+
+use crate::{
+    common::internationalization::I18n,
+    sqlx_common::{
+        presenter::create_columns_string,
+        state::{SqlState, SqlxMessage},
+    },
+};
 
 pub struct InsertionWindow<R, DB, T>(PhantomData<R>, PhantomData<DB>, PhantomData<T>);
 

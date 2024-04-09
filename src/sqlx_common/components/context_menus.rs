@@ -10,8 +10,8 @@ use eframe::egui;
 use std::sync::mpsc::Sender;
 
 use crate::{
-    sqlx_module::state::{SqlState, SqlxMessage},
-    utils::internationalization::I18n,
+    common::internationalization::I18n,
+    sqlx_common::state::{SqlState, SqlxMessage},
 };
 
 pub struct TableContextMenu;

@@ -6,11 +6,12 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
-use crate::utils::traits::ShowVec;
 use regex::Regex;
 use sqlx::sqlite::{SqliteColumn, SqliteRow};
 use sqlx::{Column, Decode, Row, Sqlite, Type, TypeInfo};
 use std::fmt;
+
+use crate::common::traits::ShowVec;
 
 // ==============================================================
 // INFORMACIÓN PRELIMINAR

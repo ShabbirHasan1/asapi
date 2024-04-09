@@ -9,8 +9,8 @@
 // Basado en type_info.rs de sqlx, extraigo lo que allí es privado.
 
 use super::pg_type::ty_to_type;
-use crate::pg_module::pg_type::PgType;
-use crate::utils::traits::ShowVec;
+use crate::common::traits::ShowVec;
+use crate::pgm::pg_type::PgType;
 use sqlx::postgres::{PgColumn, PgRow};
 use sqlx::{Column, Decode, Postgres, Row, Type};
 use std::fmt;

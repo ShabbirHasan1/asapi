@@ -6,12 +6,13 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
-use crate::sqlx_module::{
+use serde::{Deserialize, Serialize};
+use sqlx::MySqlPool;
+
+use crate::sqlx_common::{
     state::{SqlConnectionDefinition, SqlState},
     traits::ToUrl,
 };
-use serde::{Deserialize, Serialize};
-use sqlx::MySqlPool;
 
 #[derive(Serialize, Clone, Debug, Deserialize)]
 pub struct MySqlAppState {

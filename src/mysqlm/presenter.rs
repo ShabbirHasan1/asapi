@@ -7,14 +7,15 @@
 // -------------------------------------------------------------------------
 
 use std::collections::HashMap;
-
-use super::state::MySqlConnDefinition;
-use crate::sqlx_module::presenter::{self as sqlpresenter, Action, SqlPresenter};
-use crate::sqlx_module::state::{QuerySort, SqlConnectionDefinition, SqlxMessage};
-use crate::sqlx_module::traits::{Presenter, ToUrl as _};
 use sqlx::mysql::{MySqlPoolOptions, MySqlRow};
 use sqlx::{MySql, Pool, Row};
 use tokio::sync::mpsc::Sender;
+
+use crate::sqlx_common::presenter::{self as sqlpresenter, Action, SqlPresenter};
+use crate::sqlx_common::state::{QuerySort, SqlConnectionDefinition, SqlxMessage};
+use crate::sqlx_common::traits::{Presenter, ToUrl as _};
+
+use super::state::MySqlConnDefinition;
 
 pub async fn connect(
     conn_definition: SqlConnectionDefinition,

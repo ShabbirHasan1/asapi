@@ -7,16 +7,16 @@
 // -------------------------------------------------------------------------
 
 use crate::{
-    sqlite_module::{
+    sqlitem::{
         components::contextual_menus::TableInfo,
         presenter,
         state::{SQLiteAppState, SQLiteConnectionDefinition, SQLiteState},
     },
-    sqlx_module::{
+    sqlx_common::{
         components::context_menus::TableContextMenu,
         state::{QuerySort, SqlxMessage},
     },
-    utils::internatiolization::I18n,
+    common::internationalization::I18n,
 };
 use eframe::egui;
 use egui_extras::{Size, StripBuilder};

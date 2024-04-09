@@ -6,23 +6,23 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
-use crate::{
-    pg_module::{
-        components::contextual_menus::TableInfo,
-        presenter,
-        state::{PgAppState, PostgresState},
-    },
-    sqlx_module::{
-        components::context_menus::TableContextMenu,
-        state::{QuerySort, SqlConnectionDefinition, SqlxMessage},
-    },
-    utils::internatiolization::I18n,
-};
 use eframe::egui;
 use egui_extras::{Size, StripBuilder};
 use std::collections::HashSet;
 use tokio::{runtime::Runtime, sync::mpsc::Sender};
 
+use crate::{
+    pgm::{
+        components::contextual_menus::TableInfo,
+        presenter,
+        state::{PgAppState, PostgresState},
+    },
+    sqlx_common::{
+        components::context_menus::TableContextMenu,
+        state::{QuerySort, SqlConnectionDefinition, SqlxMessage},
+    },
+    common::internationalization::I18n,
+};
 pub struct PostgresSideNav;
 
 impl PostgresSideNav {

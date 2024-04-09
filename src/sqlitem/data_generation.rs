@@ -9,10 +9,10 @@
 use chrono::{NaiveDate, NaiveDateTime, NaiveTime};
 
 use super::parser::SqliteType;
-use crate::sqlx_module::data_generation::GenericGenerator;
-use crate::utils::generator::{Gen, SimpleRGen};
-use crate::utils::traits::Runner as _;
-use crate::utils::wrap_with_single_quote;
+use crate::common::generator::{Gen, SimpleRGen};
+use crate::common::traits::Runner as _;
+use crate::quote;
+use crate::sqlx_common::data_generation::GenericGenerator;
 
 pub trait SQLiteRunner<T> {
     fn run() -> T;
@@ -33,18 +33,18 @@ pub fn generate_sqlite_value(data_type: &SqliteType) -> String {
         SqliteType::Bool => GenericGenerator::<bool>::run().to_string(),
         SqliteType::Int | SqliteType::Int64 => GenericGenerator::<i64>::run().to_string(),
         SqliteType::Text => generate_sqlite_value(&SqliteType::Varchar(32)),
-        SqliteType::Varchar(n_chars) => wrap_with_single_quote(
-            &Gen::gen_alpha_lower_with_max_len(*n_chars).sample(&SimpleRGen::new()),
-        ),
+        SqliteType::Varchar(n_chars) => {
+            quote!(Gen::gen_alpha_lower_with_max_len(*n_chars).sample(&SimpleRGen::new()))
+        }
         SqliteType::Char(n_chars) => generate_sqlite_value(&SqliteType::Varchar(*n_chars)),
         SqliteType::Float => GenericGenerator::<f64>::run().to_string(),
         SqliteType::Null => "NULL".to_string(),
         // TODO: No tengo nada, es generar Vec<u8> en ppio.
         SqliteType::Blob => todo!(),
         SqliteType::Numeric => generate_sqlite_value(&SqliteType::Float),
-        SqliteType::Datetime => wrap_with_single_quote(&NaiveDateTime::default().to_string()),
-        SqliteType::Date => wrap_with_single_quote(&NaiveDate::default().to_string()),
-        SqliteType::Time => wrap_with_single_quote(&NaiveTime::default().to_string()),
+        SqliteType::Datetime => quote!(&NaiveDateTime::default().to_string()),
+        SqliteType::Date => quote!(&NaiveDate::default().to_string()),
+        SqliteType::Time => quote!(&NaiveTime::default().to_string()),
         SqliteType::Int8 => GenericGenerator::<i8>::run().to_string(),
         SqliteType::Int16 => GenericGenerator::<i16>::run().to_string(),
         SqliteType::Int32 => GenericGenerator::<i32>::run().to_string(),

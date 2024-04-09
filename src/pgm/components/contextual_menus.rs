@@ -5,8 +5,9 @@
 // This file is confidential and only available to authorized individuals
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
-use crate::sqlx_module::state::SqlState;
 use eframe::egui;
+
+use crate::sqlx_common::state::SqlState;
 
 pub struct TableInfo;
 

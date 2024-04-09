@@ -5,20 +5,22 @@
 // This file is confidential and only available to authorized individuals
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
-use crate::utils::traits::Runner;
+
+use eframe::egui;
+use sqlx::Database;
+use std::fmt::Debug;
+use std::{marker::PhantomData, ops::RangeInclusive};
+
+use crate::common::traits::Runner;
 use crate::{
-    sqlx_module::{
+    common::internationalization::I18n,
+    sqlx_common::{
         data_generation::GenericGenerator,
         presenter::create_columns_string,
         state::{SqlState, SqlxMessage},
         traits::Presenter,
     },
-    utils::{internatiolization::I18n, wrap_with_single_quote},
 };
-use eframe::egui;
-use sqlx::Database;
-use std::fmt::Debug;
-use std::{marker::PhantomData, ops::RangeInclusive};
 
 pub struct GeneratorWindow<R, DB, T>(PhantomData<R>, PhantomData<DB>, PhantomData<T>);
 

@@ -7,12 +7,12 @@
 // -------------------------------------------------------------------------
 
 use std::collections::HashMap;
-
-use crate::sqlx_module::presenter::{self as sqlpresenter, Action, SqlPresenter};
-use crate::sqlx_module::state::{QuerySort, SqlxMessage};
-use crate::sqlx_module::traits::Presenter;
 use sqlx::{sqlite::SqliteRow, Pool, Row, Sqlite};
 use tokio::sync::mpsc::Sender;
+
+use crate::sqlx_common::presenter::{self as sqlpresenter, Action, SqlPresenter};
+use crate::sqlx_common::state::{QuerySort, SqlxMessage};
+use crate::sqlx_common::traits::Presenter;
 
 pub async fn connect(url: &str) -> Result<sqlx::Pool<sqlx::Sqlite>, sqlx::Error> {
     Pool::<Sqlite>::connect(url).await

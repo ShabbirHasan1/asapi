@@ -10,7 +10,7 @@ use egui_file_dialog::FileDialog;
 use serde::{Deserialize, Serialize};
 use sqlx::SqlitePool;
 
-use crate::sqlx_module::state::SqlState;
+use crate::sqlx_common::state::SqlState;
 
 #[derive(Serialize, Clone, Debug, Deserialize)]
 pub struct SQLiteAppState {

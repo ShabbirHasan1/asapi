@@ -9,8 +9,8 @@
 // Basado en type_info.rs de sqlx, extraigo lo que allí es privado.
 
 use crate::{
-    mysql_module::mysql_type::{ty_to_type, MySqlType},
-    utils::traits::ShowVec,
+    common::traits::ShowVec,
+    mysqlm::mysql_type::{ty_to_type, MySqlType},
 };
 use rust_decimal::Decimal;
 use sqlx::{
