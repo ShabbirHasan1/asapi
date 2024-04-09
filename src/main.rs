@@ -22,6 +22,9 @@ mod sqlx_common;
 
 // Usos/importaciones necesarios.
 use eframe::egui;
+use mysqlm::view::MySqlView;
+use pgm::view::PostgresView;
+use sqlitem::view::SQLiteView;
 use std::fs::{self, OpenOptions};
 
 use common::internationalization::language_selector;
@@ -38,9 +41,12 @@ use crate::httpm::view::HttpView;
 /// es rellenar esa estructura de datos con los datos que hay en el json.
 pub struct Asapi {
     top_bar: AppTopBar,
-    http: HttpView,
     app_state: AppState,
     rt: tokio::runtime::Runtime,
+    http: HttpView,
+    pg: PostgresView,
+    sqlite: SQLiteView,
+    mysql: MySqlView,
 }
 
 impl Asapi {
@@ -75,12 +81,15 @@ impl Asapi {
 
         Self {
             top_bar: AppTopBar::default(),
-            http: HttpView::default(),
             app_state: state,
             rt: tokio::runtime::Builder::new_multi_thread()
                 .enable_all()
                 .build()
                 .unwrap(),
+            http: HttpView::default(),
+            pg: PostgresView::default(),
+            mysql: MySqlView::default(),
+            sqlite: SQLiteView::default(),
         }
     }
 }
@@ -107,6 +116,16 @@ impl eframe::App for Asapi {
             ViewType::Http => self
                 .http
                 .update(ctx, _frame, &mut self.app_state, &self.rt, &i18n),
+            ViewType::Pg => self
+                .pg
+                .update(ctx, _frame, &mut self.app_state, &self.rt, &i18n),
+            ViewType::MySql => self
+                .mysql
+                .update(ctx, _frame, &mut self.app_state, &self.rt, &i18n),
+            ViewType::SQLite => {
+                self.sqlite
+                    .update(ctx, _frame, &mut self.app_state, &self.rt, &i18n)
+            }
         }
     }
 }
