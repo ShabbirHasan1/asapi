@@ -17,6 +17,102 @@ CLOSED: [2024-02-28 mié 16:22] No está hecho en todo, pero sí en las tablas d
 **** [[https://github.com/tokio-rs/tracing][tracing]]
 
 
+* Redis
+** Lista de funcionalidades soportadas
+*** DONE Ver/borrar streams
+CLOSED: [2024-01-29 lun 13:07]
+*** DONE Ver/borrar strings (Get/Set)
+CLOSED: [2024-01-29 lun 13:08]
+*** DONE Hash (ver/borrar)
+CLOSED: [2024-01-29 lun 17:29]
+*** Subscripciones
+**** DONE PubSub
+CLOSED: [2024-01-30 mar 06:54]
+**** TODO Streams
+*** TODO Listas
+*** TODO Documentos/JSON
+*** TODO Vector database (familia de comandos =FT.loquesea=).
+** TODO
+*** TODO [#A] Poder tener más de un Pub/Sub mostrando en pantalla en layout editable
+*** TODO [#B] Desconectar de subscripciones bajo demanda
+*** TODO [#B] Poder borrar en cascada un /hash/ entero borrando sus elementos.
+*** TODO [#C] El comando, /MultiLine/ en vez de /SingleLine/, y que se pueda hacer grande estirando.
+*** TODO [#C] Poder manejar varias sesiones cada una con una conexión distinta, similar a los distintos espacios de trabajo del módulo HTTP.
+Aunque pueda parecer muy importane, tanto como hacerlo en Postgres, no creo que lo sea. Por eso C, no quiero gastar energía si no es necesario o útil o diferencial.
+*** TODO [#C] Probar PubSub con Tokyo otra vez en vez de con /std::thread/.
+Está bien como está, simplemente por probar.
+*** DONE Poder tener varias suscripciones.
+CLOSED: [2024-01-30 mar 06:55]
+*** DONE Poder mostrar todas las estructuras o solo algunas en función de la selección del lateral.
+CLOSED: [2024-01-30 mar 06:54]
+*** DONE Guardar configuración en /AppState/.
+CLOSED: [2024-01-12 vie 22:46]
+*** DONE Poder copiar un stream y/o repostearlo, con un menú contextual.
+CLOSED: [2023-12-26 mar 10:56]
+*** DONE Conectar
+CLOSED: [2023-12-06 mié 15:29]
+*** DONE [#A] Mostrar qué elementos hay. Con scan creo que era como no se bloqueaba.
+CLOSED: [2023-12-06 mié 15:29]
+
+* Kafka
+*** [#A] Usar tabla para mostrar los mensajes que va recibiendo el consumidor.
+*** [#A] Poder /unsusbscribe/ de una conexión
+*** [#A] Producir de forma puntual
+*** [#B] Producir de forma periódica
+Se tiene que poder cancelar la producción.
+Usar generadores.
+*** [#C] Estadística bajo demanda.
+Creo /FutureProducer/, dejo que funcione un par de segundos y cierro. No tiene sentido tenerlo todo el rato conectado si no aporta al usuario. Que se haga la petición solamente en caso de que el usuario lo quiera.
+*** DONE Mostrar datos en función de botón lateral.
+CLOSED: [2024-02-01 jue 18:27]
+Uso Kafka-ui de referencia de los datos que puede ser interesante mostrar
+**** DONE [#A] /Brokers/
+CLOSED: [2024-01-31 mié 22:33]
+**** CANCELED [#A] /Consumers/
+CLOSED: [2024-02-01 jue 18:27] No se puede hacer fácilmente, ya investigaré más adelante si acaso
+**** DONE [#A] /Topics/
+CLOSED: [2024-02-01 jue 18:27]
+*** DONE Cargar metadatos al darle a conectar, y luego simplemente ir mostrándolos.
+CLOSED: [2024-01-31 mié 22:33]
+*** DONE [#C] Subscribir en tiempo real
+CLOSED: [2024-02-01 jue 18:27]
+Se tiene que poder de-subscribir.
+*** DONE Extraer metadatos de consumidor (lanzar en Tokyo)
+CLOSED: [2024-01-31 mié 12:15]
+*** DONE Menú lateral para elegir entre clúster
+CLOSED: [2024-01-31 mié 12:15]
+*** DONE [#C] Conectar
+CLOSED: [2024-01-19 sáb 11:19]
+
+
+* Mongo
+ En studio3t se muestra como tabla en vez de listado de Json extensibles como hago yo. Si no existe un atributo en un documento, no se muestra nada en esa celda. Si el atributo es a su vez un json, se puede clicar y ver lo que hay dentro en una nueva tabla. No creo que merezca la pena, pero puede ser una idea a explorar en un futurio lejano.
+*** DONE Conectar
+CLOSED: [2024-02-28 mié 16:22]
+*** DONE Mostrar bases de datos
+CLOSED: [2024-02-28 mié 16:22]
+*** DONE Mostrar colecciones de la base de datos seleccionada
+CLOSED: [2024-02-28 mié 16:22]
+*** DONE Mostrar documentos de la colección seleccionada
+CLOSED: [2024-04-01 lun 22:39]
+*** DONE [#B] Botón de recarga para volver a mostrar todos los documentos de la colección
+CLOSED: [2024-04-05 vie 14:38]
+*** DONE Filtro con texto
+CLOSED: [2024-04-05 vie 14:39]
+*** DONE [#A] Poder limpiar filtro compuesto
+CLOSED: [2024-04-05 vie 16:14]
+*** DONE [#A] Filtro compuesto
+CLOSED: [2024-04-05 vie 16:14]
+*** DONE [#A] find
+CLOSED: [2024-04-05 vie 16:14]
+*** TODO [#A] insert
+*** TODO [#A] delete
+*** TODO [#B] Label sobre la que, si hacemos hover, se nos muestra la consulta parseada que se va a enviar a Mongo.
+*** TODO [#C] Mostrar info de la base de datos con hover sobre /Info/
+*** TODO [#C] Mostrar info de la colección con hover sobre /Info/
+*** TODO [#C] El /not/ aún no funciona
+*** TODO [#C] Mostra documentos de la colección con paginación
+
 * SQLx
 El módulo común de /sqlx/ lo llamo /sqlx_common/, el resto con el nombre más la /m/ final de /module/.
 ** General
@@ -60,4 +156,3 @@ CLOSED: [2024-03-26 mar 17:34]
 CLOSED: [2024-02-28 mié 16:21]
 *** DONE Problema con conectar directamente tras abrir archivo
 CLOSED: [2024-03-26 mar 17:34]
-
