@@ -39,8 +39,8 @@ impl AppTopBar {
         const FILE_NAME: &str = "asapi_workspaces.json";
         if self.is_export_confirmation_open {
             egui::Window::new("Confirmar Exportación")
-            // .open(&mut self.is_export_confirmation_open)
-            // .title_bar(false) // Sin botón de cerrar ni título, pero no llamando al método open no se crea
+                // .open(&mut self.is_export_confirmation_open)
+                // .title_bar(false) // Sin botón de cerrar ni título, pero no llamando al método open no se crea
                 .collapsible(false)
                 .show(ctx, |ui| {
                     ui.label(&i18n.top_export_warning);
@@ -102,7 +102,10 @@ impl AppTopBar {
                     ui.separator();
                 }
 
-                if ui.add(egui::Button::new(&i18n.top_export_json_state)).clicked() {
+                if ui
+                    .add(egui::Button::new(&i18n.top_export_json_state))
+                    .clicked()
+                {
                     self.is_export_confirmation_open = true;
                     ui.close_menu();
                 }
@@ -132,8 +135,8 @@ impl AppTopBar {
                         ui.close_menu();
                     }
                 });
-                let pg_btn = ui
-                    .selectable_value(&mut app_state.selected_view, ViewType::Pg, "Postgres");
+                let pg_btn =
+                    ui.selectable_value(&mut app_state.selected_view, ViewType::Pg, "Postgres");
                 pg_btn.context_menu(|ui| {
                     if ui
                         .add(egui::Button::new(&i18n.top_pg_toggle_sidebar_connections))
@@ -142,59 +145,105 @@ impl AppTopBar {
                         app_state.pg.show_sidebar = !app_state.pg.show_sidebar;
                         ui.close_menu();
                     }
-                    if ui.checkbox(&mut app_state.pg.performance_table, &i18n.pg_performance_table)
-                        .on_hover_text(&i18n.pg_info_performance_table).clicked() {
-                            ui.close_menu();
-                        }
+                    if ui
+                        .checkbox(
+                            &mut app_state.pg.performance_table,
+                            &i18n.pg_performance_table,
+                        )
+                        .on_hover_text(&i18n.pg_info_performance_table)
+                        .clicked()
+                    {
+                        ui.close_menu();
+                    }
                 });
 
-                let mysql_btn =
-                    ui.selectable_value(&mut app_state.selected_view, ViewType::MySql, "MySql/MariaDB");
+                let mysql_btn = ui.selectable_value(
+                    &mut app_state.selected_view,
+                    ViewType::MySql,
+                    "MySql/MariaDB",
+                );
                 mysql_btn.context_menu(|ui| {
-                    if ui.add(egui::Button::new(&i18n.top_mysql_toggle_sidebar_connections))
-                        .clicked() {
-                            app_state.mysql.show_sidebar = !app_state.mysql.show_sidebar;
-                            ui.close_menu();
-                        }
-                    if ui.checkbox(&mut app_state.mysql.performance_table, &i18n.mysql_performance_table)
-                        .on_hover_text(&i18n.mysql_info_performance_table).clicked() {
-                            ui.close_menu();
-                        }
+                    if ui
+                        .add(egui::Button::new(
+                            &i18n.top_mysql_toggle_sidebar_connections,
+                        ))
+                        .clicked()
+                    {
+                        app_state.mysql.show_sidebar = !app_state.mysql.show_sidebar;
+                        ui.close_menu();
+                    }
+                    if ui
+                        .checkbox(
+                            &mut app_state.mysql.performance_table,
+                            &i18n.mysql_performance_table,
+                        )
+                        .on_hover_text(&i18n.mysql_info_performance_table)
+                        .clicked()
+                    {
+                        ui.close_menu();
+                    }
                 });
+
                 let sqlite_btn =
                     ui.selectable_value(&mut app_state.selected_view, ViewType::SQLite, "SQLite");
                 sqlite_btn.context_menu(|ui| {
-                    if ui.add(egui::Button::new(&i18n.top_sqlite_toggle_sidebar_connections))
-                        .clicked() {
-                            app_state.sqlite.show_sidebar = !app_state.sqlite.show_sidebar;
-                            ui.close_menu();
-                        }
-                    if ui.checkbox(&mut app_state.sqlite.performance_table, &i18n.sqlite_performance_table)
-                        .on_hover_text(&i18n.sqlite_info_performance_table).clicked() {
-                            ui.close_menu();
-                        }
+                    if ui
+                        .add(egui::Button::new(
+                            &i18n.top_sqlite_toggle_sidebar_connections,
+                        ))
+                        .clicked()
+                    {
+                        app_state.sqlite.show_sidebar = !app_state.sqlite.show_sidebar;
+                        ui.close_menu();
+                    }
+                    if ui
+                        .checkbox(
+                            &mut app_state.sqlite.performance_table,
+                            &i18n.sqlite_performance_table,
+                        )
+                        .on_hover_text(&i18n.sqlite_info_performance_table)
+                        .clicked()
+                    {
+                        ui.close_menu();
+                    }
                 });
-                    let redis_btn = ui
-                        .selectable_value(&mut app_state.selected_view, ViewType::Redis, "Redis");
-                    redis_btn.context_menu(|ui| {
-                        if ui
-                            .add(egui::Button::new(&i18n.top_redis_toggle_sidebar))
-                            .clicked()
-                        {
-                            app_state.redis.show_sidebar = !app_state.redis.show_sidebar;
-                            ui.close_menu();
-                        }
-                    });
+
+                let redis_btn =
+                    ui.selectable_value(&mut app_state.selected_view, ViewType::Redis, "Redis");
+                redis_btn.context_menu(|ui| {
+                    if ui
+                        .add(egui::Button::new(&i18n.top_redis_toggle_sidebar))
+                        .clicked()
+                    {
+                        app_state.redis.show_sidebar = !app_state.redis.show_sidebar;
+                        ui.close_menu();
+                    }
+                });
+
+                let mongo_btn =
+                    ui.selectable_value(&mut app_state.selected_view, ViewType::Mongo, "Mongo");
+                mongo_btn.context_menu(|ui| {
+                    if ui
+                        .add(egui::Button::new(&i18n.top_mongo_toggle_sidebar_connections))
+                        .clicked()
+                    {
+                        app_state.mongo.show_sidebar = !app_state.mongo.show_sidebar;
+                        ui.close_menu();
+                    }
+                });
+
                 if http_btn.clicked()
                     || pg_btn.clicked()
                     || mysql_btn.clicked()
                     || sqlite_btn.clicked()
-                    ||  redis_btn.clicked() {
-                        let cloned_state = app_state.clone();
-                        rt.spawn(async move {
-                            let _ = async_save_state(&cloned_state, FILE_NAME).await;
-                        });
-                    }
+                    || mongo_btn.clicked()
+                    || redis_btn.clicked()
+                {
+                    let cloned_state = app_state.clone();
+                    rt.spawn(async move {
+                        let _ = async_save_state(&cloned_state, FILE_NAME).await;
+                    });
+                }
             })
         });
     }

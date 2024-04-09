@@ -15,6 +15,7 @@ mod app_state;
 mod common;
 mod components;
 mod httpm;
+mod mongom;
 mod mysqlm;
 mod pgm;
 mod redism;
@@ -23,6 +24,7 @@ mod sqlx_common;
 
 // Usos/importaciones necesarios.
 use eframe::egui;
+use mongom::view::MongoView;
 use mysqlm::view::MySqlView;
 use pgm::view::PostgresView;
 use redism::view::RedisView;
@@ -50,6 +52,7 @@ pub struct Asapi {
     sqlite: SQLiteView,
     mysql: MySqlView,
     redis: RedisView,
+    mongo: MongoView,
 }
 
 impl Asapi {
@@ -94,6 +97,7 @@ impl Asapi {
             mysql: MySqlView::default(),
             sqlite: SQLiteView::default(),
             redis: RedisView::default(),
+            mongo: MongoView::default(),
         }
     }
 }
@@ -132,6 +136,9 @@ impl eframe::App for Asapi {
             }
             ViewType::Redis => self
                 .redis
+                .update(ctx, _frame, &mut self.app_state, &self.rt, &i18n),
+            ViewType::Mongo => self
+                .mongo
                 .update(ctx, _frame, &mut self.app_state, &self.rt, &i18n),
         }
     }

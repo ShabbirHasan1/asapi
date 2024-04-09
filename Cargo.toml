@@ -55,3 +55,9 @@ rust_decimal = "1.35.0"    # Tipos decimales en mysql.
 # Redis
 # ---------------------------------------------------------------------------
 redis = { version = "0.1.0", path = "redis-dynamic", package = "redis-dynamic" }
+
+# ----------------------------------------------------------------
+# Mongo
+# ----------------------------------------------------------------
+bson = { version = "2.9.0", features = ["chrono-0_4"] }
+mongodb = "2.8.2" # Por defecto ya lleva `tokio`.

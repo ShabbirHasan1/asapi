@@ -1,0 +1,452 @@
+// -------------------------------------------------------------------------
+// Copyright (C) 2024 Fernando López Laso - All Rights Reserved
+//
+// Unauthorized copying of this file, via any medium is strictly prohibited.
+// This file is confidential and only available to authorized individuals
+// with the permission of the copyright holders.
+// -------------------------------------------------------------------------
+
+use eframe::egui;
+use egui_extras::{Size, StripBuilder};
+use std::collections::HashSet;
+use tokio::runtime::Runtime;
+use tokio::sync::mpsc::Sender;
+
+use crate::{
+    error,
+    mongom::{
+        connection::connect_with_default,
+        presenter::{self, list_database_collections, list_database_names_in_connection},
+        state::{MongoAppState, MongoConnectionDefinition, MongoMessage, MongoLocalState},
+    },
+    common::internationalization::I18n,
+    components::toggle_switch::toggle,
+};
+
+pub struct MongoSideNav;
+
+impl MongoSideNav {
+    pub fn show(
+        ctx: &egui::Context,
+        rt: &Runtime,
+        tx: &Sender<MongoMessage>,
+        app_st: &mut MongoAppState,
+        local_st: &mut MongoLocalState,
+        i18n: &I18n,
+    ) {
+        if app_st.show_sidebar {
+            egui::SidePanel::left("mongo_sidenav_panel").show(ctx, |ui| {
+                // --> Decidimos qué mostrar <--
+                ui.horizontal(|ui| {
+                    let s1 = if local_st.hide_connections {
+                        "\u{229e}"
+                    } else {
+                        "\u{229f}"
+                    };
+                    let s2 = if local_st.hide_databases {
+                        "\u{229e}"
+                    } else {
+                        "\u{229f}"
+                    };
+                    let s3 = if local_st.hide_collections {
+                        "\u{229e}"
+                    } else {
+                        "\u{229f}"
+                    };
+
+                    if ui.button(format!("{s1} Connections")).clicked() {
+                        local_st.hide_connections = !local_st.hide_connections;
+                    }
+                    if ui.button(format!("{s2} Databases")).clicked() {
+                        local_st.hide_databases = !local_st.hide_databases;
+                    }
+                    if ui.button(format!("{s3} Collections")).clicked() {
+                        local_st.hide_collections = !local_st.hide_collections;
+                    }
+                });
+
+                // --> Abrimos ventana para definir conexión <--
+                ui.menu_button(&i18n.pg_btn_add_connection, |ui| {
+                    ui.set_min_width(200.0);
+
+                    ui.horizontal(|ui| {
+                        ui.label(&i18n.mongo_connection_host);
+                        ui.text_edit_singleline(&mut local_st.tmp_conn_definition.host);
+                    });
+
+                    ui.horizontal(|ui| {
+                        ui.label(&i18n.mongo_connection_port);
+                        ui.text_edit_singleline(&mut local_st.tmp_conn_definition.port);
+                    });
+
+                    ui.horizontal(|ui| {
+                        ui.label(&i18n.mongo_connection_user);
+                        ui.text_edit_singleline(&mut local_st.tmp_conn_definition.user);
+                    });
+
+                    ui.horizontal(|ui| {
+                        ui.label(&i18n.mongo_connection_password);
+                        ui.text_edit_singleline(&mut local_st.tmp_conn_definition.password);
+                    });
+
+                    ui.horizontal(|ui| {
+                        ui.label(&i18n.mongo_connection_srv);
+                        ui.add(toggle(&mut local_st.tmp_conn_definition.is_srv));
+                    });
+
+                    ui.horizontal(|ui| {
+                        if ui.button(&i18n.kafka_edit_cluster_cancel).clicked() {
+                            ui.close_menu();
+                        }
+                        if ui.button(&i18n.kafka_edit_cluster_save).clicked() {
+                            app_st
+                                .connections
+                                .push(local_st.tmp_conn_definition.clone());
+                            local_st.tmp_conn_definition = MongoConnectionDefinition::default();
+                            ui.close_menu();
+                        }
+                    });
+                });
+
+                // --> Mostramos Conexiones <--
+                if !local_st.hide_connections
+                    && !local_st.hide_databases
+                    && !local_st.hide_collections
+                {
+                    StripBuilder::new(ui)
+                        .size(Size::remainder())
+                        .size(Size::remainder())
+                        .size(Size::remainder())
+                        .vertical(|mut strip| {
+                            strip.cell(|ui| {
+                                MongoConnectionsSubpanel::show(
+                                    ctx, rt, tx, ui, app_st, local_st, i18n,
+                                );
+                            });
+                            strip.cell(|ui| {
+                                ui.vertical_centered(|ui| {
+                                    ui.separator();
+                                    MongoDatabasesSubpanel::show(
+                                        ctx, rt, tx, ui, app_st, local_st, i18n,
+                                    );
+                                });
+                            });
+                            strip.cell(|ui| {
+                                ui.vertical_centered(|ui| {
+                                    ui.separator();
+                                    MongoCollectionsSubpanel::show(
+                                        ctx, rt, tx, ui, app_st, local_st, i18n,
+                                    );
+                                });
+                            });
+                        });
+                } else if local_st.hide_collections
+                    && local_st.hide_databases
+                    && local_st.hide_connections
+                {
+                    // No mostramos nada.
+                } else if local_st.hide_collections && local_st.hide_databases {
+                    MongoConnectionsSubpanel::show(ctx, rt, tx, ui, app_st, local_st, i18n);
+                } else if local_st.hide_connections && local_st.hide_databases {
+                    MongoCollectionsSubpanel::show(ctx, rt, tx, ui, app_st, local_st, i18n);
+                } else if local_st.hide_connections && local_st.hide_collections {
+                    MongoDatabasesSubpanel::show(ctx, rt, tx, ui, app_st, local_st, i18n);
+                } else if local_st.hide_collections {
+                    StripBuilder::new(ui)
+                        .size(Size::remainder())
+                        .size(Size::remainder())
+                        .vertical(|mut strip| {
+                            strip.cell(|ui| {
+                                MongoConnectionsSubpanel::show(
+                                    ctx, rt, tx, ui, app_st, local_st, i18n,
+                                );
+                            });
+                            strip.cell(|ui| {
+                                ui.vertical_centered(|ui| {
+                                    ui.separator();
+                                    MongoDatabasesSubpanel::show(
+                                        ctx, rt, tx, ui, app_st, local_st, i18n,
+                                    );
+                                });
+                            });
+                        });
+                } else if local_st.hide_databases {
+                    StripBuilder::new(ui)
+                        .size(Size::remainder())
+                        .size(Size::remainder())
+                        .vertical(|mut strip| {
+                            strip.cell(|ui| {
+                                MongoConnectionsSubpanel::show(
+                                    ctx, rt, tx, ui, app_st, local_st, i18n,
+                                );
+                            });
+                            strip.cell(|ui| {
+                                ui.vertical_centered(|ui| {
+                                    ui.separator();
+                                    MongoCollectionsSubpanel::show(
+                                        ctx, rt, tx, ui, app_st, local_st, i18n,
+                                    );
+                                });
+                            });
+                        });
+                } else if local_st.hide_connections {
+                    StripBuilder::new(ui)
+                        .size(Size::remainder())
+                        .size(Size::remainder())
+                        .vertical(|mut strip| {
+                            strip.cell(|ui| {
+                                MongoDatabasesSubpanel::show(
+                                    ctx, rt, tx, ui, app_st, local_st, i18n,
+                                );
+                            });
+                            strip.cell(|ui| {
+                                ui.vertical_centered(|ui| {
+                                    ui.separator();
+                                    MongoCollectionsSubpanel::show(
+                                        ctx, rt, tx, ui, app_st, local_st, i18n,
+                                    );
+                                });
+                            });
+                        });
+                }
+            });
+        }
+    }
+}
+
+pub struct MongoConnectionsSubpanel;
+
+impl MongoConnectionsSubpanel {
+    pub fn show(
+        ctx: &egui::Context,
+        rt: &Runtime,
+        tx: &Sender<MongoMessage>,
+        ui: &mut egui::Ui,
+        pg_app_state: &mut MongoAppState,
+        local_state: &mut MongoLocalState,
+        _i18n: &I18n,
+    ) {
+        egui::ScrollArea::vertical()
+            .id_source("connections_scroll_area")
+            .show(ui, |ui| {
+                let mut connections_to_delete: HashSet<usize> = HashSet::new();
+
+                for (idx, conn_definition) in pg_app_state.connections.iter_mut().enumerate() {
+                    ui.with_layout(egui::Layout::top_down(egui::Align::LEFT), |ui| {
+                        ui.set_width(ui.available_width());
+                        let button_text = format!(
+                            "{}:{}\n{}",
+                            conn_definition.host.clone(),
+                            conn_definition.port.clone(),
+                            conn_definition.user.clone()
+                        );
+                        let raw_button = if local_state.conn.client.is_some() {
+                            egui::Button::new(button_text)
+                                .min_size(egui::vec2(200.0, 24.0))
+                                .stroke(if idx == local_state.current_selection.conn_idx {
+                                    egui::Stroke::new(1.0, egui::Color32::DARK_BLUE)
+                                } else {
+                                    egui::Stroke::new(0.0, egui::Color32::LIGHT_BLUE)
+                                })
+                        } else {
+                            egui::Button::new(button_text).min_size(egui::vec2(200.0, 24.0))
+                        };
+
+                        let button = ui.add(raw_button);
+
+                        // --> Menú contextual para manejo de las conexiones <--
+                        button.context_menu(|ui| {
+                            if ui.button("Close Connection").clicked() {
+                                close_connection(rt, local_state);
+                                local_state.current_selection.conn_idx = usize::MAX;
+                                ui.close_menu();
+                            }
+                            if ui.button("Delete Connection").clicked() {
+                                connections_to_delete.insert(idx);
+                                // Si la conexión que borramos existe, cerramos antes
+                                if local_state.current_selection.conn_idx != idx {
+                                    close_connection(rt, local_state);
+                                }
+                                local_state.current_selection.conn_idx = usize::MAX;
+                                ui.close_menu();
+                            }
+                        });
+
+                        // --> Al clicar sobre conexión, conectamos y listamos tablas <--
+                        // Si estamos ya mostrando esta conexión, clicar sobre ella no lanza ninguna acción.
+                        if button.clicked() && local_state.current_selection.conn_idx != idx {
+                            local_state.current_selection.conn_idx = idx;
+                            // Este método pone `pool` a `None`.
+                            close_connection(rt, local_state);
+
+                            // Si no conexión o la que existe no es la que clico, la defino
+                            if local_state.conn.client.is_none() {
+                                let conn = MongoConnectionDefinition {
+                                    host: conn_definition.host.clone(),
+                                    port: conn_definition.port.clone(),
+                                    user: conn_definition.user.clone(),
+                                    password: conn_definition.password.clone(),
+                                    is_srv: conn_definition.is_srv,
+                                };
+                                local_state.conn.conn_definition = conn.clone();
+                                local_state.conn.client = rt.block_on(async move {
+                                    match connect_with_default(&conn).await {
+                                        Ok(client) => Some(client),
+                                        Err(err) => {
+                                            error!("{:?}", err);
+                                            None
+                                        }
+                                    }
+                                });
+                                // Si hemos conectado con éxito, mostramos colecciones en la conexión.
+                                if local_state.conn.client.is_some() {
+                                    let tx_cloned = tx.clone();
+                                    let client = local_state.conn.client.as_ref().unwrap().clone();
+                                    let ctx_cloned = ctx.clone();
+                                    rt.spawn(async move {
+                                        list_database_names_in_connection(&tx_cloned, &client)
+                                            .await;
+                                        ctx_cloned.request_repaint();
+                                    });
+                                }
+                            }
+                        }
+                    });
+                }
+
+                if !connections_to_delete.is_empty() {
+                    let mut i = 0;
+                    let mut to_retain: Vec<MongoConnectionDefinition> = Vec::new();
+                    while i < pg_app_state.connections.len() {
+                        if !connections_to_delete.contains(&i) {
+                            to_retain.push(pg_app_state.connections.get(i).unwrap().clone());
+                        }
+                        i += 1;
+                    }
+                    pg_app_state.connections = to_retain;
+                }
+            });
+    }
+}
+
+pub struct MongoDatabasesSubpanel;
+
+impl MongoDatabasesSubpanel {
+    pub fn show(
+        _ctx: &egui::Context,
+        rt: &Runtime,
+        tx: &Sender<MongoMessage>,
+        ui: &mut egui::Ui,
+        _app_st: &mut MongoAppState,
+        local_st: &mut MongoLocalState,
+        _i18n: &I18n,
+    ) {
+        egui::ScrollArea::vertical()
+            .id_source("databases_scroll_area")
+            .show(ui, |ui| {
+                // egui::Grid::new("mongo_databases")
+                // .num_columns(2)
+                // .show(ui, |ui| {
+                for (db_idx, db_name) in local_st.db_names.iter().enumerate() {
+                    // TODO:
+                    // Poner Info para información sobre db: elementos, tamaño, etc.
+                    // ui.label(
+                    // egui::RichText::new("Info").color(egui::Color32::from_rgb(128, 128, 128)),
+                    // ).on_hover_ui(|ui| {});
+
+                    let db_btn = ui.selectable_value(
+                        &mut local_st.current_selection.db_idx,
+                        db_idx,
+                        db_name,
+                    );
+                    if db_btn.clicked() && local_st.conn.client.is_some() {
+                        local_st.current_selection.db_name = db_name.to_owned();
+                        let tx_cloned = tx.clone();
+                        let client_ref = local_st.conn.client.as_ref().unwrap().clone();
+                        let db_name_cloned = db_name.clone();
+                        rt.spawn(async move {
+                            list_database_collections(&tx_cloned, &client_ref, &db_name_cloned)
+                                .await;
+                        });
+                    }
+                }
+            });
+    }
+}
+
+pub struct MongoCollectionsSubpanel;
+
+impl MongoCollectionsSubpanel {
+    pub fn show(
+        ctx: &egui::Context,
+        rt: &Runtime,
+        tx: &Sender<MongoMessage>,
+        ui: &mut egui::Ui,
+        _app_st: &mut MongoAppState,
+        local_st: &mut MongoLocalState,
+        _i18n: &I18n,
+    ) {
+        egui::ScrollArea::vertical()
+            .id_source("collections_scroll_area")
+            .show(ui, |ui| {
+                // egui::Grid::new("mongo_collections")
+                // .num_columns(2)
+                // .show(ui, |ui| {
+                for (col_idx, col_name) in local_st.current_db_collections.iter().enumerate() {
+                    // TODO:
+                    // Poner Info para información sobre colección: elementos, tamaño, etc.
+                    // ui.label(
+                    // egui::RichText::new("Info").color(egui::Color32::from_rgb(128, 128, 128)),
+                    // ).on_hover_ui(|ui| {});
+
+                    let db_btn = ui.selectable_value(
+                        &mut local_st.current_selection.col_idx,
+                        col_idx,
+                        col_name,
+                    );
+                    if db_btn.clicked() && local_st.conn.client.is_some() {
+                        local_st.current_selection.col_name = col_name.to_owned();
+                        let ctx_cloned = ctx.clone();
+                        let tx_cloned = tx.clone();
+                        let client_ref = local_st.conn.client.as_ref().unwrap().clone();
+                        let db_name = local_st.current_selection.db_name.clone();
+                        let col = col_name.clone();
+
+                        rt.spawn(async move {
+                            let _ = presenter::list_collection_documents(
+                                &tx_cloned,
+                                &client_ref,
+                                &db_name,
+                                &col,
+                            )
+                            .await;
+                            ctx_cloned.request_repaint();
+                        });
+                    }
+                }
+                // });
+            });
+    }
+}
+
+// ==================================================
+// Funciones comunes
+// ==================================================
+fn close_connection(rt: &Runtime, local_state: &mut MongoLocalState) {
+    // Usar `guard` facilita mucho porque take sobre referencia no puede usarse,
+    // y usar is_some y dentro hacer algo genera problemas de prestado de
+    // referencia.
+    if local_state.conn.client.is_none() {
+        return;
+    }
+    let client = local_state.conn.client.as_ref().unwrap().clone();
+    // local_state.current_connection.path = String::default();
+
+    // Bloqueo para asegurar que todo cerrado antes de reconectar. Puedo
+    // de todas formas lanzar con `spawn` sin problemas.
+    rt.block_on(async move {
+        client.shutdown().await;
+    });
+
+    local_state.conn.client = None;
+}
