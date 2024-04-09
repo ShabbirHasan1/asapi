@@ -3,7 +3,7 @@
 /////! Source code example of how to create your own widget.
 //! This is meant to be read as a tutorial, hence the plethora of comments.
 
-use crate::egui;
+use eframe::egui;
 
 /// iOS-style toggle switch:
 ///
