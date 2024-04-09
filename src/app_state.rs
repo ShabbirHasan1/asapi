@@ -8,12 +8,19 @@
 
 use serde::{Deserialize, Serialize};
 
+use crate::common::internationalization::I18nOptions;
+use crate::httpm::state::HttpAppState;
 use crate::httpm::workspace::Workspace;
-use crate::{common::internationalization::I18nOptions, httpm::state::HttpAppState};
+use crate::mysqlm::state::MySqlAppState;
+use crate::pgm::state::PgAppState;
+use crate::sqlitem::state::SQLiteAppState;
 
 #[derive(Clone, Deserialize, Serialize, Copy, PartialEq, Debug)]
 pub enum ViewType {
     Http,
+    Pg,
+    MySql,
+    SQLite,
 }
 
 impl Default for ViewType {
@@ -35,6 +42,9 @@ pub struct AppState {
     pub selected_view: ViewType,
     pub show_settings: bool,
     pub http: HttpAppState,
+    pub pg: PgAppState,
+    pub mysql: MySqlAppState,
+    pub sqlite: SQLiteAppState,
 }
 
 impl Default for AppState {
@@ -48,6 +58,9 @@ impl Default for AppState {
                 workspaces: vec![Workspace::default()],
                 current_workspace_idx: 0,
             },
+            pg: PgAppState::default(),
+            mysql: MySqlAppState::default(),
+            sqlite: SQLiteAppState::default(),
         }
     }
 }
