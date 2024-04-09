@@ -1,1 +1,7 @@
+assets/
+**/target
 /target
+.cargo/
+.lsp/
+!/.cargo/config.toml
+redis-history
