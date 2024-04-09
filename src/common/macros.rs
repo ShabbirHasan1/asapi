@@ -24,9 +24,17 @@ macro_rules! error {
     })
 }
 
+// Versión más potente, pero quiero algo muy rápido así que opto por la implementación sencilla.
+// #[macro_export]
+// macro_rules! quote {
+//     ($($arg:tt)*) => ({
+//         format!("'{}'", format_args!($($arg)*))
+//     });
+// }
+
 #[macro_export]
 macro_rules! quote {
-    ($($arg:tt)*) => {{
-        format!("{}", format_args!($($arg)*));
-    }};
+    ($s:expr) => {
+        format!("'{}'", $s)
+    };
 }

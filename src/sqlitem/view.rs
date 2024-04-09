@@ -12,6 +12,7 @@ use sqlx::Sqlite;
 use tokio::runtime::Runtime;
 
 use crate::app_state::AppState;
+use crate::quote;
 use crate::sqlx_common::components::window_generator::GeneratorWindow;
 use crate::sqlx_common::components::window_insertion::InsertionWindow;
 use crate::sqlx_common::pagination::Paginator;
@@ -392,7 +393,7 @@ impl SQLiteView {
                     "{} = {}",
                     e.0,
                     if pr.should_be_wrapped(&e.1) {
-                        wrap_with_single_quote(&self.state.sql.current_table_rows[row_idx][col_idx])
+                        quote!(&self.state.sql.current_table_rows[row_idx][col_idx])
                     } else {
                         self.state.sql.current_table_rows[row_idx][col_idx].clone()
                     }
@@ -448,7 +449,7 @@ impl SQLiteView {
                                     let (col_name, t) =
                                         self.state.sql.current_table_columns[idx].clone();
 
-                                    let wrapped = wrap_with_single_quote(&col_data);
+                                    let wrapped = quote!(&col_data);
                                     let value = if pr.should_be_wrapped(&t) {
                                         &wrapped
                                     } else {

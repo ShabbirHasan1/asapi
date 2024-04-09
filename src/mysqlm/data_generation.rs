@@ -13,6 +13,7 @@ use rust_decimal::Decimal;
 use super::mysql_type::MySqlType;
 use crate::common::generator::{Gen, SimpleRGen};
 use crate::common::traits::Runner as _;
+use crate::quote;
 use crate::sqlx_common::data_generation::GenericGenerator;
 
 // pub fn generate_mysql_value_from_type_info(ty: &MySqlTypeInfo) -> String {
@@ -26,8 +27,8 @@ pub fn generate_mysql_value(data_type: &MySqlType) -> String {
         MySqlType::Blob => todo!(),
         MySqlType::BlobBinary => todo!(),
         MySqlType::Boolean => GenericGenerator::<bool>::run().to_string(),
-        MySqlType::Date => wrap_with_single_quote(&NaiveDate::default().to_string()),
-        MySqlType::Datetime => wrap_with_single_quote(&NaiveDateTime::default().to_string()),
+        MySqlType::Date => quote!(&NaiveDate::default().to_string()),
+        MySqlType::Datetime => quote!(&NaiveDateTime::default().to_string()),
         MySqlType::Decimal => decimal_generation(),
         MySqlType::Double => GenericGenerator::<f64>::run().to_string(),
         MySqlType::Enum => todo!(),
@@ -48,23 +49,21 @@ pub fn generate_mysql_value(data_type: &MySqlType) -> String {
         MySqlType::Set => todo!(),
         MySqlType::Short => GenericGenerator::<i16>::run().to_string(),
         MySqlType::ShortUnsigned => GenericGenerator::<u16>::run().to_string(),
-        MySqlType::String => wrap_with_single_quote(
-            &Gen::gen_alpha_lower_with_max_len(20).sample(&SimpleRGen::new()),
-        ),
+        MySqlType::String => {
+            quote!(&Gen::gen_alpha_lower_with_max_len(20).sample(&SimpleRGen::new()))
+        }
         MySqlType::StringBinary => todo!(),
-        MySqlType::Time => wrap_with_single_quote(&NaiveTime::default().to_string()),
-        MySqlType::Timestamp => wrap_with_single_quote(
-            &GenericGenerator::<DateTime<Utc>>::run()
-                .to_string()
-                .strip_suffix(" UTC")
-                .unwrap(),
-        ),
+        MySqlType::Time => quote!(&NaiveTime::default().to_string()),
+        MySqlType::Timestamp => quote!(&GenericGenerator::<DateTime<Utc>>::run()
+            .to_string()
+            .strip_suffix(" UTC")
+            .unwrap()),
         MySqlType::Tiny => GenericGenerator::<i8>::run().to_string(),
         MySqlType::TinyUnsigned => GenericGenerator::<u8>::run().to_string(),
         MySqlType::TinyBlob => todo!(),
         MySqlType::TinyBlobBinary => todo!(),
         MySqlType::Uuid => {
-            wrap_with_single_quote(&Gen::gen_random_uuid().sample(&SimpleRGen::new()))
+            quote!(&Gen::gen_random_uuid().sample(&SimpleRGen::new()))
         }
         MySqlType::VarChar => generate_mysql_value(&MySqlType::String),
         MySqlType::VarCharBinary => todo!(),

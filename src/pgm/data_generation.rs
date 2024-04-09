@@ -19,7 +19,7 @@ pub fn generate_pg_value(data_type: &PgType) -> String {
         PgType::Bool => GenericGenerator::<bool>::run().to_string(),
         // PgType::Int | PgType::Int64 => GenericGenerator::<i64>::run().to_string(),
         // PgType::Text => generate_pg_value(&PgType::Varchar(32)),
-        // PgType::Varchar(n_chars) => wrap_with_single_quote(
+        // PgType::Varchar(n_chars) => quote!(
         //     &Gen::gen_alpha_lower_with_max_len(*n_chars).sample(&SimpleRGen::new()),
         // ),
         // PgType::Char(n_chars) => generate_pg_value(&PgType::Varchar(*n_chars)),
@@ -28,7 +28,7 @@ pub fn generate_pg_value(data_type: &PgType) -> String {
         // TODO: No tengo nada, es generar Vec<u8> en ppio.
         // PgType::Blob => todo!(),
         // PgType::Numeric => generate_pg_value(&PgType::Float),
-        // PgType::Datetime => wrap_with_single_quote(&NaiveDateTime::default().to_string()),
+        // PgType::Datetime => quote!(&NaiveDateTime::default().to_string()),
         PgType::Date => format!("'{}'", &NaiveDate::default().to_string()),
         PgType::Time => format!("'{}'", &NaiveTime::default().to_string()),
         PgType::Timestamp => format!("'{}'", &NaiveDateTime::default().to_string()),

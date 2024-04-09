@@ -18,6 +18,7 @@ use super::parser::mysql_type_from_string;
 use super::presenter::run_statement_with_delete_control;
 use super::state::{MySqlAppState, MySqlState};
 use crate::app_state::AppState;
+use crate::quote;
 use crate::sqlx_common::components::window_generator::GeneratorWindow;
 use crate::sqlx_common::components::window_insertion::InsertionWindow;
 use crate::sqlx_common::pagination::Paginator;
@@ -355,7 +356,7 @@ impl MySqlView {
                     "{} = {}",
                     e.0,
                     if sql_presenter.should_be_wrapped(&e.1) {
-                        wrap_with_single_quote(&self.state.sql.current_table_rows[row_idx][col_idx])
+                        quote!(&self.state.sql.current_table_rows[row_idx][col_idx])
                     } else {
                         self.state.sql.current_table_rows[row_idx][col_idx].clone()
                     }
@@ -413,7 +414,7 @@ impl MySqlView {
                                         self.state.sql.current_table_columns[idx].clone();
 
                                     let value = if sql_presenter.should_be_wrapped(&t) {
-                                        wrap_with_single_quote(&col_data)
+                                        quote!(&col_data)
                                     } else {
                                         col_data.to_owned()
                                     };

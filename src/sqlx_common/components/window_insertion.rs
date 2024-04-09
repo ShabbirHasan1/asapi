@@ -13,6 +13,7 @@ use std::marker::PhantomData;
 
 use crate::{
     common::internationalization::I18n,
+    quote,
     sqlx_common::{
         presenter::create_columns_string,
         state::{SqlState, SqlxMessage},
@@ -89,7 +90,7 @@ where
                                     let (_, t) =
                                         state.data_gen.selected_table_definition[idx].clone();
                                     if should_be_wrapped(t.to_ascii_uppercase().as_str()) {
-                                        wrap_with_single_quote(v)
+                                        quote!(v)
                                     } else {
                                         v.clone()
                                     }

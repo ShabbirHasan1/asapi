@@ -12,6 +12,8 @@ use std::fmt::Debug;
 use std::{marker::PhantomData, ops::RangeInclusive};
 
 use crate::common::traits::Runner;
+use crate::components::toggle_switch;
+use crate::quote;
 use crate::{
     common::internationalization::I18n,
     sqlx_common::{
@@ -67,7 +69,7 @@ where
                             };
 
                             ui.label(text);
-                            ui.add(crate::widgets::toggle_switch::toggle(
+                            ui.add(toggle_switch::toggle(
                                 &mut state.data_gen.fixed_value_flags[idx],
                             ));
                             if state.data_gen.fixed_value_flags[idx] {
@@ -122,9 +124,7 @@ where
                                             state.data_gen.selected_table_definition[idx].clone();
 
                                         if presenter.should_be_wrapped(t.as_str()) {
-                                            wrap_with_single_quote(
-                                                &state.data_gen.fixed_string_value[idx],
-                                            )
+                                            quote!(&state.data_gen.fixed_string_value[idx])
                                         } else {
                                             state.data_gen.fixed_string_value[idx].clone()
                                         }
