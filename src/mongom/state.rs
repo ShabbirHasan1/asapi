@@ -199,6 +199,7 @@ pub struct FilterList {
     pub next_idx: usize, // Mantén un contador para asignar un nuevo idx único a cada nuevo filtro
 }
 
+#[derive(Debug)]
 pub enum MongoError {
     ClientNotInitialized,
     CommandError(String),
