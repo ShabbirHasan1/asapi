@@ -21,7 +21,7 @@ use eframe::egui;
 use mongom::view::MongoView;
 use std::fs::{self, OpenOptions};
 
-use common::internationalization::language_selector;
+use common::internationalization::{language_selector, I18n};
 use components::top_bar::AppTopBar;
 
 use crate::app_state::{AppState, ViewType};
@@ -91,6 +91,7 @@ impl eframe::App for Asapi {
         };
         ctx.set_visuals(style);
 
+        // Aquí decido qué lenguage implementamos.
         let i18n = language_selector(self.app_state.app_config.language);
 
         egui::TopBottomPanel::top("decoration").show(ctx, |ui| {

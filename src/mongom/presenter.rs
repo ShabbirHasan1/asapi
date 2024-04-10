@@ -10,9 +10,10 @@ use futures::TryStreamExt as _;
 use mongodb::error::Result as MongoResult;
 use mongodb::{options::FindOptions, Client};
 use serde_json::Value;
-use std::{collections::HashSet, sync::Arc};
-use tokio::{runtime::Runtime, sync::mpsc::Sender};
+use std::collections::HashSet;
+use tokio::sync::mpsc::Sender;
 
+use crate::common::internationalization::I18n;
 use crate::{error, info};
 
 use super::{
@@ -119,6 +120,7 @@ pub async fn find(
 
 pub async fn insert(
     tx: &Sender<MongoMessage>,
+    i18n: &I18n,
     client: &Client,
     db_name: &str,
     col_name: &str,
@@ -133,7 +135,7 @@ pub async fn insert(
         if docs.len() == 1 {
             let _ = collection.insert_one(&docs[0], None).await?;
         } else {
-            msg = MongoMessage::Error("Insert One solo acepta un único elemento".into());
+            msg = MongoMessage::Error(i18n.mongo_insert_one_error.clone());
         }
     } else {
         let _ = collection.insert_many(docs, None).await?;

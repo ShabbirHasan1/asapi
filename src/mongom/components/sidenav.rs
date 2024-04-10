@@ -6,7 +6,6 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
-use bson::Document;
 use eframe::egui;
 use egui_extras::{Size, StripBuilder};
 use egui_json_tree::JsonTree;
@@ -17,7 +16,6 @@ use tokio::sync::mpsc::Sender;
 use crate::{
     common::internationalization::I18n,
     components::toggle_switch::toggle,
-    error, info,
     mongom::{
         connection::{close_connection, connect_with_default},
         presenter::{self, list_database_collections, list_database_names_in_connection},
@@ -58,13 +56,22 @@ impl MongoSideNav {
                         "\u{229f}"
                     };
 
-                    if ui.button(format!("{s1} Connections")).clicked() {
+                    if ui
+                        .button(format!("{s1} {}", i18n.mongo_connections))
+                        .clicked()
+                    {
                         local_st.hide_connections = !local_st.hide_connections;
                     }
-                    if ui.button(format!("{s2} Databases")).clicked() {
+                    if ui
+                        .button(format!("{s2} {}", i18n.mongo_databases))
+                        .clicked()
+                    {
                         local_st.hide_databases = !local_st.hide_databases;
                     }
-                    if ui.button(format!("{s3} Collections")).clicked() {
+                    if ui
+                        .button(format!("{s3} {}", i18n.mongo_collections))
+                        .clicked()
+                    {
                         local_st.hide_collections = !local_st.hide_collections;
                     }
                 });
@@ -228,7 +235,7 @@ impl MongoConnectionsSubpanel {
         ui: &mut egui::Ui,
         pg_app_state: &mut MongoAppState,
         local_state: &mut MongoLocalState,
-        _i18n: &I18n,
+        i18n: &I18n,
     ) {
         egui::ScrollArea::vertical()
             .id_source("connections_scroll_area")
@@ -260,12 +267,12 @@ impl MongoConnectionsSubpanel {
 
                         // --> Menú contextual para manejo de las conexiones <--
                         button.context_menu(|ui| {
-                            if ui.button("Close Connection").clicked() {
+                            if ui.button(&i18n.mongo_close_connection).clicked() {
                                 close_connection(rt, local_state);
                                 local_state.current_selection.conn_idx = usize::MAX;
                                 ui.close_menu();
                             }
-                            if ui.button("Delete Connection").clicked() {
+                            if ui.button(&i18n.mongo_delete_connection).clicked() {
                                 connections_to_delete.insert(idx);
                                 // Si la conexión que borramos existe, cerramos antes
                                 if local_state.current_selection.conn_idx != idx {
@@ -338,7 +345,7 @@ impl MongoDatabasesSubpanel {
         ui: &mut egui::Ui,
         _app_st: &mut MongoAppState,
         local_st: &mut MongoLocalState,
-        _i18n: &I18n,
+        i18n: &I18n,
     ) {
         egui::ScrollArea::vertical()
             .id_source("databases_scroll_area")
@@ -353,34 +360,40 @@ impl MongoDatabasesSubpanel {
                                 egui::RichText::new("Info")
                                     .color(egui::Color32::from_rgb(128, 128, 128)),
                             )
-                            .on_hover_ui(|ui| {
-                                let client_ref = local_st.conn.client.as_ref().unwrap().clone();
-                                let info: Result<bson::Document, crate::mongom::state::MongoError> =
-                                    rt.block_on(async move {
-                                        presenter::get_db_stats(&client_ref, db_name).await
-                                    });
-                                match info {
-                                    Ok(info) => {
-                                        egui::Grid::new("mongodb_db_info").num_columns(2).show(
-                                            ui,
-                                            |ui| {
-                                                for (k, v) in info.iter() {
-                                                    ui.label(k);
-                                                    ui.monospace(format!("{:?}", v));
-                                                    ui.end_row();
-                                                }
-                                            },
-                                        );
-                                    }
-                                    Err(_) => todo!(),
-                                }
-                            });
+                                .on_hover_ui(|ui| {
+                                    db_info(rt, ui, local_st, i18n, db_name);
+                                });
 
                             let db_btn = ui.selectable_value(
                                 &mut local_st.current_selection.db_idx,
                                 db_idx,
                                 db_name,
                             );
+                            db_btn.context_menu(|ui| {
+                                if ui.button(&i18n.mongo_copy_database_info).clicked() {
+                                    let client_ref = local_st.conn.client.as_ref().unwrap().clone();
+                                    match rt.block_on(async move {
+                                        presenter::get_db_stats(
+                                            &client_ref,
+                                            &db_name,
+                                        )
+                                        .await
+                                    }) {
+                                        Ok(document) => match serde_json::to_string(&document) {
+                                            Ok(d) => {
+                                                ui.ctx().copy_text(d);
+                                            }
+                                            Err(err) => {
+                                                ui.ctx().copy_text(format!("{:?}", err));
+                                            }
+                                        },
+                                        Err(err) => {
+                                            ui.ctx().copy_text(format!("{:?}", err));
+                                        }
+                                    };
+                                    ui.close_menu();
+                                }
+                            });
                             if db_btn.clicked() && local_st.conn.client.is_some() {
                                 local_st.current_selection.db_name = db_name.to_owned();
                                 let tx_cloned = tx.clone();
@@ -428,17 +441,18 @@ impl MongoCollectionsSubpanel {
                             ui.label(
                                 egui::RichText::new("Info")
                                     .color(egui::Color32::from_rgb(128, 128, 128)),
-                            ).on_hover_ui(|ui| {
+                            )
+                            .on_hover_ui(|ui| {
                                 col_info(rt, ui, local_st, i18n, col_name);
                             });
 
-                            let db_btn = ui.selectable_value(
+                            let col_btn = ui.selectable_value(
                                 &mut local_st.current_selection.col_idx,
                                 col_idx,
                                 col_name,
                             );
-                            db_btn.context_menu(|ui| {
-                                if ui.button("Copiar Información de la Colección").clicked() {
+                            col_btn.context_menu(|ui| {
+                                if ui.button(&i18n.mongo_copy_collection_info).clicked() {
                                     let client_ref = local_st.conn.client.as_ref().unwrap().clone();
                                     let db_name = local_st.current_selection.db_name.clone();
                                     match rt.block_on(async move {
@@ -464,7 +478,7 @@ impl MongoCollectionsSubpanel {
                                     ui.close_menu();
                                 }
                             });
-                            if db_btn.clicked() && local_st.conn.client.is_some() {
+                            if col_btn.clicked() && local_st.conn.client.is_some() {
                                 local_st.current_selection.col_name = col_name.to_owned();
                                 let ctx_cloned = ctx.clone();
                                 let tx_cloned = tx.clone();
@@ -491,7 +505,48 @@ impl MongoCollectionsSubpanel {
     }
 }
 
-async fn get_col_data(
+async fn get_db_info(
+    local_st: &MongoLocalState,
+    db_name: &str,
+) -> Result<bson::Document, crate::mongom::state::MongoError> {
+    let client_ref = local_st.conn.client.as_ref().unwrap().clone();
+
+    presenter::get_db_stats(&client_ref, db_name).await
+}
+
+fn db_info(
+    rt: &Runtime,
+    ui: &mut egui::Ui,
+    local_st: &MongoLocalState,
+    i18n: &I18n,
+    db_name: &str,
+) {
+    let info = rt.block_on(async move { get_db_info(local_st, db_name).await });
+
+    match info {
+        Ok(info) => {
+            egui::Grid::new("mongodb_db_info")
+                .num_columns(2)
+                .show(ui, |ui| {
+                    for (k, v) in info.iter() {
+                        ui.label(k);
+                        ui.monospace(format!("{:?}", v));
+                        ui.end_row();
+                    }
+                });
+        }
+        Err(err) => {
+            match err {
+                MongoError::ClientNotInitialized => {
+                    ui.label(&i18n.mongo_error_client_uninitialized)
+                }
+                MongoError::CommandError(msg) => ui.label(msg),
+            };
+        }
+    }
+}
+
+async fn get_col_info(
     local_st: &MongoLocalState,
     col_name: &str,
 ) -> Result<bson::Document, crate::mongom::state::MongoError> {
@@ -511,10 +566,10 @@ fn col_info(
     rt: &Runtime,
     ui: &mut egui::Ui,
     local_st: &MongoLocalState,
-    _i18n: &I18n,
+    i18n: &I18n,
     col_name: &str,
 ) {
-    let info = rt.block_on(async move { get_col_data(local_st, col_name).await });
+    let info = rt.block_on(async move { get_col_info(local_st, col_name).await });
 
     match info {
         Ok(info) => {
@@ -541,7 +596,9 @@ fn col_info(
         }
         Err(err) => {
             match err {
-                MongoError::ClientNotInitialized => ui.label("Cliente no inicializado"),
+                MongoError::ClientNotInitialized => {
+                    ui.label(&i18n.mongo_error_client_uninitialized)
+                }
                 MongoError::CommandError(msg) => ui.label(msg),
             };
         }

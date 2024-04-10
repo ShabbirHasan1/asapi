@@ -24,33 +24,6 @@ pub struct MongoConnection {
     pub conn_definition: MongoConnectionDefinition,
 }
 
-impl MongoConnection {
-    pub async fn connect(&mut self, conn_definition: MongoConnectionDefinition) {
-        self.conn_definition = conn_definition;
-
-        if let Some(client) = self.client.take() {
-            client.shutdown().await;
-        }
-
-        match connect_with_default(&self.conn_definition).await {
-            Ok(con) => {
-                self.client = Some(con);
-            }
-            Err(err) => {
-                println!("{:?}", err);
-                self.client = None;
-            }
-        }
-    }
-
-    pub async fn shutdown(&mut self) {
-        if let Some(client) = self.client.take() {
-            // client.shutdown_immediate().await;
-            // client.shutdown().await;
-            client.shutdown().await;
-        }
-    }
-}
 
 pub async fn connect(
     host: &str,

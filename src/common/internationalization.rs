@@ -66,6 +66,17 @@ pub struct I18n {
     pub mongo_connection_password: String,
     pub mongo_connection_srv: String,
     pub mongo_actions: String,
+    pub mongo_insert_one_error: String,
+    pub mongo_invalid_doc_to_insert: String,
+    pub mongo_clean_filter: String,
+    pub mongo_connections: String,
+    pub mongo_databases: String,
+    pub mongo_collections: String,
+    pub mongo_close_connection: String,
+    pub mongo_delete_connection: String,
+    pub mongo_copy_database_info: String,
+    pub mongo_copy_collection_info: String,
+    pub mongo_error_client_uninitialized: String,
 
     // Postgres
     pub pg_connection_host: String,
@@ -148,6 +159,17 @@ pub fn language_selector(i: I18nOptions) -> I18n {
             mongo_connection_password: "Password".to_owned(),
             mongo_connection_srv: "SRV".to_owned(),
             mongo_actions: "Seleccionar Acción".to_owned(),
+            mongo_insert_one_error: String::from("InsertOne acepta un único elemento"),
+            mongo_invalid_doc_to_insert: String::from("El Documento que se está intentando isnertar no es válido"),
+            mongo_clean_filter: String::from("Limpiar Filtro"),
+            mongo_connections: String::from("Conexiones"),
+            mongo_databases: String::from("Bases de Datos"),
+            mongo_collections: String::from("Colecciones"),
+            mongo_close_connection: String::from("Cerrar Conexión"),
+            mongo_delete_connection: String::from("Borrar Conexión"),
+            mongo_copy_database_info: String::from("Copiar Información de la Base de Datos"),
+            mongo_copy_collection_info: String::from("Copiar Información de la Colección"),
+            mongo_error_client_uninitialized: String::from("Cliente no Inicializado"),
 
             // Postgres
             pg_connection_host: "Host".to_owned(),
@@ -200,7 +222,7 @@ pub fn language_selector(i: I18nOptions) -> I18n {
             top_import_json_state: "Import state from JSON".to_owned(),
             top_export_json_state: "Export to JSON".to_owned(),
             top_export_warning: "Export will override data currently stored".to_owned(),
-            
+
             // Http
             http_btn_edit_ws_name: "Edit workspace name".to_owned(),
             http_btn_delete_ws: "Delete workspace".to_owned(),
@@ -228,6 +250,17 @@ pub fn language_selector(i: I18nOptions) -> I18n {
             mongo_connection_password: "Password".to_owned(),
             mongo_connection_srv: "SRV".to_owned(),
             mongo_actions: "Select Action".to_owned(),
+            mongo_insert_one_error: String::from("InsertOne only accepts one element"),
+            mongo_invalid_doc_to_insert: String::from("Invalid document"),
+            mongo_clean_filter: String::from("Clean Filter"),
+            mongo_connections: String::from("Connections"),
+            mongo_databases: String::from("Databases"),
+            mongo_collections: String::from("Colecciones"),
+            mongo_close_connection: String::from("Close Connection"),
+            mongo_delete_connection: String::from("Delete Connection"),
+            mongo_copy_database_info: String::from("Copy Database Info"),
+            mongo_copy_collection_info: String::from("Copy Collection Info"),
+            mongo_error_client_uninitialized: String::from("Client does not Exists"),
 
             // Postgres
             pg_info_performance_table: "Deletion is forbidden for performance table.\nSelect this for massive quantity of cells (rows x columns), order of 1e5, or when massive amount of data inside the cells, like long varchar, big json/binaries/arrays or geographical data.".to_owned(),

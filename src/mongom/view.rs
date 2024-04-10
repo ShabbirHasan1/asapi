@@ -8,20 +8,19 @@
 
 use bson::{doc, Document};
 use eframe::egui;
-use mongodb::Client;
 use serde_json::Value;
-use std::sync::Arc;
 use tokio::runtime::Runtime;
 use tokio::sync::mpsc::{Receiver, Sender};
 
-use super::actions::MongoAction;
-use super::presenter;
-use super::{components::sidenav::MongoSideNav, state::MongoMessage};
 use crate::app_state::AppState;
 use crate::common::internationalization::I18n;
 use crate::error;
 use crate::mongom::parser::{build_mongo_query, pprint_bson};
 use crate::mongom::state::MongoLocalState;
+
+use super::actions::MongoAction;
+use super::presenter;
+use super::{components::sidenav::MongoSideNav, state::MongoMessage};
 
 pub struct MongoView {
     pub state: MongoLocalState,
@@ -150,7 +149,7 @@ impl MongoView {
                 || self.state.selected_action == MongoAction::FindOne;
 
             if !show_user_free && compound_filter_available {
-                self.compound_filter_constructor(rt, ctx, ui);
+                self.compound_filter_constructor(rt, ctx, i18n, ui);
             } else {
                 self.user_defined_filter_input(ctx, ui);
             }
@@ -199,16 +198,16 @@ impl MongoView {
                                                 Err(_) => doc! {},
                                             })
                                             .collect();
-                                        self.insert(rt, ctx, docs);
+                                        self.insert(rt, ctx, i18n, docs);
                                     }
                                     _ => {
-                                        self.insert(rt, ctx, vec![filter]);
+                                        self.insert(rt, ctx, i18n, vec![filter]);
                                     }
                                 },
                                 Err(e) => {
                                     error!("{:?}", e);
                                     self.state.last_error =
-                                        Some("Invalid document to Insert".into());
+                                        Some(i18n.mongo_invalid_doc_to_insert.to_owned());
                                 }
                             }
                         }

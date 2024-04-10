@@ -10,6 +10,7 @@ use eframe::egui::{self, Context};
 use serde_json::Value;
 use tokio::runtime::Runtime;
 
+use crate::common::internationalization::I18n;
 use crate::common::syntax_highlighting::{highlight, CodeTheme};
 use crate::components::toggle_selector::toggle_label;
 use crate::mongom::document::find::MongoOperator;
@@ -96,6 +97,7 @@ impl MongoView {
         &mut self,
         rt: &Runtime,
         ctx: &egui::Context,
+        i18n: &I18n,
         ui: &mut egui::Ui,
     ) {
         let user_action = self.show_filters(ui, None);
@@ -159,7 +161,7 @@ impl MongoView {
             }
         });
 
-        if ui.button("Clean Filter").clicked() {
+        if ui.button(&i18n.mongo_clean_filter).clicked() {
             self.state.clean_filter();
             self.find_all(rt, ctx);
         }
