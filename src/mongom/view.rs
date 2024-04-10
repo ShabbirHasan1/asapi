@@ -16,7 +16,6 @@ use tokio::sync::mpsc::{Receiver, Sender};
 
 use super::actions::MongoAction;
 use super::presenter;
-use super::presenter::MongoPresenter;
 use super::{components::sidenav::MongoSideNav, state::MongoMessage};
 use crate::app_state::AppState;
 use crate::common::internationalization::I18n;
@@ -29,26 +28,10 @@ pub struct MongoView {
     pub tx: Sender<MongoMessage>,
     rx: Receiver<MongoMessage>,
     first_render: bool,
-    // presenter: MongoPresenter,
 }
 
 impl Default for MongoView {
     fn default() -> Self {
-        let (tx, rx) = tokio::sync::mpsc::channel(8);
-        let mut state = MongoLocalState::default();
-        state.rows_to_show = 100;
-
-        Self {
-            state,
-            tx,
-            rx,
-            first_render: false,
-        }
-    }
-}
-
-impl MongoView {
-    pub fn new(rt: Arc<Runtime>) -> Self {
         let (tx, rx) = tokio::sync::mpsc::channel(8);
         let mut state = MongoLocalState::default();
         state.rows_to_show = 100;

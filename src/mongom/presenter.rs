@@ -144,36 +144,32 @@ pub async fn insert(
     Ok(())
 }
 
-pub struct MongoPresenter {
-    pub rt: Arc<Runtime>,
-    pub client: Option<Client>,
+pub async fn run_command(
+    client: &Client,
+    db_name: &str,
+    query: Document,
+) -> Result<Document, MongoError> {
+    let db = client.database(db_name);
+    let stats = db.run_command(query, None).await;
+
+    match stats {
+        Ok(data) => Ok(data),
+        Err(err) => {
+            let msg = format!("{:?}", err);
+            error!("{msg}");
+            Err(MongoError::CommandError(msg))
+        }
+    }
 }
 
-impl MongoPresenter {
-    pub fn new(rt: Arc<Runtime>, client: Client) -> Self {
-        Self {
-            rt,
-            client: Some(client),
-        }
-    }
+pub async fn get_db_stats(client: &Client, db_name: &str) -> Result<Document, MongoError> {
+    run_command(client, db_name, doc! {"dbStats": 1, "scale": 1}).await
+}
 
-    pub fn get_db_stats(&self, db_name: &str) -> Result<(), MongoError> {
-        if self.client.is_none() {
-            error!("Client not initialized");
-            return Err(MongoError::ClientNotInitialized);
-        }
-
-        let db = self.client.as_ref().unwrap().database(db_name);
-
-        self.rt.block_on(async {
-            let stats = db.run_command(doc! {"dbStats": 1, "scale": 1}, None).await;
-            if let Err(err) = stats {
-                let msg = format!("{:?}", err);
-                error!("{msg}");
-                return Err(MongoError::CommandError(msg));
-            }
-            info!("{:?}", stats);
-            Ok(())
-        })
-    }
+pub async fn get_collection_stats(
+    client: &Client,
+    db_name: &str,
+    col_name: &str,
+) -> Result<Document, MongoError> {
+    run_command(client, db_name, doc! {"collStats": col_name}).await
 }

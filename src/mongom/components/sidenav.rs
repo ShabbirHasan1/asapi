@@ -8,6 +8,7 @@
 
 use eframe::egui;
 use egui_extras::{Size, StripBuilder};
+use egui_json_tree::JsonTree;
 use std::collections::HashSet;
 use tokio::runtime::Runtime;
 use tokio::sync::mpsc::Sender;
@@ -15,7 +16,7 @@ use tokio::sync::mpsc::Sender;
 use crate::{
     common::internationalization::I18n,
     components::toggle_switch::toggle,
-    error,
+    error, info,
     mongom::{
         connection::{close_connection, connect_with_default},
         presenter::{self, list_database_collections, list_database_names_in_connection},
@@ -289,15 +290,10 @@ impl MongoConnectionsSubpanel {
                                     is_srv: conn_definition.is_srv,
                                 };
                                 local_state.conn.conn_definition = conn.clone();
-                                local_state.conn.client = rt.block_on(async move {
-                                    match connect_with_default(&conn).await {
-                                        Ok(client) => Some(client),
-                                        Err(err) => {
-                                            error!("{:?}", err);
-                                            None
-                                        }
-                                    }
-                                });
+                                local_state.conn.client =
+                                    rt.block_on(
+                                        async move { connect_with_default(&conn).await.ok() },
+                                    );
                                 // Si hemos conectado con éxito, mostramos colecciones en la conexión.
                                 if local_state.conn.client.is_some() {
                                     let tx_cloned = tx.clone();
@@ -344,32 +340,61 @@ impl MongoDatabasesSubpanel {
         egui::ScrollArea::vertical()
             .id_source("databases_scroll_area")
             .show(ui, |ui| {
-                // egui::Grid::new("mongo_databases")
-                // .num_columns(2)
-                // .show(ui, |ui| {
-                for (db_idx, db_name) in local_st.db_names.iter().enumerate() {
-                    // TODO:
-                    // Poner Info para información sobre db: elementos, tamaño, etc.
-                    // ui.label(
-                    // egui::RichText::new("Info").color(egui::Color32::from_rgb(128, 128, 128)),
-                    // ).on_hover_ui(|ui| {});
+                egui::Grid::new("mongo_databases")
+                    .num_columns(2)
+                    .show(ui, |ui| {
+                        for (db_idx, db_name) in local_st.db_names.iter().enumerate() {
+                            // TODO:
+                            // Poner Info para información sobre db: elementos, tamaño, etc.
+                            ui.label(
+                                egui::RichText::new("Info")
+                                    .color(egui::Color32::from_rgb(128, 128, 128)),
+                            )
+                            .on_hover_ui(|ui| {
+                                let client_ref = local_st.conn.client.as_ref().unwrap().clone();
+                                let info: Result<bson::Document, crate::mongom::state::MongoError> =
+                                    rt.block_on(async move {
+                                        presenter::get_db_stats(&client_ref, db_name).await
+                                    });
+                                match info {
+                                    Ok(info) => {
+                                        egui::Grid::new("mongodb_db_info").num_columns(2).show(
+                                            ui,
+                                            |ui| {
+                                                for (k, v) in info.iter() {
+                                                    ui.label(k);
+                                                    ui.monospace(format!("{:?}", v));
+                                                    ui.end_row();
+                                                }
+                                            },
+                                        );
+                                    }
+                                    Err(_) => todo!(),
+                                }
+                            });
 
-                    let db_btn = ui.selectable_value(
-                        &mut local_st.current_selection.db_idx,
-                        db_idx,
-                        db_name,
-                    );
-                    if db_btn.clicked() && local_st.conn.client.is_some() {
-                        local_st.current_selection.db_name = db_name.to_owned();
-                        let tx_cloned = tx.clone();
-                        let client_ref = local_st.conn.client.as_ref().unwrap().clone();
-                        let db_name_cloned = db_name.clone();
-                        rt.spawn(async move {
-                            list_database_collections(&tx_cloned, &client_ref, &db_name_cloned)
-                                .await;
-                        });
-                    }
-                }
+                            let db_btn = ui.selectable_value(
+                                &mut local_st.current_selection.db_idx,
+                                db_idx,
+                                db_name,
+                            );
+                            if db_btn.clicked() && local_st.conn.client.is_some() {
+                                local_st.current_selection.db_name = db_name.to_owned();
+                                let tx_cloned = tx.clone();
+                                let client_ref = local_st.conn.client.as_ref().unwrap().clone();
+                                let db_name_cloned = db_name.clone();
+                                rt.spawn(async move {
+                                    list_database_collections(
+                                        &tx_cloned,
+                                        &client_ref,
+                                        &db_name_cloned,
+                                    )
+                                    .await;
+                                });
+                            }
+                            ui.end_row();
+                        }
+                    });
             });
     }
 }
@@ -390,43 +415,74 @@ impl MongoCollectionsSubpanel {
             .id_source("collections_scroll_area")
             .show(ui, |ui| {
                 egui::Grid::new("mongo_collections")
-                .num_columns(2)
-                .show(ui, |ui| {
-                for (col_idx, col_name) in local_st.current_db_collections.iter().enumerate() {
-                    // TODO:
-                    // Poner Info para información sobre colección: elementos, tamaño, etc.
-                    ui.label(
-                    egui::RichText::new("Info").color(egui::Color32::from_rgb(128, 128, 128)),
-                    ).on_hover_ui(|ui| {
-                        
-                    });
-
-                    let db_btn = ui.selectable_value(
-                        &mut local_st.current_selection.col_idx,
-                        col_idx,
-                        col_name,
-                    );
-                    if db_btn.clicked() && local_st.conn.client.is_some() {
-                        local_st.current_selection.col_name = col_name.to_owned();
-                        let ctx_cloned = ctx.clone();
-                        let tx_cloned = tx.clone();
-                        let client_ref = local_st.conn.client.as_ref().unwrap().clone();
-                        let db_name = local_st.current_selection.db_name.clone();
-                        let col = col_name.clone();
-
-                        rt.spawn(async move {
-                            let _ = presenter::list_collection_documents(
-                                &tx_cloned,
-                                &client_ref,
-                                &db_name,
-                                &col,
+                    .num_columns(2)
+                    .show(ui, |ui| {
+                        for (col_idx, col_name) in
+                            local_st.current_db_collections.iter().enumerate()
+                        {
+                            // TODO:
+                            // Poner Info para información sobre colección: elementos, tamaño, etc.
+                            ui.label(
+                                egui::RichText::new("Info")
+                                    .color(egui::Color32::from_rgb(128, 128, 128)),
                             )
-                            .await;
-                            ctx_cloned.request_repaint();
-                        });
-                    }
-                }
-                });
+                            .on_hover_ui(|ui| {
+                                let client_ref = local_st.conn.client.as_ref().unwrap().clone();
+                                let db_name = local_st.current_selection.db_name.clone();
+                                let info: Result<bson::Document, crate::mongom::state::MongoError> =
+                                    rt.block_on(async move {
+                                        presenter::get_collection_stats(
+                                            &client_ref,
+                                            &db_name,
+                                            col_name,
+                                        )
+                                        .await
+                                    });
+                                 match info {
+                                    Ok(info) => {
+                                        egui::Grid::new("mongodb_col_info").num_columns(2).show(
+                                            ui,
+                                            |ui| {
+                                                for (k, v) in info.iter() {
+                                                    ui.label(k);
+                                                    ui.monospace(format!("{:?}", v));
+                                                    ui.end_row();
+                                                }
+                                            },
+                                        );
+                                    }
+                                    Err(_) => todo!(),
+                                }
+                            });
+
+                            let db_btn = ui.selectable_value(
+                                &mut local_st.current_selection.col_idx,
+                                col_idx,
+                                col_name,
+                            );
+                            if db_btn.clicked() && local_st.conn.client.is_some() {
+                                local_st.current_selection.col_name = col_name.to_owned();
+                                let ctx_cloned = ctx.clone();
+                                let tx_cloned = tx.clone();
+                                let client_ref = local_st.conn.client.as_ref().unwrap().clone();
+                                let db_name = local_st.current_selection.db_name.clone();
+                                let col = col_name.clone();
+
+                                rt.spawn(async move {
+                                    let _ = presenter::list_collection_documents(
+                                        &tx_cloned,
+                                        &client_ref,
+                                        &db_name,
+                                        &col,
+                                    )
+                                    .await;
+                                    ctx_cloned.request_repaint();
+                                });
+                            }
+
+                            ui.end_row();
+                        }
+                    });
             });
     }
 }
