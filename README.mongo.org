@@ -1,0 +1,4 @@
+#+STARTUP: logdone
+
+* Mongo
+** DONE Mostrar información de colección y poder copiar
