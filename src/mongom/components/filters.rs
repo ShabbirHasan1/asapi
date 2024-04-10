@@ -6,8 +6,11 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
+use std::collections::HashMap;
+
 use eframe::egui::{self, Context};
-use serde_json::Value;
+use egui_json_tree::JsonTree;
+use serde_json::{json, Value};
 use tokio::runtime::Runtime;
 
 use crate::common::internationalization::I18n;
@@ -53,12 +56,19 @@ pub fn add_filter(
 #[derive(PartialEq, Debug)]
 enum UserAction {
     None,
+    Delete(usize),
     AddAnd(usize),
     AddOr(usize),
     // Otras acciones según sea necesario...
 }
 impl MongoView {
-    fn show_filters(&self, ui: &mut egui::Ui, parent_idx: Option<usize>) -> UserAction {
+    fn show_filters(
+        &self,
+        i18n: &I18n,
+        ui: &mut egui::Ui,
+        parent_idx: Option<usize>,
+        level: usize,
+    ) -> UserAction {
         let mut action = UserAction::None;
 
         for (idx, filter) in self
@@ -69,22 +79,34 @@ impl MongoView {
             .filter(|(_, f)| f.parent == parent_idx)
         {
             ui.horizontal(|ui| {
-                ui.label(format!("{:?}: ", filter.op));
-                if let Some(key) = &filter.key {
-                    ui.label(format!("Key: {}", key));
+                if level > 0 {
+                    let s = vec!["    "; level];
+                    ui.label(s.join(""));
                 }
-                if let Some(val) = &filter.val {
-                    ui.label(format!("Value: {:?}", val));
+                ui.monospace(format!("{:?}: ", filter.op));
+
+                if let (Some(key), Some(val)) = (&filter.key, &filter.val) {
+                    JsonTree::new(
+                        format!("{}/{}/{}", idx, key, filter.op),
+                        &json!({ key: val }),
+                    )
+                    .show(ui);
                 }
+
+                if ui.button(&i18n.mongo_delete_filter).clicked() {
+                    action = UserAction::Delete(idx);
+                }
+
                 if ui.button("AND").clicked() {
                     action = UserAction::AddAnd(idx);
                 }
+
                 if ui.button("OR").clicked() {
                     action = UserAction::AddOr(idx);
                 }
             });
 
-            let child_action = self.show_filters(ui, Some(filter.idx));
+            let child_action = self.show_filters(i18n, ui, Some(filter.idx), level + 1);
             if child_action != UserAction::None {
                 action = child_action;
             }
@@ -100,8 +122,10 @@ impl MongoView {
         i18n: &I18n,
         ui: &mut egui::Ui,
     ) {
-        let user_action = self.show_filters(ui, None);
+        // --> Mostramos los filtros ya grabados <--
+        let user_action = self.show_filters(i18n, ui, None, 0);
 
+        // --> Mostramos la entrada de datos <--
         match user_action {
             UserAction::AddAnd(idx) | UserAction::AddOr(idx) => {
                 let op = if user_action == UserAction::AddAnd(idx) {
@@ -117,11 +141,12 @@ impl MongoView {
                 self.state.filters[idx] = old_filter;
                 // Actualizamos el padre actual al nuevo filtro AND/OR.
                 self.state.current_parent = Some(new_and_or_filter_idx);
-
-                // info!("Filtros tras {:?}: {:?}", op, self.state.filters);
             }
-            _ => (),
-        }
+            UserAction::Delete(idx) => {
+                info!("Borramos filtro con índice {idx}");
+            }
+            UserAction::None => (),
+        };
 
         ui.horizontal(|ui| {
             toggle_label(ui, &mut self.state.current_selection.is_not, "Not");

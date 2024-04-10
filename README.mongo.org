@@ -2,3 +2,5 @@
 
 * Mongo
 ** DONE Mostrar información de colección y poder copiar
+** Mostrar entradas de filtro como JsonTree
+** Poder borrar elemento del filtro
