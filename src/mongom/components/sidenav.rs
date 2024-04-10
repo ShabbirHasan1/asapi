@@ -13,14 +13,14 @@ use tokio::runtime::Runtime;
 use tokio::sync::mpsc::Sender;
 
 use crate::{
-    error,
-    mongom::{
-        connection::connect_with_default,
-        presenter::{self, list_database_collections, list_database_names_in_connection},
-        state::{MongoAppState, MongoConnectionDefinition, MongoMessage, MongoLocalState},
-    },
     common::internationalization::I18n,
     components::toggle_switch::toggle,
+    error,
+    mongom::{
+        connection::{close_connection, connect_with_default},
+        presenter::{self, list_database_collections, list_database_names_in_connection},
+        state::{MongoAppState, MongoConnectionDefinition, MongoLocalState, MongoMessage},
+    },
 };
 
 pub struct MongoSideNav;
@@ -389,15 +389,17 @@ impl MongoCollectionsSubpanel {
         egui::ScrollArea::vertical()
             .id_source("collections_scroll_area")
             .show(ui, |ui| {
-                // egui::Grid::new("mongo_collections")
-                // .num_columns(2)
-                // .show(ui, |ui| {
+                egui::Grid::new("mongo_collections")
+                .num_columns(2)
+                .show(ui, |ui| {
                 for (col_idx, col_name) in local_st.current_db_collections.iter().enumerate() {
                     // TODO:
                     // Poner Info para información sobre colección: elementos, tamaño, etc.
-                    // ui.label(
-                    // egui::RichText::new("Info").color(egui::Color32::from_rgb(128, 128, 128)),
-                    // ).on_hover_ui(|ui| {});
+                    ui.label(
+                    egui::RichText::new("Info").color(egui::Color32::from_rgb(128, 128, 128)),
+                    ).on_hover_ui(|ui| {
+                        
+                    });
 
                     let db_btn = ui.selectable_value(
                         &mut local_st.current_selection.col_idx,
@@ -424,29 +426,7 @@ impl MongoCollectionsSubpanel {
                         });
                     }
                 }
-                // });
+                });
             });
     }
-}
-
-// ==================================================
-// Funciones comunes
-// ==================================================
-fn close_connection(rt: &Runtime, local_state: &mut MongoLocalState) {
-    // Usar `guard` facilita mucho porque take sobre referencia no puede usarse,
-    // y usar is_some y dentro hacer algo genera problemas de prestado de
-    // referencia.
-    if local_state.conn.client.is_none() {
-        return;
-    }
-    let client = local_state.conn.client.as_ref().unwrap().clone();
-    // local_state.current_connection.path = String::default();
-
-    // Bloqueo para asegurar que todo cerrado antes de reconectar. Puedo
-    // de todas formas lanzar con `spawn` sin problemas.
-    rt.block_on(async move {
-        client.shutdown().await;
-    });
-
-    local_state.conn.client = None;
 }

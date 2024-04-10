@@ -12,15 +12,8 @@ use mongodb::{
     Client,
 };
 
-use super::state::MongoConnectionDefinition;
+use super::state::{MongoConnectionDefinition, MongoLocalState};
 
-pub struct MongoPresenter {}
-
-impl Default for MongoPresenter {
-    fn default() -> Self {
-        Self {}
-    }
-}
 
 #[derive(Default)]
 pub struct MongoConnection {
@@ -88,4 +81,23 @@ pub async fn connect_with_default(
         conn_definition.is_srv,
     )
     .await
+}
+
+pub fn close_connection(rt: &tokio::runtime::Runtime, local_state: &mut MongoLocalState) {
+    // Usar `guard` facilita mucho porque take sobre referencia no puede usarse,
+    // y usar is_some y dentro hacer algo genera problemas de prestado de
+    // referencia.
+    if local_state.conn.client.is_none() {
+        return;
+    }
+    let client = local_state.conn.client.as_ref().unwrap().clone();
+    // local_state.current_connection.path = String::default();
+
+    // Bloqueo para asegurar que todo cerrado antes de reconectar. Puedo
+    // de todas formas lanzar con `spawn` sin problemas.
+    rt.block_on(async move {
+        client.shutdown().await;
+    });
+
+    local_state.conn.client = None;
 }

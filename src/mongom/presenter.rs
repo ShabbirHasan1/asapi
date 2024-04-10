@@ -5,24 +5,20 @@
 // This file is confidential and only available to authorized individuals
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
-use futures::TryStreamExt as _;
 use bson::{doc, Document};
+use futures::TryStreamExt as _;
+use mongodb::error::Result as MongoResult;
 use mongodb::{options::FindOptions, Client};
 use serde_json::Value;
-use tokio::sync::mpsc::Sender;
-use std::collections::HashSet;
+use std::{collections::HashSet, sync::Arc};
+use tokio::{runtime::Runtime, sync::mpsc::Sender};
 
-use crate::info;
+use crate::{error, info};
 
-use super::{actions::MongoAction, state::MongoMessage};
-
-pub struct MongoPresenter;
-
-impl Default for MongoPresenter {
-    fn default() -> Self {
-        Self {}
-    }
-}
+use super::{
+    actions::MongoAction,
+    state::{MongoError, MongoMessage},
+};
 
 pub async fn list_database_names_in_connection(
     tx: &Sender<MongoMessage>,
@@ -128,7 +124,7 @@ pub async fn insert(
     col_name: &str,
     docs: Vec<Document>,
     action: MongoAction,
-) -> mongodb::error::Result<()> {
+) -> MongoResult<()> {
     let db = client.database(db_name);
     let collection = db.collection::<Document>(col_name);
     let mut msg = MongoMessage::InsertionSuccess;
@@ -146,4 +142,38 @@ pub async fn insert(
     let _ = tx.send(msg).await;
 
     Ok(())
+}
+
+pub struct MongoPresenter {
+    pub rt: Arc<Runtime>,
+    pub client: Option<Client>,
+}
+
+impl MongoPresenter {
+    pub fn new(rt: Arc<Runtime>, client: Client) -> Self {
+        Self {
+            rt,
+            client: Some(client),
+        }
+    }
+
+    pub fn get_db_stats(&self, db_name: &str) -> Result<(), MongoError> {
+        if self.client.is_none() {
+            error!("Client not initialized");
+            return Err(MongoError::ClientNotInitialized);
+        }
+
+        let db = self.client.as_ref().unwrap().database(db_name);
+
+        self.rt.block_on(async {
+            let stats = db.run_command(doc! {"dbStats": 1, "scale": 1}, None).await;
+            if let Err(err) = stats {
+                let msg = format!("{:?}", err);
+                error!("{msg}");
+                return Err(MongoError::CommandError(msg));
+            }
+            info!("{:?}", stats);
+            Ok(())
+        })
+    }
 }

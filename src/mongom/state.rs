@@ -198,3 +198,8 @@ pub struct FilterList {
     pub filters: Vec<MongoFilter>,
     pub next_idx: usize, // Mantén un contador para asignar un nuevo idx único a cada nuevo filtro
 }
+
+pub enum MongoError {
+    ClientNotInitialized,
+    CommandError(String),
+}
