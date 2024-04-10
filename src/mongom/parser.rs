@@ -9,20 +9,9 @@
 use bson::{doc, Bson, Document};
 use serde_json::Value;
 
-use crate::{error, info};
+use crate::info;
 
 use super::{document::find::MongoOperator, state::MongoFilter};
-
-pub fn parse_user_input_to_bson(value: &str) -> Result<Bson, String> {
-    let data: serde_json::Result<Value> = serde_json::from_str(value);
-    match data {
-        Ok(r_data) => match mongodb::bson::to_bson(&r_data) {
-            Ok(r_data) => Ok(r_data),
-            Err(err) => Err(format!("{:?}", err)),
-        },
-        Err(err) => Err(format!("{:?}", err)),
-    }
-}
 
 fn json_value_to_bson(value: &Value) -> Bson {
     match value {
@@ -46,13 +35,6 @@ fn json_value_to_bson(value: &Value) -> Bson {
             Bson::Document(doc)
         }
         _ => Bson::Null,
-    }
-}
-
-pub fn json_to_document(value: &Value) -> Option<Document> {
-    match json_value_to_bson(value) {
-        Bson::Document(doc) => Some(doc),
-        _ => None,
     }
 }
 
@@ -122,38 +104,27 @@ pub fn build_mongo_query(ls: &[MongoFilter]) -> Document {
     }
 }
 
+pub fn doc_to_pretty_string(doc: &Document) -> String {
+    let json: Value = doc_to_serde_value(doc);
+    serde_json::to_string_pretty(&json).unwrap()
+}
+
+/// Convertimos BSON a serde_json::Value
+///
+/// En caso de error en alguno de los pasos que se dan para hacer la
+/// transformación, devolvemos un `Value::Null`.
+pub fn doc_to_serde_value(doc_bson: &Document) -> Value {
+    bson::to_bson(doc_bson)
+        .ok()
+        .and_then(|b| b.as_document().cloned())
+        .and_then(|bson_doc| serde_json::to_value(&bson_doc).ok())
+        .unwrap_or_else(|| serde_json::Value::Null)
+}
+
 /// Convertimos BSON a JSON e imprimimos
 ///
 /// Para debuggear mucho más útil que el parseo normal, en cuanto hay varios
 /// niveles de anidación es muy útil
 pub fn pprint_bson(doc_bson: &Document) {
-    let json: Value = bson::to_bson(doc_bson)
-        .ok()
-        .and_then(|b| b.as_document().cloned())
-        .and_then(|bson_doc| serde_json::to_value(&bson_doc).ok())
-        .unwrap_or_else(|| serde_json::Value::Null);
-
-    let pretty_json = serde_json::to_string_pretty(&json).unwrap();
-    info!("{}", pretty_json);
-}
-
-/// Forma sencilla de convertir, no me funciona pero dejo como referencia
-pub fn convert_str_to_document(s: &str) -> Option<Document> {
-    if let Ok(bson_value) = bson::from_slice::<bson::Bson>(s.as_bytes()) {
-        info!("{:?}", bson_value);
-        if let Bson::Document(doc) = bson_value {
-            return Some(doc);
-        }
-    } else {
-        let foo = bson::from_slice::<bson::Bson>(s.as_bytes());
-        error!("{:?}", foo);
-    }
-
-    None
-}
-
-pub fn convert_json_value_to_bson_document(value: &Value) -> Option<Document> {
-    serde_json::to_string(value)
-        .ok()
-        .and_then(|j| convert_str_to_document(&j))
+    info!("{}", doc_to_pretty_string(doc_bson));
 }

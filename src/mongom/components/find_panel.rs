@@ -26,6 +26,10 @@ impl MongoView {
     }
 
     pub fn find(&self, rt: &Runtime, ctx: &egui::Context, filter: Document) {
+        if self.state.conn.client.is_none() {
+            return;
+        }
+
         let tx = self.tx.clone();
         let ctx_cloned = ctx.clone();
         let client = self.state.conn.client.as_ref().unwrap().clone();

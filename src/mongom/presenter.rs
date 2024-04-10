@@ -5,24 +5,21 @@
 // This file is confidential and only available to authorized individuals
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
-use futures::TryStreamExt as _;
 use bson::{doc, Document};
+use futures::TryStreamExt as _;
+use mongodb::error::Result as MongoResult;
 use mongodb::{options::FindOptions, Client};
 use serde_json::Value;
-use tokio::sync::mpsc::Sender;
 use std::collections::HashSet;
+use tokio::sync::mpsc::Sender;
 
-use crate::info;
+use crate::common::internationalization::I18n;
+use crate::{error, info};
 
-use super::{actions::MongoAction, state::MongoMessage};
-
-pub struct MongoPresenter;
-
-impl Default for MongoPresenter {
-    fn default() -> Self {
-        Self {}
-    }
-}
+use super::{
+    actions::MongoAction,
+    state::{MongoError, MongoMessage},
+};
 
 pub async fn list_database_names_in_connection(
     tx: &Sender<MongoMessage>,
@@ -123,12 +120,13 @@ pub async fn find(
 
 pub async fn insert(
     tx: &Sender<MongoMessage>,
+    i18n: &I18n,
     client: &Client,
     db_name: &str,
     col_name: &str,
     docs: Vec<Document>,
     action: MongoAction,
-) -> mongodb::error::Result<()> {
+) -> MongoResult<()> {
     let db = client.database(db_name);
     let collection = db.collection::<Document>(col_name);
     let mut msg = MongoMessage::InsertionSuccess;
@@ -137,7 +135,7 @@ pub async fn insert(
         if docs.len() == 1 {
             let _ = collection.insert_one(&docs[0], None).await?;
         } else {
-            msg = MongoMessage::Error("Insert One solo acepta un único elemento".into());
+            msg = MongoMessage::Error(i18n.mongo_insert_one_error.clone());
         }
     } else {
         let _ = collection.insert_many(docs, None).await?;
@@ -146,4 +144,34 @@ pub async fn insert(
     let _ = tx.send(msg).await;
 
     Ok(())
+}
+
+pub async fn run_command(
+    client: &Client,
+    db_name: &str,
+    query: Document,
+) -> Result<Document, MongoError> {
+    let db = client.database(db_name);
+    let stats = db.run_command(query, None).await;
+
+    match stats {
+        Ok(data) => Ok(data),
+        Err(err) => {
+            let msg = format!("{:?}", err);
+            error!("{msg}");
+            Err(MongoError::CommandError(msg))
+        }
+    }
+}
+
+pub async fn get_db_stats(client: &Client, db_name: &str) -> Result<Document, MongoError> {
+    run_command(client, db_name, doc! {"dbStats": 1, "scale": 1}).await
+}
+
+pub async fn get_collection_stats(
+    client: &Client,
+    db_name: &str,
+    col_name: &str,
+) -> Result<Document, MongoError> {
+    run_command(client, db_name, doc! {"collStats": col_name}).await
 }

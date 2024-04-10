@@ -14,15 +14,7 @@ use std::error::Error;
 
 use crate::info;
 
-use super::state::MongoConnectionDefinition;
-
-pub struct MongoPresenter {}
-
-impl Default for MongoPresenter {
-    fn default() -> Self {
-        Self {}
-    }
-}
+use super::state::{MongoConnectionDefinition, MongoLocalState};
 
 #[derive(Default)]
 pub struct MongoConnection {
@@ -31,34 +23,6 @@ pub struct MongoConnection {
     // messages: Arc<Mutex<Vec<KafkaConsumerMessage>>>,
     // Realmente esta definción no me hace falta aquí, pero por si acaso...
     pub conn_definition: MongoConnectionDefinition,
-}
-
-impl MongoConnection {
-    pub async fn connect(&mut self, conn_definition: MongoConnectionDefinition) {
-        self.conn_definition = conn_definition;
-
-        if let Some(client) = self.client.take() {
-            client.shutdown().await;
-        }
-
-        match connect_with_default(&self.conn_definition).await {
-            Ok(con) => {
-                self.client = Some(con);
-            }
-            Err(err) => {
-                info!("{:?}", err);
-                self.client = None;
-            }
-        }
-    }
-
-    pub async fn shutdown(&mut self) {
-        if let Some(client) = self.client.take() {
-            // client.shutdown_immediate().await;
-            // client.shutdown().await;
-            client.shutdown().await;
-        }
-    }
 }
 
 pub async fn connect(
@@ -90,4 +54,23 @@ pub async fn connect_with_default(
         conn_definition.is_srv,
     )
     .await
+}
+
+pub fn close_connection(rt: &tokio::runtime::Runtime, local_state: &mut MongoLocalState) {
+    // Usar `guard` facilita mucho porque take sobre referencia no puede usarse,
+    // y usar is_some y dentro hacer algo genera problemas de prestado de
+    // referencia.
+    if local_state.conn.client.is_none() {
+        return;
+    }
+    let client = local_state.conn.client.as_ref().unwrap().clone();
+    // local_state.current_connection.path = String::default();
+
+    // Bloqueo para asegurar que todo cerrado antes de reconectar. Puedo
+    // de todas formas lanzar con `spawn` sin problemas.
+    rt.block_on(async move {
+        client.shutdown().await;
+    });
+
+    local_state.conn.client = None;
 }

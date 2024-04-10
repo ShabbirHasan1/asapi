@@ -32,7 +32,7 @@ use pgm::view::PostgresView;
 use redism::view::RedisView;
 use sqlitem::view::SQLiteView;
 
-use common::internationalization::language_selector;
+use common::internationalization::{language_selector, I18n};
 use components::top_bar::AppTopBar;
 use std::fs::{self, OpenOptions};
 
@@ -116,6 +116,7 @@ impl eframe::App for Asapi {
         };
         ctx.set_visuals(style);
 
+        // Aquí decido qué lenguage implementamos.
         let i18n = language_selector(self.app_state.app_config.language);
 
         egui::TopBottomPanel::top("decoration").show(ctx, |ui| {
