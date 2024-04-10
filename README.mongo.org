@@ -1,6 +1,8 @@
 #+STARTUP: logdone
 
 * Mongo
-** DONE Mostrar información de colección y poder copiar
-** Mostrar entradas de filtro como JsonTree
-** Poder borrar elemento del filtro
+*** Que el /not/ de los filtros sea funcional
+*** Poder borrar elemento del filtro
+*** DONE Mostrar información de colección y poder copiar
+*** DONE Mostrar entradas de filtro como JsonTree
+CLOSED: [2024-04-10 mié 17:20]

@@ -104,17 +104,27 @@ pub fn build_mongo_query(ls: &[MongoFilter]) -> Document {
     }
 }
 
+pub fn doc_to_pretty_string(doc: &Document) -> String {
+    let json: Value = doc_to_serde_value(doc);
+    serde_json::to_string_pretty(&json).unwrap()
+}
+
+/// Convertimos BSON a serde_json::Value
+///
+/// En caso de error en alguno de los pasos que se dan para hacer la
+/// transformación, devolvemos un `Value::Null`.
+pub fn doc_to_serde_value(doc_bson: &Document) -> Value {
+    bson::to_bson(doc_bson)
+        .ok()
+        .and_then(|b| b.as_document().cloned())
+        .and_then(|bson_doc| serde_json::to_value(&bson_doc).ok())
+        .unwrap_or_else(|| serde_json::Value::Null)
+}
+
 /// Convertimos BSON a JSON e imprimimos
 ///
 /// Para debuggear mucho más útil que el parseo normal, en cuanto hay varios
 /// niveles de anidación es muy útil
 pub fn pprint_bson(doc_bson: &Document) {
-    let json: Value = bson::to_bson(doc_bson)
-        .ok()
-        .and_then(|b| b.as_document().cloned())
-        .and_then(|bson_doc| serde_json::to_value(&bson_doc).ok())
-        .unwrap_or_else(|| serde_json::Value::Null);
-
-    let pretty_json = serde_json::to_string_pretty(&json).unwrap();
-    info!("{}", pretty_json);
+    info!("{}", doc_to_pretty_string(doc_bson));
 }

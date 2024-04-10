@@ -17,7 +17,9 @@ use crate::common::internationalization::I18n;
 use crate::common::syntax_highlighting::{highlight, CodeTheme};
 use crate::components::toggle_selector::toggle_label;
 use crate::mongom::document::find::MongoOperator;
-use crate::mongom::parser::{build_mongo_query, pprint_bson};
+use crate::mongom::parser::{
+    build_mongo_query, doc_to_pretty_string, doc_to_serde_value, pprint_bson,
+};
 use crate::mongom::state::{MongoFilter, MongoLocalState};
 use crate::mongom::view::MongoView;
 use crate::{error, info};
@@ -169,12 +171,12 @@ impl MongoView {
                         );
                         self.state.last_error = None;
 
-                        println!();
-                        info!("{:?}", &self.state.filters);
-                        println!();
-                        info!("{:?}", build_mongo_query(&self.state.filters));
-                        println!();
-                        pprint_bson(&build_mongo_query(&self.state.filters));
+                        // println!();
+                        // info!("{:?}", &self.state.filters);
+                        // println!();
+                        // info!("{:?}", build_mongo_query(&self.state.filters));
+                        // println!();
+                        // pprint_bson(&build_mongo_query(&self.state.filters));
 
                         // Al añadir sin más no modificamos el padre.
                     }
@@ -186,9 +188,18 @@ impl MongoView {
             }
         });
 
-        if ui.button(&i18n.mongo_clean_filter).clicked() {
-            self.state.clean_filter();
-            self.find_all(rt, ctx);
+        if !self.state.filters.is_empty() {
+            ui.horizontal(|ui| {
+                if ui.button(&i18n.mongo_clean_filter).clicked() {
+                    self.state.clean_filter();
+                    self.find_all(rt, ctx);
+                }
+                ui.label(&i18n.mongo_previsualize_filter).on_hover_ui(|ui| {
+                    ui.monospace(doc_to_pretty_string(&build_mongo_query(
+                        &self.state.filters,
+                    )));
+                })
+            });
         }
     }
 
