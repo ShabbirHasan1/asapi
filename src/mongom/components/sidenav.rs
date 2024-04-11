@@ -354,8 +354,6 @@ impl MongoDatabasesSubpanel {
                     .num_columns(2)
                     .show(ui, |ui| {
                         for (db_idx, db_name) in local_st.db_names.iter().enumerate() {
-                            // TODO:
-                            // Poner Info para información sobre db: elementos, tamaño, etc.
                             ui.label(
                                 egui::RichText::new("Info")
                                     .color(egui::Color32::from_rgb(128, 128, 128)),
@@ -436,8 +434,6 @@ impl MongoCollectionsSubpanel {
                         for (col_idx, col_name) in
                             local_st.current_db_collections.iter().enumerate()
                         {
-                            // TODO:
-                            // Poner Info para información sobre colección: elementos, tamaño, etc.
                             ui.label(
                                 egui::RichText::new("Info")
                                     .color(egui::Color32::from_rgb(128, 128, 128)),
