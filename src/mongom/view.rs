@@ -6,16 +6,12 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
-use bson::{doc, Document};
 use eframe::egui;
-use serde_json::Value;
 use tokio::runtime::Runtime;
 use tokio::sync::mpsc::{Receiver, Sender};
 
 use crate::app_state::AppState;
 use crate::common::internationalization::I18n;
-use crate::error;
-use crate::mongom::parser::{build_mongo_query, pprint_bson};
 use crate::mongom::state::MongoLocalState;
 
 use super::actions::MongoAction;
@@ -170,51 +166,51 @@ impl MongoView {
                     self.state.last_error = None;
 
                     // Aunque le llame `filter`, es más cosas, por ejemplo el objeto a insertar
-                    let filter: Document = if show_user_free {
-                        let value = &self.state.current_selection.user_free_input;
-                        serde_json::from_str(value).map_or(doc! {}, |d| d)
-                    } else {
-                        build_mongo_query(&self.state.filters)
-                    };
+                    // let filter: Document = if show_user_free {
+                    //     let value = &self.state.current_selection.user_free_input;
+                    //     serde_json::from_str(value).map_or(doc! {}, |d| d)
+                    // } else {
+                    //     // build_mongo_query(&self.state.filters)
+                    // };
 
-                    pprint_bson(&filter);
+                    // pprint_bson(&filter);
 
-                    match self.state.selected_action {
-                        MongoAction::Find | MongoAction::FindOne => self.find(rt, ctx, filter),
-                        MongoAction::InsertOne | MongoAction::InsertMany => {
-                            let value = &self.state.current_selection.user_free_input;
-                            let result: serde_json::Result<Value> = serde_json::from_str(value);
-                            // Tenemos que reparsear para ver si es un array.
-                            match result {
-                                Ok(docs) => match docs {
-                                    Value::Array(arr) => {
-                                        let docs: Vec<Document> = arr
-                                            .iter()
-                                            .map(|a| match mongodb::bson::to_bson(a) {
-                                                Ok(bs) => match bs {
-                                                    bson::Bson::Document(doc) => doc,
-                                                    _ => doc! {},
-                                                },
-                                                Err(_) => doc! {},
-                                            })
-                                            .collect();
-                                        self.insert(rt, ctx, i18n, docs);
-                                    }
-                                    _ => {
-                                        self.insert(rt, ctx, i18n, vec![filter]);
-                                    }
-                                },
-                                Err(e) => {
-                                    error!("{:?}", e);
-                                    self.state.last_error =
-                                        Some(i18n.mongo_invalid_doc_to_insert.to_owned());
-                                }
-                            }
-                        }
-                        MongoAction::UpdateOne | MongoAction::UpdateMany => {}
-                        MongoAction::DeleteOne | MongoAction::DeleteMany => {}
-                        MongoAction::ReplaceOne | MongoAction::ReplaceMany => {}
-                    }
+                    // match self.state.selected_action {
+                    //     MongoAction::Find | MongoAction::FindOne => self.find(rt, ctx, filter),
+                    //     MongoAction::InsertOne | MongoAction::InsertMany => {
+                    //         let value = &self.state.current_selection.user_free_input;
+                    //         let result: serde_json::Result<Value> = serde_json::from_str(value);
+                    //         // Tenemos que reparsear para ver si es un array.
+                    //         match result {
+                    //             Ok(docs) => match docs {
+                    //                 Value::Array(arr) => {
+                    //                     let docs: Vec<Document> = arr
+                    //                         .iter()
+                    //                         .map(|a| match mongodb::bson::to_bson(a) {
+                    //                             Ok(bs) => match bs {
+                    //                                 bson::Bson::Document(doc) => doc,
+                    //                                 _ => doc! {},
+                    //                             },
+                    //                             Err(_) => doc! {},
+                    //                         })
+                    //                         .collect();
+                    //                     self.insert(rt, ctx, i18n, docs);
+                    //                 }
+                    //                 _ => {
+                    //                     self.insert(rt, ctx, i18n, vec![filter]);
+                    //                 }
+                    //             },
+                    //             Err(e) => {
+                    //                 error!("{:?}", e);
+                    //                 self.state.last_error =
+                    //                     Some(i18n.mongo_invalid_doc_to_insert.to_owned());
+                    //             }
+                    //         }
+                    //     }
+                    //     MongoAction::UpdateOne | MongoAction::UpdateMany => {}
+                    //     MongoAction::DeleteOne | MongoAction::DeleteMany => {}
+                    //     MongoAction::ReplaceOne | MongoAction::ReplaceMany => {}
+                    // }
                 }
             });
 

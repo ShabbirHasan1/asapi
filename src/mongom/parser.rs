@@ -11,9 +11,9 @@ use serde_json::Value;
 
 use crate::info;
 
-use super::{document::find::MongoOperator, state::MongoFilter};
+use super::{filter::MongoFilter, filter::MongoOperator};
 
-fn json_value_to_bson(value: &Value) -> Bson {
+pub fn json_value_to_bson(value: &Value) -> Bson {
     match value {
         Value::Null => Bson::Null,
         Value::Bool(b) => Bson::Boolean(*b),
@@ -39,70 +39,70 @@ fn json_value_to_bson(value: &Value) -> Bson {
 }
 
 /// Parseo de filtro propio a bson::Bson
-fn build_filter_bson(filter: &MongoFilter, ls: &[MongoFilter]) -> Bson {
-    match filter.op {
-        MongoOperator::EQ
-        | MongoOperator::NEQ
-        | MongoOperator::GT
-        | MongoOperator::GTE
-        | MongoOperator::LT
-        | MongoOperator::LTE
-        | MongoOperator::IN
-        | MongoOperator::NIN
-        | MongoOperator::NOT
-        | MongoOperator::Exists
-        | MongoOperator::HasType
-        | MongoOperator::ArrayContainsAll
-        | MongoOperator::Regex
-        | MongoOperator::NOR => {
-            let value_bson = filter
-                .val
-                .as_ref()
-                .map_or(Bson::Null, |v| json_value_to_bson(v));
-            Bson::Document(
-                doc! { filter.key.as_ref().unwrap().clone(): { filter.op.as_mongo_operator(): value_bson } },
-            )
-        }
-        MongoOperator::AND | MongoOperator::OR => {
-            let children_bson = filter
-                .children
-                .iter()
-                .map(|&child_idx| {
-                    let child_filter = &ls.iter().find(|&f| f.idx == child_idx).unwrap();
-                    build_filter_bson(child_filter, ls)
-                })
-                .collect::<Vec<Bson>>();
-            let operator = if filter.op == MongoOperator::AND {
-                "$and"
-            } else {
-                "$or"
-            };
-            Bson::Document(doc! { operator: children_bson })
-        }
-    }
-}
+// fn build_filter_bson(filter: &MongoFilter, ls: &[MongoFilter]) -> Bson {
+//     match filter.op {
+//         MongoOperator::EQ
+//         | MongoOperator::NEQ
+//         | MongoOperator::GT
+//         | MongoOperator::GTE
+//         | MongoOperator::LT
+//         | MongoOperator::LTE
+//         | MongoOperator::IN
+//         | MongoOperator::NIN
+//         | MongoOperator::NOT
+//         | MongoOperator::Exists
+//         | MongoOperator::HasType
+//         | MongoOperator::ArrayContainsAll
+//         | MongoOperator::Regex
+//         | MongoOperator::NOR => {
+//             let value_bson = filter
+//                 .val
+//                 .as_ref()
+//                 .map_or(Bson::Null, |v| json_value_to_bson(v));
+//             Bson::Document(
+//                 doc! { filter.key.as_ref().unwrap().clone(): { filter.op.as_mongo_operator(): value_bson } },
+//             )
+//         }
+//         MongoOperator::AND | MongoOperator::OR => {
+//             let children_bson = filter
+//                 .children
+//                 .iter()
+//                 .map(|&child_idx| {
+//                     let child_filter = &ls.iter().find(|&f| f.idx == child_idx).unwrap();
+//                     build_filter_bson(child_filter, ls)
+//                 })
+//                 .collect::<Vec<Bson>>();
+//             let operator = if filter.op == MongoOperator::AND {
+//                 "$and"
+//             } else {
+//                 "$or"
+//             };
+//             Bson::Document(doc! { operator: children_bson })
+//         }
+//     }
+// }
 
 /// Construimos bson::Document a partir de filtros introducidos
 ///
 /// Hacemos un `fold` (realmente recursivo, no hay llamada a `fold` en sí)
 /// y construimos bson::Document para poder consultar a MongoDB.
-pub fn build_mongo_query(ls: &[MongoFilter]) -> Document {
-    let root_filters = ls
-        .iter()
-        .filter(|f| f.parent.is_none()) // Empezamos con filtros raíz
-        .map(|f| build_filter_bson(f, ls))
-        .collect::<Vec<Bson>>();
+// pub fn build_mongo_query(ls: &[MongoFilter]) -> Document {
+//     let root_filters = ls
+//         .iter()
+//         .filter(|f| f.parent.is_none()) // Empezamos con filtros raíz
+//         .map(|f| build_filter_bson(f, ls))
+//         .collect::<Vec<Bson>>();
 
-    match root_filters.len() {
-        // 1  => match root_filters.first().unwrap()
-        1 => match &root_filters[0] {
-            Bson::Document(doc) => doc.clone(),
-            _ => doc! {},
-        },
-        // Me es más fácil juntarlo todo bajo un `$and` que gestionarlo de forma implícita.
-        _ => doc! {"$and": root_filters},
-    }
-}
+//     match root_filters.len() {
+//         // 1  => match root_filters.first().unwrap()
+//         1 => match &root_filters[0] {
+//             Bson::Document(doc) => doc.clone(),
+//             _ => doc! {},
+//         },
+//         // Me es más fácil juntarlo todo bajo un `$and` que gestionarlo de forma implícita.
+//         _ => doc! {"$and": root_filters},
+//     }
+// }
 
 pub fn doc_to_pretty_string(doc: &Document) -> String {
     let json: Value = doc_to_serde_value(doc);

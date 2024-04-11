@@ -7,11 +7,7 @@
 // -------------------------------------------------------------------------
 use crate::{
     components::toggle_selector::toggle_label,
-    mongom::{
-        actions::MongoAction,
-        document::{bson_type::BsonType, find::MongoOperator},
-        view::MongoView,
-    },
+    mongom::{actions::MongoAction, bson_type::BsonType, filter::MongoOperator, view::MongoView},
 };
 use eframe::egui;
 
