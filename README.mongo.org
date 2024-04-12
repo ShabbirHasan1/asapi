@@ -1,11 +1,13 @@
 #+STARTUP: logdone
 
 * Mongo
+*** Poder borrar padre para añadir a primer nivel y no estar ya con estructuras raras tras la primera vez que se incluye algo.
+*** Que el /not/ de los filtros sea funcional.
+*** Añadir /nor/.
 *** DONE Cambiar a VecDeque
 CLOSED: [2024-04-12 vie 09:41]
-*** Que el /not/ de los filtros sea funcional
-*** Poder borrar elemento del filtro
-*** Poder borrar padre para añadir a primer nivel y no estar ya con estructuras raras tras la primera vez que se incluye algo
+*** DONE Poder borrar elemento del filtro
+CLOSED: [2024-04-12 vie 11:04]
 *** DONE Mostrar información de colección y poder copiar
 *** DONE Mostrar entradas de filtro como JsonTree
 CLOSED: [2024-04-10 mié 17:20]

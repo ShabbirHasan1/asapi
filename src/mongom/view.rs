@@ -6,6 +6,7 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
+use bson::{doc, Document};
 use eframe::egui;
 use tokio::runtime::Runtime;
 use tokio::sync::mpsc::{Receiver, Sender};
@@ -15,6 +16,7 @@ use crate::common::internationalization::I18n;
 use crate::mongom::state::MongoLocalState;
 
 use super::actions::MongoAction;
+use super::parser::{pprint_doc, pprint_docs};
 use super::presenter;
 use super::{components::sidenav::MongoSideNav, state::MongoMessage};
 
@@ -166,18 +168,25 @@ impl MongoView {
                     self.state.last_error = None;
 
                     // Aunque le llame `filter`, es más cosas, por ejemplo el objeto a insertar
-                    // let filter: Document = if show_user_free {
-                    //     let value = &self.state.current_selection.user_free_input;
-                    //     serde_json::from_str(value).map_or(doc! {}, |d| d)
-                    // } else {
-                    //     // build_mongo_query(&self.state.filters)
-                    // };
+                    let document: Document = if show_user_free {
+                        let value = &self.state.current_selection.user_free_input;
+                        serde_json::from_str(value).map_or(doc! {}, |d| d)
+                    } else {
+                        let docs = self
+                            .state
+                            .filters
+                            .iter()
+                            .map(|f| f.build_mongo_query())
+                            .collect::<Vec<Document>>();
 
-                    // pprint_bson(&filter);
+                        doc! {"$and": docs}
+                    };
 
-                    // match self.state.selected_action {
-                    //     MongoAction::Find | MongoAction::FindOne => self.find(rt, ctx, filter),
-                    //     MongoAction::InsertOne | MongoAction::InsertMany => {
+                    pprint_doc(&document);
+
+                    match self.state.selected_action {
+                        MongoAction::Find | MongoAction::FindOne => self.find(rt, ctx, document),
+                        MongoAction::InsertOne | MongoAction::InsertMany => {
                     //         let value = &self.state.current_selection.user_free_input;
                     //         let result: serde_json::Result<Value> = serde_json::from_str(value);
                     //         // Tenemos que reparsear para ver si es un array.
@@ -205,12 +214,12 @@ impl MongoView {
                     //                 self.state.last_error =
                     //                     Some(i18n.mongo_invalid_doc_to_insert.to_owned());
                     //             }
-                    //         }
-                    //     }
-                    //     MongoAction::UpdateOne | MongoAction::UpdateMany => {}
-                    //     MongoAction::DeleteOne | MongoAction::DeleteMany => {}
-                    //     MongoAction::ReplaceOne | MongoAction::ReplaceMany => {}
-                    // }
+                            // }
+                        }
+                        MongoAction::UpdateOne | MongoAction::UpdateMany => {}
+                        MongoAction::DeleteOne | MongoAction::DeleteMany => {}
+                        MongoAction::ReplaceOne | MongoAction::ReplaceMany => {}
+                    }
                 }
             });
 

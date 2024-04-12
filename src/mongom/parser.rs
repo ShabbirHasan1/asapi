@@ -117,17 +117,13 @@ pub fn doc_to_serde_value(doc_bson: &Document) -> Value {
     serde_json::to_value(&doc_bson)
         .ok()
         .unwrap_or_else(|| serde_json::Value::Null)
-    // bson::to_bson(doc_bson)
-    // .ok()
-    // .and_then(|b| b.as_document().cloned())
-    // .and_then(|bson_doc| serde_json::to_value(&bson_doc).ok())
-    // .unwrap_or_else(|| serde_json::Value::Null)
 }
 
-/// Convertimos BSON a JSON e imprimimos
-///
-/// Para debuggear mucho más útil que el parseo normal, en cuanto hay varios
-/// niveles de anidación es muy útil
 pub fn pprint_docs(docs: &[Document]) {
     info!("{}", doc_to_pretty_string(docs));
+}
+
+pub fn pprint_doc(doc: &Document) {
+    let json: Value = doc_to_serde_value(doc);
+    info!("{}", serde_json::to_string_pretty(&json).unwrap());
 }
