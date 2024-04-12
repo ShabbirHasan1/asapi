@@ -24,7 +24,6 @@ use crate::mongom::view::MongoView;
 use crate::{error, info};
 
 impl MongoView {
-    // pub fn show_filters(&self, ui: &mut Ui, actions: &mut Vec<FilterAction>, index: usize) {
     fn show_filters(
         filters: &mut VecDeque<MongoFilter>,
         i18n: &I18n,
@@ -32,6 +31,7 @@ impl MongoView {
         level: usize,
     ) -> UserAction {
         let mut action = UserAction::None;
+
         for f in filters {
             let id_source = format!("{}/{:?}/{:?}/{}", f.op, f.key, f.val, level);
             ui.indent(id_source, |ui| {
@@ -66,15 +66,40 @@ impl MongoView {
     }
 
     fn find_filter(fs: &VecDeque<MongoFilter>, idx: usize) -> Option<MongoFilter> {
+        let mut filter = None;
         for f in fs {
             if f.idx == idx {
                 return Some(f.clone());
+            } else if filter.is_none() {
+                filter = MongoView::find_filter(&f.children, idx);
             }
-
-            return MongoView::find_filter(&f.children, idx);
         }
 
-        return None;
+        return filter;
+    }
+
+    /// Buscamos índice y devolvemos filtro y padre
+    ///
+    /// Si el filtro no existe se devuelve None, y si el filtro existe pero no tiene padre se
+    /// devuelve None como segundo elemento de la tupla.
+    /// En caso de tener padre sí se devuelve Some(...) en el segundo elemento.
+    fn delete_filter(fs: &mut VecDeque<MongoFilter>, idx_to_delete: usize) -> bool {
+        // Flag para evitarnos seguir atravesando una vez en alguna rama de la
+        // jerarquía ya se borró.
+        let mut was_deleted = false;
+
+        for (idx_in_deque, f) in fs.iter_mut().enumerate() {
+            if f.idx == idx_to_delete {
+                fs.remove(idx_in_deque);
+                return true;
+            } else if !was_deleted {
+                was_deleted = MongoView::delete_filter(&mut f.children, idx_to_delete);
+            } else {
+                break;
+            }
+        }
+
+        was_deleted
     }
 
     fn add_child(fs: &mut VecDeque<MongoFilter>, idx: usize, child: &MongoFilter) {
@@ -87,6 +112,10 @@ impl MongoView {
         }
     }
 
+    /// Intercambio de dos filtros de posición.
+    ///
+    /// Usado para AND/OR/NOT/NOR, coloca este en la posición donde había un filtro con `idx`,
+    /// y ese filtro lo pone como hijo del AND/OR/NOT/NOR.
     fn swap_filters(fs: &mut VecDeque<MongoFilter>, idx: usize, new_filter: &MongoFilter) {
         for f in fs.iter_mut() {
             if f.idx == idx {
@@ -112,43 +141,22 @@ impl MongoView {
 
         // Según la acción y el índice, insertamos aquí o allá
         match user_action {
-            UserAction::AddAnd(idx) => {
-                let op = MongoOperator::AND;
+            UserAction::AddAnd(idx) | UserAction::AddOr(idx) => {
+                let op = match user_action {
+                    UserAction::AddAnd(_) => MongoOperator::AND,
+                    _ => MongoOperator::OR,
+                };
+
                 self.state.current_parent = Some(self.state.next_idx);
                 let new_and_filter = MongoFilter::new(op, None, None, self.state.next_idx);
                 MongoView::swap_filters(&mut self.state.filters, idx, &new_and_filter);
 
                 self.state.next_idx += 1;
-
-                // info!("ADD {:?}", &self.state.filters);
-            }
-            UserAction::AddOr(idx) => {
-                let op = MongoOperator::OR;
-                self.state.current_parent = Some(self.state.next_idx);
-                let new_or_filter = MongoFilter::new(op, None, None, self.state.next_idx);
-                MongoView::swap_filters(&mut self.state.filters, idx, &new_or_filter);
-
-                self.state.next_idx += 1;
-                // info!("OR {:?}", &self.state.filters);
-
-                // let op = if user_action == UserAction::AddAnd {
-                // MongoOperator::AND
-                // } else {
-                // MongoOperator::OR
-                // };
-                //         let mut old_filter = self.state.filters[idx].clone();
-                //         let new_and_or_filter_idx =
-                //             add_filter(op.clone(), None, None, old_filter.parent, &mut self.state);
-                //         self.state.filters[new_and_or_filter_idx].children.push(idx);
-                //         old_filter.parent = Some(new_and_or_filter_idx);
-                //         self.state.filters[idx] = old_filter;
-                //         // Actualizamos el padre actual al nuevo filtro AND/OR.
-                //         self.state.current_parent = Some(new_and_or_filter_idx);
             }
             UserAction::Delete(idx) => {
-                // info!("Borramos filtro con índice {idx}");
-
-                //         remove_filter_and_children(&mut self.state.filters, idx);
+                let filter = MongoView::find_filter(&self.state.filters, idx);
+                info!("\nFiltro a Borrar (idx: {idx})\n {:?}", filter);
+                let _ = MongoView::delete_filter(&mut self.state.filters, idx);
             }
             UserAction::None => (),
         };
@@ -182,15 +190,6 @@ impl MongoView {
                             self.state.next_idx += 1;
                             self.state.last_error = None;
                         }
-
-                        // println!();
-                        info!("{:?}", &self.state.filters);
-                        // println!();
-                        // info!("{:?}", build_mongo_query(&self.state.filters));
-                        // println!();
-                        // pprint_bson(&build_mongo_query(&self.state.filters));
-
-                        // Al añadir sin más no modificamos el padre.
                     }
                     Err(ref e) => {
                         self.state.last_error = Some(format!("{:?}", e));

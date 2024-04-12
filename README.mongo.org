@@ -1,6 +1,8 @@
 #+STARTUP: logdone
 
 * Mongo
+*** DONE Cambiar a VecDeque
+CLOSED: [2024-04-12 vie 09:41]
 *** Que el /not/ de los filtros sea funcional
 *** Poder borrar elemento del filtro
 *** Poder borrar padre para añadir a primer nivel y no estar ya con estructuras raras tras la primera vez que se incluye algo

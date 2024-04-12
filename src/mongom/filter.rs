@@ -195,12 +195,6 @@ impl MongoFilter {
         self.children.push_back(child);
     }
 
-    pub fn delete(&mut self, index: usize) {
-        if index < self.children.len() {
-            self.children.remove(index);
-        }
-    }
-
     pub fn pretty_print(&self, indent_level: usize) {
         let indent = "  ".repeat(indent_level);
 
