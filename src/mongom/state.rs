@@ -12,7 +12,6 @@ use super::filter::MongoOperator;
 use super::{actions::MongoAction, connection::MongoConnection};
 use bson::Document;
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
 use std::collections::{HashSet, VecDeque};
 
 #[derive(Debug, PartialEq)]
@@ -95,7 +94,6 @@ pub struct MongoLocalState {
     pub filters: VecDeque<MongoFilter>,
     pub current_parent: Option<usize>,
     pub next_idx: usize,
-    pub is_not: bool,
 }
 
 impl Default for MongoLocalState {
@@ -122,7 +120,6 @@ impl Default for MongoLocalState {
             last_error: Default::default(),
             current_db_collections: Default::default(),
             selected_action: MongoAction::Find,
-            is_not: false,
         }
     }
 }
@@ -162,28 +159,6 @@ pub struct MongoEditRowState {
     pub selected_table_definition: Vec<(String, String)>,
     pub fixed_string_value: Vec<String>,
 }
-
-// /// Filtro para buscar según características un clave y un valor
-// ///
-// /// No usamos referencias directas a un padre y por lo tanto hijos dentro
-// /// del struct porque nos complicamos infinitamente mantener la referencia
-// /// de cuál es el padre actual.
-// #[derive(Debug, Clone)]
-// pub struct MongoFilter {
-//     pub op: MongoOperator,
-//     pub key: Option<String>, // Para And/Or
-//     pub val: Option<Value>,  // `serde_json::Value` para bson <-> str <-> serde fácilmente
-//     // pub children: Vec<MongoFilter>, // Para And/Or
-//     pub idx: usize,
-//     pub children: Vec<usize>,
-//     pub parent: Option<usize>, // todos tendrán salvo el inicial
-// }
-
-// #[derive(Debug, Clone)]
-// pub struct FilterList {
-//     pub filters: Vec<MongoFilter>,
-//     pub next_idx: usize, // Mantén un contador para asignar un nuevo idx único a cada nuevo filtro
-// }
 
 #[derive(Debug)]
 pub enum MongoError {

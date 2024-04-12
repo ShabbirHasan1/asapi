@@ -224,7 +224,19 @@ impl MongoFilter {
             }
 
             MongoOperator::NOT => {
-                doc! { "$not": self.children.iter().map(|child| child.build_mongo_query()).collect::<Vec<Document>>() }
+                // En caso de NOT, solo un hijo con predicado, no puede tener operación lógica después según entiendo
+                // por la inexistencia de dicho caso en la documentación.
+                // https://www.mongodb.com/docs/manual/reference/operator/query/not/
+                if let Some(document_to_negate) = self.children.front() {
+                    match (&document_to_negate.key, &document_to_negate.val) {
+                        (Some(k), Some(v)) => {
+                            doc! { k: {"$not": { document_to_negate.op.extract_operator(): json_value_to_bson(&v) }}}
+                        }
+                        _ => doc! {},
+                    }
+                } else {
+                    doc! {}
+                }
             }
 
             MongoOperator::NOR => {

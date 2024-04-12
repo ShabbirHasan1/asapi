@@ -1,8 +1,12 @@
 #+STARTUP: logdone
 
 * Mongo
-*** Que el /not/ de los filtros sea funcional.
-*** Añadir /nor/.
+*** DONE Cuando tenga /NOT/, sus hijos no pueden ser /and/or/nor/.
+CLOSED: [2024-04-12 vie 13:07]
+*** DONE Que el /not/ de los filtros sea funcional.
+CLOSED: [2024-04-12 vie 12:58]
+*** DONE Añadir /nor/.
+CLOSED: [2024-04-12 vie 12:59]
 *** DONE Marcar el padre actual.
 CLOSED: [2024-04-12 vie 12:04]
 *** DONE Poder borrar padre para añadir a primer nivel y no estar ya con estructuras raras tras la primera vez que se incluye algo.

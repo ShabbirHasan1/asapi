@@ -30,6 +30,7 @@ impl MongoView {
         ui: &mut egui::Ui,
         level: usize,
         parent: Option<usize>,
+        parent_operator: MongoOperator,
     ) -> UserAction {
         let mut action = UserAction::None;
 
@@ -45,22 +46,31 @@ impl MongoView {
                             .show(ui);
                     }
 
-                    if ui.button("AND").clicked() {
-                        action = UserAction::AddAnd(f.idx);
-                    }
-                    if ui.button("OR").clicked() {
-                        action = UserAction::AddOr(f.idx);
-                    }
-                    if ui.button("NOR").clicked() {
-                        action = UserAction::AddNor(f.idx);
-                    }
+                    ui.add_enabled_ui(parent_operator != MongoOperator::NOT, |ui| {
+                        if ui.button("AND").clicked() {
+                            action = UserAction::AddAnd(f.idx);
+                        }
+                        if ui.button("OR").clicked() {
+                            action = UserAction::AddOr(f.idx);
+                        }
+                        if ui.button("NOR").clicked() {
+                            action = UserAction::AddNor(f.idx);
+                        }
+                    });
+
                     if ui.button("Delete").clicked() {
                         action = UserAction::Delete(f.idx);
                     }
                 });
 
-                let child_action =
-                    MongoView::show_filters(&mut f.children, i18n, ui, level + 1, parent);
+                let child_action = MongoView::show_filters(
+                    &mut f.children,
+                    i18n,
+                    ui,
+                    level + 1,
+                    parent,
+                    f.op.clone(),
+                );
                 if child_action != UserAction::None {
                     action = child_action;
                 }
@@ -156,6 +166,7 @@ impl MongoView {
             ui,
             0,
             self.state.current_parent,
+            MongoOperator::AND, // Lo es de forma implícita.
         );
 
         // Según la acción y el índice, insertamos aquí o allá
@@ -194,21 +205,36 @@ impl MongoView {
                     serde_json::from_str(&self.state.current_filter_value);
                 match data {
                     Ok(ref value) => {
-                        let f = MongoFilter::new(
+                        let mut f = MongoFilter::new(
                             self.state.current_operator.clone(),
                             Some(self.state.current_selected_key.clone()),
                             Some(value.clone()),
                             self.state.next_idx,
                         );
+
+                        if self.state.current_selection.is_not {
+                            self.state.next_idx += 1;
+                            let mut not_filter = MongoFilter::new(
+                                MongoOperator::NOT,
+                                None,
+                                None,
+                                self.state.next_idx,
+                            );
+                            not_filter.add_child(f);
+
+                            f = not_filter;
+                        }
                         // Si no hay, añado sin más.
                         if self.state.current_parent.is_none() || self.state.filters.is_empty() {
                             self.state.filters.push_back(f);
                             self.state.next_idx += 1;
                             self.state.last_error = None;
+                            self.state.current_selection.is_not = false;
                         } else if let Some(idx) = self.state.current_parent {
                             MongoView::add_child(&mut self.state.filters, idx, &f);
                             self.state.next_idx += 1;
                             self.state.last_error = None;
+                            self.state.current_selection.is_not = false;
                         }
                     }
                     Err(ref e) => {
