@@ -30,12 +30,14 @@ impl MongoView {
         i18n: &I18n,
         ui: &mut egui::Ui,
         level: usize,
+        parent: Option<usize>,
     ) -> UserAction {
         let mut action = UserAction::None;
 
         for f in filters {
             let id_source = format!("{}/{:?}/{:?}/{}", f.op, f.key, f.val, level);
-            ui.indent(id_source, |ui| {
+
+            let element = ui.indent(id_source, |ui| {
                 ui.horizontal(|ui| {
                     ui.label(format!("Operador: {:?}", f.op));
                     if let Some(ref key) = f.key {
@@ -56,11 +58,20 @@ impl MongoView {
                     }
                 });
 
-                let child_action = MongoView::show_filters(&mut f.children, i18n, ui, level + 1);
+                let child_action =
+                    MongoView::show_filters(&mut f.children, i18n, ui, level + 1, parent);
                 if child_action != UserAction::None {
                     action = child_action;
                 }
             });
+
+            if parent.unwrap_or(usize::MAX) == f.idx {
+                ui.painter().rect_stroke(
+                    element.response.rect,
+                    0.0,
+                    egui::Stroke::new(2.0, egui::Color32::BLACK),
+                );
+            }
         }
 
         action
@@ -138,7 +149,13 @@ impl MongoView {
         ui: &mut egui::Ui,
     ) {
         // --> Mostramos los filtros ya grabados <--
-        let user_action = MongoView::show_filters(&mut self.state.filters, i18n, ui, 0);
+        let user_action = MongoView::show_filters(
+            &mut self.state.filters,
+            i18n,
+            ui,
+            0,
+            self.state.current_parent,
+        );
 
         // Según la acción y el índice, insertamos aquí o allá
         match user_action {
@@ -205,6 +222,9 @@ impl MongoView {
                 if ui.button(&i18n.mongo_clean_filter).clicked() {
                     self.state.clean_filter();
                     self.find_all(rt, ctx);
+                }
+                if ui.button(&i18n.mongo_clean_parent).clicked() {
+                    self.state.current_parent = None;
                 }
                 ui.label(
                     egui::RichText::new(&i18n.mongo_previsualize_filter)
