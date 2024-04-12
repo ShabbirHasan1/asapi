@@ -8,6 +8,7 @@
 
 use std::collections::{HashMap, VecDeque};
 
+use bson::Document;
 use eframe::egui::{self, Context};
 use egui_json_tree::JsonTree;
 use serde_json::{json, Value};
@@ -198,6 +199,28 @@ impl MongoView {
                 }
             }
         });
+
+        if !self.state.filters.is_empty() {
+            ui.horizontal(|ui| {
+                if ui.button(&i18n.mongo_clean_filter).clicked() {
+                    self.state.clean_filter();
+                    self.find_all(rt, ctx);
+                }
+                ui.label(
+                    egui::RichText::new(&i18n.mongo_previsualize_filter)
+                        .color(egui::Color32::from_rgb(128, 128, 128)),
+                )
+                .on_hover_ui(|ui| {
+                    let docs = self
+                        .state
+                        .filters
+                        .iter()
+                        .map(|f| f.build_mongo_query())
+                        .collect::<Vec<Document>>();
+                    ui.monospace(doc_to_pretty_string(&docs));
+                })
+            });
+        }
     }
 
     pub fn user_defined_filter_input(&mut self, ctx: &Context, ui: &mut egui::Ui) {

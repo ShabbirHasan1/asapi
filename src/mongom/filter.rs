@@ -213,20 +213,24 @@ impl MongoFilter {
         }
     }
 
-    pub fn build_mongo_query(&self) -> Bson {
+    pub fn build_mongo_query(&self) -> Document {
         match self.op {
-            MongoOperator::AND => Bson::Document(
-                doc! { "$and": self.children.iter().map(|child| child.build_mongo_query()).collect::<Vec<Bson>>() },
-            ),
-            MongoOperator::OR => Bson::Document(
-                doc! { "$or": self.children.iter().map(|child| child.build_mongo_query()).collect::<Vec<Bson>>() },
-            ),
-            MongoOperator::NOT => Bson::Document(
-                doc! { "$not": self.children.iter().map(|child| child.build_mongo_query()).collect::<Vec<Bson>>() },
-            ),
-            MongoOperator::NOR => Bson::Document(
-                doc! { "$nor": self.children.iter().map(|child| child.build_mongo_query()).collect::<Vec<Bson>>() },
-            ),
+            MongoOperator::AND => {
+                doc! { "$and": self.children.iter().map(|child| child.build_mongo_query()).collect::<Vec<Document>>() }
+            }
+
+            MongoOperator::OR => {
+                doc! { "$or": self.children.iter().map(|child| child.build_mongo_query()).collect::<Vec<Document>>() }
+            }
+
+            MongoOperator::NOT => {
+                doc! { "$not": self.children.iter().map(|child| child.build_mongo_query()).collect::<Vec<Document>>() }
+            }
+
+            MongoOperator::NOR => {
+                doc! { "$nor": self.children.iter().map(|child| child.build_mongo_query()).collect::<Vec<Document>>() }
+            }
+
             // En esta rama siempre debe entrar con key/value no None, tengo que ver cómo puedo
             // hacer que para estos lo otro sea obligado, no sé si se podrá.
             MongoOperator::EQ
@@ -245,9 +249,8 @@ impl MongoFilter {
                     .val
                     .as_ref()
                     .map_or(Bson::Null, |v| json_value_to_bson(v));
-                Bson::Document(
-                    doc! { self.key.as_ref().unwrap().clone(): { self.op.extract_operator(): value_bson } },
-                )
+
+                doc! { self.key.as_ref().unwrap().clone(): { self.op.extract_operator(): value_bson } }
             }
         }
     }
