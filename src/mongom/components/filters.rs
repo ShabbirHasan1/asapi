@@ -39,12 +39,11 @@ impl MongoView {
 
             let element = ui.indent(id_source, |ui| {
                 ui.horizontal(|ui| {
-                    ui.label(format!("Operador: {:?}", f.op));
-                    if let Some(ref key) = f.key {
-                        ui.label(format!("Clave: {}", key));
-                    }
-                    if let Some(ref val) = f.val {
-                        ui.label(format!("Valor: {:?}", val));
+                    ui.monospace(format!("{:?}", f.op));
+
+                    if let (Some(key), Some(val)) = (&f.key, &f.val) {
+                        JsonTree::new(format!("{}/{}/", f.idx, f.op), &json!({ key: val }))
+                            .show(ui);
                     }
 
                     if ui.button("AND").clicked() {
