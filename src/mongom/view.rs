@@ -16,7 +16,7 @@ use crate::common::internationalization::I18n;
 use crate::mongom::state::MongoLocalState;
 
 use super::actions::MongoAction;
-use super::parser::{pprint_doc, pprint_docs};
+use super::parser::pprint_doc;
 use super::presenter;
 use super::{components::sidenav::MongoSideNav, state::MongoMessage};
 
@@ -30,11 +30,9 @@ pub struct MongoView {
 impl Default for MongoView {
     fn default() -> Self {
         let (tx, rx) = tokio::sync::mpsc::channel(8);
-        let mut state = MongoLocalState::default();
-        state.rows_to_show = 100;
 
         Self {
-            state,
+            state: MongoLocalState::default(),
             tx,
             rx,
             first_render: false,
@@ -187,33 +185,33 @@ impl MongoView {
                     match self.state.selected_action {
                         MongoAction::Find | MongoAction::FindOne => self.find(rt, ctx, document),
                         MongoAction::InsertOne | MongoAction::InsertMany => {
-                    //         let value = &self.state.current_selection.user_free_input;
-                    //         let result: serde_json::Result<Value> = serde_json::from_str(value);
-                    //         // Tenemos que reparsear para ver si es un array.
-                    //         match result {
-                    //             Ok(docs) => match docs {
-                    //                 Value::Array(arr) => {
-                    //                     let docs: Vec<Document> = arr
-                    //                         .iter()
-                    //                         .map(|a| match mongodb::bson::to_bson(a) {
-                    //                             Ok(bs) => match bs {
-                    //                                 bson::Bson::Document(doc) => doc,
-                    //                                 _ => doc! {},
-                    //                             },
-                    //                             Err(_) => doc! {},
-                    //                         })
-                    //                         .collect();
-                    //                     self.insert(rt, ctx, i18n, docs);
-                    //                 }
-                    //                 _ => {
-                    //                     self.insert(rt, ctx, i18n, vec![filter]);
-                    //                 }
-                    //             },
-                    //             Err(e) => {
-                    //                 error!("{:?}", e);
-                    //                 self.state.last_error =
-                    //                     Some(i18n.mongo_invalid_doc_to_insert.to_owned());
-                    //             }
+                            //         let value = &self.state.current_selection.user_free_input;
+                            //         let result: serde_json::Result<Value> = serde_json::from_str(value);
+                            //         // Tenemos que reparsear para ver si es un array.
+                            //         match result {
+                            //             Ok(docs) => match docs {
+                            //                 Value::Array(arr) => {
+                            //                     let docs: Vec<Document> = arr
+                            //                         .iter()
+                            //                         .map(|a| match mongodb::bson::to_bson(a) {
+                            //                             Ok(bs) => match bs {
+                            //                                 bson::Bson::Document(doc) => doc,
+                            //                                 _ => doc! {},
+                            //                             },
+                            //                             Err(_) => doc! {},
+                            //                         })
+                            //                         .collect();
+                            //                     self.insert(rt, ctx, i18n, docs);
+                            //                 }
+                            //                 _ => {
+                            //                     self.insert(rt, ctx, i18n, vec![filter]);
+                            //                 }
+                            //             },
+                            //             Err(e) => {
+                            //                 error!("{:?}", e);
+                            //                 self.state.last_error =
+                            //                     Some(i18n.mongo_invalid_doc_to_insert.to_owned());
+                            //             }
                             // }
                         }
                         MongoAction::UpdateOne | MongoAction::UpdateMany => {}

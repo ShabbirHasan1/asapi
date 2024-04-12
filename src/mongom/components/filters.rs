@@ -20,7 +20,6 @@ use crate::components::toggle_selector::toggle_label;
 use crate::mongom::filter::UserAction;
 use crate::mongom::filter::{MongoFilter, MongoOperator};
 use crate::mongom::parser::doc_to_pretty_string;
-use crate::mongom::state::MongoLocalState;
 use crate::mongom::view::MongoView;
 use crate::{error, info};
 
@@ -51,6 +50,9 @@ impl MongoView {
                     }
                     if ui.button("OR").clicked() {
                         action = UserAction::AddOr(f.idx);
+                    }
+                    if ui.button("NOR").clicked() {
+                        action = UserAction::AddNor(f.idx);
                     }
                     if ui.button("Delete").clicked() {
                         action = UserAction::Delete(f.idx);
@@ -158,9 +160,10 @@ impl MongoView {
 
         // Según la acción y el índice, insertamos aquí o allá
         match user_action {
-            UserAction::AddAnd(idx) | UserAction::AddOr(idx) => {
+            UserAction::AddAnd(idx) | UserAction::AddOr(idx) | UserAction::AddNor(idx) => {
                 let op = match user_action {
                     UserAction::AddAnd(_) => MongoOperator::AND,
+                    UserAction::AddNor(_) => MongoOperator::NOR,
                     _ => MongoOperator::OR,
                 };
 

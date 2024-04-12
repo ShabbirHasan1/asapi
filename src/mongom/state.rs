@@ -90,18 +90,12 @@ pub struct MongoLocalState {
     pub db_names: Vec<String>,
     pub collections: Vec<String>,
     pub last_error: Option<String>,
-    // Aún no claro para qué las gasto en `Mongo`.
-    // pub column_visible: Vec<bool>,
     pub current_db_collections: Vec<String>, // Colecciones de la db seleccionada en panel laterial
-    // pub current_collection: String,          // Colleción seleccionada en panel central
-    // pub current_table_data: Vec<Vec<String>>,
-    // pub current_table_row_idx: usize, // para controlar qué muestro y qué no
-    // pub current_table_end_idx: usize, // para controlar qué muestro y qué no
-    pub rows_to_show: usize, // número de filas a mostrar, para paginar
     // Filtro
     pub filters: VecDeque<MongoFilter>,
     pub current_parent: Option<usize>,
     pub next_idx: usize,
+    pub is_not: bool,
 }
 
 impl Default for MongoLocalState {
@@ -126,17 +120,9 @@ impl Default for MongoLocalState {
             db_names: Default::default(),
             collections: Default::default(),
             last_error: Default::default(),
-
-            // column_visible: Default::default(),
-            // current_db_name: Default::default(),
             current_db_collections: Default::default(),
-            // current_collection: Default::default(),
-            // current_table_data: Default::default(),
-            // current_table_row_idx: Default::default(),
-            // current_table_end_idx: Default::default(),
-            rows_to_show: Default::default(),
-            // edit_row: Default::default(),
             selected_action: MongoAction::Find,
+            is_not: false,
         }
     }
 }

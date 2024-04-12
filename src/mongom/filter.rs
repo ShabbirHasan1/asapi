@@ -265,6 +265,7 @@ pub enum UserAction {
     Delete(usize),
     AddAnd(usize),
     AddOr(usize),
+    AddNor(usize),
     // Otras acciones según sea necesario...
 }
 
