@@ -146,6 +146,13 @@ impl MongoLocalState {
         self.current_parent = None;
         self.last_error = None;
     }
+
+    pub fn parse_filters(&self) -> Vec<Document> {
+        self.filters
+            .iter()
+            .map(|f| f.build_mongo_query())
+            .collect::<Vec<Document>>()
+    }
 }
 
 #[derive(Default)]
