@@ -17,6 +17,7 @@ use tokio::runtime::Runtime;
 use crate::common::internationalization::I18n;
 use crate::common::syntax_highlighting::{highlight, CodeTheme};
 use crate::components::toggle_selector::toggle_label;
+use crate::mongom::actions::MongoAction;
 use crate::mongom::filter::UserAction;
 use crate::mongom::filter::{MongoFilter, MongoOperator};
 use crate::mongom::parser::doc_to_pretty_string;
@@ -279,6 +280,9 @@ impl MongoView {
             ui.fonts(|f| f.layout_job(layout_job))
         };
 
+        if self.state.selected_action == MongoAction::ReplaceOne {
+            ui.label("Filter");
+        }
         ui.add(
             egui::TextEdit::multiline(&mut self.state.current_selection.user_free_input)
                 .font(egui::TextStyle::Monospace)
@@ -288,5 +292,17 @@ impl MongoView {
                 .desired_width(f32::INFINITY)
                 .layouter(&mut layouter),
         );
+        if self.state.selected_action == MongoAction::ReplaceOne {
+            ui.label("New Document");
+            ui.add(
+                egui::TextEdit::multiline(&mut self.state.current_selection.replace_new_document)
+                    .font(egui::TextStyle::Monospace)
+                    .code_editor()
+                    .desired_rows(5)
+                    .lock_focus(true)
+                    .desired_width(f32::INFINITY)
+                    .layouter(&mut layouter),
+            );
+        }
     }
 }

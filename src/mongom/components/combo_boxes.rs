@@ -111,12 +111,6 @@ impl MongoView {
 
             ui.selectable_value(
                 &mut self.state.selected_action,
-                MongoAction::ReplaceMany,
-                "Replace Many",
-            );
-
-            ui.selectable_value(
-                &mut self.state.selected_action,
                 MongoAction::ReplaceOne,
                 "Replace One",
             );

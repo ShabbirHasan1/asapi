@@ -21,6 +21,7 @@ pub enum MongoMessage {
     Documents((Vec<Document>, Vec<serde_json::Value>)),
     Error(String),
     InsertionSuccess,
+    ReplaceSuccess,
     DeleteSuccess,
     // Para enviar las claves que hay en el primer nivel de los documentos
     FirstLevelCollectionKeys(HashSet<String>),
@@ -53,6 +54,7 @@ pub struct MongoCurrentSelection {
     // Dos distintos para poder mantener estado, que en caso de usar Option<String> no podría.
     pub show_user_free_input: bool,
     pub user_free_input: String,
+    pub replace_new_document: String,
 }
 
 impl Default for MongoCurrentSelection {
@@ -66,6 +68,7 @@ impl Default for MongoCurrentSelection {
             is_not: false,
             show_user_free_input: false,
             user_free_input: Default::default(),
+            replace_new_document: Default::default(),
         }
     }
 }

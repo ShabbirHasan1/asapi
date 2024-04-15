@@ -13,11 +13,9 @@ use tokio::sync::mpsc::{Receiver, Sender};
 
 use crate::app_state::AppState;
 use crate::common::internationalization::I18n;
-use crate::info;
 use crate::mongom::state::MongoLocalState;
 
 use super::actions::MongoAction;
-use super::parser::pprint_docs;
 use super::presenter;
 use super::{components::sidenav::MongoSideNav, state::MongoMessage};
 
@@ -91,7 +89,10 @@ impl MongoView {
 
         while let Ok(message) = self.rx.try_recv() {
             // Lo proceso independiente para no tener que pasar ctx/rt/tx a la función.
-            if message == MongoMessage::InsertionSuccess || message == MongoMessage::DeleteSuccess {
+            if message == MongoMessage::InsertionSuccess
+                || message == MongoMessage::DeleteSuccess
+                || message == MongoMessage::ReplaceSuccess
+            {
                 self.find_all(rt, ctx);
             } else {
                 self.process_message(message);
@@ -190,7 +191,9 @@ impl MongoView {
                             self.delete(rt, ctx, i18n);
                         }
                         MongoAction::UpdateOne | MongoAction::UpdateMany => {}
-                        MongoAction::ReplaceOne | MongoAction::ReplaceMany => {}
+                        MongoAction::ReplaceOne => {
+                            self.replace(rt, ctx, i18n);
+                        }
                     }
                 }
             });
@@ -240,6 +243,7 @@ impl MongoView {
             // forma independiente, para no tener que pasar ctx/rt/tx a la función.
             MongoMessage::DeleteSuccess => {}
             MongoMessage::InsertionSuccess => {}
+            MongoMessage::ReplaceSuccess => {}
         }
     }
 }

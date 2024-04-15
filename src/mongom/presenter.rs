@@ -147,6 +147,28 @@ pub async fn insert(
     Ok(())
 }
 
+pub async fn replace(
+    tx: &Sender<MongoMessage>,
+    i18n: &I18n,
+    client: &Client,
+    db_name: &str,
+    col_name: &str,
+    filter: Document,
+    doc: &Document,
+) -> MongoResult<()> {
+    let db = client.database(db_name);
+    let collection = db.collection::<Document>(col_name);
+    let msg = MongoMessage::ReplaceSuccess;
+
+    // Esta comprobación es redundante si el cliente es solo MongoView.insert
+    let _ = collection.replace_one(filter, doc, None).await?;
+
+    let _ = tx.send(msg).await;
+
+    Ok(())
+}
+
+
 pub async fn delete(
     tx: &Sender<MongoMessage>,
     i18n: &I18n,
