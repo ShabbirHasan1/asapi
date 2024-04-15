@@ -8,17 +8,16 @@
 
 use bson::{doc, Document};
 use eframe::egui;
-use serde_json::Value;
 use tokio::runtime::Runtime;
 use tokio::sync::mpsc::{Receiver, Sender};
 
 use crate::app_state::AppState;
 use crate::common::internationalization::I18n;
-use crate::error;
+use crate::info;
 use crate::mongom::state::MongoLocalState;
 
 use super::actions::MongoAction;
-use super::parser::{pprint_doc, pprint_docs};
+use super::parser::pprint_docs;
 use super::presenter;
 use super::{components::sidenav::MongoSideNav, state::MongoMessage};
 
@@ -169,29 +168,23 @@ impl MongoView {
                 {
                     self.state.last_error = None;
 
-                    // Aunque le llame `filter`, es más cosas, por ejemplo el objeto a insertar
-                    let docs: Vec<Document> = if show_user_free {
-                        let value = &self.state.current_selection.user_free_input;
-                        serde_json::from_str(value).map_or(vec![], |d| d)
-                    } else {
-                        let docs = self
-                            .state
-                            .filters
-                            .iter()
-                            .map(|f| f.build_mongo_query())
-                            .collect::<Vec<Document>>();
-
-                        docs
-                    };
-
-                    pprint_docs(&docs);
-
                     match self.state.selected_action {
                         MongoAction::Find | MongoAction::FindOne => {
-                            self.find(rt, ctx, doc! {"$and": docs})
+                            let docs: Vec<Document> =
+                                if !compound_filter_available || show_user_free {
+                                    let value = &self.state.current_selection.user_free_input;
+                                    serde_json::from_str(value).map_or(vec![], |d| d)
+                                } else {
+                                    self.state
+                                        .filters
+                                        .iter()
+                                        .map(|f| f.build_mongo_query())
+                                        .collect::<Vec<Document>>()
+                                };
+                            self.find(rt, ctx, doc! {"$and": docs});
                         }
                         MongoAction::InsertOne | MongoAction::InsertMany => {
-                            self.insert(rt, ctx, i18n, docs)
+                            self.insert(rt, ctx, i18n);
                         }
                         MongoAction::UpdateOne | MongoAction::UpdateMany => {}
                         MongoAction::DeleteOne | MongoAction::DeleteMany => {}
@@ -241,7 +234,9 @@ impl MongoView {
             // Mensajes que no quiero procesar porque proceso antes de la llamada
             // a esta función. Dejo explicitado para que me dé error, si uso `_`
             // se me colará algún bug.
-            MongoMessage::InsertionSuccess => (),
+            // `MongoMessage::InsertionSuccess` está procesado arriba, no aquí bajo, de
+            // forma independiente, para no tener que pasar ctx/rt/tx a la función.
+            MongoMessage::InsertionSuccess => {},
         }
     }
 }

@@ -131,6 +131,7 @@ pub async fn insert(
     let collection = db.collection::<Document>(col_name);
     let mut msg = MongoMessage::InsertionSuccess;
 
+    // Esta comprobación es redundante si el cliente es solo MongoView.insert
     if action == MongoAction::InsertOne {
         if docs.len() == 1 {
             let _ = collection.insert_one(&docs[0], None).await?;

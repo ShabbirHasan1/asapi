@@ -12,11 +12,39 @@ use tokio::runtime::Runtime;
 
 use crate::{
     common::internationalization::I18n,
-    mongom::{presenter, state::MongoMessage, view::MongoView},
+    mongom::{actions::MongoAction, presenter, state::MongoMessage, view::MongoView},
 };
 
 impl MongoView {
-    pub fn insert(&self, rt: &Runtime, ctx: &egui::Context, i18n: &I18n, docs: Vec<Document>) {
+    pub fn insert(&mut self, rt: &Runtime, ctx: &egui::Context, i18n: &I18n) {
+        let docs: Vec<Document> = if self.state.selected_action == MongoAction::InsertMany {
+            serde_json::from_str::<Vec<Document>>(&self.state.current_selection.user_free_input)
+                .map_or_else(
+                    |e| {
+                        self.state.last_error = Some(format!("{:?}", e));
+                        vec![]
+                    },
+                    |d| d,
+                )
+        } else if self.state.selected_action == MongoAction::InsertOne {
+            serde_json::from_str::<Document>(&self.state.current_selection.user_free_input)
+                .map_or_else(
+                    |e| {
+                        self.state.last_error = Some(format!("{:?}", e));
+                        vec![]
+                    },
+                    |d| vec![d],
+                )
+        } else {
+            self.state.last_error = Some(i18n.mongo_wrong_action.clone());
+            vec![]
+        };
+
+        // Guarda para no crear objeto vacío.
+        if docs.len() == 0 {
+            return;
+        }
+
         let tx = self.tx.clone();
         let ctx_cloned = ctx.clone();
         let client = self.state.conn.client.as_ref().unwrap().clone();

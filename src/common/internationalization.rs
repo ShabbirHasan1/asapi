@@ -80,6 +80,7 @@ pub struct I18n {
     pub mongo_copy_collection_info: String,
     pub mongo_error_client_uninitialized: String,
     pub mongo_delete_filter: String,
+    pub mongo_wrong_action: String,
 
     // Postgres
     pub pg_connection_host: String,
@@ -176,6 +177,7 @@ pub fn language_selector(i: I18nOptions) -> I18n {
             mongo_copy_collection_info: String::from("Copiar Información de la Colección"),
             mongo_error_client_uninitialized: String::from("Cliente no Inicializado"),
             mongo_delete_filter: String::from("Borrar Filtro"),
+            mongo_wrong_action: String::from("Acción Incorrecta"),
 
             // Postgres
             pg_connection_host: "Host".to_owned(),
@@ -270,6 +272,7 @@ pub fn language_selector(i: I18nOptions) -> I18n {
             mongo_copy_collection_info: String::from("Copy Collection Info"),
             mongo_error_client_uninitialized: String::from("Client does not Exists"),
             mongo_delete_filter: String::from("Delete Filter"),
+            mongo_wrong_action: String::from("Wrong Action"),
 
             // Postgres
             pg_info_performance_table: "Deletion is forbidden for performance table.\nSelect this for massive quantity of cells (rows x columns), order of 1e5, or when massive amount of data inside the cells, like long varchar, big json/binaries/arrays or geographical data.".to_owned(),
