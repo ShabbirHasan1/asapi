@@ -21,6 +21,7 @@ pub enum MongoMessage {
     Documents((Vec<Document>, Vec<serde_json::Value>)),
     Error(String),
     InsertionSuccess,
+    DeleteSuccess,
     // Para enviar las claves que hay en el primer nivel de los documentos
     FirstLevelCollectionKeys(HashSet<String>),
 }

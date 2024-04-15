@@ -1,10 +1,13 @@
 #+STARTUP: logdone
 
 * Mongo
-*** InsertOne/InsertMany
+*** DONE InsertOne/InsertMany
+CLOSED: [2024-04-15 lun 14:25]
+*** DONE DeleteOne/DeleteMany
+CLOSED: [2024-04-15 lun 14:38]
 *** UpdateOne/UpdateMany
-*** DeleteOne/DeleteMany
 *** ReplaceOne/ReplaceMany
+*** Menú contextual con tres puntos como sql, para al menos borrar objeto
 *** DONE Cuando tenga /NOT/, sus hijos no pueden ser /and/or/nor/.
 CLOSED: [2024-04-12 vie 13:07]
 *** DONE Que el /not/ de los filtros sea funcional.

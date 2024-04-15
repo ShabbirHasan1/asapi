@@ -147,6 +147,31 @@ pub async fn insert(
     Ok(())
 }
 
+pub async fn delete(
+    tx: &Sender<MongoMessage>,
+    i18n: &I18n,
+    client: &Client,
+    db_name: &str,
+    col_name: &str,
+    doc: Document,
+    action: MongoAction,
+) -> MongoResult<()> {
+    let db = client.database(db_name);
+    let collection = db.collection::<Document>(col_name);
+    let msg = MongoMessage::DeleteSuccess;
+
+    // Esta comprobación es redundante si el cliente es solo MongoView.insert
+    if action == MongoAction::DeleteOne {
+        let _ = collection.delete_one(doc, None).await?;
+    } else {
+        let _ = collection.delete_many(doc, None).await?;
+    }
+
+    let _ = tx.send(msg).await;
+
+    Ok(())
+}
+
 pub async fn run_command(
     client: &Client,
     db_name: &str,

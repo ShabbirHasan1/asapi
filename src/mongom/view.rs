@@ -91,7 +91,7 @@ impl MongoView {
 
         while let Ok(message) = self.rx.try_recv() {
             // Lo proceso independiente para no tener que pasar ctx/rt/tx a la función.
-            if message == MongoMessage::InsertionSuccess {
+            if message == MongoMessage::InsertionSuccess || message == MongoMessage::DeleteSuccess {
                 self.find_all(rt, ctx);
             } else {
                 self.process_message(message);
@@ -186,8 +186,10 @@ impl MongoView {
                         MongoAction::InsertOne | MongoAction::InsertMany => {
                             self.insert(rt, ctx, i18n);
                         }
+                        MongoAction::DeleteOne | MongoAction::DeleteMany => {
+                            self.delete(rt, ctx, i18n);
+                        }
                         MongoAction::UpdateOne | MongoAction::UpdateMany => {}
-                        MongoAction::DeleteOne | MongoAction::DeleteMany => {}
                         MongoAction::ReplaceOne | MongoAction::ReplaceMany => {}
                     }
                 }
@@ -234,9 +236,10 @@ impl MongoView {
             // Mensajes que no quiero procesar porque proceso antes de la llamada
             // a esta función. Dejo explicitado para que me dé error, si uso `_`
             // se me colará algún bug.
-            // `MongoMessage::InsertionSuccess` está procesado arriba, no aquí bajo, de
+            // `MongoMessage::InsertionSuccess/DeleteSuccess` está procesado arriba, no aquí bajo, de
             // forma independiente, para no tener que pasar ctx/rt/tx a la función.
-            MongoMessage::InsertionSuccess => {},
+            MongoMessage::DeleteSuccess => {}
+            MongoMessage::InsertionSuccess => {}
         }
     }
 }
