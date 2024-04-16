@@ -27,7 +27,7 @@ use super::state::{PubSubState, RedisLocalState};
 use super::utils::value_map_to_string_btree_map;
 
 pub struct RedisView {
-    state: RedisLocalState,
+    pub state: RedisLocalState,
     pubsub: PubSubState,
 }
 
@@ -45,7 +45,7 @@ impl RedisView {
         &mut self,
         ctx: &egui::Context,
         _frame: &mut eframe::Frame,
-        app_state: &mut AppState,
+        app_st: &mut AppState,
         _rt: &Runtime,
         _i18n: &I18n,
     ) {
@@ -58,7 +58,7 @@ impl RedisView {
         }
 
         if self.state.must_scan {
-            let _ = presenter::scan(&mut self.state, &app_state);
+            let _ = presenter::scan(&mut self.state, &app_st.redis);
             self.state.must_scan = false;
         }
         if self.state.is_first_update {
@@ -69,28 +69,8 @@ impl RedisView {
         // ===================================================================
         // Panel Lateral
         // ===================================================================
-        if app_state.redis.show_sidebar {
-            egui::SidePanel::left("side_panel").show(ctx, |ui| {
-                if ui.button("\u{27f3} Load").clicked() {
-                    let _ = presenter::scan(&mut self.state, &app_state);
-                }
-                ui.separator();
-                ui.set_width(200.0);
-                // TODO: Mejor separar PubSub puesto que no está conectado con los demás... solo puede ser
-                // conexión en vivo.
-                for option in RedisMenu::iterator() {
-                    // ui.label(format!("{idx} -- {:#?}", option));
-                    let opt = option.clone();
-                    if ui
-                        .selectable_value(
-                            &mut self.state.selected_menu,
-                            opt,
-                            format!("{:#?}", option),
-                        )
-                        .clicked()
-                    {}
-                }
-            });
+        if app_st.redis.show_sidebar {
+            self.sidenav_show(ctx, &app_st.redis);
         }
 
         // ===================================================================
@@ -100,12 +80,12 @@ impl RedisView {
             if self.state.selected_menu != RedisMenu::PubSub {
                 // --> Definición de conexión <--
                 ui.horizontal(|ui| {
-                    ui.add(egui::TextEdit::singleline(&mut app_state.redis.host).hint_text("host"));
-                    ui.add(egui::TextEdit::singleline(&mut app_state.redis.port).hint_text("port"));
+                    ui.add(egui::TextEdit::singleline(&mut app_st.redis.host).hint_text("host"));
+                    ui.add(egui::TextEdit::singleline(&mut app_st.redis.port).hint_text("port"));
                     if ui.button("Connect").clicked() {
-                        if let Ok(port) = app_state.redis.port.parse::<i16>() {
+                        if let Ok(port) = app_st.redis.port.parse::<i16>() {
                             // app_state.redis.port = port;
-                            match presenter::create_conn(&app_state.redis.host, port) {
+                            match presenter::create_conn(&app_st.redis.host, port) {
                                 Ok(conn) => {
                                     // TODO: Poner algún indicador visual de que tenemos conexión.
                                     self.state.conn = Some(conn);
@@ -144,14 +124,14 @@ impl RedisView {
 
                         // --> Ejecución de Comandos <--
                         match presenter::run_command(
-                            &app_state.redis.host,
-                            &app_state.redis.port,
+                            &app_st.redis.host,
+                            &app_st.redis.port,
                             self.state.current_command.as_str(),
                         ) {
                             Ok(result) => {
                                 info!("Result: {:?}", result);
                                 self.state.command_last_result = result;
-                                let _ = presenter::scan(&mut self.state, &app_state);
+                                let _ = presenter::scan(&mut self.state, &app_st.redis);
                             }
                             // TODO: Change color
                             Err(e) => {
@@ -212,7 +192,7 @@ impl RedisView {
                 {
                     egui::CollapsingHeader::new("Hashes")
                         .default_open(true)
-                        .show(ui, |ui| self.hash_component(ui, app_state));
+                        .show(ui, |ui| self.hash_component(ui, app_st));
                 }
 
                 // --> Hashes <--
@@ -221,7 +201,7 @@ impl RedisView {
                 {
                     egui::CollapsingHeader::new("Strings")
                         .default_open(true)
-                        .show(ui, |ui| self.string_component(ui, app_state));
+                        .show(ui, |ui| self.string_component(ui, app_st));
                 }
 
                 // --> Streams (sólo mostrar/borrar/enviar, sin subscribirnos) <--
@@ -230,7 +210,7 @@ impl RedisView {
                 {
                     egui::CollapsingHeader::new("Streams")
                         .default_open(true)
-                        .show(ui, |ui| self.stream_component(ui, app_state));
+                        .show(ui, |ui| self.stream_component(ui, app_st));
                 }
 
                 // --> PubSub <--
@@ -249,8 +229,8 @@ impl RedisView {
                                 );
                                 if ui.button("Publish").clicked() {
                                     let publish_response = presenter::publish_to_channel(
-                                        &app_state.redis.host,
-                                        &app_state.redis.port,
+                                        &app_st.redis.host,
+                                        &app_st.redis.port,
                                         &self.pubsub.channel,
                                         &self.pubsub.value,
                                     );
@@ -274,8 +254,8 @@ impl RedisView {
                                     } else {
                                         let subscription =
                                             presenter::subscribe_to_channel_std_thread(
-                                                &app_state.redis.host,
-                                                &app_state.redis.port,
+                                                &app_st.redis.host,
+                                                &app_st.redis.port,
                                                 &self.pubsub.channel,
                                                 // rt,
                                                 &self.pubsub.tx,
@@ -361,8 +341,8 @@ impl RedisView {
                                                 // Para cerrar publicamos mensaje concreto en el canal que queremos cerrar.
                                                 if ui.button("Close Subscription").clicked() {
                                                     let _ = presenter::publish_to_channel(
-                                                        &app_state.redis.host,
-                                                        &app_state.redis.port,
+                                                        &app_st.redis.host,
+                                                        &app_st.redis.port,
                                                         chan,
                                                         "#break#",
                                                     );
@@ -370,8 +350,8 @@ impl RedisView {
 
                                                 if ui.button("Delete Channel").clicked() {
                                                     let _ = presenter::publish_to_channel(
-                                                        &app_state.redis.host,
-                                                        &app_state.redis.port,
+                                                        &app_st.redis.host,
+                                                        &app_st.redis.port,
                                                         chan,
                                                         "#break#",
                                                     );
