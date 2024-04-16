@@ -7,10 +7,11 @@
 // -------------------------------------------------------------------------
 
 mod actions;
+mod bson_type;
 mod components;
 mod connection;
-mod document;
+mod filter;
 mod parser;
-pub mod presenter;
+mod presenter;
 pub mod state;
 pub mod view;

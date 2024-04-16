@@ -8,14 +8,11 @@
 
 use bson::{doc, Document};
 use eframe::egui;
-use serde_json::Value;
 use tokio::runtime::Runtime;
 use tokio::sync::mpsc::{Receiver, Sender};
 
 use crate::app_state::AppState;
 use crate::common::internationalization::I18n;
-use crate::error;
-use crate::mongom::parser::{build_mongo_query, pprint_bson};
 use crate::mongom::state::MongoLocalState;
 
 use super::actions::MongoAction;
@@ -32,11 +29,9 @@ pub struct MongoView {
 impl Default for MongoView {
     fn default() -> Self {
         let (tx, rx) = tokio::sync::mpsc::channel(8);
-        let mut state = MongoLocalState::default();
-        state.rows_to_show = 100;
 
         Self {
-            state,
+            state: MongoLocalState::default(),
             tx,
             rx,
             first_render: false,
@@ -94,7 +89,11 @@ impl MongoView {
 
         while let Ok(message) = self.rx.try_recv() {
             // Lo proceso independiente para no tener que pasar ctx/rt/tx a la función.
-            if message == MongoMessage::InsertionSuccess {
+            if message == MongoMessage::InsertionSuccess
+                || message == MongoMessage::DeleteSuccess
+                || message == MongoMessage::ReplaceSuccess
+                || message == MongoMessage::UpdateSuccess
+            {
                 self.find_all(rt, ctx);
             } else {
                 self.process_message(message);
@@ -151,7 +150,7 @@ impl MongoView {
             if !show_user_free && compound_filter_available {
                 self.compound_filter_constructor(rt, ctx, i18n, ui);
             } else {
-                self.user_defined_filter_input(ctx, ui);
+                self.user_defined_filter_input(ctx, ui, i18n);
             }
 
             ui.horizontal(|ui| {
@@ -164,56 +163,40 @@ impl MongoView {
                 }
 
                 // --> Ejecutar <--
-                if (show_user_free || !self.state.current_filter_value.is_empty())
+                if (show_user_free
+                    || !self.state.current_filter_value.is_empty()
+                    || !compound_filter_available) // Este caso es cuando queremos insertar/replacer/delete/update.
                     && ui.button("\u{25b6}").clicked()
                 {
                     self.state.last_error = None;
 
-                    // Aunque le llame `filter`, es más cosas, por ejemplo el objeto a insertar
-                    let filter: Document = if show_user_free {
-                        let value = &self.state.current_selection.user_free_input;
-                        serde_json::from_str(value).map_or(doc! {}, |d| d)
-                    } else {
-                        build_mongo_query(&self.state.filters)
-                    };
-
-                    pprint_bson(&filter);
-
                     match self.state.selected_action {
-                        MongoAction::Find | MongoAction::FindOne => self.find(rt, ctx, filter),
-                        MongoAction::InsertOne | MongoAction::InsertMany => {
-                            let value = &self.state.current_selection.user_free_input;
-                            let result: serde_json::Result<Value> = serde_json::from_str(value);
-                            // Tenemos que reparsear para ver si es un array.
-                            match result {
-                                Ok(docs) => match docs {
-                                    Value::Array(arr) => {
-                                        let docs: Vec<Document> = arr
-                                            .iter()
-                                            .map(|a| match mongodb::bson::to_bson(a) {
-                                                Ok(bs) => match bs {
-                                                    bson::Bson::Document(doc) => doc,
-                                                    _ => doc! {},
-                                                },
-                                                Err(_) => doc! {},
-                                            })
-                                            .collect();
-                                        self.insert(rt, ctx, i18n, docs);
-                                    }
-                                    _ => {
-                                        self.insert(rt, ctx, i18n, vec![filter]);
-                                    }
-                                },
-                                Err(e) => {
-                                    error!("{:?}", e);
-                                    self.state.last_error =
-                                        Some(i18n.mongo_invalid_doc_to_insert.to_owned());
-                                }
-                            }
+                        MongoAction::Find | MongoAction::FindOne => {
+                            let docs: Vec<Document> =
+                                if !compound_filter_available || show_user_free {
+                                    let value = &self.state.current_selection.user_free_input;
+                                    serde_json::from_str(value).map_or(vec![], |d| d)
+                                } else {
+                                    self.state
+                                        .filters
+                                        .iter()
+                                        .map(|f| f.build_mongo_query())
+                                        .collect::<Vec<Document>>()
+                                };
+                            self.find(rt, ctx, doc! {"$and": docs});
                         }
-                        MongoAction::UpdateOne | MongoAction::UpdateMany => {}
-                        MongoAction::DeleteOne | MongoAction::DeleteMany => {}
-                        MongoAction::ReplaceOne | MongoAction::ReplaceMany => {}
+                        MongoAction::InsertOne | MongoAction::InsertMany => {
+                            self.insert(rt, ctx, i18n);
+                        }
+                        MongoAction::DeleteOne | MongoAction::DeleteMany => {
+                            self.delete(rt, ctx);
+                        }
+                        MongoAction::ReplaceOne => {
+                            self.replace(rt, ctx);
+                        }
+                        MongoAction::UpdateOne | MongoAction::UpdateMany => {
+                            self.update_doc(rt, ctx, i18n);
+                        }
                     }
                 }
             });
@@ -223,7 +206,7 @@ impl MongoView {
             egui::ScrollArea::vertical()
                 .id_source("mongo_central_panel")
                 .show(ui, |ui| {
-                    self.find_panel(ui);
+                    self.find_panel(rt, &self.tx.clone(), ui, i18n);
                 });
         });
     }
@@ -256,10 +239,13 @@ impl MongoView {
             MongoMessage::Error(s) => {
                 self.state.last_error = Some(s);
             }
-            // Mensajes que no quiero procesar porque proceso antes de la llamada
-            // a esta función. Dejo explicitado para que me dé error, si uso `_`
-            // se me colará algún bug.
-            MongoMessage::InsertionSuccess => (),
+            // `MongoMessage::InsertionSuccess/DeleteSuccess/ReplaceSuccess/UpdateSuccess` está
+            // procesado arriba, no aquí bajo, de forma independiente, para no tener que pasar
+            // ctx/rt/tx a la función.
+            MongoMessage::DeleteSuccess
+            | MongoMessage::InsertionSuccess
+            | MongoMessage::ReplaceSuccess
+            | MongoMessage::UpdateSuccess => {}
         }
     }
 }

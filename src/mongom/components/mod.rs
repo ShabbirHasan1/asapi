@@ -7,7 +7,10 @@
 // -------------------------------------------------------------------------
 
 pub mod combo_boxes;
+pub mod delete_panel;
 pub mod filters;
 pub mod find_panel;
 pub mod insert_panel;
+pub mod replace_panel;
 pub mod sidenav;
+pub mod update_panel;

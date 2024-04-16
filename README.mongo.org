@@ -1,8 +1,34 @@
 #+STARTUP: logdone
 
 * Mongo
-*** Que el /not/ de los filtros sea funcional
-*** Poder borrar elemento del filtro
+*** [#C] Intentar en /update/ poder pasar /pipeline/
+Para hacer una /pipeline/ es necesario pasar vector de /document/ al =update_many=, no un único documento al que añado =$set=.
+*** [#B] Poder usar /aggregate/
+https://www.mongodb.com/docs/drivers/rust/current/fundamentals/aggregation/
+*** DONE [#A] Menú contextual con tres puntos como sql, para al menos borrar objeto
+CLOSED: [2024-04-16 mar 12:14]
+*** DONE ReplaceOne/ReplaceMany
+CLOSED: [2024-04-16 mar 10:01]
+*** DONE UpdateOne/UpdateMany
+CLOSED: [2024-04-16 mar 10:01]
+*** DONE InsertOne/InsertMany
+CLOSED: [2024-04-15 lun 14:25]
+*** DONE DeleteOne/DeleteMany
+CLOSED: [2024-04-15 lun 14:38]
+*** DONE Cuando tenga /NOT/, sus hijos no pueden ser /and/or/nor/.
+CLOSED: [2024-04-12 vie 13:07]
+*** DONE Que el /not/ de los filtros sea funcional.
+CLOSED: [2024-04-12 vie 12:58]
+*** DONE Añadir /nor/.
+CLOSED: [2024-04-12 vie 12:59]
+*** DONE Marcar el padre actual.
+CLOSED: [2024-04-12 vie 12:04]
+*** DONE Poder borrar padre para añadir a primer nivel y no estar ya con estructuras raras tras la primera vez que se incluye algo.
+CLOSED: [2024-04-12 vie 12:04]
+*** DONE Cambiar a VecDeque
+CLOSED: [2024-04-12 vie 09:41]
+*** DONE Poder borrar elemento del filtro
+CLOSED: [2024-04-12 vie 11:04]
 *** DONE Mostrar información de colección y poder copiar
 *** DONE Mostrar entradas de filtro como JsonTree
 CLOSED: [2024-04-10 mié 17:20]

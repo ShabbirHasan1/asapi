@@ -17,5 +17,4 @@ pub enum MongoAction {
     DeleteOne,
     DeleteMany,
     ReplaceOne,
-    ReplaceMany,
 }

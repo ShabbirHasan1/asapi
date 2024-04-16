@@ -6,67 +6,47 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
-use bson::Document;
+use bson::{doc, Document};
 use eframe::egui;
 use tokio::runtime::Runtime;
 
-use crate::{
-    common::internationalization::I18n,
-    mongom::{actions::MongoAction, presenter, state::MongoMessage, view::MongoView},
-};
+use crate::mongom::{actions::MongoAction, presenter, state::MongoMessage, view::MongoView};
 
 impl MongoView {
-    pub fn insert(&mut self, rt: &Runtime, ctx: &egui::Context, i18n: &I18n) {
-        let docs: Vec<Document> = if self.state.selected_action == MongoAction::InsertMany {
-            serde_json::from_str::<Vec<Document>>(&self.state.current_selection.user_free_input)
-                .map_or_else(
-                    |e| {
-                        self.state.last_error = Some(format!("{:?}", e));
-                        vec![]
-                    },
-                    |d| d,
-                )
-        } else if self.state.selected_action == MongoAction::InsertOne {
+    pub fn delete(&mut self, rt: &Runtime, ctx: &egui::Context) {
+        let doc: Document =
             serde_json::from_str::<Document>(&self.state.current_selection.user_free_input)
                 .map_or_else(
                     |e| {
                         self.state.last_error = Some(format!("{:?}", e));
-                        vec![]
+                        doc! {}
                     },
-                    |d| vec![d],
-                )
-        } else {
-            self.state.last_error = Some(i18n.mongo_wrong_action.clone());
-            vec![]
-        };
+                    |d| d,
+                );
 
         // Guarda para no crear objeto vacío.
-        if docs.len() == 0 {
+        if doc.is_empty() {
             return;
         }
 
+        let action = self.state.selected_action.clone();
+        self.delete_action(rt, ctx, doc, action);
+    }
+
+    pub fn delete_action(&self, rt: &Runtime, ctx: &egui::Context, doc: Document, action: MongoAction) {
         let tx = self.tx.clone();
         let ctx_cloned = ctx.clone();
         let client = self.state.conn.client.as_ref().unwrap().clone();
         let db_name = self.state.current_selection.db_name.to_owned();
         let col_name = self.state.current_selection.col_name.to_owned();
-        let action = self.state.selected_action.clone();
-        let i18n_cloned = i18n.clone();
 
         rt.spawn(async move {
-            let result = presenter::insert(
-                &tx,
-                &i18n_cloned,
-                &client,
-                &db_name,
-                &col_name,
-                docs,
-                action,
-            )
-            .await;
+            let result = presenter::delete(&tx, &client, &db_name, &col_name, doc, action).await;
+
             if let Err(err) = result {
                 let _ = tx.send(MongoMessage::Error(format!("{:?}", err))).await;
             }
+
             ctx_cloned.request_repaint();
         });
     }

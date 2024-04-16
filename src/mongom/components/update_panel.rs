@@ -6,42 +6,36 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
-use bson::Document;
+use bson::{doc, Document};
 use eframe::egui;
 use tokio::runtime::Runtime;
 
 use crate::{
     common::internationalization::I18n,
-    mongom::{actions::MongoAction, presenter, state::MongoMessage, view::MongoView},
+    mongom::{presenter, state::MongoMessage, view::MongoView},
 };
 
 impl MongoView {
-    pub fn insert(&mut self, rt: &Runtime, ctx: &egui::Context, i18n: &I18n) {
-        let docs: Vec<Document> = if self.state.selected_action == MongoAction::InsertMany {
-            serde_json::from_str::<Vec<Document>>(&self.state.current_selection.user_free_input)
-                .map_or_else(
-                    |e| {
-                        self.state.last_error = Some(format!("{:?}", e));
-                        vec![]
-                    },
-                    |d| d,
-                )
-        } else if self.state.selected_action == MongoAction::InsertOne {
+    pub fn update_doc(&mut self, rt: &Runtime, ctx: &egui::Context, i18n: &I18n) {
+        let filter: Document =
             serde_json::from_str::<Document>(&self.state.current_selection.user_free_input)
                 .map_or_else(
                     |e| {
                         self.state.last_error = Some(format!("{:?}", e));
-                        vec![]
+                        doc! {}
                     },
-                    |d| vec![d],
-                )
-        } else {
-            self.state.last_error = Some(i18n.mongo_wrong_action.clone());
-            vec![]
-        };
-
+                    |d| d,
+                );
+        let doc: Document =
+            serde_json::from_str(&self.state.current_selection.replace_new_document).map_or_else(
+                |e| {
+                    self.state.last_error = Some(format!("{:?}", e));
+                    doc! {}
+                },
+                |d| d,
+            );
         // Guarda para no crear objeto vacío.
-        if docs.len() == 0 {
+        if doc.is_empty() {
             return;
         }
 
@@ -51,16 +45,15 @@ impl MongoView {
         let db_name = self.state.current_selection.db_name.to_owned();
         let col_name = self.state.current_selection.col_name.to_owned();
         let action = self.state.selected_action.clone();
-        let i18n_cloned = i18n.clone();
 
         rt.spawn(async move {
-            let result = presenter::insert(
+            let result = presenter::update(
                 &tx,
-                &i18n_cloned,
                 &client,
                 &db_name,
                 &col_name,
-                docs,
+                filter,
+                doc,
                 action,
             )
             .await;

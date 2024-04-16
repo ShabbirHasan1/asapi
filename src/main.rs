@@ -32,7 +32,7 @@ use pgm::view::PostgresView;
 use redism::view::RedisView;
 use sqlitem::view::SQLiteView;
 
-use common::internationalization::{language_selector, I18n};
+use common::internationalization::language_selector;
 use components::top_bar::AppTopBar;
 use std::fs::{self, OpenOptions};
 

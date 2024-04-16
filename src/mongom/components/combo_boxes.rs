@@ -7,11 +7,7 @@
 // -------------------------------------------------------------------------
 use crate::{
     components::toggle_selector::toggle_label,
-    mongom::{
-        actions::MongoAction,
-        document::{bson_type::BsonType, find::MongoOperator},
-        view::MongoView,
-    },
+    mongom::{actions::MongoAction, bson_type::BsonType, filter::MongoOperator, view::MongoView},
 };
 use eframe::egui;
 
@@ -111,12 +107,6 @@ impl MongoView {
                 &mut self.state.selected_action,
                 MongoAction::DeleteOne,
                 "Delete One",
-            );
-
-            ui.selectable_value(
-                &mut self.state.selected_action,
-                MongoAction::ReplaceMany,
-                "Replace Many",
             );
 
             ui.selectable_value(
