@@ -46,7 +46,6 @@ impl Default for PubSubState {
     }
 }
 
-#[derive(Default)]
 pub struct RedisLocalState {
     pub cmd_history: Vec<String>,
     pub strings: Vec<(String, String)>,
@@ -66,6 +65,31 @@ pub struct RedisLocalState {
     pub hide_data_structures: bool,
     pub tmp_connection: RedisConnectionDefinition,
     pub current_connection: RedisConnectionDefinition,
+    pub current_connection_idx: usize,
+}
+
+impl Default for RedisLocalState {
+    fn default() -> Self {
+        Self {
+            cmd_history: Default::default(),
+            strings: Default::default(),
+            streams: Default::default(),
+            hashes: Default::default(),
+            stream_id_values: Default::default(),
+            current_history_index: Default::default(),
+            current_command: Default::default(),
+            is_first_update: Default::default(),
+            must_scan: Default::default(),
+            command_last_result: Default::default(),
+            conn: Default::default(),
+            selected_menu: Default::default(),
+            hide_connections: Default::default(),
+            hide_data_structures: Default::default(),
+            tmp_connection: Default::default(),
+            current_connection: Default::default(),
+            current_connection_idx: usize::MAX,
+        }
+    }
 }
 
 impl RedisLocalState {

@@ -8,6 +8,7 @@
 
 use super::state::{RedisAppState, RedisLocalState};
 use crate::app_state::AppState;
+use crate::info;
 use redis::streams::{StreamReadOptions, StreamReadReply};
 use redis::{self, Client, Commands, Connection, Msg as PubSubMsg, RedisError, RedisResult, Value};
 use std::collections::HashMap;
@@ -84,7 +85,7 @@ impl Default for RedisMenu {
 //             key: "foo".to_string(),
 //         };
 //         let _ = tx.send(cmd2);
-//         println!("-->> bar1");
+//         info!("-->> bar1");
 //         Ok::<(), RedisError>(())
 //         // ctx.request_repaint();
 //     });
@@ -97,7 +98,7 @@ impl Default for RedisMenu {
 //     let _ = con.set("my_key", "Hello world!").await?;
 //     let result: String = con.get("my_key").await?;
 
-//     println!("->> my_key: {}\n", result);
+//     info!("->> my_key: {}\n", result);
 
 //     Ok(())
 // }
@@ -145,20 +146,20 @@ pub fn scan(state: &mut RedisLocalState) -> RedisResult<()> {
                         let value = con.get(key.clone()).unwrap();
                         state.strings.push((key, value));
                     }
-                    "list" => println!("List: {}", key),
-                    "set" => println!("Set: {}", key),
-                    "zset" => println!("Sorted Set: {}", key),
+                    "list" => info!("List: {}", key),
+                    "set" => info!("Set: {}", key),
+                    "zset" => info!("Sorted Set: {}", key),
                     "hash" => {
                         let result: RedisResult<Vec<(String, String)>> = con.hgetall(key.clone());
 
-                        println!("Hash: {}", key);
+                        info!("Hash: {}", key);
 
                         match result {
                             Ok(ls) => {
                                 state.hashes.insert(key.clone(), ls);
                             }
                             Err(_) => {
-                                println!("error");
+                                info!("error");
                                 state.hashes.insert(key.clone(), Vec::new());
                             }
                         }
@@ -181,13 +182,13 @@ pub fn scan(state: &mut RedisLocalState) -> RedisResult<()> {
                                     }
                                 }
                             }
-                            Err(e) => println!("Ocurrió un error {}", e),
+                            Err(e) => info!("Ocurrió un error {}", e),
                         }
                     }
-                    _ => println!("Unknown type: {}", value),
+                    _ => info!("Unknown type: {}", value),
                 },
                 Err(e) => {
-                    println!("Ocurrió un error: {}", e);
+                    info!("Ocurrió un error: {}", e);
                 }
             }
         }
@@ -220,36 +221,36 @@ pub fn read_stream_id(
     match result {
         Ok(stream_keys) => {
             for entry in stream_keys.keys {
-                println!("Stream keys: {}, asked for {}", entry.key, id);
-                println!("  {}", entry.ids.len());
+                info!("Stream keys: {}, asked for {}", entry.key, id);
+                info!("  {}", entry.ids.len());
                 for stream_id in entry.ids {
                     // if stream_id.id != id {
                     //     continue;
                     // }
-                    println!(" - entry id: {}", stream_id.id);
+                    info!(" - entry id: {}", stream_id.id);
                     state.insert(stream_id.id, stream_id.map.clone());
-                    println!("{:?}", stream_id.map);
+                    info!("{:?}", stream_id.map);
                     // .stream_id_values
                     // for (k, v) in stream_id.map {
                     //     match v {
-                    //         redis::Value::Nil => println!("     NIL       k: {}", k),
-                    //         redis::Value::Int(i) => println!("     INT       k: {}, {}", k, i),
+                    //         redis::Value::Nil => info!("     NIL       k: {}", k),
+                    //         redis::Value::Int(i) => info!("     INT       k: {}, {}", k, i),
                     //         redis::Value::Data(d) => {
-                    //             println!(
+                    //             info!(
                     //                 "     DATA      k: {}, {}",
                     //                 k,
                     //                 String::from_utf8(d).unwrap()
                     //             )
                     //         }
-                    //         redis::Value::Bulk(b) => println!("     BULK      k: {}", k),
-                    //         redis::Value::Status(s) => println!("     STATUS    k: {}", k),
-                    //         redis::Value::Okay => println!("     OKAY      k: {}", k),
+                    //         redis::Value::Bulk(b) => info!("     BULK      k: {}", k),
+                    //         redis::Value::Status(s) => info!("     STATUS    k: {}", k),
+                    //         redis::Value::Okay => info!("     OKAY      k: {}", k),
                     //     }
                     // }
                 }
             }
         }
-        Err(e) => println!("Ocurrió un error {}", e),
+        Err(e) => info!("Ocurrió un error {}", e),
     }
 
     Ok(())
@@ -331,7 +332,7 @@ pub fn subscribe_to_channel_std_thread(
 
             match payload.as_ref() {
                 "#break#" => {
-                    println!(
+                    info!(
                         ">>> Finishing subscription to channel {} <<<",
                         msg.get_channel_name()
                     );

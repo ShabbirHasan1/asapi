@@ -70,7 +70,7 @@ impl RedisView {
         // Panel Lateral
         // ===================================================================
         if app_st.show_sidebar {
-            self.sidenav_show(ctx, app_st, i18n);
+            self.show_sidenav(ctx, app_st, i18n);
         }
 
         // ===================================================================
@@ -529,6 +529,19 @@ impl RedisView {
                         ui.close_menu();
                     }
                 });
+            }
+        }
+    }
+
+    pub fn connect(&mut self) {
+        if let Ok(port) = self.state.current_connection.port.parse::<i16>() {
+            match presenter::create_conn(&self.state.current_connection.host, port) {
+                Ok(conn) => {
+                    self.state.conn = Some(conn);
+                }
+                Err(e) => {
+                    self.state.conn = None;
+                }
             }
         }
     }

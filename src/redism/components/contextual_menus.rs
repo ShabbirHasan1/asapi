@@ -6,9 +6,12 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
-use crate::redism::{
-    presenter::delete_stream_message,
-    utils::{value_map_to_string, value_map_to_string_map},
+use crate::{
+    error, info,
+    redism::{
+        presenter::delete_stream_message,
+        utils::{value_map_to_string, value_map_to_string_map},
+    },
 };
 use eframe::egui;
 use egui::Ui;
@@ -59,11 +62,11 @@ pub fn stream_msg(
     if ui.button("Delete").clicked() {
         match delete_stream_message("127.0.0.1", 6379, stream_name, &id) {
             Ok(k) => {
-                println!("Borrada clave {}.", k);
+                info!("Borrada clave {}.", k);
                 ui.close_menu();
                 return true;
             }
-            Err(e) => println!("Error borrando clave {}", e),
+            Err(e) => error!("Error borrando clave {}", e),
         }
         ui.close_menu();
     }
