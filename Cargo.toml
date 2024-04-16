@@ -27,11 +27,11 @@ opt-level = 3
 egui-dynamic = { version = "0.1.0", path = "egui-dynamic", package = "egui-dynamic" }
 
 uuid = "1.8.0"
-eframe="0.26.2"
+eframe="0.27.2"
 serde = "1.0.197"
 serde_json = "1.0.115"
-egui_extras = "0.26.2"
-egui_json_tree = "0.4.0"
+egui_extras = "0.27.2"
+egui_json_tree = "0.5.0"
 chrono = { version = "0.4.37", features = ["serde"] }
 futures = "0.3.30"                                     # Para lanzar futuros a los que esperar en rendimiento y Mongo.
 tokio = { version = "1.37.0", features = ["full"] }    # tokio[full] porque al final entre rt/sync/fs/io necesito casi todas.
@@ -40,14 +40,14 @@ enum-map = { version = "2.7.3", features = ["serde"] } # Necesario para common/s
 # ---------------------------------------------------------------------------
 # Módulo HTTP
 # ---------------------------------------------------------------------------
-reqwest = { version = "0.11.27", features = ["json"] }
-egui_plot = "0.26.2" # Para gráficas en panel de rendimiento.
+reqwest = { version = "0.12.3", features = ["json"] }
+egui_plot = "0.27.2" # Para gráficas en panel de rendimiento.
 
 # ---------------------------------------------------------------------------
 # Módulo SQLx
 # ---------------------------------------------------------------------------
 sqlx = { version = "0.7.4", features = [ "runtime-tokio", "tls-native-tls", "sqlite", "chrono", "mysql", "postgres", "uuid", "json", "rust_decimal" ] }
-egui-file-dialog = "0.4.0" # Para buscar archivo de sqlite.
+egui-file-dialog = "0.5.0" # Para buscar archivo de sqlite.
 regex = "1.10.4"           # Para extraer la acción que se correponse con la consulta escrita.
 rust_decimal = "1.35.0"    # Tipos decimales en mysql.
 
@@ -59,7 +59,7 @@ redis = { version = "0.1.0", path = "redis-dynamic", package = "redis-dynamic" }
 # ----------------------------------------------------------------
 # Mongo
 # ----------------------------------------------------------------
-bson = { version = "2.9.0", features = ["chrono-0_4"] }
+bson = { version = "2.10.0", features = ["chrono-0_4"] }
 mongodb = "2.8.2" # Por defecto ya lleva `tokio`.
 
 # ---------------------------------------------------------------------------
