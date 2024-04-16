@@ -100,9 +100,10 @@ impl eframe::App for Asapi {
         });
 
         match self.app_state.selected_view {
-            ViewType::Redis => self
-                .redis
-                .update(ctx, _frame, &mut self.app_state, &self.rt, &i18n),
+            ViewType::Redis => {
+                self.redis
+                    .update(ctx, _frame, &mut self.app_state.redis, &self.rt, &i18n)
+            }
         }
     }
 }

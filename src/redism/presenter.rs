@@ -118,12 +118,15 @@ pub fn create_conn_with_default(host: &str, port: &str) -> Result<redis::Connect
     create_conn(&host, port)
 }
 
-pub fn scan(state: &mut RedisLocalState, app_st: &RedisAppState) -> RedisResult<()> {
+pub fn scan(state: &mut RedisLocalState) -> RedisResult<()> {
     // let client = Client::open("redis://127.0.0.1/")?;
     // let mut con: Connection = client.get_connection()?;
     // let port = app_state.redis.port.parse::<i16>().unwrap_or(6379); // Using 6379 as default value;
     // let mut con: Connection = create_conn(&app_state.redis.host, port)?;
-    let mut con: Connection = create_conn_with_default(&app_st.host, &app_st.port)?;
+    let mut con: Connection = create_conn_with_default(
+        &state.current_connection.host,
+        &state.current_connection.port,
+    )?;
     let mut cursor: u64 = 0;
 
     state.reset();

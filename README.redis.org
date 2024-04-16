@@ -1,0 +1,2 @@
+* Redis
+** TODO [#A] Tener listado de conexiones y conexión temporal como en el resto

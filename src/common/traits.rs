@@ -17,3 +17,9 @@ pub trait Show {
 pub trait Runner<T> {
     fn run() -> T;
 }
+
+// Para definir cómo se genera la url de conexión a partir
+// de una definición de una conexión.
+pub trait ToUrl {
+    fn to_url(&self) -> String;
+}
