@@ -7,12 +7,24 @@
 // -------------------------------------------------------------------------
 
 use bson::{doc, Bson, Document};
-use serde_json::Value;
+use serde_json::{Value, Map};
 
 use crate::info;
 
 use super::{filter::MongoFilter, filter::MongoOperator};
 
+pub fn json_value_to_document(value: &Value) -> Document {
+    match value {
+        Value::Object(obj) => {
+            let doc: Document = obj
+                .iter()
+                .map(|(k, v)| (k.clone(), json_value_to_bson(v)))
+                .collect();
+            doc
+        }
+        _ => doc! {},
+    }
+}
 pub fn json_value_to_bson(value: &Value) -> Bson {
     match value {
         Value::Null => Bson::Null,
@@ -109,15 +121,47 @@ pub fn doc_to_pretty_string(docs: &[Document]) -> String {
     serde_json::to_string_pretty(&json).unwrap()
 }
 
+
 /// Convertimos BSON a serde_json::Value
 ///
 /// En caso de error en alguno de los pasos que se dan para hacer la
 /// transformación, devolvemos un `Value::Null`.
+/// Hay que tratar con especial cuidado el `ObjectId` por cómo lo maneja
+/// `serde_json`, porque al ser un `enum::ObjectId(oid: String)` crea un
+/// nuevo campo y el `_id` queda de la forma
+///     {"_id": {"$oid": "...."}}
+/// lo que es incorrecto.
 pub fn doc_to_serde_value(doc_bson: &Document) -> Value {
     serde_json::to_value(&doc_bson)
         .ok()
+        .map(|value: serde_json::Value| adjust_object_id(&value))
         .unwrap_or_else(|| serde_json::Value::Null)
 }
+
+fn adjust_object_id(value: &Value) -> Value {
+    match value {
+        Value::Object(obj) => {
+            let mut new_obj = Map::new();
+            for (key, val) in obj {
+                if key == "_id" && val.is_object() && val.get("$oid").is_some() {
+                    // Extraemos la cadena del $oid si es posible y la usamos como el nuevo valor de "_id".
+                    if let Some(oid_value) = val.get("$oid") {
+                        new_obj.insert(key.clone(), oid_value.clone());
+                    }
+                } else {
+                    // Recursión por si hay más $oid
+                    new_obj.insert(key.clone(), adjust_object_id(val));
+                }
+            }
+            Value::Object(new_obj)
+        },
+        Value::Array(arr) => {
+            Value::Array(arr.iter().map(adjust_object_id).collect())
+        },
+        _ => value.clone(),  // Los primitivos los copio.
+    }
+}
+
 
 pub fn pprint_docs(docs: &[Document]) {
     info!("{}", doc_to_pretty_string(docs));

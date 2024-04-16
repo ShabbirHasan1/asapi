@@ -6,12 +6,11 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
-use std::collections::{HashMap, VecDeque};
-
 use bson::Document;
 use eframe::egui::{self, Context};
 use egui_json_tree::JsonTree;
 use serde_json::{json, Value};
+use std::collections::VecDeque;
 use tokio::runtime::Runtime;
 
 use crate::common::internationalization::I18n;
@@ -272,7 +271,7 @@ impl MongoView {
         }
     }
 
-    pub fn user_defined_filter_input(&mut self, ctx: &Context, ui: &mut egui::Ui) {
+    pub fn user_defined_filter_input(&mut self, ctx: &Context, ui: &mut egui::Ui, i18n: &I18n) {
         let theme = CodeTheme::from_memory(ctx);
         let mut layouter = |ui: &egui::Ui, string: &str, wrap_width: f32| {
             let mut layout_job = highlight(ui.ctx(), &theme, string, "json");
@@ -280,9 +279,14 @@ impl MongoView {
             ui.fonts(|f| f.layout_job(layout_job))
         };
 
-        if self.state.selected_action == MongoAction::ReplaceOne {
-            ui.label("Filter");
+        let show_filter_and_new_doc = self.state.selected_action == MongoAction::ReplaceOne
+            || self.state.selected_action == MongoAction::UpdateMany
+            || self.state.selected_action == MongoAction::UpdateOne;
+
+        if show_filter_and_new_doc {
+            ui.heading(egui::RichText::new(&i18n.mongo_filter_heading).strong());
         }
+
         ui.add(
             egui::TextEdit::multiline(&mut self.state.current_selection.user_free_input)
                 .font(egui::TextStyle::Monospace)
@@ -292,8 +296,9 @@ impl MongoView {
                 .desired_width(f32::INFINITY)
                 .layouter(&mut layouter),
         );
-        if self.state.selected_action == MongoAction::ReplaceOne {
-            ui.label("New Document");
+
+        if show_filter_and_new_doc {
+            ui.heading(egui::RichText::new(&i18n.mongo_new_document_heading).strong());
             ui.add(
                 egui::TextEdit::multiline(&mut self.state.current_selection.replace_new_document)
                     .font(egui::TextStyle::Monospace)

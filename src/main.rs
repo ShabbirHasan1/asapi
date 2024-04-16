@@ -21,7 +21,7 @@ use eframe::egui;
 use mongom::view::MongoView;
 use std::fs::{self, OpenOptions};
 
-use common::internationalization::{language_selector, I18n};
+use common::internationalization::language_selector;
 use components::top_bar::AppTopBar;
 
 use crate::app_state::{AppState, ViewType};

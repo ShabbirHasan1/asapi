@@ -81,6 +81,10 @@ pub struct I18n {
     pub mongo_error_client_uninitialized: String,
     pub mongo_delete_filter: String,
     pub mongo_wrong_action: String,
+    pub mongo_filter_heading: String,
+    pub mongo_new_document_heading: String,
+    pub mongo_doc_menu_copy: String,
+    pub mongo_doc_menu_delete_by_id: String,
 
     // Postgres
     pub pg_connection_host: String,
@@ -178,7 +182,11 @@ pub fn language_selector(i: I18nOptions) -> I18n {
             mongo_error_client_uninitialized: String::from("Cliente no Inicializado"),
             mongo_delete_filter: String::from("Borrar Filtro"),
             mongo_wrong_action: String::from("Acción Incorrecta"),
-
+            mongo_filter_heading: String::from("Filtro"),
+            mongo_new_document_heading: String::from("Nuevo Documento"),
+            mongo_doc_menu_copy: String::from("Copiar Documento"),
+            mongo_doc_menu_delete_by_id: String::from("Borrar usando _id"),
+            
             // Postgres
             pg_connection_host: "Host".to_owned(),
             pg_connection_port: "Puerto".to_owned(),
@@ -273,6 +281,10 @@ pub fn language_selector(i: I18nOptions) -> I18n {
             mongo_error_client_uninitialized: String::from("Client does not Exists"),
             mongo_delete_filter: String::from("Delete Filter"),
             mongo_wrong_action: String::from("Wrong Action"),
+            mongo_filter_heading: String::from("Filter"),
+            mongo_new_document_heading: String::from("New Document"),
+            mongo_doc_menu_copy: String::from("Copy Document"),
+            mongo_doc_menu_delete_by_id: String::from("Delete using _id"),
 
             // Postgres
             pg_info_performance_table: "Deletion is forbidden for performance table.\nSelect this for massive quantity of cells (rows x columns), order of 1e5, or when massive amount of data inside the cells, like long varchar, big json/binaries/arrays or geographical data.".to_owned(),

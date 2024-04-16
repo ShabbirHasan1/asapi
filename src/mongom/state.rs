@@ -23,6 +23,7 @@ pub enum MongoMessage {
     InsertionSuccess,
     ReplaceSuccess,
     DeleteSuccess,
+    UpdateSuccess,
     // Para enviar las claves que hay en el primer nivel de los documentos
     FirstLevelCollectionKeys(HashSet<String>),
 }

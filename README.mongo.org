@@ -1,13 +1,20 @@
 #+STARTUP: logdone
 
 * Mongo
+*** [#C] Intentar en /update/ poder pasar /pipeline/
+Para hacer una /pipeline/ es necesario pasar vector de /document/ al =update_many=, no un único documento al que añado =$set=.
+*** [#B] Poder usar /aggregate/
+https://www.mongodb.com/docs/drivers/rust/current/fundamentals/aggregation/
+*** DONE [#A] Menú contextual con tres puntos como sql, para al menos borrar objeto
+CLOSED: [2024-04-16 mar 12:14]
+*** DONE ReplaceOne/ReplaceMany
+CLOSED: [2024-04-16 mar 10:01]
+*** DONE UpdateOne/UpdateMany
+CLOSED: [2024-04-16 mar 10:01]
 *** DONE InsertOne/InsertMany
 CLOSED: [2024-04-15 lun 14:25]
 *** DONE DeleteOne/DeleteMany
 CLOSED: [2024-04-15 lun 14:38]
-*** UpdateOne/UpdateMany
-*** ReplaceOne/ReplaceMany
-*** Menú contextual con tres puntos como sql, para al menos borrar objeto
 *** DONE Cuando tenga /NOT/, sus hijos no pueden ser /and/or/nor/.
 CLOSED: [2024-04-12 vie 13:07]
 *** DONE Que el /not/ de los filtros sea funcional.

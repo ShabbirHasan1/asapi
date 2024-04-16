@@ -14,6 +14,7 @@ use std::collections::HashSet;
 use tokio::sync::mpsc::Sender;
 
 use crate::common::internationalization::I18n;
+use crate::mongom::parser::doc_to_serde_value;
 use crate::{error, info};
 
 use super::{
@@ -96,7 +97,8 @@ pub async fn find(
         }
     };
 
-    let jsons: Vec<Value> = docs.iter().map(|doc| serde_json::json!(doc)).collect();
+    let jsons: Vec<Value> = docs.iter().map(doc_to_serde_value).collect();
+
     let first_level_keys = docs
         .iter()
         .flat_map(|doc| doc.keys())
@@ -109,11 +111,6 @@ pub async fn find(
     let _ = tx
         .send(MongoMessage::FirstLevelCollectionKeys(first_level_keys))
         .await;
-
-    info!(
-        "find many {:?} in db [{}], col [{}]",
-        docs, db_name, col_name
-    );
 
     Ok((docs, jsons))
 }
@@ -147,9 +144,38 @@ pub async fn insert(
     Ok(())
 }
 
+pub async fn update(
+    tx: &Sender<MongoMessage>,
+    client: &Client,
+    db_name: &str,
+    col_name: &str,
+    filter: Document,
+    doc: Document,
+    action: MongoAction,
+) -> MongoResult<()> {
+    let db = client.database(db_name);
+    let collection = db.collection::<Document>(col_name);
+
+    info!("filter\n{:?}", filter);
+
+    // Esta comprobación es redundante si el cliente es solo MongoView.insert
+    if action == MongoAction::UpdateOne {
+        let _ = collection
+            .update_one(filter, doc! { "$set": doc }, None)
+            .await?;
+    } else {
+        let _ = collection
+            .update_many(filter, doc! { "$set": doc }, None)
+            .await?;
+    };
+
+    let _ = tx.send(MongoMessage::UpdateSuccess).await;
+
+    Ok(())
+}
+
 pub async fn replace(
     tx: &Sender<MongoMessage>,
-    i18n: &I18n,
     client: &Client,
     db_name: &str,
     col_name: &str,
@@ -168,10 +194,8 @@ pub async fn replace(
     Ok(())
 }
 
-
 pub async fn delete(
     tx: &Sender<MongoMessage>,
-    i18n: &I18n,
     client: &Client,
     db_name: &str,
     col_name: &str,
@@ -184,6 +208,7 @@ pub async fn delete(
 
     // Esta comprobación es redundante si el cliente es solo MongoView.insert
     if action == MongoAction::DeleteOne {
+        info!("Documento a borrar\n{:?}", doc);
         let _ = collection.delete_one(doc, None).await?;
     } else {
         let _ = collection.delete_many(doc, None).await?;

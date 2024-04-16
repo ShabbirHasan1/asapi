@@ -92,6 +92,7 @@ impl MongoView {
             if message == MongoMessage::InsertionSuccess
                 || message == MongoMessage::DeleteSuccess
                 || message == MongoMessage::ReplaceSuccess
+                || message == MongoMessage::UpdateSuccess
             {
                 self.find_all(rt, ctx);
             } else {
@@ -149,7 +150,7 @@ impl MongoView {
             if !show_user_free && compound_filter_available {
                 self.compound_filter_constructor(rt, ctx, i18n, ui);
             } else {
-                self.user_defined_filter_input(ctx, ui);
+                self.user_defined_filter_input(ctx, ui, i18n);
             }
 
             ui.horizontal(|ui| {
@@ -188,11 +189,13 @@ impl MongoView {
                             self.insert(rt, ctx, i18n);
                         }
                         MongoAction::DeleteOne | MongoAction::DeleteMany => {
-                            self.delete(rt, ctx, i18n);
+                            self.delete(rt, ctx);
                         }
-                        MongoAction::UpdateOne | MongoAction::UpdateMany => {}
                         MongoAction::ReplaceOne => {
-                            self.replace(rt, ctx, i18n);
+                            self.replace(rt, ctx);
+                        }
+                        MongoAction::UpdateOne | MongoAction::UpdateMany => {
+                            self.update_doc(rt, ctx, i18n);
                         }
                     }
                 }
@@ -203,7 +206,7 @@ impl MongoView {
             egui::ScrollArea::vertical()
                 .id_source("mongo_central_panel")
                 .show(ui, |ui| {
-                    self.find_panel(ui);
+                    self.find_panel(rt, &self.tx.clone(), ui, i18n);
                 });
         });
     }
@@ -236,14 +239,13 @@ impl MongoView {
             MongoMessage::Error(s) => {
                 self.state.last_error = Some(s);
             }
-            // Mensajes que no quiero procesar porque proceso antes de la llamada
-            // a esta función. Dejo explicitado para que me dé error, si uso `_`
-            // se me colará algún bug.
-            // `MongoMessage::InsertionSuccess/DeleteSuccess` está procesado arriba, no aquí bajo, de
-            // forma independiente, para no tener que pasar ctx/rt/tx a la función.
-            MongoMessage::DeleteSuccess => {}
-            MongoMessage::InsertionSuccess => {}
-            MongoMessage::ReplaceSuccess => {}
+            // `MongoMessage::InsertionSuccess/DeleteSuccess/ReplaceSuccess/UpdateSuccess` está
+            // procesado arriba, no aquí bajo, de forma independiente, para no tener que pasar
+            // ctx/rt/tx a la función.
+            MongoMessage::DeleteSuccess
+            | MongoMessage::InsertionSuccess
+            | MongoMessage::ReplaceSuccess
+            | MongoMessage::UpdateSuccess => {}
         }
     }
 }

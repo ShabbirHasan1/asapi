@@ -6,18 +6,58 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
-use crate::mongom::{presenter, state::MongoMessage, view::MongoView};
-use bson::{doc, Document};
+use bson::{doc, oid::ObjectId, Document};
 use eframe::egui;
 use egui_json_tree::JsonTree;
-use tokio::runtime::Runtime;
+use tokio::{runtime::Runtime, sync::mpsc::Sender};
+
+use crate::{
+    common::internationalization::I18n,
+    mongom::{
+        actions::MongoAction, presenter, state::MongoMessage,
+        view::MongoView,
+    },
+};
+
 
 impl MongoView {
-    pub fn find_panel(&mut self, ui: &mut egui::Ui) {
+    pub fn find_panel(&mut self, rt: &Runtime, tx: &Sender<MongoMessage>, ui: &mut egui::Ui, i18n: &I18n) {
         for (idx, doc) in self.state.current_col_find_json_result.iter().enumerate() {
             // TODO: 24/04/01
             // Usar idx hasta que seca cómo extraer el `_id` del documento.
-            JsonTree::new(idx, doc).show(ui);
+            ui.horizontal(|ui| {
+                ui.menu_button((1 + idx).to_string(), |ui| {
+                    if ui.button(&i18n.mongo_doc_menu_copy).clicked() {
+                        ui.ctx().copy_text(format!("{:?}", doc));
+                        ui.close_menu();
+                    }
+
+                    // --> Borrar Fila <--
+                    if ui.button(&i18n.mongo_doc_menu_delete_by_id).clicked() {
+                        let id_string = doc.get("_id");
+                        let oid = id_string
+                            .and_then(|s|s.as_str())
+                            .and_then(|s| ObjectId::parse_str(s).ok());
+
+                        match oid {
+                            Some(oid) => {
+                                self.delete_action(
+                                    rt,
+                                    ui.ctx(),
+                                    doc! { "_id": oid },
+                                    MongoAction::DeleteOne,
+                                );
+                            },
+                            None => {
+                                tx.send(MongoMessage::Error(format!("{:?} no parseable a ObjectId", id_string)));
+                            },
+                        }
+
+                        ui.close_menu();
+                    }
+                });
+                JsonTree::new(idx, doc).show(ui);
+            });
         }
     }
 
