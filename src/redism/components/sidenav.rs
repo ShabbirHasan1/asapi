@@ -195,78 +195,94 @@ impl RedisView {
     }
 
     fn show_data_structures(&mut self, ui: &mut egui::Ui) {
-        ui.separator();
-
-        egui::Grid::new("mongo_all_data_structures")
-            .num_columns(2)
+        egui::ScrollArea::vertical()
+            .id_source("scroll_para_ds")
             .show(ui, |ui| {
-                ui.label(egui::RichText::new("Info").color(egui::Color32::from_rgb(128, 128, 128)))
-                    .on_hover_ui(|ui| {
-                        show_ds_info(ui, &self.state);
-                    });
-                ui.selectable_value(
-                    &mut self.state.selected_menu,
-                    RedisMenu::All,
-                    format!("{:#?}", RedisMenu::All),
-                );
-                ui.end_row()
-            });
+                ui.separator();
 
-        ui_color_separator(ui, egui::Color32::LIGHT_GRAY);
-
-        egui::Grid::new("mongo_data_structures")
-            .num_columns(2)
-            .show(ui, |ui| {
-                for option in RedisMenu::iter().filter(|e| {
-                    **e != RedisMenu::All && **e != RedisMenu::PubSub && **e != RedisMenu::Json
-                }) {
-                    ui.label(
-                        egui::RichText::new("Info").color(egui::Color32::from_rgb(128, 128, 128)),
-                    )
-                    .on_hover_ui(|ui| {
-                        show_ds_info(ui, &self.state);
+                egui::Grid::new("mongo_all_data_structures")
+                    .num_columns(2)
+                    .show(ui, |ui| {
+                        ui.label(
+                            egui::RichText::new("Info")
+                                .color(egui::Color32::from_rgb(128, 128, 128)),
+                        )
+                        .on_hover_ui(|ui| {
+                            show_ds_info(ui, &self.state);
+                        });
+                        ui.selectable_value(
+                            &mut self.state.selected_menu,
+                            RedisMenu::All,
+                            format!("{:#?}", RedisMenu::All),
+                        );
+                        ui.end_row()
                     });
 
-                    ui.selectable_value(
-                        &mut self.state.selected_menu,
-                        option.clone(),
-                        format!("{:#?}", option),
-                    );
+                ui_color_separator(ui, egui::Color32::LIGHT_GRAY);
 
-                    ui.end_row();
-                }
-            });
+                egui::Grid::new("mongo_data_structures")
+                    .num_columns(2)
+                    .show(ui, |ui| {
+                        for option in RedisMenu::iter().filter(|e| {
+                            **e != RedisMenu::All
+                                && **e != RedisMenu::PubSub
+                                && **e != RedisMenu::Json
+                        }) {
+                            ui.label(
+                                egui::RichText::new("Info")
+                                    .color(egui::Color32::from_rgb(128, 128, 128)),
+                            )
+                            .on_hover_ui(|ui| {
+                                show_ds_info(ui, &self.state);
+                            });
 
-        ui.separator();
+                            ui.selectable_value(
+                                &mut self.state.selected_menu,
+                                option.clone(),
+                                format!("{:#?}", option),
+                            );
 
-        egui::Grid::new("mongo_json_data_structure")
-            .num_columns(2)
-            .show(ui, |ui| {
-                ui.label(egui::RichText::new("Info").color(egui::Color32::from_rgb(128, 128, 128)))
-                    .on_hover_ui(|ui| {
-                        show_json_info(ui, &self.state);
+                            ui.end_row();
+                        }
                     });
-                ui.selectable_value(
-                    &mut self.state.selected_menu,
-                    RedisMenu::Json,
-                    format!("{:#?}", RedisMenu::Json),
-                );
-                ui.end_row()
-            });
 
-        egui::Grid::new("mongo_pubsub_data_structure")
-            .num_columns(2)
-            .show(ui, |ui| {
-                ui.label(egui::RichText::new("Info").color(egui::Color32::from_rgb(128, 128, 128)))
-                    .on_hover_ui(|ui| {
-                        show_pubsub_info(ui, &self.pubsub);
+                ui.separator();
+
+                egui::Grid::new("mongo_json_data_structure")
+                    .num_columns(2)
+                    .show(ui, |ui| {
+                        ui.label(
+                            egui::RichText::new("Info")
+                                .color(egui::Color32::from_rgb(128, 128, 128)),
+                        )
+                        .on_hover_ui(|ui| {
+                            show_json_info(ui, &self.state);
+                        });
+                        ui.selectable_value(
+                            &mut self.state.selected_menu,
+                            RedisMenu::Json,
+                            format!("{:#?}", RedisMenu::Json),
+                        );
+                        ui.end_row()
                     });
-                ui.selectable_value(
-                    &mut self.state.selected_menu,
-                    RedisMenu::PubSub,
-                    format!("{:#?}", RedisMenu::PubSub),
-                );
-                ui.end_row()
+
+                egui::Grid::new("mongo_pubsub_data_structure")
+                    .num_columns(2)
+                    .show(ui, |ui| {
+                        ui.label(
+                            egui::RichText::new("Info")
+                                .color(egui::Color32::from_rgb(128, 128, 128)),
+                        )
+                        .on_hover_ui(|ui| {
+                            show_pubsub_info(ui, &self.pubsub);
+                        });
+                        ui.selectable_value(
+                            &mut self.state.selected_menu,
+                            RedisMenu::PubSub,
+                            format!("{:#?}", RedisMenu::PubSub),
+                        );
+                        ui.end_row()
+                    });
             });
     }
 }
