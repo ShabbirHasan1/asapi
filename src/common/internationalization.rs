@@ -93,6 +93,8 @@ pub struct I18n {
     pub redis_connection_port: String,
     pub redis_edit_connection_cancel: String,
     pub redis_edit_connection_save: String,
+    pub redis_close_connection: String,
+    pub redis_delete_connection: String,
 
     // Postgres
     pub pg_connection_host: String,
@@ -202,6 +204,8 @@ pub fn language_selector(i: I18nOptions) -> I18n {
             redis_data_structures: String::from("Estructuras de Datos"),
             redis_edit_connection_cancel: String::from("Cancelar"),
             redis_edit_connection_save: String::from("Guardar"),
+            redis_close_connection: String::from("Editar Conexión"),
+            redis_delete_connection: String::from("Borrar Conexión"),
 
             // Postgres
             pg_connection_host: "Host".to_owned(),
@@ -309,6 +313,8 @@ pub fn language_selector(i: I18nOptions) -> I18n {
             redis_edit_connection_save: String::from("Save"),
             redis_connection_host: String::from("Host"),
             redis_connection_port: String::from("Port"),
+            redis_close_connection: String::from("Edit Connection"),
+            redis_delete_connection: String::from("Delete Connection"),
 
             // Postgres
             pg_info_performance_table: "Deletion is forbidden for performance table.\nSelect this for massive quantity of cells (rows x columns), order of 1e5, or when massive amount of data inside the cells, like long varchar, big json/binaries/arrays or geographical data.".to_owned(),

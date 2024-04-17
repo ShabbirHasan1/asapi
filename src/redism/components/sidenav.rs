@@ -10,16 +10,13 @@ use std::collections::HashSet;
 
 use eframe::egui::{self, Context};
 use egui_extras::{Size, StripBuilder};
-use redis::ConnectionLike;
-use tokio::runtime::Runtime;
 
 use crate::{
-    app_state,
     common::internationalization::I18n,
     info,
     redism::{
         presenter::{self, RedisMenu},
-        state::{RedisAppState, RedisConnectionDefinition, RedisLocalState},
+        state::{PubSubState, RedisAppState, RedisConnectionDefinition, RedisLocalState},
         view::RedisView,
     },
 };
@@ -100,27 +97,13 @@ impl RedisView {
                             self.show_connections(ui, app_st, i18n);
                         });
                         strip.cell(|ui| {
-                            for option in RedisMenu::iterator() {
-                                let opt = option.clone();
-                                ui.selectable_value(
-                                    &mut self.state.selected_menu,
-                                    opt,
-                                    format!("{:#?}", option),
-                                );
-                            }
+                            self.show_data_structures(ui);
                         });
                     });
             } else if !self.state.hide_connections {
                 self.show_connections(ui, app_st, i18n);
             } else if !self.state.hide_data_structures {
-                for option in RedisMenu::iterator() {
-                    let opt = option.clone();
-                    ui.selectable_value(
-                        &mut self.state.selected_menu,
-                        opt,
-                        format!("{:#?}", option),
-                    );
-                }
+                self.show_data_structures(ui);
             }
         });
     }
@@ -154,14 +137,14 @@ impl RedisView {
 
                     // --> Menú contextual para manejo de las conexiones <--
                     button.context_menu(|ui| {
-                        if ui.button("Close Connection").clicked() {
+                        if ui.button(&i18n.redis_close_connection).clicked() {
                             // Este crate no requiere que cerremos explícitamente. Es más
                             // por cómo es redis que por que en sí haga algo especial.
                             self.state.conn = None;
                             self.state.current_connection_idx = usize::MAX;
                             ui.close_menu();
                         }
-                        if ui.button("Delete Connection").clicked() {
+                        if ui.button(&i18n.redis_delete_connection).clicked() {
                             connections_to_delete.insert(idx);
                             // Si la conexión que borramos existe, cerramos antes
                             if self.state.current_connection_idx != idx {
@@ -185,6 +168,12 @@ impl RedisView {
 
                         self.state.current_connection = conn.clone();
                         self.connect();
+                        // TODO: No compruebo la existencia de conexión porque `scan` crea la suya
+                        // propia. Habría que pasársela para no necesitar dicha conexión local,
+                        // aunque realmente podemos crear todas las que queramos.
+                        if let Err(err) = presenter::scan(&mut self.state) {
+                            self.state.last_response = Some(format!("ERROR {:?}", err));
+                        }
                     }
                 });
             }
@@ -200,4 +189,95 @@ impl RedisView {
             }
         });
     }
+
+    fn show_data_structures(&mut self, ui: &mut egui::Ui) {
+        ui.separator();
+
+        egui::Grid::new("mongo_all_data_structures")
+            .num_columns(2)
+            .show(ui, |ui| {
+                ui.label(egui::RichText::new("Info").color(egui::Color32::from_rgb(128, 128, 128)))
+                    .on_hover_ui(|ui| {
+                        show_ds_info(ui, &self.state);
+                    });
+                ui.selectable_value(
+                    &mut self.state.selected_menu,
+                    RedisMenu::All,
+                    format!("{:#?}", RedisMenu::All),
+                );
+                ui.end_row()
+            });
+
+        ui.separator();
+
+        egui::Grid::new("mongo_data_structures")
+            .num_columns(2)
+            .show(ui, |ui| {
+                for option in
+                    RedisMenu::iter().filter(|e| **e != RedisMenu::All && **e != RedisMenu::PubSub)
+                {
+                    ui.label(
+                        egui::RichText::new("Info").color(egui::Color32::from_rgb(128, 128, 128)),
+                    )
+                    .on_hover_ui(|ui| {
+                        show_ds_info(ui, &self.state);
+                    });
+
+                    ui.selectable_value(
+                        &mut self.state.selected_menu,
+                        option.clone(),
+                        format!("{:#?}", option),
+                    );
+
+                    ui.end_row();
+                }
+            });
+
+        ui.separator();
+
+        egui::Grid::new("mongo_pubsub_data_structure")
+            .num_columns(2)
+            .show(ui, |ui| {
+                ui.label(egui::RichText::new("Info").color(egui::Color32::from_rgb(128, 128, 128)))
+                    .on_hover_ui(|ui| {
+                        show_pubsub_info(ui, &self.pubsub);
+                    });
+                ui.selectable_value(
+                    &mut self.state.selected_menu,
+                    RedisMenu::PubSub,
+                    format!("{:#?}", RedisMenu::PubSub),
+                );
+                ui.end_row()
+            });
+    }
+}
+
+fn show_pubsub_info(ui: &mut egui::Ui, st: &PubSubState) {
+    egui::Grid::new("redis_pubsub_info")
+        .num_columns(2)
+        .show(ui, |ui| {
+            ui.label("Name");
+            ui.label("#Messages");
+            ui.end_row();
+
+            for (key, value) in st.messages.iter() {
+                ui.label(key);
+                ui.monospace(value.len().to_string());
+                ui.end_row();
+            }
+        });
+}
+
+fn show_ds_info(ui: &mut egui::Ui, st: &RedisLocalState) {
+    egui::Grid::new("redis_data_st_info")
+        .num_columns(6)
+        .show(ui, |ui| {
+            ui.label("Name");
+            ui.label("Data Type");
+            ui.label("Column Type");
+            ui.label("Is Nullable");
+            ui.label("Column Default");
+            ui.label("Column Key");
+            ui.end_row();
+        });
 }

@@ -120,10 +120,6 @@ impl RedisView {
                     // Hacemos n x m, pero solo pintamos una vez cada uno de esos bucles, alli
                     // donde le toca (en qué columna) a cada lista de mensajes
                     if n_col == column_idx {
-                        info!(
-                            "channel_idx {}, n_col {}, column_idx {}",
-                            channel_idx, n_col, column_idx
-                        );
                         ui.horizontal(|ui| {
                             ui.heading(format!("Channel {}", chan)).context_menu(|ui| {
                                 if ui.button("Clear Messages").clicked() {

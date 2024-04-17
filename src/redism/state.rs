@@ -66,6 +66,7 @@ pub struct RedisLocalState {
     pub tmp_connection: RedisConnectionDefinition,
     pub current_connection: RedisConnectionDefinition,
     pub current_connection_idx: usize,
+    pub last_response: Option<String>,
 }
 
 impl Default for RedisLocalState {
@@ -88,6 +89,7 @@ impl Default for RedisLocalState {
             tmp_connection: Default::default(),
             current_connection: Default::default(),
             current_connection_idx: usize::MAX,
+            last_response: None,
         }
     }
 }

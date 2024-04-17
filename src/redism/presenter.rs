@@ -6,13 +6,14 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
-use super::state::{RedisAppState, RedisLocalState};
-use crate::app_state::AppState;
-use crate::info;
 use redis::streams::{StreamReadOptions, StreamReadReply};
 use redis::{self, Client, Commands, Connection, Msg as PubSubMsg, RedisError, RedisResult, Value};
 use std::collections::HashMap;
 use std::slice::Iter;
+
+use crate::info;
+
+use super::state::RedisLocalState;
 
 #[derive(Clone, Debug, PartialEq, Copy)]
 pub enum RedisMenu {
@@ -24,7 +25,7 @@ pub enum RedisMenu {
 }
 
 impl RedisMenu {
-    pub fn iterator() -> Iter<'static, RedisMenu> {
+    pub fn iter() -> Iter<'static, RedisMenu> {
         static MENUS: [RedisMenu; 5] = [
             RedisMenu::All,
             RedisMenu::String,
@@ -120,6 +121,7 @@ pub fn create_conn_with_default(host: &str, port: &str) -> Result<redis::Connect
 }
 
 pub fn scan(state: &mut RedisLocalState) -> RedisResult<()> {
+    state.last_response = None;
     // let client = Client::open("redis://127.0.0.1/")?;
     // let mut con: Connection = client.get_connection()?;
     // let port = app_state.redis.port.parse::<i16>().unwrap_or(6379); // Using 6379 as default value;
