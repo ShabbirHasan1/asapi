@@ -1,16 +1,52 @@
+#+STARTUP: logdone
 * General
-** Añadir listas
-** Info de string en menú lateral
-** Info de stream en menú lateral
-** Info de hash en menú lateral
-** Poder añadir nombre a la conexión
+** TODO [#A] Info de string en menú lateral
+** TODO [#A] Info de stream en menú lateral
+** TODO [#A] Info de hash en menú lateral
+** TODO [#B] Poder añadir nombre a la conexión
+** TODO [#C] Vector database (familia de comandos =FT.loquesea=)
+** TODO [#C] El comando, /MultiLine/ en vez de /SingleLine/, y que se pueda hacer grande estirando.
+** TODO [#C] Poder manejar varias sesiones cada una con una conexión distinta, similar a los distintos espacios de trabajo del módulo HTTP.
+Aunque pueda parecer muy importane, tanto como hacerlo en Postgres, no creo que lo sea. Por eso C, no quiero gastar energía si no es necesario o útil o diferencial.
+** TODO [#C] Probar PubSub con Tokyo otra vez en vez de con /std::thread/.
+Está bien como está, simplemente por probar.
+** DONE Poder tener varias suscripciones.
+CLOSED: [2024-01-30 mar 06:55]
+** DONE Poder mostrar todas las estructuras o solo algunas en función de la selección del lateral.
+CLOSED: [2024-01-30 mar 06:54]
+** DONE Guardar configuración en /AppState/.
+CLOSED: [2024-01-12 vie 22:46]
+** DONE Poder copiar un stream y/o repostearlo, con un menú contextual.
+CLOSED: [2023-12-26 mar 10:56]
+** DONE Conectar
+CLOSED: [2023-12-06 mié 15:29]
+** DONE Mostrar qué elementos hay. Con scan creo que era como no se bloqueaba.
+CLOSED: [2023-12-06 mié 15:29]
+
+** DONE Añadir listas
+** DONE Ver/borrar streams
+CLOSED: [2024-01-29 lun 13:07]
+** DONE Ver/borrar strings (Get/Set)
+CLOSED: [2024-01-29 lun 13:08]
+** DONE Hash (ver/borrar)
+CLOSED: [2024-01-29 lun 17:29]
 ** DONE Información de pubsub en menú lateral
-** DONE [#A] Tener listado de conexiones y conexión temporal como en el resto
+** DONE Tener listado de conexiones y conexión temporal como en el resto
 
 * Json
-** TODO Representar los valores no como string sino como JsonTree
+** TODO [#A] Representar los valores no como string sino como JsonTree
 ** DONE Añadir
 He tenido que usar otra imagen de redis (redis-stack) y añadir la /feature/ json a cargo
+
+* Hash
+*** CANCELED [#B] Poder borrar en cascada un /hash/ entero borrando sus elementos.
+Esto se puede hacer simplemente con /del/, que borra cualquier estructura del tipo que sea asociada a una clave.
+
+* Subscripciones
+*** TODO [#A] Poder tener más de un Pub/Sub mostrando en pantalla en layout editable
+*** TODO [#B] Desconectar de subscripciones bajo demanda
+*** DONE PubSub
+CLOSED: [2024-01-30 mar 06:54]
 
 * Panel con acciones prefijadas
 Cuando seleccionems solamente una de las estructuras, hemos de mostrar el panel con acciones prefijadas. Es decir, cuando mostremos /All/ mostramos el campo para entrada con texto, cuando mostremos una estructura concreta solo el panel de ayuda.
