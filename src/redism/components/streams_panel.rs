@@ -10,6 +10,7 @@ use eframe::egui::{self, Label, Sense};
 use egui_json_tree::JsonTree;
 
 use crate::{
+    common::internationalization::I18n,
     error, info,
     redism::{presenter, utils::value_map_to_string_btree_map, view::RedisView},
 };
@@ -17,7 +18,7 @@ use crate::{
 use super::contextual_menus;
 
 impl RedisView {
-    pub fn show_streams(&mut self, ui: &mut egui::Ui) {
+    pub fn show_streams(&mut self, ui: &mut egui::Ui, i18n: &I18n) {
         {
             ui.set_width(ui.available_width());
             for (stream_name, v) in &self.state.streams {

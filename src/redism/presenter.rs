@@ -166,8 +166,14 @@ pub fn scan(state: &mut RedisLocalState) -> RedisResult<()> {
                         let value = con.lrange(key.clone(), 0, isize::MAX).unwrap();
                         state.lists.insert(key, value);
                     }
-                    "set" => info!("Set: {}", key),
-                    "zset" => info!("Sorted Set: {}", key),
+                    "set" => {
+                        let value = con.smembers(key.clone()).unwrap();
+                        state.sets.insert(key, value);
+                    }
+                    "zset" => {
+                        let value = con.zrange(key.clone(), 0, -1).unwrap();
+                        state.sorted_sets.insert(key, value);
+                    }
                     "hash" => {
                         let result: RedisResult<Vec<(String, String)>> = con.hgetall(key.clone());
 

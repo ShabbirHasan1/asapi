@@ -157,46 +157,69 @@ impl RedisView {
             // Bloques para mostrar unos u otros elementos
             // ===========================================
             egui::ScrollArea::vertical().show(ui, |ui| {
-                // --> Mostramos todos los paneles <--
-                if self.state.selected_menu == RedisMenu::All {
-                    egui::CollapsingHeader::new("Strings")
-                        .default_open(true)
-                        .show(ui, |ui| self.show_strings(ui, i18n));
-
-                    egui::CollapsingHeader::new("Lists")
-                        .default_open(true)
-                        .show(ui, |ui| self.show_lists(ui, i18n));
-
-                    egui::CollapsingHeader::new("Hashes")
-                        .default_open(true)
-                        .show(ui, |ui| self.show_hashes(ui));
-
-                    egui::CollapsingHeader::new("Streams")
-                        .default_open(true)
-                        .show(ui, |ui| self.show_streams(ui));
-                }
-                // --> Solo se muestra el panel seleccionado <--
-                else if self.state.selected_menu == RedisMenu::Hash {
-                    ui.heading(egui::RichText::new("Hashes").strong());
-                    self.show_hashes(ui);
-                } else if self.state.selected_menu == RedisMenu::String {
-                    ui.heading(egui::RichText::new("Strings").strong());
-                    self.show_strings(ui, i18n);
-                } else if self.state.selected_menu == RedisMenu::List {
-                    ui.heading(egui::RichText::new("Lists").strong());
-                    self.show_lists(ui, i18n);
-                } else if self.state.selected_menu == RedisMenu::Streams {
-                    ui.heading(egui::RichText::new("Streams").strong());
-                    self.show_streams(ui);
-                } else if self.state.selected_menu == RedisMenu::Json {
-                    ui.heading(egui::RichText::new("Json").strong());
-                    self.show_json(ui, i18n);
-                } else if self.state.selected_menu == RedisMenu::PubSub {
-                    ui.heading(egui::RichText::new("PubSub").strong());
-                    self.show_pubsub(ui, i18n);
-                }
+                match self.state.selected_menu {
+                    RedisMenu::All => self.show_all(ui, i18n),
+                    RedisMenu::String => {
+                        ui.heading(egui::RichText::new("Strings").strong());
+                        self.show_strings(ui, i18n);
+                    }
+                    RedisMenu::List => {
+                        ui.heading(egui::RichText::new("Lists").strong());
+                        self.show_lists(ui, i18n);
+                    }
+                    RedisMenu::Set => {
+                        ui.heading(egui::RichText::new("Set").strong());
+                        self.show_sets(ui, i18n);
+                    }
+                    RedisMenu::Hash => {
+                        ui.heading(egui::RichText::new("Hashes").strong());
+                        self.show_hashes(ui, i18n);
+                    }
+                    RedisMenu::SortedSet => {
+                        ui.heading(egui::RichText::new("SortedSet").strong());
+                        self.show_sorted_sets(ui, i18n);
+                    }
+                    RedisMenu::Streams => {
+                        ui.heading(egui::RichText::new("Streams").strong());
+                        self.show_streams(ui, i18n);
+                    }
+                    RedisMenu::Json => {
+                        ui.heading(egui::RichText::new("Json").strong());
+                        self.show_json(ui, i18n);
+                    }
+                    RedisMenu::PubSub => {
+                        ui.heading(egui::RichText::new("PubSub").strong());
+                        self.show_pubsub(ui, i18n);
+                    }
+                };
             });
         });
+    }
+
+    fn show_all(&mut self, ui: &mut egui::Ui, i18n: &I18n) {
+        egui::CollapsingHeader::new("Strings")
+            .default_open(true)
+            .show(ui, |ui| self.show_strings(ui, i18n));
+
+        egui::CollapsingHeader::new("Lists")
+            .default_open(true)
+            .show(ui, |ui| self.show_lists(ui, i18n));
+
+        egui::CollapsingHeader::new("Sets")
+            .default_open(true)
+            .show(ui, |ui| self.show_sets(ui, i18n));
+
+        egui::CollapsingHeader::new("Hashes")
+            .default_open(true)
+            .show(ui, |ui| self.show_hashes(ui, i18n));
+
+        egui::CollapsingHeader::new("Sorted Sets")
+            .default_open(true)
+            .show(ui, |ui| self.show_sorted_sets(ui, i18n));
+
+        egui::CollapsingHeader::new("Streams")
+            .default_open(true)
+            .show(ui, |ui| self.show_streams(ui, i18n));
     }
 
     pub fn connect(&mut self) {

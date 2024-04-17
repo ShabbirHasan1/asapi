@@ -50,6 +50,8 @@ pub struct RedisLocalState {
     pub cmd_history: Vec<String>,
     pub strings: Vec<(String, String)>,
     pub jsons: Vec<(String, String)>,
+    pub sets: HashMap<String, Vec<String>>,
+    pub sorted_sets: HashMap<String, Vec<String>>,
     pub lists: HashMap<String, Vec<String>>,
     pub streams: HashMap<String, Vec<String>>,
     pub hashes: HashMap<String, Vec<(String, String)>>, // nombre_hash: Lista de pares
@@ -92,6 +94,8 @@ impl Default for RedisLocalState {
             current_connection_idx: usize::MAX,
             jsons: Default::default(),
             lists: Default::default(),
+            sets: Default::default(),
+            sorted_sets: Default::default(),
         }
     }
 }
@@ -103,6 +107,8 @@ impl RedisLocalState {
         self.hashes.clear();
         self.jsons.clear();
         self.lists.clear();
+        self.sets.clear();
+        self.sorted_sets.clear();
     }
 
     pub fn reset_command(&mut self) {
