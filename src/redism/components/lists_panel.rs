@@ -14,11 +14,11 @@ use crate::{
 };
 
 impl RedisView {
-    pub fn show_strings(&mut self, ui: &mut egui::Ui, i18n: &I18n) {
-        egui::Grid::new("key/value")
+    pub fn show_lists(&mut self, ui: &mut egui::Ui, i18n: &I18n) {
+        egui::Grid::new("redis_lists")
             .spacing(egui::vec2(ui.spacing().item_spacing.x * 2.0, 0.0))
             .show(ui, |ui| {
-                for header in &self.state.strings {
+                for header in &self.state.lists {
                     ui.code(header.0.clone()).context_menu(|ui| {
                         if ui.button(&i18n.redis_delete_ds).clicked() {
                             match presenter::delete_key(
@@ -35,7 +35,7 @@ impl RedisView {
                             ui.close_menu();
                         }
                     });
-                    ui.label(header.1.clone());
+                    ui.label(format!("{:?}", header.1));
                     ui.end_row();
                 }
             });

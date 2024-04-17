@@ -162,7 +162,10 @@ pub fn scan(state: &mut RedisLocalState) -> RedisResult<()> {
                         let value = con.json_get(key.clone(), "$").unwrap();
                         state.jsons.push((key, value));
                     }
-                    "list" => info!("List: {}", key),
+                    "list" => {
+                        let value = con.lrange(key.clone(), 0, isize::MAX).unwrap();
+                        state.lists.insert(key, value);
+                    }
                     "set" => info!("Set: {}", key),
                     "zset" => info!("Sorted Set: {}", key),
                     "hash" => {

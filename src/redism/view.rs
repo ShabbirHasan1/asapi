@@ -159,13 +159,17 @@ impl RedisView {
             egui::ScrollArea::vertical().show(ui, |ui| {
                 // --> Mostramos todos los paneles <--
                 if self.state.selected_menu == RedisMenu::All {
+                    egui::CollapsingHeader::new("Strings")
+                        .default_open(true)
+                        .show(ui, |ui| self.show_strings(ui, i18n));
+
+                    egui::CollapsingHeader::new("Lists")
+                        .default_open(true)
+                        .show(ui, |ui| self.show_lists(ui, i18n));
+
                     egui::CollapsingHeader::new("Hashes")
                         .default_open(true)
                         .show(ui, |ui| self.show_hashes(ui));
-
-                    egui::CollapsingHeader::new("Strings")
-                        .default_open(true)
-                        .show(ui, |ui| self.show_strings(ui));
 
                     egui::CollapsingHeader::new("Streams")
                         .default_open(true)
@@ -177,7 +181,10 @@ impl RedisView {
                     self.show_hashes(ui);
                 } else if self.state.selected_menu == RedisMenu::String {
                     ui.heading(egui::RichText::new("Strings").strong());
-                    self.show_strings(ui);
+                    self.show_strings(ui, i18n);
+                } else if self.state.selected_menu == RedisMenu::List {
+                    ui.heading(egui::RichText::new("Lists").strong());
+                    self.show_lists(ui, i18n);
                 } else if self.state.selected_menu == RedisMenu::Streams {
                     ui.heading(egui::RichText::new("Streams").strong());
                     self.show_streams(ui);

@@ -19,7 +19,7 @@ impl RedisView {
             .spacing(egui::vec2(ui.spacing().item_spacing.x * 2.0, 0.0))
             .show(ui, |ui| {
                 for header in &self.state.jsons {
-                    ui.label(header.0.clone()).context_menu(|ui| {
+                    ui.code(header.0.clone()).context_menu(|ui| {
                         if ui.button("Delete").clicked() {
                             match presenter::delete_key(
                                 &self.state.current_connection.host,
@@ -35,7 +35,6 @@ impl RedisView {
                             ui.close_menu();
                         }
                     });
-                    ui.label(" : ");
                     ui.label(header.1.clone());
                     ui.end_row();
                 }
