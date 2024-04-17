@@ -7,4 +7,8 @@
 // -------------------------------------------------------------------------
 
 pub mod contextual_menus;
+pub mod hash_panel;
+pub mod pubsub_panel;
 pub mod sidenav;
+pub mod streams_panel;
+pub mod strings_panel;

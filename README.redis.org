@@ -1,2 +1,14 @@
-* Redis
+* General
 ** TODO [#A] Tener listado de conexiones y conexión temporal como en el resto
+
+* Panel con acciones prefijadas
+Cuando seleccionems solamente una de las estructuras, hemos de mostrar el panel con acciones prefijadas. Es decir, cuando mostremos /All/ mostramos el campo para entrada con texto, cuando mostremos una estructura concreta solo el panel de ayuda.
+Las acciones prefijadas no se pueden hacer con texto, sino usando la API de alto nivel de /redis-rust/.
+
+*** Strings
+Comandos a poner: /get/, /set/, /getset/[fn:1], /mget/, /mset/, /incr/, /decr/, /incrby/, /setnx/[fn:2], /getrange/, /ttl/ , /pttl/, /exists/
+
+* Footnotes
+[fn:2] Igual que nota [1].
+
+[fn:1] /deprecated/, pero podemos implementarla con /set/ y /get/ como parámetro.
