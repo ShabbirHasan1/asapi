@@ -13,6 +13,7 @@ use egui_extras::{Size, StripBuilder};
 
 use crate::{
     common::internationalization::I18n,
+    components::separators::ui_color_separator,
     info,
     redism::{
         presenter::{self, RedisMenu},
@@ -168,6 +169,7 @@ impl RedisView {
 
                         self.state.current_connection = conn.clone();
                         self.connect();
+                        self.state.command_last_result = "".to_owned();
                         // TODO: No compruebo la existencia de conexión porque `scan` crea la suya
                         // propia. Habría que pasársela para no necesitar dicha conexión local,
                         // aunque realmente podemos crear todas las que queramos.
@@ -209,14 +211,14 @@ impl RedisView {
                 ui.end_row()
             });
 
-        ui.separator();
+        ui_color_separator(ui, egui::Color32::LIGHT_GRAY);
 
         egui::Grid::new("mongo_data_structures")
             .num_columns(2)
             .show(ui, |ui| {
-                for option in
-                    RedisMenu::iter().filter(|e| **e != RedisMenu::All && **e != RedisMenu::PubSub)
-                {
+                for option in RedisMenu::iter().filter(|e| {
+                    **e != RedisMenu::All && **e != RedisMenu::PubSub && **e != RedisMenu::Json
+                }) {
                     ui.label(
                         egui::RichText::new("Info").color(egui::Color32::from_rgb(128, 128, 128)),
                     )
@@ -236,6 +238,21 @@ impl RedisView {
 
         ui.separator();
 
+        egui::Grid::new("mongo_json_data_structure")
+            .num_columns(2)
+            .show(ui, |ui| {
+                ui.label(egui::RichText::new("Info").color(egui::Color32::from_rgb(128, 128, 128)))
+                    .on_hover_ui(|ui| {
+                        show_json_info(ui, &self.state);
+                    });
+                ui.selectable_value(
+                    &mut self.state.selected_menu,
+                    RedisMenu::Json,
+                    format!("{:#?}", RedisMenu::Json),
+                );
+                ui.end_row()
+            });
+
         egui::Grid::new("mongo_pubsub_data_structure")
             .num_columns(2)
             .show(ui, |ui| {
@@ -251,6 +268,22 @@ impl RedisView {
                 ui.end_row()
             });
     }
+}
+
+fn show_json_info(ui: &mut egui::Ui, st: &RedisLocalState) {
+    egui::Grid::new("redis_json_info")
+        .num_columns(2)
+        .show(ui, |ui| {
+            ui.label("Object");
+            ui.label("#Chars");
+            ui.end_row();
+
+            for (key, value) in st.jsons.iter() {
+                ui.label(key);
+                ui.monospace(value.len().to_string());
+                ui.end_row();
+            }
+        });
 }
 
 fn show_pubsub_info(ui: &mut egui::Ui, st: &PubSubState) {

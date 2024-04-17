@@ -6,5 +6,6 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
+pub mod separators;
 pub mod toggle_switch;
 pub mod top_bar;
