@@ -7,10 +7,10 @@
 // -------------------------------------------------------------------------
 
 use std::fs;
-use std::io::{Error as IOError, ErrorKind};
-use tokio::fs as async_fs;
 use std::fs::OpenOptions;
 use std::io::Write;
+use std::io::{Error as IOError, ErrorKind};
+use tokio::fs as async_fs;
 
 use crate::app_state::AppState;
 
@@ -47,7 +47,6 @@ pub fn load_state(file_name: &str) -> Result<AppState, IOError> {
 
     Ok(state)
 }
-
 
 pub fn append_to_file(file_path: &str, text: &str) -> std::io::Result<()> {
     let mut file = OpenOptions::new()

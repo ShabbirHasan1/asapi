@@ -1,0 +1,27 @@
+* General
+** Añadir listas
+** Info de string en menú lateral
+** Info de stream en menú lateral
+** Info de hash en menú lateral
+** Poder añadir nombre a la conexión
+** DONE Información de pubsub en menú lateral
+** DONE [#A] Tener listado de conexiones y conexión temporal como en el resto
+
+* Json
+** TODO Representar los valores no como string sino como JsonTree
+** DONE Añadir
+He tenido que usar otra imagen de redis (redis-stack) y añadir la /feature/ json a cargo
+
+* Panel con acciones prefijadas
+Cuando seleccionems solamente una de las estructuras, hemos de mostrar el panel con acciones prefijadas. Es decir, cuando mostremos /All/ mostramos el campo para entrada con texto, cuando mostremos una estructura concreta solo el panel de ayuda.
+Las acciones prefijadas no se pueden hacer con texto, sino usando la API de alto nivel de /redis-rust/.
+
+*** Json
+Única forma de introducir valores porque el parseo del comando no es tan sencillo como el resto
+
+*** Strings
+Comandos a poner: /get/, /set/, /getset/[fn:1], /mget/, /mset/, /incr/, /decr/, /incrby/, /setnx/[fn:2], /getrange/, /setrange/, /ttl/ , /pttl/, /exists/, /append/, /getdel/, /strlen/
+
+* Footnotes
+[fn:2] Igual que nota [1].
+[fn:1] /deprecated/, pero podemos implementarla con /set/ y /get/ como parámetro.

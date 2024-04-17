@@ -6,7 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-redis = { version = "0.25.2", features = ["tokio-comp", "streams"] }
+redis = { version = "0.25.2", features = ["tokio-comp", "streams", "json"] }
 
 [lib]
 crate-type = ["dylib"]

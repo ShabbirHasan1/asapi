@@ -7,7 +7,7 @@
 // -------------------------------------------------------------------------
 
 use crate::{
-    info,
+    error, info,
     redism::{
         presenter::delete_stream_message,
         utils::{value_map_to_string, value_map_to_string_map},
@@ -66,7 +66,7 @@ pub fn stream_msg(
                 ui.close_menu();
                 return true;
             }
-            Err(e) => info!("Error borrando clave {}", e),
+            Err(e) => error!("Error borrando clave {}", e),
         }
         ui.close_menu();
     }

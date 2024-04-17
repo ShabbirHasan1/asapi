@@ -136,6 +136,7 @@ impl AppTopBar {
                         ui.close_menu();
                     }
                 });
+
                 let kafka_btn =
                     ui.selectable_value(&mut app_state.selected_view, ViewType::Kafka, "Kafka");
                 kafka_btn.context_menu(|ui| {
@@ -147,6 +148,7 @@ impl AppTopBar {
                         ui.close_menu();
                     }
                 });
+
                 let pg_btn =
                     ui.selectable_value(&mut app_state.selected_view, ViewType::Pg, "Postgres");
                 pg_btn.context_menu(|ui| {

@@ -7,3 +7,11 @@
 // -------------------------------------------------------------------------
 
 pub mod contextual_menus;
+pub mod hash_panel;
+pub mod json_panel;
+pub mod lists_panel;
+pub mod pubsub_panel;
+pub mod sets_panel;
+pub mod sidenav;
+pub mod streams_panel;
+pub mod strings_panel;

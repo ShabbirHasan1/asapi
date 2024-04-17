@@ -139,15 +139,16 @@ impl eframe::App for Asapi {
                 self.sqlite
                     .update(ctx, _frame, &mut self.app_state, &self.rt, &i18n)
             }
-            ViewType::Redis => self
-                .redis
-                .update(ctx, _frame, &mut self.app_state, &self.rt, &i18n),
             ViewType::Mongo => self
                 .mongo
                 .update(ctx, _frame, &mut self.app_state, &self.rt, &i18n),
             ViewType::Kafka => self
                 .kafka
                 .update(ctx, _frame, &mut self.app_state, &self.rt, &i18n),
+            ViewType::Redis => {
+                self.redis
+                    .update(ctx, _frame, &mut self.app_state.redis, &self.rt, &i18n)
+            }
         }
     }
 }

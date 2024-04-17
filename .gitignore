@@ -5,3 +5,4 @@ assets/
 .lsp/
 !/.cargo/config.toml
 redis-history
+infrastructure/data

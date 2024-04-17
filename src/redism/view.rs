@@ -6,29 +6,22 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
-use std::ops::RangeInclusive;
-
 use eframe::egui;
-use egui::{Label, Sense};
-use egui_json_tree::JsonTree;
-use serde_json;
 use tokio;
 use tokio::runtime::Runtime;
 
-use crate::app_state::AppState;
 use crate::common::fs::append_to_file;
 use crate::common::internationalization::I18n;
 use crate::error;
 use crate::info;
 
-use super::components::contextual_menus;
 use super::presenter::{self, RedisMenu};
+use super::state::RedisAppState;
 use super::state::{PubSubState, RedisLocalState};
-use super::utils::value_map_to_string_btree_map;
 
 pub struct RedisView {
-    state: RedisLocalState,
-    pubsub: PubSubState,
+    pub state: RedisLocalState,
+    pub pubsub: PubSubState,
 }
 
 impl Default for RedisView {
@@ -45,9 +38,9 @@ impl RedisView {
         &mut self,
         ctx: &egui::Context,
         _frame: &mut eframe::Frame,
-        app_state: &mut AppState,
+        app_st: &mut RedisAppState,
         _rt: &Runtime,
-        _i18n: &I18n,
+        i18n: &I18n,
     ) {
         // =======================================
         // Preparación de cada ciclo
@@ -58,7 +51,7 @@ impl RedisView {
         }
 
         if self.state.must_scan {
-            let _ = presenter::scan(&mut self.state, &app_state);
+            let _ = presenter::scan(&mut self.state);
             self.state.must_scan = false;
         }
         if self.state.is_first_update {
@@ -69,28 +62,8 @@ impl RedisView {
         // ===================================================================
         // Panel Lateral
         // ===================================================================
-        if app_state.redis.show_sidebar {
-            egui::SidePanel::left("side_panel").show(ctx, |ui| {
-                if ui.button("\u{27f3} Load").clicked() {
-                    let _ = presenter::scan(&mut self.state, &app_state);
-                }
-                ui.separator();
-                ui.set_width(200.0);
-                // TODO: Mejor separar PubSub puesto que no está conectado con los demás... solo puede ser
-                // conexión en vivo.
-                for option in RedisMenu::iterator() {
-                    // ui.label(format!("{idx} -- {:#?}", option));
-                    let opt = option.clone();
-                    if ui
-                        .selectable_value(
-                            &mut self.state.selected_menu,
-                            opt,
-                            format!("{:#?}", option),
-                        )
-                        .clicked()
-                    {}
-                }
-            });
+        if app_st.show_sidebar {
+            self.show_sidenav(ctx, app_st, i18n);
         }
 
         // ===================================================================
@@ -98,33 +71,11 @@ impl RedisView {
         // ===================================================================
         egui::CentralPanel::default().show(ctx, |ui| {
             if self.state.selected_menu != RedisMenu::PubSub {
-                // --> Definición de conexión <--
-                ui.horizontal(|ui| {
-                    ui.add(egui::TextEdit::singleline(&mut app_state.redis.host).hint_text("host"));
-                    ui.add(egui::TextEdit::singleline(&mut app_state.redis.port).hint_text("port"));
-                    if ui.button("Connect").clicked() {
-                        if let Ok(port) = app_state.redis.port.parse::<i16>() {
-                            // app_state.redis.port = port;
-                            match presenter::create_conn(&app_state.redis.host, port) {
-                                Ok(conn) => {
-                                    // TODO: Poner algún indicador visual de que tenemos conexión.
-                                    self.state.conn = Some(conn);
-                                    info!("Connected to Redis.");
-                                }
-                                Err(e) => {
-                                    self.state.conn = None;
-                                    info!("Error trying to connect to Redis: {:?}", e);
-                                }
-                            }
-                        }
-                    }
-                });
-
                 // --> Historia, movimiento y ejecución de comandos <--
                 ui.horizontal(|ui| {
                     let command_textedit =
                         egui::TextEdit::singleline(&mut self.state.current_command);
-                    let send_command_button = ui.button("Send Command");
+                    let send_command_button = ui.button(&i18n.redis_send_command);
                     let command_input = ui.add_sized(ui.available_size(), command_textedit);
 
                     // ArrowUp    ->  dirección pasado
@@ -144,14 +95,14 @@ impl RedisView {
 
                         // --> Ejecución de Comandos <--
                         match presenter::run_command(
-                            &app_state.redis.host,
-                            &app_state.redis.port,
+                            &self.state.current_connection.host,
+                            &self.state.current_connection.port,
                             self.state.current_command.as_str(),
                         ) {
                             Ok(result) => {
                                 info!("Result: {:?}", result);
                                 self.state.command_last_result = result;
-                                let _ = presenter::scan(&mut self.state, &app_state);
+                                let _ = presenter::scan(&mut self.state);
                             }
                             // TODO: Change color
                             Err(e) => {
@@ -206,349 +157,80 @@ impl RedisView {
             // Bloques para mostrar unos u otros elementos
             // ===========================================
             egui::ScrollArea::vertical().show(ui, |ui| {
-                // --> Strings <--
-                if self.state.selected_menu == RedisMenu::All
-                    || self.state.selected_menu == RedisMenu::Hash
-                {
-                    egui::CollapsingHeader::new("Hashes")
-                        .default_open(true)
-                        .show(ui, |ui| self.hash_component(ui, app_state));
-                }
-
-                // --> Hashes <--
-                if self.state.selected_menu == RedisMenu::All
-                    || self.state.selected_menu == RedisMenu::String
-                {
-                    egui::CollapsingHeader::new("Strings")
-                        .default_open(true)
-                        .show(ui, |ui| self.string_component(ui, app_state));
-                }
-
-                // --> Streams (sólo mostrar/borrar/enviar, sin subscribirnos) <--
-                if self.state.selected_menu == RedisMenu::All
-                    || self.state.selected_menu == RedisMenu::Streams
-                {
-                    egui::CollapsingHeader::new("Streams")
-                        .default_open(true)
-                        .show(ui, |ui| self.stream_component(ui, app_state));
-                }
-
-                // --> PubSub <--
-                if self.state.selected_menu == RedisMenu::PubSub {
-                    egui::CollapsingHeader::new("PubSub Publish")
-                        .default_open(true)
-                        .show(ui, |ui| {
-                            ui.horizontal(|ui| {
-                                ui.add(
-                                    egui::TextEdit::singleline(&mut self.pubsub.channel)
-                                        .hint_text("Channel"),
-                                );
-                                ui.add(
-                                    egui::TextEdit::singleline(&mut self.pubsub.value)
-                                        .hint_text("Value"),
-                                );
-                                if ui.button("Publish").clicked() {
-                                    let publish_response = presenter::publish_to_channel(
-                                        &app_state.redis.host,
-                                        &app_state.redis.port,
-                                        &self.pubsub.channel,
-                                        &self.pubsub.value,
-                                    );
-                                    info!("Publish response: {:?}", publish_response);
-                                }
-                            });
-                        });
-                    egui::CollapsingHeader::new("PubSub Subscribe")
-                        .default_open(true)
-                        .show(ui, |ui| {
-                            ui.horizontal(|ui| {
-                                ui.add(
-                                    egui::TextEdit::singleline(&mut self.pubsub.channel)
-                                        .hint_text("Channel"),
-                                );
-                                if ui.button("Subscribe").clicked() {
-                                    // Podríamos hacer esto arriba y activar/desactivar o mostrar/ocultar
-                                    // el botón, pero una (nimia) comprobación que nos ahorramos.
-                                    if self.pubsub.messages.contains_key(&self.pubsub.channel) {
-                                        info!("Already subscribed to {}", self.pubsub.channel);
-                                    } else {
-                                        let subscription =
-                                            presenter::subscribe_to_channel_std_thread(
-                                                &app_state.redis.host,
-                                                &app_state.redis.port,
-                                                &self.pubsub.channel,
-                                                // rt,
-                                                &self.pubsub.tx,
-                                            );
-                                        match subscription {
-                                            Ok(_) => {
-                                                self.pubsub.messages.insert(
-                                                    self.pubsub.channel.clone(),
-                                                    Vec::new(),
-                                                );
-                                            }
-                                            Err(err) => info!(
-                                                "Error trying to subscribe to {}\nError {:?}",
-                                                self.pubsub.channel, err
-                                            ),
-                                        }
-                                    }
-                                }
-                            });
-                        });
-
-                    // --> Leemos mensajes <--
-                    let max_n_cols = if self.pubsub.messages.len() > 3 {
-                        4
-                    } else {
-                        self.pubsub.messages.len()
-                    };
-
-                    while let Ok(message) = self.pubsub.rx.try_recv() {
-                        info!("Message: {:?}", message);
-                        let channel = message.get_channel_name();
-                        let msg_text: String = message.get_payload().unwrap();
-                        let reference_to_messages = self.pubsub.messages.get_mut(channel);
-                        match reference_to_messages {
-                            Some(vs) => vs.push(msg_text),
-                            // Aquí no debemos llegar nunca porque creamos la entrada al clicar `Subscribe`.
-                            None => {
-                                self.pubsub
-                                    .messages
-                                    .insert(channel.to_string(), vec![msg_text]);
-                            }
-                        }
-                        // Cada vez que leemos
+                match self.state.selected_menu {
+                    RedisMenu::All => self.show_all(ui, i18n),
+                    RedisMenu::String => {
+                        ui.heading(egui::RichText::new("Strings").strong());
+                        self.show_strings(ui, i18n);
                     }
-
-                    // --> Mostramos mensajes de PubSub <--
-                    let mut pubsub_channel_to_delete = "".to_string();
-                    let mut n_col = 0;
-
-                    let min_n_cols = if self.pubsub.messages.len() > 0 { 1 } else { 0 };
-                    ui.horizontal(|ui| {
-                        ui.label("Number of Columns");
-                        ui.add(
-                            egui::DragValue::new(&mut self.pubsub.n_columns)
-                                .clamp_range(RangeInclusive::new(min_n_cols, max_n_cols)),
-                        );
-                    });
-                    // Necesario para cuando empiezan a haber datos
-                    if min_n_cols == 1 && self.pubsub.n_columns == 0 {
-                        self.pubsub.n_columns = max_n_cols;
+                    RedisMenu::List => {
+                        ui.heading(egui::RichText::new("Lists").strong());
+                        self.show_lists(ui, i18n);
                     }
-
-                    ui.columns(self.pubsub.n_columns, |uis| {
-                        for ui in uis {
-                            for (channel_idx, (chan, msg_ls)) in
-                                self.pubsub.messages.iter_mut().enumerate()
-                            {
-                                let column_idx = channel_idx % self.pubsub.n_columns;
-                                // Hacemos n x m, pero solo pintamos una vez cada uno de esos bucles, alli
-                                // donde le toca (en qué columna) a cada lista de mensajes
-                                if n_col == column_idx {
-                                    info!(
-                                        "channel_idx {}, n_col {}, column_idx {}",
-                                        channel_idx, n_col, column_idx
-                                    );
-                                    ui.horizontal(|ui| {
-                                        ui.heading(format!("Channel {}", chan)).context_menu(
-                                            |ui| {
-                                                if ui.button("Clear Messages").clicked() {
-                                                    msg_ls.clear();
-                                                }
-
-                                                // Para cerrar publicamos mensaje concreto en el canal que queremos cerrar.
-                                                if ui.button("Close Subscription").clicked() {
-                                                    let _ = presenter::publish_to_channel(
-                                                        &app_state.redis.host,
-                                                        &app_state.redis.port,
-                                                        chan,
-                                                        "#break#",
-                                                    );
-                                                }
-
-                                                if ui.button("Delete Channel").clicked() {
-                                                    let _ = presenter::publish_to_channel(
-                                                        &app_state.redis.host,
-                                                        &app_state.redis.port,
-                                                        chan,
-                                                        "#break#",
-                                                    );
-                                                    msg_ls.clear();
-                                                    pubsub_channel_to_delete = chan.to_string();
-                                                }
-                                            },
-                                        );
-                                    });
-
-                                    for msg in msg_ls {
-                                        ui.label(format!("    {}", msg));
-                                    }
-                                    ui.separator();
-                                }
-                            }
-                            n_col += 1;
-                        }
-                    });
-                    let _ = self.pubsub.messages.remove(&pubsub_channel_to_delete);
-                }
+                    RedisMenu::Set => {
+                        ui.heading(egui::RichText::new("Set").strong());
+                        self.show_sets(ui, i18n);
+                    }
+                    RedisMenu::Hash => {
+                        ui.heading(egui::RichText::new("Hashes").strong());
+                        self.show_hashes(ui, i18n);
+                    }
+                    RedisMenu::SortedSet => {
+                        ui.heading(egui::RichText::new("SortedSet").strong());
+                        self.show_sorted_sets(ui, i18n);
+                    }
+                    RedisMenu::Streams => {
+                        ui.heading(egui::RichText::new("Streams").strong());
+                        self.show_streams(ui, i18n);
+                    }
+                    RedisMenu::Json => {
+                        ui.heading(egui::RichText::new("Json").strong());
+                        self.show_json(ui, i18n);
+                    }
+                    RedisMenu::PubSub => {
+                        ui.heading(egui::RichText::new("PubSub").strong());
+                        self.show_pubsub(ui, i18n);
+                    }
+                };
             });
         });
     }
 
-    fn hash_component(&mut self, ui: &mut egui::Ui, app_state: &mut AppState) {
-        ui.set_width(ui.available_width());
-        for (h_name, v) in &self.state.hashes {
-            // --> Manejamos acciones sobre elemento que muestra nombre del hash
-            ui.collapsing(h_name, |ui| {
-                // TODO: Borrar todos en cascada con el menú contextual del hash.
-                egui::Grid::new(h_name)
-                    .spacing(egui::vec2(ui.spacing().item_spacing.x * 2.0, 0.0))
-                    .show(ui, |ui| {
-                        for (field_key, field_value) in v {
-                            let field_label =
-                                ui.add(Label::new(format!("    {} : {}", field_key, field_value)));
+    fn show_all(&mut self, ui: &mut egui::Ui, i18n: &I18n) {
+        egui::CollapsingHeader::new("Strings")
+            .default_open(true)
+            .show(ui, |ui| self.show_strings(ui, i18n));
 
-                            // --> Cada campo se puede borrar con menú contextual <--
-                            field_label.context_menu(|ui| {
-                                if ui.button("Delete").clicked() {
-                                    match presenter::delete_hashkey(
-                                        &app_state.redis.host,
-                                        &app_state.redis.port,
-                                        h_name,
-                                        field_key,
-                                    ) {
-                                        Ok(s) => {
-                                            self.state.must_scan = true;
-                                            info!("{:?}", s);
-                                        }
-                                        Err(e) => info!("{:?}", e),
-                                    }
-                                    ui.close_menu();
-                                }
-                            });
-                            ui.end_row();
-                        }
-                    });
-            });
-        }
+        egui::CollapsingHeader::new("Lists")
+            .default_open(true)
+            .show(ui, |ui| self.show_lists(ui, i18n));
+
+        egui::CollapsingHeader::new("Sets")
+            .default_open(true)
+            .show(ui, |ui| self.show_sets(ui, i18n));
+
+        egui::CollapsingHeader::new("Hashes")
+            .default_open(true)
+            .show(ui, |ui| self.show_hashes(ui, i18n));
+
+        egui::CollapsingHeader::new("Sorted Sets")
+            .default_open(true)
+            .show(ui, |ui| self.show_sorted_sets(ui, i18n));
+
+        egui::CollapsingHeader::new("Streams")
+            .default_open(true)
+            .show(ui, |ui| self.show_streams(ui, i18n));
     }
 
-    fn string_component(&mut self, ui: &mut egui::Ui, app_state: &mut AppState) {
-        egui::Grid::new("key/value")
-            .spacing(egui::vec2(ui.spacing().item_spacing.x * 2.0, 0.0))
-            .show(ui, |ui| {
-                for header in &self.state.strings {
-                    ui.label(header.0.clone()).context_menu(|ui| {
-                        if ui.button("Delete").clicked() {
-                            match presenter::delete_key(
-                                &app_state.redis.host,
-                                &app_state.redis.port,
-                                &header.0,
-                            ) {
-                                Ok(s) => {
-                                    self.state.must_scan = true;
-                                    info!("{:?}", s);
-                                }
-                                Err(e) => info!("{:?}", e),
-                            }
-                            ui.close_menu();
-                        }
-                    });
-                    ui.label(" : ");
-                    ui.label(header.1.clone());
-                    ui.end_row();
+    pub fn connect(&mut self) {
+        if let Ok(port) = self.state.current_connection.port.parse::<i16>() {
+            match presenter::create_conn(&self.state.current_connection.host, port) {
+                Ok(conn) => {
+                    self.state.conn = Some(conn);
                 }
-            });
-    }
-
-    fn stream_component(&mut self, ui: &mut egui::Ui, app_state: &mut AppState) {
-        {
-            ui.set_width(ui.available_width());
-            for (stream_name, v) in &self.state.streams {
-                // ==> Gestión de Stream y todos los mensajes en él
-                ui.collapsing(stream_name, |ui| {
-                    for (idx, id) in v.iter().enumerate() {
-                        // --> Gestión de cada mensaje <--
-                        let label = match self.state.stream_id_values.get(id) {
-                            Some(_) => ui.add(Label::new(id).sense(Sense::click())),
-                            _ => ui
-                                .add(Label::new(id).sense(Sense::click()))
-                                .on_hover_text("Click to Open Stream and enabling resend"),
-                        };
-
-                        label.context_menu(|ui| {
-                            // TODO: Aquí estoy cogiendo valores leídos
-                            let option = self.state.stream_id_values.get(id);
-                            self.state.must_scan = contextual_menus::stream_msg(
-                                ui,
-                                stream_name,
-                                id.to_string().to_string(),
-                                option,
-                                &mut self.state.current_command,
-                            );
-                        });
-                        if label.clicked() {
-                            match self.state.stream_id_values.get(id) {
-                                Some(_) => {
-                                    self.state.stream_id_values.remove(id);
-                                }
-                                None => {
-                                    // Hace falta esto porque cuando busco, si no es desde 0, el
-                                    // que me devuelve es el siguiente al que selecciono, por
-                                    // eso me hace falta el `idx-1`.
-                                    let from_when = if idx == 0 { "0" } else { &v[idx - 1] };
-                                    let _ = presenter::read_stream_id(
-                                        &stream_name,
-                                        from_when,
-                                        &mut self.state.stream_id_values,
-                                    );
-                                    // if idx == 0 {
-                                    //     let _ = presenter::read_stream_id(
-                                    //         &stream_name,
-                                    //         "0",
-                                    //         &mut self.state.stream_id_values,
-                                    //     );
-                                    // } else {
-                                    //     let _ = presenter::read_stream_id(
-                                    //         &stream_name,
-                                    //         &v[idx - 1],
-                                    //         &mut self.state.stream_id_values,
-                                    //     );
-                                    // }
-                                }
-                            }
-                        }
-                        ui.end_row();
-                        // TODO: Cambiar y almacenar los serde_json::Value para no estar
-                        // haciendo el parseo continumamente. Eso nos permite volver a usar
-                        // HashMap en vez de BTreeMap, aunque lo mejor sería comprobar el
-                        // rendimiento al crear cada uno.
-                        if let Some(value) = self.state.stream_id_values.get(id) {
-                            // let value = serde_json::json!(value_map_to_string_map(value));
-                            let value = serde_json::json!(value_map_to_string_btree_map(value));
-                            JsonTree::new(id, &value).show(ui);
-                        }
-                    }
-                })
-                .header_response
-                .context_menu(|ui| {
-                    if ui.button("Delete").clicked() {
-                        match presenter::delete_key(
-                            &app_state.redis.host,
-                            &app_state.redis.port,
-                            &stream_name,
-                        ) {
-                            Ok(s) => {
-                                self.state.must_scan = true;
-                                info!("{:?}", s);
-                            }
-                            Err(e) => info!("{:?}", e),
-                        }
-                        ui.close_menu();
-                    }
-                });
+                Err(_) => {
+                    self.state.conn = None;
+                }
             }
         }
     }

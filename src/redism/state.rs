@@ -10,13 +10,12 @@ use redis::Msg as PubSubMsg;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-use crate::redism::presenter::RedisMenu;
+use crate::{common::traits::ToUrl, redism::presenter::RedisMenu};
 
 #[derive(Clone, Serialize, Deserialize, Default, Debug)]
 pub struct RedisAppState {
     pub show_sidebar: bool,
-    pub host: String,
-    pub port: String,
+    pub connections: Vec<RedisConnectionDefinition>,
 }
 
 pub struct PubSubState {
@@ -47,10 +46,13 @@ impl Default for PubSubState {
     }
 }
 
-#[derive(Default)]
 pub struct RedisLocalState {
     pub cmd_history: Vec<String>,
     pub strings: Vec<(String, String)>,
+    pub jsons: Vec<(String, String)>,
+    pub sets: HashMap<String, Vec<String>>,
+    pub sorted_sets: HashMap<String, Vec<String>>,
+    pub lists: HashMap<String, Vec<String>>,
     pub streams: HashMap<String, Vec<String>>,
     pub hashes: HashMap<String, Vec<(String, String)>>, // nombre_hash: Lista de pares
     // Para poder mostrar y quitar a voluntad, donde guardo los valores de los streams. No guardo todo el listado de
@@ -63,6 +65,39 @@ pub struct RedisLocalState {
     pub command_last_result: String,
     pub conn: Option<redis::Connection>, // La estoy gastando?
     pub selected_menu: RedisMenu,
+    pub hide_connections: bool,
+    pub hide_data_structures: bool,
+    pub tmp_connection: RedisConnectionDefinition,
+    pub current_connection: RedisConnectionDefinition,
+    pub current_connection_idx: usize,
+}
+
+impl Default for RedisLocalState {
+    fn default() -> Self {
+        Self {
+            cmd_history: Default::default(),
+            strings: Default::default(),
+            streams: Default::default(),
+            hashes: Default::default(),
+            stream_id_values: Default::default(),
+            current_history_index: Default::default(),
+            current_command: Default::default(),
+            is_first_update: Default::default(),
+            must_scan: Default::default(),
+            command_last_result: Default::default(),
+            conn: Default::default(),
+            selected_menu: Default::default(),
+            hide_connections: Default::default(),
+            hide_data_structures: Default::default(),
+            tmp_connection: Default::default(),
+            current_connection: Default::default(),
+            current_connection_idx: usize::MAX,
+            jsons: Default::default(),
+            lists: Default::default(),
+            sets: Default::default(),
+            sorted_sets: Default::default(),
+        }
+    }
 }
 
 impl RedisLocalState {
@@ -70,10 +105,31 @@ impl RedisLocalState {
         self.strings.clear();
         self.streams.clear();
         self.hashes.clear();
+        self.jsons.clear();
+        self.lists.clear();
+        self.sets.clear();
+        self.sorted_sets.clear();
     }
 
     pub fn reset_command(&mut self) {
         self.current_command.clear();
         self.command_last_result.clear();
+    }
+}
+
+/// No tengo muy claro cómo hacerlo mejor.
+/// Path y OsStr son más apropiadas pero problemáticas.
+/// Voy con String y ya se verá si necesito cambiar.
+#[derive(Clone, Serialize, Deserialize, Default, Debug)]
+pub struct RedisConnectionDefinition {
+    pub host: String,
+    pub port: String,
+    // pub user: String,
+    // pub password: String,
+}
+
+impl ToUrl for RedisConnectionDefinition {
+    fn to_url(&self) -> String {
+        format!("redis://{}:{}", self.host, self.port)
     }
 }
