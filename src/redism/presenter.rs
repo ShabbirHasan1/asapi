@@ -7,41 +7,14 @@
 // -------------------------------------------------------------------------
 
 use redis::streams::{StreamReadOptions, StreamReadReply};
+use redis::JsonCommands;
 use redis::{self, Client, Commands, Connection, Msg as PubSubMsg, RedisError, RedisResult, Value};
 use std::collections::HashMap;
 use std::slice::Iter;
 
-use crate::info;
+use crate::{error, info};
 
 use super::state::RedisLocalState;
-
-#[derive(Clone, Debug, PartialEq, Copy)]
-pub enum RedisMenu {
-    All,
-    String,
-    Hash,
-    Streams,
-    PubSub,
-}
-
-impl RedisMenu {
-    pub fn iter() -> Iter<'static, RedisMenu> {
-        static MENUS: [RedisMenu; 5] = [
-            RedisMenu::All,
-            RedisMenu::String,
-            RedisMenu::Hash,
-            RedisMenu::Streams,
-            RedisMenu::PubSub,
-        ];
-        MENUS.iter()
-    }
-}
-
-impl Default for RedisMenu {
-    fn default() -> Self {
-        RedisMenu::All
-    }
-}
 
 // #[derive(Debug)]
 // pub enum Command {
@@ -104,6 +77,42 @@ impl Default for RedisMenu {
 //     Ok(())
 // }
 
+#[derive(Clone, Debug, PartialEq, Copy)]
+pub enum RedisMenu {
+    All,
+    String,
+    Json,
+    List,
+    Set,
+    SortedSet,
+    Hash,
+    Streams,
+    PubSub,
+}
+
+impl RedisMenu {
+    pub fn iter() -> Iter<'static, RedisMenu> {
+        static MENUS: [RedisMenu; 9] = [
+            RedisMenu::All,
+            RedisMenu::String,
+            RedisMenu::Json,
+            RedisMenu::Hash,
+            RedisMenu::List,
+            RedisMenu::Set,
+            RedisMenu::SortedSet,
+            RedisMenu::Streams,
+            RedisMenu::PubSub,
+        ];
+        MENUS.iter()
+    }
+}
+
+impl Default for RedisMenu {
+    fn default() -> Self {
+        RedisMenu::All
+    }
+}
+
 pub fn create_conn(host: &str, port: i16) -> Result<redis::Connection, RedisError> {
     //if Redis server needs secure connection // https://medium.com/swlh/tutorial-getting-started-with-rust-and-redis-69041dd38279
     // let uri_scheme = match env::var("IS_TLS") {
@@ -121,7 +130,6 @@ pub fn create_conn_with_default(host: &str, port: &str) -> Result<redis::Connect
 }
 
 pub fn scan(state: &mut RedisLocalState) -> RedisResult<()> {
-    state.last_response = None;
     // let client = Client::open("redis://127.0.0.1/")?;
     // let mut con: Connection = client.get_connection()?;
     // let port = app_state.redis.port.parse::<i16>().unwrap_or(6379); // Using 6379 as default value;
@@ -142,11 +150,17 @@ pub fn scan(state: &mut RedisLocalState) -> RedisResult<()> {
         for key in scan_result.1 {
             let key_type = redis::Cmd::key_type(&key).query::<String>(&mut con);
 
+            info!("{:?}", key_type);
+
             match key_type {
                 Ok(value) => match value.as_str() {
                     "string" => {
                         let value = con.get(key.clone()).unwrap();
                         state.strings.push((key, value));
+                    }
+                    "ReJSON-RL" => {
+                        let value = con.json_get(key.clone(), "$").unwrap();
+                        state.jsons.push((key, value));
                     }
                     "list" => info!("List: {}", key),
                     "set" => info!("Set: {}", key),
@@ -184,13 +198,13 @@ pub fn scan(state: &mut RedisLocalState) -> RedisResult<()> {
                                     }
                                 }
                             }
-                            Err(e) => info!("Ocurrió un error {}", e),
+                            Err(e) => error!("Ocurrió un error {}", e),
                         }
                     }
-                    _ => info!("Unknown type: {}", value),
+                    _ => error!("Unknown type: {}", value),
                 },
                 Err(e) => {
-                    info!("Ocurrió un error: {}", e);
+                    error!("Ocurrió un error: {}", e);
                 }
             }
         }
@@ -258,10 +272,13 @@ pub fn read_stream_id(
     Ok(())
 }
 
-pub fn run_command(host: &str, port: &str, command: &str) -> Result<String, String> {
-    if let Some((command, args)) = parse_command(command) {
+pub fn run_command(host: &str, port: &str, cmd: &str) -> Result<String, String> {
+    if let Some((command, args)) = parse_command(cmd) {
+        info!("\nCommando\n{:?}\n{:?}", command, args);
+
         match create_conn_with_default(host, port) {
             Ok(mut c) => {
+                info!("{}", cmd);
                 let response = redis::cmd(command).arg(&args).query::<Value>(&mut c);
                 match response {
                     Ok(value) => return Ok(format!("{:?}", value)),

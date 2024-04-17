@@ -75,7 +75,7 @@ impl RedisView {
                 ui.horizontal(|ui| {
                     let command_textedit =
                         egui::TextEdit::singleline(&mut self.state.current_command);
-                    let send_command_button = ui.button("Send Command");
+                    let send_command_button = ui.button(&i18n.redis_send_command);
                     let command_input = ui.add_sized(ui.available_size(), command_textedit);
 
                     // ArrowUp    ->  dirección pasado
@@ -181,9 +181,12 @@ impl RedisView {
                 } else if self.state.selected_menu == RedisMenu::Streams {
                     ui.heading(egui::RichText::new("Streams").strong());
                     self.show_streams(ui);
+                } else if self.state.selected_menu == RedisMenu::Json {
+                    ui.heading(egui::RichText::new("Json").strong());
+                    self.show_json(ui, i18n);
                 } else if self.state.selected_menu == RedisMenu::PubSub {
                     ui.heading(egui::RichText::new("PubSub").strong());
-                    self.show_pubsub(ui);
+                    self.show_pubsub(ui, i18n);
                 }
             });
         });

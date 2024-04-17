@@ -39,4 +39,4 @@ enum-map = { version = "2.7.3", features = ["serde"] }
 # ---------------------------------------------------------------------------
 # Redis
 # ---------------------------------------------------------------------------
-redis = { version = "0.1.0", path = "redis-dynamic", package = "redis-dynamic" }
+redis = { version = "0.1.0", path = "redis-dynamic", package = "redis-dynamic"}

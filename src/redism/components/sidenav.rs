@@ -172,7 +172,8 @@ impl RedisView {
                         // propia. Habría que pasársela para no necesitar dicha conexión local,
                         // aunque realmente podemos crear todas las que queramos.
                         if let Err(err) = presenter::scan(&mut self.state) {
-                            self.state.last_response = Some(format!("ERROR {:?}", err));
+                            // TODO: Mostrar con color rojo.
+                            self.state.command_last_result = format!("ERROR {:?}", err);
                         }
                     }
                 });

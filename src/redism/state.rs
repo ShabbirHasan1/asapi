@@ -49,6 +49,7 @@ impl Default for PubSubState {
 pub struct RedisLocalState {
     pub cmd_history: Vec<String>,
     pub strings: Vec<(String, String)>,
+    pub jsons: Vec<(String, String)>,
     pub streams: HashMap<String, Vec<String>>,
     pub hashes: HashMap<String, Vec<(String, String)>>, // nombre_hash: Lista de pares
     // Para poder mostrar y quitar a voluntad, donde guardo los valores de los streams. No guardo todo el listado de
@@ -66,7 +67,6 @@ pub struct RedisLocalState {
     pub tmp_connection: RedisConnectionDefinition,
     pub current_connection: RedisConnectionDefinition,
     pub current_connection_idx: usize,
-    pub last_response: Option<String>,
 }
 
 impl Default for RedisLocalState {
@@ -89,7 +89,7 @@ impl Default for RedisLocalState {
             tmp_connection: Default::default(),
             current_connection: Default::default(),
             current_connection_idx: usize::MAX,
-            last_response: None,
+            jsons: Default::default(),
         }
     }
 }

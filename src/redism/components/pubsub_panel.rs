@@ -11,21 +11,26 @@ use std::ops::RangeInclusive;
 use eframe::egui;
 
 use crate::{
+    common::internationalization::I18n,
     info,
     redism::{presenter, view::RedisView},
 };
 
 impl RedisView {
-    pub fn show_pubsub(&mut self, ui: &mut egui::Ui) {
-        egui::CollapsingHeader::new("PubSub Publish")
+    pub fn show_pubsub(&mut self, ui: &mut egui::Ui, i18n: &I18n) {
+        egui::CollapsingHeader::new(format!("PubSub {}", &i18n.redis_channel_publish))
             .default_open(true)
             .show(ui, |ui| {
                 ui.horizontal(|ui| {
                     ui.add(
-                        egui::TextEdit::singleline(&mut self.pubsub.channel).hint_text("Channel"),
+                        egui::TextEdit::singleline(&mut self.pubsub.channel)
+                            .hint_text(&i18n.redis_channel),
                     );
-                    ui.add(egui::TextEdit::singleline(&mut self.pubsub.value).hint_text("Value"));
-                    if ui.button("Publish").clicked() {
+                    ui.add(
+                        egui::TextEdit::singleline(&mut self.pubsub.value)
+                            .hint_text(&i18n.redis_channel_value),
+                    );
+                    if ui.button(&i18n.redis_channel_publish).clicked() {
                         let publish_response = presenter::publish_to_channel(
                             &self.state.current_connection.host,
                             &self.state.current_connection.port,
@@ -36,14 +41,15 @@ impl RedisView {
                     }
                 });
             });
-        egui::CollapsingHeader::new("PubSub Subscribe")
+        egui::CollapsingHeader::new(format!("PubSub {}", &i18n.redis_channel_subscribe))
             .default_open(true)
             .show(ui, |ui| {
                 ui.horizontal(|ui| {
                     ui.add(
-                        egui::TextEdit::singleline(&mut self.pubsub.channel).hint_text("Channel"),
+                        egui::TextEdit::singleline(&mut self.pubsub.channel)
+                            .hint_text(&i18n.redis_channel),
                     );
-                    if ui.button("Subscribe").clicked() {
+                    if ui.button(&i18n.redis_channel_subscribe).clicked() {
                         // Podríamos hacer esto arriba y activar/desactivar o mostrar/ocultar
                         // el botón, pero una (nimia) comprobación que nos ahorramos.
                         if self.pubsub.messages.contains_key(&self.pubsub.channel) {
@@ -102,7 +108,7 @@ impl RedisView {
 
         let min_n_cols = if self.pubsub.messages.len() > 0 { 1 } else { 0 };
         ui.horizontal(|ui| {
-            ui.label("Number of Columns");
+            ui.label(&i18n.redis_n_columns);
             ui.add(
                 egui::DragValue::new(&mut self.pubsub.n_columns)
                     .clamp_range(RangeInclusive::new(min_n_cols, max_n_cols)),
@@ -121,13 +127,17 @@ impl RedisView {
                     // donde le toca (en qué columna) a cada lista de mensajes
                     if n_col == column_idx {
                         ui.horizontal(|ui| {
-                            ui.heading(format!("Channel {}", chan)).context_menu(|ui| {
-                                if ui.button("Clear Messages").clicked() {
+                            ui.heading(
+                                egui::RichText::new(format!("{} {}", &i18n.redis_channel, chan))
+                                    .strong(),
+                            )
+                            .context_menu(|ui| {
+                                if ui.button(&i18n.redis_clean_messages).clicked() {
                                     msg_ls.clear();
                                 }
 
                                 // Para cerrar publicamos mensaje concreto en el canal que queremos cerrar.
-                                if ui.button("Close Subscription").clicked() {
+                                if ui.button(&i18n.redis_close_subscription).clicked() {
                                     let _ = presenter::publish_to_channel(
                                         &self.state.current_connection.host,
                                         &self.state.current_connection.port,
@@ -136,7 +146,7 @@ impl RedisView {
                                     );
                                 }
 
-                                if ui.button("Delete Channel").clicked() {
+                                if ui.button(&i18n.redis_delete_subscription).clicked() {
                                     let _ = presenter::publish_to_channel(
                                         &self.state.current_connection.host,
                                         &self.state.current_connection.port,
