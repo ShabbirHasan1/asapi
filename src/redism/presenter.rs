@@ -10,7 +10,6 @@ use redis::streams::{StreamReadOptions, StreamReadReply};
 use redis::JsonCommands;
 use redis::{self, Client, Commands, Connection, Msg as PubSubMsg, RedisError, RedisResult, Value};
 use std::collections::HashMap;
-use std::slice::Iter;
 
 use crate::{error, info};
 
@@ -90,23 +89,6 @@ pub enum RedisMenu {
     PubSub,
 }
 
-impl RedisMenu {
-    pub fn iter() -> Iter<'static, RedisMenu> {
-        static MENUS: [RedisMenu; 9] = [
-            RedisMenu::All,
-            RedisMenu::String,
-            RedisMenu::Json,
-            RedisMenu::Hash,
-            RedisMenu::List,
-            RedisMenu::Set,
-            RedisMenu::SortedSet,
-            RedisMenu::Streams,
-            RedisMenu::PubSub,
-        ];
-        MENUS.iter()
-    }
-}
-
 impl Default for RedisMenu {
     fn default() -> Self {
         RedisMenu::All
@@ -129,7 +111,12 @@ pub fn create_conn_with_default(host: &str, port: &str) -> Result<redis::Connect
     create_conn(&host, port)
 }
 
-pub fn scan(state: &mut RedisLocalState) -> RedisResult<()> {
+/// Escaneo de toda la instancia de redis.
+///
+/// Pasamos de forma explícita la opción elegida aunque ya hay una en el estado
+/// para permitir recarga bajo demanda en menú contextual de cada estructura de datos.
+pub fn scan(state: &mut RedisLocalState, option: RedisMenu) -> RedisResult<()> {
+    // let option = state.selected_menu;
     // let client = Client::open("redis://127.0.0.1/")?;
     // let mut con: Connection = client.get_connection()?;
     // let port = app_state.redis.port.parse::<i16>().unwrap_or(6379); // Using 6379 as default value;
@@ -140,7 +127,17 @@ pub fn scan(state: &mut RedisLocalState) -> RedisResult<()> {
     )?;
     let mut cursor: u64 = 0;
 
-    state.reset();
+    match option {
+        RedisMenu::All => state.reset(),
+        RedisMenu::String => state.strings.clear(),
+        RedisMenu::Json => state.jsons.clear(),
+        RedisMenu::List => state.lists.clear(),
+        RedisMenu::Set => state.sets.clear(),
+        RedisMenu::Hash => state.hashes.clear(),
+        RedisMenu::SortedSet => state.sorted_sets.clear(),
+        RedisMenu::Streams => state.streams.clear(),
+        _ => (),
+    };
 
     loop {
         let scan_result: (u64, Vec<String>) = redis::cmd("SCAN").arg(cursor).query(&mut con)?;
@@ -150,64 +147,64 @@ pub fn scan(state: &mut RedisLocalState) -> RedisResult<()> {
         for key in scan_result.1 {
             let key_type = redis::Cmd::key_type(&key).query::<String>(&mut con);
 
-            info!("{:?}", key_type);
-
             match key_type {
                 Ok(value) => match value.as_str() {
                     "string" => {
-                        let value = con.get(key.clone()).unwrap();
-                        state.strings.push((key, value));
+                        if option == RedisMenu::String || option == RedisMenu::All {
+                            let value = con.get(key.clone()).unwrap();
+                            state.strings.push((key, value));
+                        }
                     }
                     "ReJSON-RL" => {
-                        let value = con.json_get(key.clone(), "$").unwrap();
-                        state.jsons.push((key, value));
+                        if option == RedisMenu::Json || option == RedisMenu::All {
+                            let value = con.json_get(key.clone(), "$").unwrap();
+                            state.jsons.push((key, value));
+                        }
                     }
                     "list" => {
-                        let value = con.lrange(key.clone(), 0, isize::MAX).unwrap();
-                        state.lists.insert(key, value);
+                        if option == RedisMenu::List || option == RedisMenu::All {
+                            let value = con.lrange(key.clone(), 0, isize::MAX).unwrap();
+                            state.lists.insert(key, value);
+                        }
                     }
                     "set" => {
-                        let value = con.smembers(key.clone()).unwrap();
-                        state.sets.insert(key, value);
+                        if option == RedisMenu::Set || option == RedisMenu::All {
+                            let value = con.smembers(key.clone()).unwrap();
+                            state.sets.insert(key, value);
+                        }
                     }
                     "zset" => {
-                        let value = con.zrange(key.clone(), 0, -1).unwrap();
-                        state.sorted_sets.insert(key, value);
+                        if option == RedisMenu::SortedSet || option == RedisMenu::All {
+                            let value = con.zrange(key.clone(), 0, -1).unwrap();
+                            state.sorted_sets.insert(key, value);
+                        }
                     }
                     "hash" => {
-                        let result: RedisResult<Vec<(String, String)>> = con.hgetall(key.clone());
-
-                        info!("Hash: {}", key);
-
-                        match result {
-                            Ok(ls) => {
-                                state.hashes.insert(key.clone(), ls);
-                            }
-                            Err(_) => {
-                                info!("error");
-                                state.hashes.insert(key.clone(), Vec::new());
-                            }
+                        if option == RedisMenu::Hash || option == RedisMenu::All {
+                            let result = con.hgetall(key.clone()).unwrap();
+                            state.hashes.insert(key.clone(), result);
                         }
-                        // con.xread_options(&[key.as_str()], &["0"], &opts);
                     }
                     "stream" => {
-                        let key_c = key.clone();
-                        state.streams.insert(key_c, Vec::new());
-                        let opts = StreamReadOptions::default(); //.count(10);
-                        let result: RedisResult<StreamReadReply> =
-                            con.xread_options(&[key.as_str()], &["0"], &opts);
+                        if option == RedisMenu::Streams || option == RedisMenu::All {
+                            let key_c = key.clone();
+                            state.streams.insert(key_c, Vec::new());
+                            let opts = StreamReadOptions::default(); //.count(10);
+                            let result: RedisResult<StreamReadReply> =
+                                con.xread_options(&[key.as_str()], &["0"], &opts);
 
-                        match result {
-                            Ok(stream_keys) => {
-                                let ids = state.streams.get_mut(&key).unwrap();
+                            match result {
+                                Ok(stream_keys) => {
+                                    let ids = state.streams.get_mut(&key).unwrap();
 
-                                for k in stream_keys.keys {
-                                    for v in k.ids {
-                                        ids.push(v.id.clone());
+                                    for k in stream_keys.keys {
+                                        for v in k.ids {
+                                            ids.push(v.id.clone());
+                                        }
                                     }
                                 }
+                                Err(e) => error!("Ocurrió un error {}", e),
                             }
-                            Err(e) => error!("Ocurrió un error {}", e),
                         }
                     }
                     _ => error!("Unknown type: {}", value),

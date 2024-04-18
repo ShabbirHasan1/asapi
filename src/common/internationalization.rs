@@ -107,6 +107,7 @@ pub struct I18n {
     pub redis_delete_subscription: String,
     pub redis_send_command: String,
     pub redis_delete_ds: String,
+    pub redis_load: String,
 
     // Postgres
     pub pg_connection_host: String,
@@ -230,6 +231,7 @@ pub fn language_selector(i: I18nOptions) -> I18n {
             redis_delete_subscription: String::from("Borrar Subscripción"),
             redis_send_command: String::from("Ejecutar"),
             redis_delete_ds: String::from("Borrar"),
+            redis_load: String::from("Cargar"),
 
             // Postgres
             pg_connection_host: "Host".to_owned(),
@@ -351,6 +353,7 @@ pub fn language_selector(i: I18nOptions) -> I18n {
             redis_delete_subscription: String::from("Delete Subscription"),
             redis_send_command: String::from("Send Command"),
             redis_delete_ds: String::from("Delete"),
+            redis_load: String::from("Load"),
 
             // Postgres
             pg_info_performance_table: "Deletion is forbidden for performance table.\nSelect this for massive quantity of cells (rows x columns), order of 1e5, or when massive amount of data inside the cells, like long varchar, big json/binaries/arrays or geographical data.".to_owned(),

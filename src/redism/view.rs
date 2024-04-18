@@ -51,7 +51,8 @@ impl RedisView {
         }
 
         if self.state.must_scan {
-            let _ = presenter::scan(&mut self.state);
+            let option = self.state.selected_menu;
+            let _ = presenter::scan(&mut self.state, option);
             self.state.must_scan = false;
         }
         if self.state.is_first_update {
@@ -100,9 +101,9 @@ impl RedisView {
                             self.state.current_command.as_str(),
                         ) {
                             Ok(result) => {
-                                info!("Result: {:?}", result);
+                                let option = self.state.selected_menu;
                                 self.state.command_last_result = result;
-                                let _ = presenter::scan(&mut self.state);
+                                let _ = presenter::scan(&mut self.state, option);
                             }
                             // TODO: Change color
                             Err(e) => {

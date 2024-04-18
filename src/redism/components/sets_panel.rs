@@ -6,8 +6,6 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
-use std::collections::HashMap;
-
 use eframe::egui;
 
 use crate::{

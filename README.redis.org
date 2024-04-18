@@ -1,15 +1,21 @@
 #+STARTUP: logdone
 * General
-** TODO [#A] Info de string en menú lateral
-** TODO [#A] Info de stream en menú lateral
-** TODO [#A] Info de hash en menú lateral
+** TODO [#A] Poder cargar solamente los datos de la estructura de datos que he filtrado
+** TODO [#A] Ocultar introducción con texto cuando se muestran los paneles individuales
 ** TODO [#B] Poder añadir nombre a la conexión
 ** TODO [#C] Vector database (familia de comandos =FT.loquesea=)
 ** TODO [#C] El comando, /MultiLine/ en vez de /SingleLine/, y que se pueda hacer grande estirando.
 ** TODO [#C] Poder manejar varias sesiones cada una con una conexión distinta, similar a los distintos espacios de trabajo del módulo HTTP.
 Aunque pueda parecer muy importane, tanto como hacerlo en Postgres, no creo que lo sea. Por eso C, no quiero gastar energía si no es necesario o útil o diferencial.
-** TODO [#C] Probar PubSub con Tokyo otra vez en vez de con /std::thread/.
-Está bien como está, simplemente por probar.
+** CANCELED [#C] Probar PubSub con Tokyo otra vez en vez de con /std::thread/.
+CLOSED: [2024-04-18 jue 13:10]
+~Está bien como está, simplemente por probar.~ Cancelo porque tal como está va genial.
+** DONE [#A] Info de string en menú lateral
+CLOSED: [2024-04-18 jue 13:09]
+** DONE [#A] Info de stream en menú lateral
+CLOSED: [2024-04-18 jue 13:09]
+** DONE [#A] Info de hash en menú lateral
+CLOSED: [2024-04-18 jue 13:09]
 ** DONE Poder tener varias suscripciones.
 CLOSED: [2024-01-30 mar 06:55]
 ** DONE Poder mostrar todas las estructuras o solo algunas en función de la selección del lateral.

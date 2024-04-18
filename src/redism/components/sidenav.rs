@@ -6,10 +6,9 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
-use std::collections::HashSet;
-
 use eframe::egui::{self, Context};
 use egui_extras::{Size, StripBuilder};
+use std::collections::HashSet;
 
 use crate::{
     common::internationalization::I18n,
@@ -22,13 +21,15 @@ use crate::{
     },
 };
 
+use super::menu_option::selectable_and_info;
+
 impl RedisView {
     pub fn show_sidenav(&mut self, ctx: &Context, app_st: &mut RedisAppState, i18n: &I18n) {
         egui::SidePanel::left("redis_side_panel").show(ctx, |ui| {
             // --> Decidimos qué mostrar <--
             ui.horizontal(|ui| {
                 if ui.button("\u{27f3} Load").clicked() {
-                    let _ = presenter::scan(&mut self.state);
+                    let _ = presenter::scan(&mut self.state, RedisMenu::All);
                 }
 
                 let s1 = if self.state.hide_connections {
@@ -98,13 +99,13 @@ impl RedisView {
                             self.show_connections(ui, app_st, i18n);
                         });
                         strip.cell(|ui| {
-                            self.show_data_structures(ui);
+                            self.show_data_structures(ui, i18n);
                         });
                     });
             } else if !self.state.hide_connections {
                 self.show_connections(ui, app_st, i18n);
             } else if !self.state.hide_data_structures {
-                self.show_data_structures(ui);
+                self.show_data_structures(ui, i18n);
             }
         });
     }
@@ -134,10 +135,10 @@ impl RedisView {
                         egui::Button::new(button_text).min_size(egui::vec2(200.0, 24.0))
                     };
 
-                    let button = ui.add(raw_button);
+                    let connection_button = ui.add(raw_button);
 
                     // --> Menú contextual para manejo de las conexiones <--
-                    button.context_menu(|ui| {
+                    connection_button.context_menu(|ui| {
                         if ui.button(&i18n.redis_close_connection).clicked() {
                             // Este crate no requiere que cerremos explícitamente. Es más
                             // por cómo es redis que por que en sí haga algo especial.
@@ -158,7 +159,7 @@ impl RedisView {
 
                     // --> Al clicar sobre conexión, conectamos y listamos tablas <--
                     // Si estamos ya mostrando esta conexión, clicar sobre ella no lanza ninguna acción.
-                    if button.clicked() && self.state.current_connection_idx != idx {
+                    if connection_button.clicked() && self.state.current_connection_idx != idx {
                         self.state.current_connection_idx = idx;
                         self.state.reset();
 
@@ -174,7 +175,8 @@ impl RedisView {
                         // TODO: No compruebo la existencia de conexión porque `scan` crea la suya
                         // propia. Habría que pasársela para no necesitar dicha conexión local,
                         // aunque realmente podemos crear todas las que queramos.
-                        if let Err(err) = presenter::scan(&mut self.state) {
+                        let option = self.state.selected_menu;
+                        if let Err(err) = presenter::scan(&mut self.state, option) {
                             // TODO: Mostrar con color rojo.
                             self.state.command_last_result = format!("ERROR {:?}", err);
                         }
@@ -194,7 +196,7 @@ impl RedisView {
         });
     }
 
-    fn show_data_structures(&mut self, ui: &mut egui::Ui) {
+    fn show_data_structures(&mut self, ui: &mut egui::Ui, i18n: &I18n) {
         egui::ScrollArea::vertical()
             .id_source("scroll_para_ds")
             .show(ui, |ui| {
@@ -203,17 +205,12 @@ impl RedisView {
                 egui::Grid::new("mongo_all_data_structures")
                     .num_columns(2)
                     .show(ui, |ui| {
-                        ui.label(
-                            egui::RichText::new("Info")
-                                .color(egui::Color32::from_rgb(128, 128, 128)),
-                        )
-                        .on_hover_ui(|ui| {
-                            show_ds_info(ui, &self.state);
-                        });
-                        ui.selectable_value(
-                            &mut self.state.selected_menu,
+                        selectable_and_info(
+                            ui,
+                            &mut self.state,
+                            i18n,
                             RedisMenu::All,
-                            format!("{:#?}", RedisMenu::All),
+                            show_ds_info,
                         );
                         ui.end_row()
                     });
@@ -223,88 +220,60 @@ impl RedisView {
                 egui::Grid::new("mongo_data_structures")
                     .num_columns(2)
                     .show(ui, |ui| {
-                        ui.label(
-                            egui::RichText::new("Info")
-                                .color(egui::Color32::from_rgb(128, 128, 128)),
-                        )
-                        .on_hover_ui(|ui| {
-                            show_strings_info(ui, &self.state);
-                        });
-                        ui.selectable_value(
-                            &mut self.state.selected_menu,
+                        selectable_and_info(
+                            ui,
+                            &mut self.state,
+                            i18n,
                             RedisMenu::String,
-                            format!("{:#?}", RedisMenu::String),
+                            show_strings_info,
                         );
                         ui.end_row();
 
-                        ui.label(
-                            egui::RichText::new("Info")
-                                .color(egui::Color32::from_rgb(128, 128, 128)),
-                        )
-                        .on_hover_ui(|ui| {
-                            show_lists_info(ui, &self.state);
-                        });
-                        ui.selectable_value(
-                            &mut self.state.selected_menu,
+                        selectable_and_info(
+                            ui,
+                            &mut self.state,
+                            i18n,
                             RedisMenu::List,
-                            format!("{:#?}", RedisMenu::List),
+                            show_lists_info,
                         );
                         ui.end_row();
 
-                        ui.label(
-                            egui::RichText::new("Info")
-                                .color(egui::Color32::from_rgb(128, 128, 128)),
-                        )
-                        .on_hover_ui(|ui| {
-                            show_sets_info(ui, &self.state);
-                        });
-                        ui.selectable_value(
-                            &mut self.state.selected_menu,
+                        selectable_and_info(
+                            ui,
+                            &mut self.state,
+                            i18n,
                             RedisMenu::Set,
-                            format!("{:#?}", RedisMenu::Set),
+                            show_sets_info,
                         );
                         ui.end_row();
 
-                        ui.label(
-                            egui::RichText::new("Info")
-                                .color(egui::Color32::from_rgb(128, 128, 128)),
-                        )
-                        .on_hover_ui(|ui| {
-                            show_hash_info(ui, &self.state);
-                        });
-                        ui.selectable_value(
-                            &mut self.state.selected_menu,
+                        selectable_and_info(
+                            ui,
+                            &mut self.state,
+                            i18n,
                             RedisMenu::Hash,
-                            format!("{:#?}", RedisMenu::Hash),
+                            show_hashes_info,
                         );
                         ui.end_row();
 
-                        ui.label(
-                            egui::RichText::new("Info")
-                                .color(egui::Color32::from_rgb(128, 128, 128)),
-                        )
-                        .on_hover_ui(|ui| {
-                            show_sorted_sets_info(ui, &self.state);
-                        });
-                        ui.selectable_value(
-                            &mut self.state.selected_menu,
+                        selectable_and_info(
+                            ui,
+                            &mut self.state,
+                            i18n,
                             RedisMenu::SortedSet,
-                            format!("{:#?}", RedisMenu::SortedSet),
+                            show_sorted_sets_info,
                         );
                         ui.end_row();
 
-                        ui.label(
-                            egui::RichText::new("Info")
-                                .color(egui::Color32::from_rgb(128, 128, 128)),
-                        )
-                        .on_hover_ui(|ui| {
-                            show_streams_info(ui, &self.state);
-                        });
-                        ui.selectable_value(
-                            &mut self.state.selected_menu,
+                        selectable_and_info(
+                            ui,
+                            &mut self.state,
+                            i18n,
                             RedisMenu::Streams,
-                            format!("{:#?}", RedisMenu::Streams),
+                            show_streams_info,
                         );
+                        ui.end_row();
+
                         ui.end_row();
                     });
 
@@ -428,7 +397,7 @@ fn show_sets_info(ui: &mut egui::Ui, st: &RedisLocalState) {
         });
 }
 
-fn show_hash_info(ui: &mut egui::Ui, st: &RedisLocalState) {
+fn show_hashes_info(ui: &mut egui::Ui, st: &RedisLocalState) {
     egui::Grid::new("redis_hash_info")
         .num_columns(1)
         .show(ui, |ui| {
