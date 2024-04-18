@@ -1,12 +1,13 @@
 #+STARTUP: logdone
 * General
-** TODO [#A] Poder cargar solamente los datos de la estructura de datos que he filtrado
 ** TODO [#A] Ocultar introducción con texto cuando se muestran los paneles individuales
 ** TODO [#B] Poder añadir nombre a la conexión
 ** TODO [#C] Vector database (familia de comandos =FT.loquesea=)
 ** TODO [#C] El comando, /MultiLine/ en vez de /SingleLine/, y que se pueda hacer grande estirando.
 ** TODO [#C] Poder manejar varias sesiones cada una con una conexión distinta, similar a los distintos espacios de trabajo del módulo HTTP.
 Aunque pueda parecer muy importane, tanto como hacerlo en Postgres, no creo que lo sea. Por eso C, no quiero gastar energía si no es necesario o útil o diferencial.
+** DONE [#A] Poder cargar solamente los datos de la estructura de datos que he filtrado
+CLOSED: [2024-04-18 jue 15:22]
 ** CANCELED [#C] Probar PubSub con Tokyo otra vez en vez de con /std::thread/.
 CLOSED: [2024-04-18 jue 13:10]
 ~Está bien como está, simplemente por probar.~ Cancelo porque tal como está va genial.

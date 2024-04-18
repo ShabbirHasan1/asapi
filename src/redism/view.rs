@@ -71,7 +71,7 @@ impl RedisView {
         // Panel Central
         // ===================================================================
         egui::CentralPanel::default().show(ctx, |ui| {
-            if self.state.selected_menu != RedisMenu::PubSub {
+            if self.state.selected_menu == RedisMenu::All {
                 // --> Historia, movimiento y ejecución de comandos <--
                 ui.horizontal(|ui| {
                     let command_textedit =
