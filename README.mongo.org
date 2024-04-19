@@ -1,9 +1,10 @@
 #+STARTUP: logdone
 
 * Mongo
+*** [#A] Timeout para la conexión, para que no bloquee/crash la aplicación en caso de no poder conectar
 *** [#C] Intentar en /update/ poder pasar /pipeline/
 Para hacer una /pipeline/ es necesario pasar vector de /document/ al =update_many=, no un único documento al que añado =$set=.
-*** [#B] Poder usar /aggregate/
+*** [#C] Poder usar /aggregate/
 https://www.mongodb.com/docs/drivers/rust/current/fundamentals/aggregation/
 *** DONE [#A] Menú contextual con tres puntos como sql, para al menos borrar objeto
 CLOSED: [2024-04-16 mar 12:14]

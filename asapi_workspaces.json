@@ -4,7 +4,7 @@
     "dark_theme": false,
     "language": "ES"
   },
-  "selected_view": "Mongo",
+  "selected_view": "Redis",
   "show_settings": false,
   "http": {
     "show_sidebar": true,
@@ -382,8 +382,16 @@
   },
   "redis": {
     "show_sidebar": true,
-    "host": "localhost",
-    "port": "6379"
+    "connections": [
+      {
+        "host": "localhost",
+        "port": "6379"
+      },
+      {
+        "host": "localhost",
+        "port": "6380"
+      }
+    ]
   },
   "mongo": {
     "show_sidebar": true,
@@ -393,7 +401,7 @@
         "host": "localhost",
         "port": "27017",
         "user": "root",
-        "password": "pass",
+        "password": "password",
         "is_srv": false
       }
     ]

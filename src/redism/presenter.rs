@@ -95,7 +95,7 @@ pub enum RedisMenu {
 
 impl Default for RedisMenu {
     fn default() -> Self {
-        RedisMenu::String
+        RedisMenu::All
     }
 }
 

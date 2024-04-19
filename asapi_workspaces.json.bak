@@ -384,8 +384,16 @@
   },
   "redis": {
     "show_sidebar": true,
-    "host": "localhost",
-    "port": "6379"
+    "connections": [
+      {
+        "host": "localhost",
+        "port": "6379"
+      },
+      {
+        "host": "localhost",
+        "port": "6380"
+      }
+    ]
   },
   "kafka": {
     "show_sidebar": true,
