@@ -14,7 +14,7 @@ use crate::{
 };
 
 impl RedisView {
-    pub fn show_json(&mut self, ui: &mut egui::Ui, i18n: &I18n) {
+    pub fn show_json(&mut self, ui: &mut egui::Ui, _i18n: &I18n) {
         egui::Grid::new("json objects")
             .spacing(egui::vec2(ui.spacing().item_spacing.x * 2.0, 0.0))
             .show(ui, |ui| {

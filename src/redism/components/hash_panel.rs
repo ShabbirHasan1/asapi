@@ -15,7 +15,7 @@ use crate::{
 };
 
 impl RedisView {
-    pub fn show_hashes(&mut self, ui: &mut egui::Ui, i18n: &I18n) {
+    pub fn show_hashes(&mut self, ui: &mut egui::Ui, _i18n: &I18n) {
         ui.set_width(ui.available_width());
         for (h_name, v) in &self.state.hashes {
             // --> Manejamos acciones sobre elemento que muestra nombre del hash

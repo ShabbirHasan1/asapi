@@ -51,7 +51,8 @@ impl RedisView {
         }
 
         if self.state.must_scan {
-            let _ = presenter::scan(&mut self.state);
+            let option = self.state.selected_menu;
+            let _ = presenter::scan(&mut self.state, option);
             self.state.must_scan = false;
         }
         if self.state.is_first_update {
@@ -70,7 +71,7 @@ impl RedisView {
         // Panel Central
         // ===================================================================
         egui::CentralPanel::default().show(ctx, |ui| {
-            if self.state.selected_menu != RedisMenu::PubSub {
+            if self.state.selected_menu == RedisMenu::All {
                 // --> Historia, movimiento y ejecución de comandos <--
                 ui.horizontal(|ui| {
                     let command_textedit =
@@ -100,9 +101,9 @@ impl RedisView {
                             self.state.current_command.as_str(),
                         ) {
                             Ok(result) => {
-                                info!("Result: {:?}", result);
+                                let option = self.state.selected_menu;
                                 self.state.command_last_result = result;
-                                let _ = presenter::scan(&mut self.state);
+                                let _ = presenter::scan(&mut self.state, option);
                             }
                             // TODO: Change color
                             Err(e) => {
@@ -124,10 +125,10 @@ impl RedisView {
                         self.state.current_history_index -= 1;
                         self.state.current_command =
                             self.state.cmd_history[self.state.current_history_index].clone();
-                        info!(
-                            "UP {}  --  {}",
-                            self.state.current_history_index, self.state.current_command
-                        );
+                        // info!(
+                        //     "UP {}  --  {}",
+                        //     self.state.current_history_index, self.state.current_command
+                        // );
                     } else if ctx.input(|i| i.key_pressed(egui::Key::ArrowDown))
                         && (self.state.current_history_index != self.state.cmd_history.len())
                     {
@@ -141,10 +142,10 @@ impl RedisView {
                                 self.state.current_command.clear();
                             }
                         }
-                        info!(
-                            "DOWN {}  --  {}",
-                            self.state.current_history_index, self.state.current_command
-                        );
+                        // info!(
+                        //     "DOWN {}  --  {}",
+                        //     self.state.current_history_index, self.state.current_command
+                        // );
                     }
                 });
 
@@ -161,7 +162,7 @@ impl RedisView {
                     RedisMenu::All => self.show_all(ui, i18n),
                     RedisMenu::String => {
                         ui.heading(egui::RichText::new("Strings").strong());
-                        self.show_strings(ui, i18n);
+                        let _ = self.show_strings(ui, i18n);
                     }
                     RedisMenu::List => {
                         ui.heading(egui::RichText::new("Lists").strong());
@@ -179,7 +180,7 @@ impl RedisView {
                         ui.heading(egui::RichText::new("SortedSet").strong());
                         self.show_sorted_sets(ui, i18n);
                     }
-                    RedisMenu::Streams => {
+                    RedisMenu::Stream => {
                         ui.heading(egui::RichText::new("Streams").strong());
                         self.show_streams(ui, i18n);
                     }

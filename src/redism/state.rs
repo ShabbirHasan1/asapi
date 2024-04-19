@@ -8,6 +8,7 @@
 
 use redis::Msg as PubSubMsg;
 use serde::{Deserialize, Serialize};
+use std::collections::BTreeMap;
 use std::collections::HashMap;
 
 use crate::{common::traits::ToUrl, redism::presenter::RedisMenu};
@@ -46,9 +47,32 @@ impl Default for PubSubState {
     }
 }
 
+#[derive(Default)]
+pub struct RedisStringState {
+    pub set_k: String,
+    pub set_v: String,
+    pub set_offset: String, // SETRANGE
+    pub append_str: String,
+    pub get_k: String,
+    pub getset_v: String,
+    pub get_offset_from: String,    // GETRANGE
+    pub get_offset_to: String,      // GETRANGE
+    pub get_expire_seconds: String, // GET
+    pub incr_k: String,
+    pub incr_by_v: String,
+    pub incr_byfloat_v: String,
+    pub decr_k: String,
+    pub decr_by_v: String,
+    pub strlen_k: String,
+    pub lcs_k1: String,
+    pub lcs_k2: String,
+    pub lcs_len: String,
+    pub lcs_idx: String,
+}
+
 pub struct RedisLocalState {
     pub cmd_history: Vec<String>,
-    pub strings: Vec<(String, String)>,
+    pub strings: BTreeMap<String, String>,
     pub jsons: Vec<(String, String)>,
     pub sets: HashMap<String, Vec<String>>,
     pub sorted_sets: HashMap<String, Vec<String>>,
@@ -70,6 +94,7 @@ pub struct RedisLocalState {
     pub tmp_connection: RedisConnectionDefinition,
     pub current_connection: RedisConnectionDefinition,
     pub current_connection_idx: usize,
+    pub string_st: RedisStringState,
 }
 
 impl Default for RedisLocalState {
@@ -96,6 +121,7 @@ impl Default for RedisLocalState {
             lists: Default::default(),
             sets: Default::default(),
             sorted_sets: Default::default(),
+            string_st: Default::default(),
         }
     }
 }
