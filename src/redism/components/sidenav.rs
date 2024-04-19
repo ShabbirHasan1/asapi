@@ -269,7 +269,7 @@ impl RedisView {
                             ui,
                             &mut self.state,
                             i18n,
-                            RedisMenu::Streams,
+                            RedisMenu::Stream,
                             show_streams_info,
                         );
                         ui.end_row();

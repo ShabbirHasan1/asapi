@@ -125,9 +125,6 @@ impl AppTopBar {
             // --> Aquí ponemos botones de la barra <--
 
             ui.horizontal(|ui| {
-
-
-
                 let redis_btn =
                     ui.selectable_value(&mut app_state.selected_view, ViewType::Redis, "Redis");
                 redis_btn.context_menu(|ui| {
@@ -140,11 +137,7 @@ impl AppTopBar {
                     }
                 });
 
-
-
-                if redis_btn.clicked()
-
-                {
+                if redis_btn.clicked() {
                     let cloned_state = app_state.clone();
                     rt.spawn(async move {
                         let _ = async_save_state(&cloned_state, FILE_NAME).await;

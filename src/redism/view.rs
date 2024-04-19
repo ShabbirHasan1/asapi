@@ -125,10 +125,10 @@ impl RedisView {
                         self.state.current_history_index -= 1;
                         self.state.current_command =
                             self.state.cmd_history[self.state.current_history_index].clone();
-                        info!(
-                            "UP {}  --  {}",
-                            self.state.current_history_index, self.state.current_command
-                        );
+                        // info!(
+                        //     "UP {}  --  {}",
+                        //     self.state.current_history_index, self.state.current_command
+                        // );
                     } else if ctx.input(|i| i.key_pressed(egui::Key::ArrowDown))
                         && (self.state.current_history_index != self.state.cmd_history.len())
                     {
@@ -142,10 +142,10 @@ impl RedisView {
                                 self.state.current_command.clear();
                             }
                         }
-                        info!(
-                            "DOWN {}  --  {}",
-                            self.state.current_history_index, self.state.current_command
-                        );
+                        // info!(
+                        //     "DOWN {}  --  {}",
+                        //     self.state.current_history_index, self.state.current_command
+                        // );
                     }
                 });
 
@@ -162,7 +162,7 @@ impl RedisView {
                     RedisMenu::All => self.show_all(ui, i18n),
                     RedisMenu::String => {
                         ui.heading(egui::RichText::new("Strings").strong());
-                        self.show_strings(ui, i18n);
+                        let _ = self.show_strings(ui, i18n);
                     }
                     RedisMenu::List => {
                         ui.heading(egui::RichText::new("Lists").strong());
@@ -180,7 +180,7 @@ impl RedisView {
                         ui.heading(egui::RichText::new("SortedSet").strong());
                         self.show_sorted_sets(ui, i18n);
                     }
-                    RedisMenu::Streams => {
+                    RedisMenu::Stream => {
                         ui.heading(egui::RichText::new("Streams").strong());
                         self.show_streams(ui, i18n);
                     }
