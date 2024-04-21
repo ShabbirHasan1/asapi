@@ -106,7 +106,11 @@ impl RedisView {
         let mut pubsub_channel_to_delete = "".to_string();
         let mut n_col = 0;
 
-        let min_n_cols = if self.pubsub.messages.len() > 0 { 1 } else { 0 };
+        let min_n_cols = if self.pubsub.messages.is_empty() {
+            0
+        } else {
+            1
+        };
         ui.horizontal(|ui| {
             ui.label(&i18n.redis_n_columns);
             ui.add(

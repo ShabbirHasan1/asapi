@@ -11,15 +11,10 @@ use serde::{Deserialize, Serialize};
 use crate::common::internationalization::I18nOptions;
 use crate::redism::state::RedisAppState;
 
-#[derive(Clone, Deserialize, Serialize, Copy, PartialEq, Debug)]
+#[derive(Clone, Deserialize, Serialize, Copy, PartialEq, Debug, Default)]
 pub enum ViewType {
+    #[default]
     Redis,
-}
-
-impl Default for ViewType {
-    fn default() -> Self {
-        ViewType::Redis
-    }
 }
 
 #[derive(Clone, Serialize, Deserialize, Default, Debug)]
@@ -29,21 +24,10 @@ pub struct AppConfig {
     pub language: I18nOptions,
 }
 
-#[derive(Clone, Serialize, Deserialize, Debug)]
+#[derive(Clone, Serialize, Deserialize, Debug, Default)]
 pub struct AppState {
     pub app_config: AppConfig,
     pub selected_view: ViewType,
-    pub show_settings: bool,
+    pub show_settings: bool, // false
     pub redis: RedisAppState,
-}
-
-impl Default for AppState {
-    fn default() -> Self {
-        Self {
-            app_config: AppConfig::default(),
-            selected_view: ViewType::default(),
-            show_settings: false,
-            redis: RedisAppState::default(),
-        }
-    }
 }

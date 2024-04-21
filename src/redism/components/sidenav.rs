@@ -189,7 +189,7 @@ impl RedisView {
                     .connections
                     .iter()
                     .enumerate()
-                    .filter(|(idx, _)| !connections_to_delete.contains(&idx))
+                    .filter(|(idx, _)| !connections_to_delete.contains(idx))
                     .map(|(_, e)| e.to_owned())
                     .collect();
             }

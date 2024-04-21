@@ -55,7 +55,7 @@ impl RedisView {
                                     // eso me hace falta el `idx-1`.
                                     let from_when = if idx == 0 { "0" } else { &v[idx - 1] };
                                     let _ = presenter::read_stream_id(
-                                        &stream_name,
+                                        stream_name,
                                         from_when,
                                         &mut self.state.stream_id_values,
                                     );
@@ -93,7 +93,7 @@ impl RedisView {
                         match presenter::delete_key(
                             &self.state.current_connection.host,
                             &self.state.current_connection.port,
-                            &stream_name,
+                            stream_name,
                         ) {
                             Ok(s) => {
                                 self.state.must_scan = true;

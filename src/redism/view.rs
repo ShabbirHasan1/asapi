@@ -19,18 +19,10 @@ use super::presenter::{self, RedisMenu};
 use super::state::RedisAppState;
 use super::state::{PubSubState, RedisLocalState};
 
+#[derive(Default)]
 pub struct RedisView {
     pub state: RedisLocalState,
     pub pubsub: PubSubState,
-}
-
-impl Default for RedisView {
-    fn default() -> Self {
-        Self {
-            state: RedisLocalState::default(),
-            pubsub: PubSubState::default(),
-        }
-    }
 }
 
 impl RedisView {

@@ -80,9 +80,10 @@ use super::state::RedisLocalState;
 //     Ok(())
 // }
 
-#[derive(Clone, Debug, PartialEq, Copy)]
+#[derive(Clone, Debug, PartialEq, Copy, Default)]
 pub enum RedisMenu {
     All,
+    #[default]
     String,
     Json,
     List,
@@ -91,12 +92,6 @@ pub enum RedisMenu {
     Hash,
     Stream,
     PubSub,
-}
-
-impl Default for RedisMenu {
-    fn default() -> Self {
-        RedisMenu::String
-    }
 }
 
 pub fn create_conn(host: &str, port: i16) -> Result<redis::Connection, RedisError> {
@@ -112,7 +107,7 @@ pub fn create_conn(host: &str, port: i16) -> Result<redis::Connection, RedisErro
 
 pub fn create_conn_with_default(host: &str, port: &str) -> Result<redis::Connection, RedisError> {
     let port = port.parse::<i16>().unwrap_or(6379); // Using 6379 as default value;
-    create_conn(&host, port)
+    create_conn(host, port)
 }
 
 /// Escaneo de toda la instancia de redis.
@@ -323,12 +318,12 @@ pub fn delete_stream_message(
 }
 
 pub fn delete_key(host: &str, port: &str, key: &str) -> RedisResult<i8> {
-    create_conn_with_default(&host, &port).and_then(|mut con| con.del(key))
+    create_conn_with_default(host, port).and_then(|mut con| con.del(key))
 }
 
 // Borrado por entrada, un hash entero no se puede borrar. Se borra cuando no le quedan entradas.
 pub fn delete_hashkey(host: &str, port: &str, hash_name: &str, field_key: &str) -> RedisResult<i8> {
-    create_conn_with_default(&host, &port).and_then(|mut con| con.hdel(hash_name, field_key))
+    create_conn_with_default(host, port).and_then(|mut con| con.hdel(hash_name, field_key))
 }
 
 pub fn publish_to_channel(
@@ -337,7 +332,7 @@ pub fn publish_to_channel(
     channel: &str,
     message: &str,
 ) -> RedisResult<bool> {
-    create_conn_with_default(&host, &port).and_then(|mut conn| conn.publish(channel, message))
+    create_conn_with_default(host, port).and_then(|mut conn| conn.publish(channel, message))
 }
 
 pub fn subscribe_to_channel_std_thread(
@@ -346,13 +341,13 @@ pub fn subscribe_to_channel_std_thread(
     channel: &str,
     tx: &std::sync::mpsc::Sender<PubSubMsg>,
 ) -> Result<(), RedisError> {
-    let mut conn = create_conn_with_default(&host, &port)?;
+    let mut conn = create_conn_with_default(host, port)?;
     let owned_channel = channel.to_owned();
     let tx_owned = tx.to_owned();
 
     std::thread::spawn(move || -> Result<(), RedisError> {
         let mut pubsub = conn.as_pubsub();
-        let _ = pubsub.subscribe(&owned_channel).unwrap();
+        pubsub.subscribe(&owned_channel).unwrap();
 
         loop {
             let msg = pubsub.get_message()?;
@@ -546,19 +541,19 @@ impl StringPresenter {
             let response = match t {
                 NumericValue::Int => v
                     .parse::<i64>()
-                    .or_else(|err| Err(format!("PARSE ERROR :: {err:?}")))
+                    .map_err(|err| format!("PARSE ERROR :: {err:?}"))
                     .and_then(|i| {
                         conn.incr::<&str, i64, redis::Value>(&k, i)
-                            .or_else(|err| Err(format!("{err:?}")))
-                            .and_then(|value| Ok(redis_value_to_string(&value)))
+                            .map_err(|err| format!("{err:?}"))
+                            .map(|v| redis_value_to_string(&v))
                     }),
                 NumericValue::Float => v
                     .parse::<f32>()
-                    .or_else(|err| Err(format!("PARSE ERROR :: {err:?}")))
+                    .map_err(|err| format!("PARSE ERROR :: {err:?}"))
                     .and_then(|i| {
                         conn.incr::<&str, f32, redis::Value>(&k, i)
-                            .or_else(|err| Err(format!("{err:?}")))
-                            .and_then(|value| Ok(redis_value_to_string(&value)))
+                            .map_err(|err| format!("{err:?}"))
+                            .map(|v| redis_value_to_string(&v))
                     }),
             };
 
@@ -598,11 +593,11 @@ impl StringPresenter {
             let k = st.string_st.decr_k.clone();
             let response = v
                 .parse::<i64>()
-                .or_else(|err| Err(format!("{err:?}")))
+                .map_err(|err| format!("{err:?}"))
                 .and_then(|i| {
                     conn.decr::<&str, i64, redis::Value>(&k, i)
-                        .or_else(|err| Err(format!("{err:?}")))
-                        .and_then(|value| Ok(redis_value_to_string(&value)))
+                        .map_err(|err| format!("{err:?}"))
+                        .map(|value| redis_value_to_string(&value))
                 });
 
             match response {
@@ -691,15 +686,12 @@ impl StringPresenter {
                 st.string_st.get_offset_to.clone(),
             );
 
-            match (from_s.parse::<isize>(), to_s.parse::<isize>()) {
-                (Ok(f), Ok(t)) => {
-                    let result = conn.getrange::<&str, String>(&k, f, t);
-                    st.command_last_result = match result {
-                        Ok(msg) => format!("GETRANGE :: Key: {k}, Value: {msg}"),
-                        Err(err) => format!("ERROR GETRANGE :: {err:?}"),
-                    }
+            if let (Ok(f), Ok(t)) = (from_s.parse::<isize>(), to_s.parse::<isize>()) {
+                let result = conn.getrange::<&str, String>(&k, f, t);
+                st.command_last_result = match result {
+                    Ok(msg) => format!("GETRANGE :: Key: {k}, Value: {msg}"),
+                    Err(err) => format!("ERROR GETRANGE :: {err:?}"),
                 }
-                _ => {}
             }
         }
     }
@@ -714,22 +706,18 @@ impl StringPresenter {
                 st.string_st.get_expire_seconds.clone(),
             );
 
-            match expire_at_s.parse::<usize>() {
-                Ok(ex) => {
-                    let result = conn.get_ex::<&str, String>(&k, redis::Expiry::EX(ex));
-                    st.command_last_result = match result {
-                        Ok(msg) => format!("GETEX :: Key: {k}, Value: {msg}"),
-                        Err(err) => format!("ERROR GETEX :: {err:?}"),
-                    }
+            if let Ok(ex) = expire_at_s.parse::<usize>() {
+                let result = conn.get_ex::<&str, String>(&k, redis::Expiry::EX(ex));
+                st.command_last_result = match result {
+                    Ok(msg) => format!("GETEX :: Key: {k}, Value: {msg}"),
+                    Err(err) => format!("ERROR GETEX :: {err:?}"),
                 }
-                _ => {}
             }
         }
     }
 
     pub fn _get(conn: &mut redis::Connection, k: &str) -> Result<String, RedisError> {
-        let result = conn.get::<&str, String>(&k);
-        result
+        conn.get::<&str, String>(k)
     }
 }
 
@@ -742,7 +730,7 @@ fn redis_value_to_string(v: &redis::Value) -> String {
             .unwrap_or_else(|err| format!("ERROR {err:?} parsing {d:?}")),
         Value::Bulk(b) => b
             .iter()
-            .map(|v| redis_value_to_string(&v))
+            .map(redis_value_to_string)
             .collect::<Vec<String>>()
             .join(", "),
         Value::Status(s) => s.clone(),

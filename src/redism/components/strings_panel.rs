@@ -449,7 +449,7 @@ impl RedisView {
                             match presenter::delete_key(
                                 &self.state.current_connection.host,
                                 &self.state.current_connection.port,
-                                &header.0,
+                                header.0,
                             ) {
                                 Ok(_) => {
                                     self.state.must_scan = true;

@@ -14,18 +14,10 @@ use crate::app_state::{AppState, ViewType};
 use crate::common::fs::{async_save_state, load_state, save_state};
 use crate::common::internationalization::{I18n, I18nOptions};
 
+#[derive(Default)]
 pub struct AppTopBar {
     show_settings: bool,
     is_export_confirmation_open: bool,
-}
-
-impl Default for AppTopBar {
-    fn default() -> Self {
-        Self {
-            show_settings: false,
-            is_export_confirmation_open: false,
-        }
-    }
 }
 
 impl AppTopBar {
