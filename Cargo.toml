@@ -66,3 +66,4 @@ mongodb = "2.8.2" # Por defecto ya lleva `tokio`.
 # Kafka
 # ---------------------------------------------------------------------------
 rdkafka = { version = "0.36.2", features = ["cmake-build"] }
+clippy = "0.0.302"
