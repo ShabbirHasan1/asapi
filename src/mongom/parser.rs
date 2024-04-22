@@ -11,8 +11,6 @@ use serde_json::{Map, Value};
 
 use crate::info;
 
-use super::{filter::MongoFilter, filter::MongoOperator};
-
 pub fn json_value_to_document(value: &Value) -> Document {
     match value {
         Value::Object(obj) => {

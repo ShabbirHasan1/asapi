@@ -16,7 +16,7 @@ use crate::{
 };
 
 impl MongoView {
-    pub fn update_doc(&mut self, rt: &Runtime, ctx: &egui::Context, i18n: &I18n) {
+    pub fn update_doc(&mut self, rt: &Runtime, ctx: &egui::Context, _i18n: &I18n) {
         let filter: Document =
             serde_json::from_str::<Document>(&self.state.current_selection.user_free_input)
                 .map_or_else(
