@@ -12,7 +12,8 @@ use sqlx::Sqlite;
 use tokio::runtime::Runtime;
 
 use crate::app_state::AppState;
-use crate::quote;
+use crate::common::internationalization::I18n;
+use crate::common::syntax_highlighting::{highlight, CodeTheme};
 use crate::sqlx_common::components::window_generator::GeneratorWindow;
 use crate::sqlx_common::components::window_insertion::InsertionWindow;
 use crate::sqlx_common::pagination::Paginator;
@@ -20,16 +21,13 @@ use crate::sqlx_common::presenter::SqlPresenter;
 use crate::sqlx_common::state::{QuerySort, SqlxMessage};
 use crate::sqlx_common::table::{PerformanceTable, RegularTable};
 use crate::sqlx_common::traits::{Presenter as _, Show};
-use crate::common::internationalization::I18n;
-use crate::common::syntax_highlighting::{highlight, CodeTheme};
-
+use crate::{info, quote};
 
 use super::components::sidenav::SQLiteSideNav;
 use super::data_generation::generate_sqlite_value;
 use super::parser::SqliteType;
 use super::presenter::{self, run_statement_with_delete_control};
 use super::state::{SQLiteAppState, SQLiteState};
-
 
 pub struct SQLiteView {
     state: SQLiteState,
@@ -87,25 +85,22 @@ impl SQLiteView {
             }
 
             let path = self.state.current_connection.path.to_owned();
-            self.state.pool = rt.block_on(async move {
-                match presenter::connect(&path).await {
-                    Ok(conn) => Some(conn),
-                    _ => None,
-                }
-            });
+            self.state.pool = rt.block_on(async move { presenter::connect(&path).await.ok() });
 
-            let pool_ref = self.state.pool.as_ref().unwrap().clone();
-            self.state.sql.current_connection_tables_info =
-                rt.block_on(async move { presenter::tables_info(&pool_ref).await });
-            self.state.sql.tables = self
-                .state
-                .sql
-                .current_connection_tables_info
-                .keys()
-                .map(|k| k.to_ascii_lowercase())
-                .collect::<Vec<String>>();
-            self.state.sql.tables.sort();
-            self.state.connect_to_file = false;
+            if let Some(ref pool_ref) = self.state.pool {
+                // let pool_ref = self.state.pool.as_ref().unwrap().clone();
+                self.state.sql.current_connection_tables_info =
+                    rt.block_on(async move { presenter::tables_info(&pool_ref).await });
+                self.state.sql.tables = self
+                    .state
+                    .sql
+                    .current_connection_tables_info
+                    .keys()
+                    .map(|k| k.to_ascii_lowercase())
+                    .collect::<Vec<String>>();
+                self.state.sql.tables.sort();
+                self.state.connect_to_file = false;
+            }
         }
 
         // --> Ejecutamos query al cambiar el orden en la tabla <--
@@ -220,9 +215,13 @@ impl SQLiteView {
 
             // --> Ejecutamos la consulta introducida por el usuario <--
             ui.horizontal(|ui| {
-                if ui.button("\u{25b6}").on_hover_ui(|ui| {
-                    ui.label("Lanzar con \u{27a1} + \u{2ba8}");
-                }).clicked() {
+                if ui
+                    .button("\u{25b6}")
+                    .on_hover_ui(|ui| {
+                        ui.label("Lanzar con \u{27a1} + \u{2ba8}");
+                    })
+                    .clicked()
+                {
                     self.run_statement(
                         ctx,
                         rt,

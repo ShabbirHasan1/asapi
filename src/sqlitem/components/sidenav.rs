@@ -7,6 +7,7 @@
 // -------------------------------------------------------------------------
 
 use crate::{
+    common::{fs::file_exists, internationalization::I18n},
     sqlitem::{
         components::contextual_menus::TableInfo,
         presenter,
@@ -16,7 +17,6 @@ use crate::{
         components::context_menus::TableContextMenu,
         state::{QuerySort, SqlxMessage},
     },
-    common::internationalization::I18n,
 };
 use eframe::egui;
 use egui_extras::{Size, StripBuilder};
@@ -133,15 +133,7 @@ impl SQLiteSideNav {
                         i18n,
                     );
                 } else if !local_state.sql.hide_tables {
-                    SQLiteTablesSubpanel::show(
-                        ctx,
-                        rt,
-                        ui,
-                        tx,
-                        tx_sync,
-                        local_state,
-                        i18n,
-                    );
+                    SQLiteTablesSubpanel::show(ctx, rt, ui, tx, tx_sync, local_state, i18n);
                 }
             });
         }
@@ -211,8 +203,9 @@ impl SQLiteConnectionsSubpanel {
                         close_connection(rt, local_state);
                         let file_path = conn_definition.path.clone();
 
-                        if local_state.pool.is_none()
-                            || file_path != local_state.current_connection.path
+                        if (local_state.pool.is_none()
+                            || file_path != local_state.current_connection.path)
+                            && file_exists(&file_path)
                         {
                             local_state.current_connection =
                                 SQLiteConnectionDefinition { path: file_path };
