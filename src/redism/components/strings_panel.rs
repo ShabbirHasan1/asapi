@@ -11,7 +11,7 @@ use redis::RedisResult;
 
 use crate::{
     common::internationalization::I18n,
-    components::widgets::{text_edit_singleline_w100, ui_text_edit_singleline_hint},
+    components::widgets::ui_text_edit_singleline_hint,
     error,
     redism::{
         presenter::{self, RedisMenu, StringPresenter},
@@ -20,8 +20,7 @@ use crate::{
     ui_button_w, ui_button_w100, ui_button_w50,
 };
 
-// TODO:
-// ===========
+/// Comandos a 240419
 // done - SET
 // done - SETNX
 // done - SETRANGE
@@ -36,8 +35,8 @@ use crate::{
 // done - INCRBYFLOAT
 // done - DECR
 // done - DECRBY
-// LCS
-// STRLEN
+// done - LCS
+// done - STRLEN
 impl RedisView {
     pub fn show_strings(&mut self, ui: &mut egui::Ui, i18n: &I18n) -> RedisResult<()> {
         if self.state.selected_menu == RedisMenu::String {
@@ -449,7 +448,7 @@ impl RedisView {
                             match presenter::delete_key(
                                 &self.state.current_connection.host,
                                 &self.state.current_connection.port,
-                                &header.0,
+                                header.0,
                             ) {
                                 Ok(_) => {
                                     self.state.must_scan = true;

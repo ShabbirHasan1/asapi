@@ -19,18 +19,10 @@ use super::presenter::{self, RedisMenu};
 use super::state::RedisAppState;
 use super::state::{PubSubState, RedisLocalState};
 
+#[derive(Default)]
 pub struct RedisView {
     pub state: RedisLocalState,
     pub pubsub: PubSubState,
-}
-
-impl Default for RedisView {
-    fn default() -> Self {
-        Self {
-            state: RedisLocalState::default(),
-            pubsub: PubSubState::default(),
-        }
-    }
 }
 
 impl RedisView {
@@ -142,9 +134,6 @@ impl RedisView {
                                 self.state.current_command.clear();
                             }
                         }
-                        // info!(
-                        //     "DOWN {}  --  {}",
-                        //     self.state.current_history_index, self.state.current_command
                         // );
                     }
                 });
@@ -217,10 +206,6 @@ impl RedisView {
         egui::CollapsingHeader::new("Sorted Sets")
             .default_open(true)
             .show(ui, |ui| self.show_sorted_sets(ui, i18n));
-
-        egui::CollapsingHeader::new("Streams")
-            .default_open(true)
-            .show(ui, |ui| self.show_streams(ui, i18n));
     }
 
     pub fn connect(&mut self) {

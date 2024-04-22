@@ -18,8 +18,9 @@ use crate::pgm::state::PgAppState;
 use crate::redism::state::RedisAppState;
 use crate::sqlitem::state::SQLiteAppState;
 
-#[derive(Clone, Deserialize, Serialize, Copy, PartialEq, Debug)]
+#[derive(Clone, Deserialize, Serialize, Copy, PartialEq, Debug, Default)]
 pub enum ViewType {
+    #[default]
     Http,
     Pg,
     MySql,
@@ -27,12 +28,6 @@ pub enum ViewType {
     Redis,
     Mongo,
     Kafka,
-}
-
-impl Default for ViewType {
-    fn default() -> Self {
-        ViewType::Http
-    }
 }
 
 #[derive(Clone, Serialize, Deserialize, Default, Debug)]

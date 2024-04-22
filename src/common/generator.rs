@@ -6,6 +6,7 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
+#![allow(clippy::all)]
 // Puntos importantes
 // No puedo (no sé) usar trait porque al intentar usar Box<&dyn RGen> problemas porque en ciertos casos
 // me obliga a definir como fn para capturar el tipo de lo que defino, pero entonces es demaiaso específico
@@ -28,9 +29,7 @@ pub struct SimpleRGen {
 
 impl Clone for SimpleRGen {
     fn clone(&self) -> Self {
-        Self {
-            seed: self.seed.clone(),
-        }
+        Self { seed: self.seed }
     }
 }
 
@@ -87,8 +86,7 @@ impl SimpleRGen {
 
     // Generador del FP in Scala
     fn gen_i32(&self) -> (i32, SimpleRGen) {
-        let new_seed =
-            (self.seed.wrapping_mul(0x5DEECE66D as i64) + 0xB as i64) & 0xFFFFFFFFFFFF as i64;
+        let new_seed = (self.seed.wrapping_mul(0x5DEECE66D) + 0xB) & 0xFFFFFFFFFFFF;
         let new_rgen = SimpleRGen { seed: new_seed };
         let random_number = (new_seed >> 16) as i32;
 

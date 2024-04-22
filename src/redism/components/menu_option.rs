@@ -22,7 +22,7 @@ pub fn selectable_and_info(
     st: &mut RedisLocalState,
     i18n: &I18n,
     menu_option: RedisMenu,
-    hover_cb: impl Fn(&mut egui::Ui, &RedisLocalState) -> (),
+    hover_cb: impl Fn(&mut egui::Ui, &RedisLocalState),
 ) {
     ui.label(egui::RichText::new("Info").color(egui::Color32::from_rgb(128, 128, 128)))
         .on_hover_ui(|ui| {

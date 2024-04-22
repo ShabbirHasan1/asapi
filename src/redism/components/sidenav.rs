@@ -189,7 +189,7 @@ impl RedisView {
                     .connections
                     .iter()
                     .enumerate()
-                    .filter(|(idx, _)| !connections_to_delete.contains(&idx))
+                    .filter(|(idx, _)| !connections_to_delete.contains(idx))
                     .map(|(_, e)| e.to_owned())
                     .collect();
             }
@@ -264,17 +264,6 @@ impl RedisView {
                             show_sorted_sets_info,
                         );
                         ui.end_row();
-
-                        selectable_and_info(
-                            ui,
-                            &mut self.state,
-                            i18n,
-                            RedisMenu::Stream,
-                            show_streams_info,
-                        );
-                        ui.end_row();
-
-                        ui.end_row();
                     });
 
                 ui.separator();
@@ -295,6 +284,18 @@ impl RedisView {
                             format!("{:#?}", RedisMenu::Json),
                         );
                         ui.end_row()
+                    });
+
+                egui::Grid::new("mongo_streams_data_structure")
+                    .num_columns(2)
+                    .show(ui, |ui| {
+                        selectable_and_info(
+                            ui,
+                            &mut self.state,
+                            i18n,
+                            RedisMenu::Stream,
+                            show_streams_info,
+                        );
                     });
 
                 egui::Grid::new("mongo_pubsub_data_structure")

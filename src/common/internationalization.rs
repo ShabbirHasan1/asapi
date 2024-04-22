@@ -8,16 +8,11 @@
 
 use serde::{Deserialize, Serialize};
 
-#[derive(Copy, Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
+#[derive(Copy, Clone, PartialEq, Eq, Serialize, Deserialize, Debug, Default)]
 pub enum I18nOptions {
+    #[default]
     ES,
     EN,
-}
-
-impl Default for I18nOptions {
-    fn default() -> Self {
-        I18nOptions::ES
-    }
 }
 
 #[derive(Clone)]
