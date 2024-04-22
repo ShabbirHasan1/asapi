@@ -40,4 +40,4 @@ sqlx = { version = "0.7.4", features = [ "runtime-tokio", "tls-native-tls", "sql
 egui-file-dialog = "0.4.0"
 # tipos decimales en mysql
 rust_decimal = "1.35"
-rust_decimal_macros = "1.35"
+
