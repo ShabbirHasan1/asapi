@@ -14,7 +14,7 @@ use std::num::NonZeroUsize;
 
 use crate::{error, info};
 
-use super::state::{RedisConnectionDefinition, RedisListState, RedisLocalState};
+use super::state::{RedisConnectionDefinition, RedisListState, RedisLocalState, RedisSetsState};
 
 // ========================================================================
 // I do not create Presenter to share client/connection because reading the
@@ -37,8 +37,8 @@ use super::state::{RedisConnectionDefinition, RedisListState, RedisLocalState};
 pub enum RedisMenu {
     All,
     String,
-    #[default]
     List,
+    #[default]
     Set,
     Hash,
     SortedSet,
@@ -1026,6 +1026,162 @@ impl ListPresenter {
             }
             Err(err) => {
                 format!("ERROR LPUSHX :: {err:?}")
+            }
+        }
+    }
+}
+
+pub struct SetsPresenter;
+
+impl SetsPresenter {
+    pub fn sadd(
+        conn: &mut redis::Connection,
+        hm: &mut HashMap<String, Vec<String>>,
+        st: &mut RedisSetsState,
+    ) -> String {
+        let vs = st
+            .sadd_vs
+            .split(' ')
+            .map(|s| s.to_owned())
+            .collect::<Vec<String>>();
+        let k = st.sadd_k.clone();
+
+        match conn.sadd(&k, vs) {
+            Ok(rresp) => {
+                let value: Vec<String> = conn.smembers(&k).unwrap();
+                hm.insert(k, value);
+                let parsed_rresp = redis_value_to_string(&rresp);
+                format!("SADD :: {parsed_rresp}")
+            }
+            Err(err) => {
+                format!("ERROR SADD :: {err:?}")
+            }
+        }
+    }
+
+    pub fn srem(
+        conn: &mut redis::Connection,
+        hm: &mut HashMap<String, Vec<String>>,
+        st: &mut RedisSetsState,
+    ) -> String {
+        let vs = st
+            .srem_vs
+            .split(' ')
+            .map(|s| s.to_owned())
+            .collect::<Vec<String>>();
+        let k = st.srem_k.clone();
+
+        match conn.srem(&k, vs) {
+            Ok(rresp) => {
+                let value: Vec<String> = conn.smembers(&k).unwrap();
+                hm.insert(k, value);
+                let parsed_rresp = redis_value_to_string(&rresp);
+                format!("SREM :: {parsed_rresp}")
+            }
+            Err(err) => {
+                format!("ERROR SREM :: {err:?}")
+            }
+        }
+    }
+
+    pub fn spop(
+        conn: &mut redis::Connection,
+        hm: &mut HashMap<String, Vec<String>>,
+        st: &mut RedisSetsState,
+    ) -> String {
+        let k = st.spop_k.clone();
+
+        match conn.spop(&k) {
+            Ok(rresp) => {
+                let value: Vec<String> = conn.smembers(&k).unwrap();
+                hm.insert(k, value);
+                let parsed_rresp = redis_value_to_string(&rresp);
+                format!("SPOP :: {parsed_rresp}")
+            }
+            Err(err) => {
+                format!("ERROR SPOP :: {err:?}")
+            }
+        }
+    }
+
+    pub fn srandmember(conn: &mut redis::Connection, st: &mut RedisSetsState) -> String {
+        let k = st.srandmember_k.clone();
+        let count = st.srandmember_count.parse::<usize>().unwrap_or(1);
+        let value = if count <= 1 {
+            conn.srandmember_multiple(&k, 1)
+        } else {
+            conn.srandmember_multiple(&k, count)
+        };
+
+        match value {
+            Ok(rresp) => {
+                let parsed_rresp = redis_value_to_string(&rresp);
+                format!("SRANDMEMBER :: {parsed_rresp}")
+            }
+            Err(err) => {
+                format!("ERROR SRANDMEMBER :: {err:?}")
+            }
+        }
+    }
+
+    pub fn sismember(conn: &mut redis::Connection, st: &mut RedisSetsState) -> String {
+        match conn.sismember(&st.sismember_k, &st.sismember_m) {
+            Ok(rresp) => {
+                let parsed_rresp = redis_value_to_string(&rresp);
+                format!("SISMEMBER :: {parsed_rresp}")
+            }
+            Err(err) => {
+                format!("ERROR SISMEMBER :: {err:?}")
+            }
+        }
+    }
+
+    pub fn smismember(conn: &mut redis::Connection, st: &mut RedisSetsState) -> String {
+        let vs = st
+            .smismember_ms
+            .split(' ')
+            .map(|s| s.to_owned())
+            .collect::<Vec<String>>();
+
+        match conn.smismember(&st.smismember_k, &vs) {
+            Ok(rresp) => {
+                let parsed_rresp = redis_value_to_string(&rresp);
+                format!("SMISMEMBER :: {parsed_rresp}")
+            }
+            Err(err) => {
+                format!("ERROR SMISMEMBER :: {err:?}")
+            }
+        }
+    }
+
+    pub fn scard(conn: &mut redis::Connection, st: &mut RedisSetsState) -> String {
+        match conn.scard(&st.scard_k) {
+            Ok(rresp) => {
+                let parsed_rresp = redis_value_to_string(&rresp);
+                format!("SCARD :: {parsed_rresp}")
+            }
+            Err(err) => {
+                format!("ERROR SCARD :: {err:?}")
+            }
+        }
+    }
+
+    pub fn smembers(
+        conn: &mut redis::Connection,
+        hm: &mut HashMap<String, Vec<String>>,
+        st: &mut RedisSetsState,
+    ) -> String {
+        let k = st.smembers_k.clone();
+
+        match conn.smembers::<&str, Vec<String>>(&k) {
+            Ok(rresp) => {
+                let resp = format!("SCARD :: {parsed_rresp}", parsed_rresp = rresp.join(", "));
+                hm.insert(k, rresp);
+
+                resp
+            }
+            Err(err) => {
+                format!("ERROR SCARD :: {err:?}")
             }
         }
     }

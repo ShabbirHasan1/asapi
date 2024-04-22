@@ -5,20 +5,65 @@
 // This file is confidential and only available to authorized individuals
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
-
 use eframe::egui;
+use egui_extras::{Size, StripBuilder};
+use redis::RedisResult;
 
 use crate::{
     common::internationalization::I18n,
+    components::widgets::ui_text_edit_singleline_hint,
     error, info,
     redism::{
-        presenter::{self, RedisMenu},
+        presenter::{self, run_redis_command, RedisMenu, SetsPresenter, StringPresenter},
         view::RedisView,
     },
+    ui_button_w, ui_button_w100, ui_button_w50,
 };
 
+///
+/// Básico
+/// done - SADD
+/// done - SREM
+/// done - SPOP
+/// done - SRANDMEMBER
+///
+/// Info Básica
+/// SISMBEMBER
+/// SCARD
+/// SMEMBERS
+///
+/// Operaciones Conjuntos
+/// SINTER
+/// SINTERCARD
+/// SINTERSTORE
+/// SDIFF
+/// SDIFFSTORE
+/// SUNION
+/// SUNIONSTORE
+///
 impl RedisView {
     pub fn show_sets(&mut self, ui: &mut egui::Ui, i18n: &I18n) {
+        if self.state.selected_menu == RedisMenu::Set {
+            egui::CollapsingHeader::new("Comandos Disponibles")
+                .default_open(true)
+                .show(ui, |ui| {
+                    ui.columns(2, |uis| {
+                        self.basic_cmds(&mut uis[0]);
+                        self.set_info_cmds(&mut uis[1]);
+                    });
+                    ui.separator();
+
+                    ui.columns(2, |uis| {
+                        // self.inter_cmds(&mut uis[0]);
+                        // self.diff_and_union_cmds(&mut uis[1]);
+                    });
+                });
+
+            if !self.state.command_last_result.is_empty() {
+                ui.label(&self.state.command_last_result);
+            }
+        }
+
         self.show(ui, i18n, RedisMenu::Set);
     }
 
@@ -55,5 +100,277 @@ impl RedisView {
 
             ui.end_row();
         }
+    }
+
+    fn basic_cmds(&mut self, ui: &mut egui::Ui) {
+        StripBuilder::new(ui)
+            .size(Size::exact(20.0))
+            .size(Size::exact(20.0))
+            .size(Size::exact(20.0))
+            .size(Size::exact(20.0))
+            .vertical(|mut strip| {
+                strip.strip(|builder| {
+                    builder
+                        .size(Size::remainder())
+                        .size(Size::remainder())
+                        .size(Size::exact(108.0))
+                        .horizontal(|mut strip| {
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Key",
+                                    &mut self.state.sets_st.sadd_k,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Value (& Values)",
+                                    &mut self.state.sets_st.sadd_vs,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                if ui_button_w100!(ui, "SADD") {
+                                    self.state.command_last_result =
+                                        run_redis_command(&self.state.current_connection, |conn| {
+                                            SetsPresenter::sadd(
+                                                conn,
+                                                &mut self.state.sets,
+                                                &mut self.state.sets_st,
+                                            )
+                                        });
+                                }
+                            });
+                        });
+                });
+
+                strip.strip(|builder| {
+                    builder
+                        .size(Size::remainder())
+                        .size(Size::remainder())
+                        .size(Size::exact(108.0))
+                        .horizontal(|mut strip| {
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Key",
+                                    &mut self.state.sets_st.srem_k,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Value (& Values)",
+                                    &mut self.state.sets_st.srem_vs,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                if ui_button_w100!(ui, "SREM") {
+                                    self.state.command_last_result =
+                                        run_redis_command(&self.state.current_connection, |conn| {
+                                            SetsPresenter::srem(
+                                                conn,
+                                                &mut self.state.sets,
+                                                &mut self.state.sets_st,
+                                            )
+                                        });
+                                }
+                            });
+                        });
+                });
+
+                strip.strip(|builder| {
+                    builder
+                        .size(Size::remainder())
+                        .size(Size::exact(108.0))
+                        .horizontal(|mut strip| {
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Key",
+                                    &mut self.state.sets_st.spop_k,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                if ui_button_w100!(ui, "SPOP") {
+                                    self.state.command_last_result =
+                                        run_redis_command(&self.state.current_connection, |conn| {
+                                            SetsPresenter::spop(
+                                                conn,
+                                                &mut self.state.sets,
+                                                &mut self.state.sets_st,
+                                            )
+                                        });
+                                }
+                            });
+                        });
+                });
+
+                strip.strip(|builder| {
+                    builder
+                        .size(Size::remainder())
+                        .size(Size::remainder())
+                        .size(Size::exact(108.0))
+                        .horizontal(|mut strip| {
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Key",
+                                    &mut self.state.sets_st.srandmember_k,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Count (1 if no value provided)",
+                                    &mut self.state.sets_st.srandmember_count,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                if ui_button_w!(ui, "SRANDMEMBER", 108.0) {
+                                    self.state.command_last_result =
+                                        run_redis_command(&self.state.current_connection, |conn| {
+                                            SetsPresenter::srandmember(
+                                                conn,
+                                                &mut self.state.sets_st,
+                                            )
+                                        });
+                                }
+                            });
+                        });
+                });
+            });
+    }
+
+    fn set_info_cmds(&mut self, ui: &mut egui::Ui) {
+        StripBuilder::new(ui)
+            .size(Size::exact(20.0))
+            .size(Size::exact(20.0))
+            .size(Size::exact(20.0))
+            .size(Size::exact(20.0))
+            .vertical(|mut strip| {
+                strip.strip(|builder| {
+                    builder
+                        .size(Size::remainder())
+                        .size(Size::remainder())
+                        .size(Size::exact(108.0))
+                        .horizontal(|mut strip| {
+                            strip.cell(|ui| {
+                                ui.add(
+                                    egui::TextEdit::singleline(&mut self.state.sets_st.sismember_k)
+                                        .hint_text("Key"),
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                ui.add(
+                                    egui::TextEdit::singleline(&mut self.state.sets_st.sismember_m)
+                                        .hint_text("Member"),
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                if ui_button_w!(ui, "SISMEMBER", 128.0) {
+                                    self.state.command_last_result =
+                                        run_redis_command(&self.state.current_connection, |conn| {
+                                            SetsPresenter::sismember(conn, &mut self.state.sets_st)
+                                        });
+                                }
+                            });
+                        });
+                });
+
+                strip.strip(|builder| {
+                    builder
+                        .size(Size::remainder())
+                        .size(Size::remainder())
+                        .size(Size::exact(108.0))
+                        .horizontal(|mut strip| {
+                            strip.cell(|ui| {
+                                ui.add(
+                                    egui::TextEdit::singleline(
+                                        &mut self.state.sets_st.smismember_k,
+                                    )
+                                    .hint_text("Key"),
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                ui.add(
+                                    egui::TextEdit::singleline(
+                                        &mut self.state.sets_st.smismember_ms,
+                                    )
+                                    .hint_text("Member (& Members)"),
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                if ui_button_w!(ui, "SMISMEMBER", 128.0) {
+                                    self.state.command_last_result =
+                                        run_redis_command(&self.state.current_connection, |conn| {
+                                            SetsPresenter::smismember(conn, &mut self.state.sets_st)
+                                        });
+                                }
+                            });
+                        });
+                });
+
+                strip.strip(|builder| {
+                    builder
+                        .size(Size::remainder())
+                        .size(Size::exact(108.0))
+                        .horizontal(|mut strip| {
+                            strip.cell(|ui| {
+                                ui.add(
+                                    egui::TextEdit::singleline(&mut self.state.sets_st.scard_k)
+                                        .hint_text("Key"),
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                if ui_button_w!(ui, "SCARD", 128.0) {
+                                    self.state.command_last_result =
+                                        run_redis_command(&self.state.current_connection, |conn| {
+                                            SetsPresenter::scard(conn, &mut self.state.sets_st)
+                                        });
+                                }
+                            });
+                        });
+                });
+
+                strip.strip(|builder| {
+                    builder
+                        .size(Size::remainder())
+                        .size(Size::exact(108.0))
+                        .horizontal(|mut strip| {
+                            strip.cell(|ui| {
+                                ui.add(
+                                    egui::TextEdit::singleline(&mut self.state.sets_st.smembers_k)
+                                        .hint_text("Key"),
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                if ui_button_w!(ui, "SMEMBERS", 128.0) {
+                                    self.state.command_last_result =
+                                        run_redis_command(&self.state.current_connection, |conn| {
+                                            SetsPresenter::smembers(
+                                                conn,
+                                                &mut self.state.sets,
+                                                &mut self.state.sets_st,
+                                            )
+                                        });
+                                }
+                            });
+                        });
+                });
+            });
     }
 }
