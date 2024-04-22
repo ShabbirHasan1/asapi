@@ -14,6 +14,7 @@ use tokio::runtime::Runtime;
 use crate::app_state::AppState;
 use crate::common::internationalization::I18n;
 use crate::common::syntax_highlighting::{highlight, CodeTheme};
+use crate::quote;
 use crate::sqlx_common::components::window_generator::GeneratorWindow;
 use crate::sqlx_common::components::window_insertion::InsertionWindow;
 use crate::sqlx_common::pagination::Paginator;
@@ -21,7 +22,6 @@ use crate::sqlx_common::presenter::SqlPresenter;
 use crate::sqlx_common::state::{QuerySort, SqlxMessage};
 use crate::sqlx_common::table::{PerformanceTable, RegularTable};
 use crate::sqlx_common::traits::{Presenter as _, Show};
-use crate::{info, quote};
 
 use super::components::sidenav::SQLiteSideNav;
 use super::data_generation::generate_sqlite_value;
