@@ -234,19 +234,17 @@ impl ClientContext for StatsContext {
     }
 }
 
-type LoggingConsumer = StreamConsumer<CustomContext>;
-type StatsConsumer = StreamConsumer<StatsContext>;
 
 pub trait Create<T> {
     fn create(config: &str) -> T;
 }
 
-pub struct KafkaConsumer {}
+pub struct KafkaConsumer;
 
 impl Create<StreamConsumer<CustomContext>> for KafkaConsumer {
     fn create(brokers: &str) -> StreamConsumer<CustomContext> {
         let context = CustomContext;
-        let consumer: LoggingConsumer = ClientConfig::new()
+        ClientConfig::new()
             // .set("group.id", group_id)
             .set("bootstrap.servers", brokers)
             .set("enable.partition.eof", "false")
@@ -256,9 +254,7 @@ impl Create<StreamConsumer<CustomContext>> for KafkaConsumer {
             //.set("auto.offset.reset", "smallest")
             .set_log_level(RDKafkaLogLevel::Debug)
             .create_with_context(context)
-            .expect("Consumer creation failed");
-
-        return consumer;
+            .expect("Consumer creation failed")
     }
 }
 
@@ -297,7 +293,7 @@ impl KafkaConsumer {
         messages: Arc<Mutex<Vec<KafkaConsumerMessage>>>,
     ) {
         consumer
-            .subscribe(&topics.to_vec())
+            .subscribe(topics)
             .expect("Can't subscribe to specified topics");
 
         loop {
@@ -316,7 +312,7 @@ impl KafkaConsumer {
 
                             // ENVÍO A TRAVÉS DE ACTUALIZACIÓN DE VARIABLE COMPARTIDA. Dejo así para tener un modelo distinto.
                             let mut messages = messages.lock().unwrap();
-                            let key = if m.key() == None {
+                            let key = if m.key().is_none() {
                                 String::from("")
                             } else {
                                 format!("{:?}", m.key())
@@ -346,12 +342,8 @@ impl KafkaConsumer {
                         let len = headers.count();
                         for idx in 0..len - 1 {
                             let opt_header = headers.try_get(idx);
-                            // println!("  Header {:#?}: {:?}", header.key, header.value);
-                            match opt_header {
-                                Some(header) => {
-                                    println!("  Header {:#?}: {:?}", header.key, header.value);
-                                }
-                                None => (),
+                            if let Some(h) = opt_header {
+                                println!("  Header {:#?}: {:?}", h.key, h.value);
                             }
                         }
                     }

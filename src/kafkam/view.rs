@@ -10,9 +10,7 @@ use super::{
     presenter::{Kafka, KafkaConsumer, KafkaConsumerMessage, KafkaMessage, KafkaProducer},
     state::{Cluster, KafkaAppState, KafkaLocalState},
 };
-use crate::{
-    app_state::AppState, kafkam::state::KafkaPanel, common::internationalization::I18n,
-};
+use crate::{app_state::AppState, common::internationalization::I18n, kafkam::state::KafkaPanel};
 use eframe::egui;
 use egui_extras::{Column, TableBuilder};
 use rdkafka::metadata::Metadata;
@@ -47,7 +45,7 @@ impl KafkaView {
         // Preparación de cada ciclo
         // =======================================
         // --> Repintado continuo si estamos en subscripción <--
-        if self.state.current_view == KafkaPanel::SUBSCRIBE {
+        if self.state.current_view == KafkaPanel::Subscribe {
             ctx.request_repaint();
         }
 
@@ -79,7 +77,7 @@ impl KafkaView {
         if app_state.kafka.show_sidebar {
             egui::SidePanel::left("kafka_cluster_panel").show(ctx, |ui| {
                 ui.menu_button(i18n.kafka_btn_add_connection.clone(), |ui| {
-                    self.edit_cluster_menu(ui, &mut app_state.kafka, &i18n);
+                    self.edit_cluster_menu(ui, &mut app_state.kafka, i18n);
                 });
 
                 for (idx, cluster) in app_state.kafka.clusters.iter().enumerate() {
@@ -114,15 +112,12 @@ impl KafkaView {
                                                 Kafka::extract_cluster_metadata_from_client(
                                                     producer.client(),
                                                 );
-                                            match metadata {
-                                                Some(data) => {
-                                                    let _ = tx_cloned
-                                                        .send(KafkaMessage::ClusterMetadata((
-                                                            idx, data,
-                                                        )))
-                                                        .await;
-                                                }
-                                                None => (),
+                                            if let Some(data) = metadata {
+                                                let _ = tx_cloned
+                                                    .send(KafkaMessage::ClusterMetadata((
+                                                        idx, data,
+                                                    )))
+                                                    .await;
                                             }
                                         });
 
@@ -142,30 +137,30 @@ impl KafkaView {
                             // --> Selección entre una u otra vista y acciones <--
                             let show_brokers_btn = ui.add(egui::SelectableLabel::new(
                                 self.state.current_cluster_idx == idx
-                                    && self.state.current_view == KafkaPanel::BROKERS,
+                                    && self.state.current_view == KafkaPanel::Brokers,
                                 &i18n.kafka_btn_show_brokers,
                             ));
                             let show_topics_btn = ui.add(egui::SelectableLabel::new(
                                 self.state.current_cluster_idx == idx
-                                    && self.state.current_view == KafkaPanel::TOPICS,
+                                    && self.state.current_view == KafkaPanel::Topics,
                                 &i18n.kafka_btn_show_topics,
                             ));
                             let show_subscription_btn = ui.add(egui::SelectableLabel::new(
                                 self.state.current_cluster_idx == idx
-                                    && self.state.current_view == KafkaPanel::SUBSCRIBE,
+                                    && self.state.current_view == KafkaPanel::Subscribe,
                                 &i18n.kafka_btn_show_subscription,
                             ));
 
                             // TODO: Hay que parar subscripción existente cuando hacemos click
                             if show_brokers_btn.clicked() {
                                 self.state.current_cluster_idx = idx;
-                                self.state.current_view = KafkaPanel::BROKERS;
+                                self.state.current_view = KafkaPanel::Brokers;
                             } else if show_topics_btn.clicked() {
                                 self.state.current_cluster_idx = idx;
-                                self.state.current_view = KafkaPanel::TOPICS;
+                                self.state.current_view = KafkaPanel::Topics;
                             } else if show_subscription_btn.clicked() {
                                 self.state.current_cluster_idx = idx;
-                                self.state.current_view = KafkaPanel::SUBSCRIBE;
+                                self.state.current_view = KafkaPanel::Subscribe;
                                 let broker = format!("{}:{}", cluster.host, cluster.port);
                                 let data = Arc::clone(&self.messages);
 
@@ -204,23 +199,19 @@ impl KafkaView {
                 .get(self.state.current_cluster_idx);
 
             // --> Mostramos la información en función de la selección del usuario <--
-            if self.state.current_view == KafkaPanel::BROKERS {
+            if self.state.current_view == KafkaPanel::Brokers {
                 // Control de si hay ya algún elemento en el vector.
-                if let Some(d2) = d1 {
+                if let Some(Some(metadata)) = d1 {
                     // Control de si ya hemos insertado valores en vez del None.
-                    if let Some(metadata) = d2 {
-                        show_clusters_metadata_info(ui, metadata);
-                    }
+                    show_clusters_metadata_info(ui, metadata);
                 }
-            } else if self.state.current_view == KafkaPanel::TOPICS {
+            } else if self.state.current_view == KafkaPanel::Topics {
                 // Control de si hay ya algún elemento en el vector.
-                if let Some(d2) = d1 {
+                if let Some(Some(metadata)) = d1 {
                     // Control de si ya hemos insertado valores en vez del None.
-                    if let Some(metadata) = d2 {
-                        show_topics_metadata_info(ui, metadata);
-                    }
+                    show_topics_metadata_info(ui, metadata);
                 }
-            } else if self.state.current_view == KafkaPanel::SUBSCRIBE {
+            } else if self.state.current_view == KafkaPanel::Subscribe {
                 // Control de si ya hemos insertado valores en vez del None.
                 let messages = self.messages.lock().unwrap();
                 KafkaView::show_messages_table(ui, &messages);
@@ -229,7 +220,7 @@ impl KafkaView {
     }
 
     // TODO: Hay que ver si es fácil ajustar para que sirva para todos los paneles.
-    fn show_messages_table(ui: &mut egui::Ui, messages: &Vec<KafkaConsumerMessage>) {
+    fn show_messages_table(ui: &mut egui::Ui, messages: &[KafkaConsumerMessage]) {
         let n_columns = 6;
         // let text_height = egui::TextStyle::Body
         //     .resolve(ui.style())
@@ -357,7 +348,7 @@ fn show_topics_metadata_info(ui: &mut egui::Ui, metadata: &Metadata) {
 }
 
 fn show_clusters_metadata_info(ui: &mut egui::Ui, metadata: &Metadata) {
-    ui.label(format!("Cluster information:"));
+    ui.label("Cluster information:".to_string());
     ui.label(format!("  Broker count: {}", metadata.brokers().len()));
     ui.label(format!("  Topics count: {}", metadata.topics().len()));
     ui.label(format!(

@@ -11,17 +11,12 @@ use serde::{Deserialize, Serialize};
 
 use super::presenter::KafkaMessage;
 
-#[derive(Eq, PartialEq, Debug)]
+#[derive(Eq, PartialEq, Debug, Default)]
 pub enum KafkaPanel {
-    BROKERS,
-    TOPICS,
-    SUBSCRIBE,
-}
-
-impl Default for KafkaPanel {
-    fn default() -> Self {
-        KafkaPanel::BROKERS
-    }
+    #[default]
+    Brokers,
+    Topics,
+    Subscribe,
 }
 
 #[derive(Default, Serialize, Clone, Debug, Deserialize)]
