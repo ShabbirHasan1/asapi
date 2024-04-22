@@ -104,7 +104,7 @@ pub struct MongoLocalState {
 impl Default for MongoLocalState {
     fn default() -> Self {
         Self {
-            current_operator: MongoOperator::EQ,
+            current_operator: MongoOperator::Eq,
             current_available_keys: Default::default(),
             current_selected_key: Default::default(),
             current_filter_value: Default::default(),

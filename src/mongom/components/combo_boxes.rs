@@ -126,23 +126,23 @@ impl MongoView {
             .show_ui(ui, |ui| {
                 ui.selectable_value(
                     &mut self.state.current_operator,
-                    MongoOperator::EQ,
-                    MongoOperator::EQ.as_str(),
+                    MongoOperator::Eq,
+                    MongoOperator::Eq.as_str(),
                 );
                 ui.selectable_value(
                     &mut self.state.current_operator,
-                    MongoOperator::NEQ,
-                    MongoOperator::NEQ.as_str(),
+                    MongoOperator::Neq,
+                    MongoOperator::Neq.as_str(),
                 );
                 ui.selectable_value(
                     &mut self.state.current_operator,
-                    MongoOperator::IN,
-                    MongoOperator::IN.as_str(),
+                    MongoOperator::In,
+                    MongoOperator::In.as_str(),
                 );
                 ui.selectable_value(
                     &mut self.state.current_operator,
-                    MongoOperator::NIN,
-                    MongoOperator::NIN.as_str(),
+                    MongoOperator::Nin,
+                    MongoOperator::Nin.as_str(),
                 );
                 ui.selectable_value(
                     &mut self.state.current_operator,
@@ -156,23 +156,23 @@ impl MongoView {
                 );
                 ui.selectable_value(
                     &mut self.state.current_operator,
-                    MongoOperator::GT,
-                    MongoOperator::GT.as_str(),
+                    MongoOperator::Gt,
+                    MongoOperator::Gt.as_str(),
                 );
                 ui.selectable_value(
                     &mut self.state.current_operator,
-                    MongoOperator::GTE,
-                    MongoOperator::GTE.as_str(),
+                    MongoOperator::Gte,
+                    MongoOperator::Gte.as_str(),
                 );
                 ui.selectable_value(
                     &mut self.state.current_operator,
-                    MongoOperator::LT,
-                    MongoOperator::LT.as_str(),
+                    MongoOperator::Lt,
+                    MongoOperator::Lt.as_str(),
                 );
                 ui.selectable_value(
                     &mut self.state.current_operator,
-                    MongoOperator::LTE,
-                    MongoOperator::LTE.as_str(),
+                    MongoOperator::Lte,
+                    MongoOperator::Lte.as_str(),
                 );
                 ui.selectable_value(
                     &mut self.state.current_operator,

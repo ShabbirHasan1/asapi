@@ -26,7 +26,6 @@ use crate::{error, info};
 impl MongoView {
     fn show_filters(
         filters: &mut VecDeque<MongoFilter>,
-        i18n: &I18n,
         ui: &mut egui::Ui,
         level: usize,
         parent: Option<usize>,
@@ -46,7 +45,7 @@ impl MongoView {
                             .show(ui);
                     }
 
-                    ui.add_enabled_ui(parent_operator != MongoOperator::NOT, |ui| {
+                    ui.add_enabled_ui(parent_operator != MongoOperator::Not, |ui| {
                         if ui.button("AND").clicked() {
                             action = UserAction::AddAnd(f.idx);
                         }
@@ -58,19 +57,13 @@ impl MongoView {
                         }
                     });
 
-                    if ui.button("Delete").clicked() {
+                    if ui.button("\u{1f5d1}").clicked() {
                         action = UserAction::Delete(f.idx);
                     }
                 });
 
-                let child_action = MongoView::show_filters(
-                    &mut f.children,
-                    i18n,
-                    ui,
-                    level + 1,
-                    parent,
-                    f.op.clone(),
-                );
+                let child_action =
+                    MongoView::show_filters(&mut f.children, ui, level + 1, parent, f.op.clone());
                 if child_action != UserAction::None {
                     action = child_action;
                 }
@@ -98,7 +91,7 @@ impl MongoView {
             }
         }
 
-        return filter;
+        filter
     }
 
     /// Buscamos índice y devolvemos filtro y padre
@@ -162,20 +155,19 @@ impl MongoView {
         // --> Mostramos los filtros ya grabados <--
         let user_action = MongoView::show_filters(
             &mut self.state.filters,
-            i18n,
             ui,
             0,
             self.state.current_parent,
-            MongoOperator::AND, // Lo es de forma implícita.
+            MongoOperator::And, // Lo es de forma implícita.
         );
 
         // Según la acción y el índice, insertamos aquí o allá
         match user_action {
             UserAction::AddAnd(idx) | UserAction::AddOr(idx) | UserAction::AddNor(idx) => {
                 let op = match user_action {
-                    UserAction::AddAnd(_) => MongoOperator::AND,
-                    UserAction::AddNor(_) => MongoOperator::NOR,
-                    _ => MongoOperator::OR,
+                    UserAction::AddAnd(_) => MongoOperator::And,
+                    UserAction::AddNor(_) => MongoOperator::Nor,
+                    _ => MongoOperator::Or,
                 };
 
                 self.state.current_parent = Some(self.state.next_idx);
@@ -200,7 +192,7 @@ impl MongoView {
             ui.text_edit_singleline(&mut self.state.current_filter_value);
             self.select_bson_data_type(ui);
 
-            if ui.button("ADD").clicked() {
+            if ui.button("\u{271a}").clicked() {
                 let data: serde_json::Result<Value> =
                     serde_json::from_str(&self.state.current_filter_value);
                 match data {
@@ -215,7 +207,7 @@ impl MongoView {
                         if self.state.current_selection.is_not {
                             self.state.next_idx += 1;
                             let mut not_filter = MongoFilter::new(
-                                MongoOperator::NOT,
+                                MongoOperator::Not,
                                 None,
                                 None,
                                 self.state.next_idx,

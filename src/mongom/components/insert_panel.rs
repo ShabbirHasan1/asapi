@@ -41,7 +41,7 @@ impl MongoView {
         };
 
         // Guarda para no crear objeto vacío.
-        if docs.len() == 0 {
+        if docs.is_empty() {
             return;
         }
 

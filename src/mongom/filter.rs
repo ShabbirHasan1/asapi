@@ -61,39 +61,39 @@ use crate::info;
 
 #[derive(PartialEq, Clone, Debug)]
 pub enum MongoOperator {
-    EQ,
-    NEQ,
-    IN,
-    NIN,
-    GT,
-    GTE,
-    LT,
-    LTE,
+    Eq,
+    Neq,
+    In,
+    Nin,
+    Gt,
+    Gte,
+    Lt,
+    Lte,
     Exists,
     HasType,
     ArrayContainsAll,
     Regex,
     // Lógicos
-    AND,
-    OR,
-    NOT,
-    NOR,
+    And,
+    Or,
+    Not,
+    Nor,
 }
 
 impl MongoOperator {
     pub fn variants() -> &'static [MongoOperator] {
         static VARIANTS: [MongoOperator; 12] = [
-            MongoOperator::EQ,
-            MongoOperator::NEQ,
+            MongoOperator::Eq,
+            MongoOperator::Neq,
             MongoOperator::Exists,
-            MongoOperator::IN,
-            MongoOperator::NIN,
+            MongoOperator::In,
+            MongoOperator::Nin,
             MongoOperator::HasType,
             MongoOperator::ArrayContainsAll,
-            MongoOperator::GT,
-            MongoOperator::GTE,
-            MongoOperator::LT,
-            MongoOperator::LTE,
+            MongoOperator::Gt,
+            MongoOperator::Gte,
+            MongoOperator::Lt,
+            MongoOperator::Lte,
             MongoOperator::Regex,
         ];
         &VARIANTS
@@ -101,17 +101,17 @@ impl MongoOperator {
 
     pub fn as_str(&self) -> &str {
         match self {
-            MongoOperator::EQ => "Equals",
-            MongoOperator::NEQ => "Doesn't Equal",
+            MongoOperator::Eq => "Equals",
+            MongoOperator::Neq => "Doesn't Equal",
             MongoOperator::Exists => "Exists",
-            MongoOperator::IN => "In",
-            MongoOperator::NIN => "Not In",
+            MongoOperator::In => "In",
+            MongoOperator::Nin => "Not In",
             MongoOperator::HasType => "Has Type",
             MongoOperator::ArrayContainsAll => "Array Contains All",
-            MongoOperator::GT => ">",
-            MongoOperator::GTE => ">=",
-            MongoOperator::LT => "<",
-            MongoOperator::LTE => "<=",
+            MongoOperator::Gt => ">",
+            MongoOperator::Gte => ">=",
+            MongoOperator::Lt => "<",
+            MongoOperator::Lte => "<=",
             MongoOperator::Regex => "Regex",
             _ => "",
         }
@@ -119,22 +119,22 @@ impl MongoOperator {
 
     pub fn extract_operator(&self) -> &str {
         match self {
-            MongoOperator::EQ => "$eq",
-            MongoOperator::NEQ => "$ne",
+            MongoOperator::Eq => "$eq",
+            MongoOperator::Neq => "$ne",
             MongoOperator::Exists => "$exists",
-            MongoOperator::IN => "$in",
-            MongoOperator::NIN => "$nin",
+            MongoOperator::In => "$in",
+            MongoOperator::Nin => "$nin",
             MongoOperator::HasType => "$type",
             MongoOperator::ArrayContainsAll => "$all",
-            MongoOperator::GT => "$gt",
-            MongoOperator::GTE => "$gte",
-            MongoOperator::LT => "$lt",
-            MongoOperator::LTE => "$lte",
+            MongoOperator::Gt => "$gt",
+            MongoOperator::Gte => "$gte",
+            MongoOperator::Lt => "$lt",
+            MongoOperator::Lte => "$lte",
             MongoOperator::Regex => "$regex",
-            MongoOperator::AND => "$and",
-            MongoOperator::OR => "$or",
-            MongoOperator::NOT => "$or",
-            MongoOperator::NOR => "$nor",
+            MongoOperator::And => "$and",
+            MongoOperator::Or => "$or",
+            MongoOperator::Not => "$or",
+            MongoOperator::Nor => "$nor",
         }
     }
 }
@@ -215,22 +215,22 @@ impl MongoFilter {
 
     pub fn build_mongo_query(&self) -> Document {
         match self.op {
-            MongoOperator::AND => {
+            MongoOperator::And => {
                 doc! { "$and": self.children.iter().map(|child| child.build_mongo_query()).collect::<Vec<Document>>() }
             }
 
-            MongoOperator::OR => {
+            MongoOperator::Or => {
                 doc! { "$or": self.children.iter().map(|child| child.build_mongo_query()).collect::<Vec<Document>>() }
             }
 
-            MongoOperator::NOT => {
+            MongoOperator::Not => {
                 // En caso de NOT, solo un hijo con predicado, no puede tener operación lógica después según entiendo
                 // por la inexistencia de dicho caso en la documentación.
                 // https://www.mongodb.com/docs/manual/reference/operator/query/not/
                 if let Some(document_to_negate) = self.children.front() {
                     match (&document_to_negate.key, &document_to_negate.val) {
                         (Some(k), Some(v)) => {
-                            doc! { k: {"$not": { document_to_negate.op.extract_operator(): json_value_to_bson(&v) }}}
+                            doc! { k: {"$not": { document_to_negate.op.extract_operator(): json_value_to_bson(v) }}}
                         }
                         _ => doc! {},
                     }
@@ -239,28 +239,25 @@ impl MongoFilter {
                 }
             }
 
-            MongoOperator::NOR => {
+            MongoOperator::Nor => {
                 doc! { "$nor": self.children.iter().map(|child| child.build_mongo_query()).collect::<Vec<Document>>() }
             }
 
             // En esta rama siempre debe entrar con key/value no None, tengo que ver cómo puedo
             // hacer que para estos lo otro sea obligado, no sé si se podrá.
-            MongoOperator::EQ
-            | MongoOperator::NEQ
-            | MongoOperator::GT
-            | MongoOperator::GTE
-            | MongoOperator::LT
-            | MongoOperator::LTE
-            | MongoOperator::IN
-            | MongoOperator::NIN
+            MongoOperator::Eq
+            | MongoOperator::Neq
+            | MongoOperator::Gt
+            | MongoOperator::Gte
+            | MongoOperator::Lt
+            | MongoOperator::Lte
+            | MongoOperator::In
+            | MongoOperator::Nin
             | MongoOperator::Exists
             | MongoOperator::HasType
             | MongoOperator::ArrayContainsAll
             | MongoOperator::Regex => {
-                let value_bson = self
-                    .val
-                    .as_ref()
-                    .map_or(Bson::Null, |v| json_value_to_bson(v));
+                let value_bson = self.val.as_ref().map_or(Bson::Null, json_value_to_bson);
 
                 doc! { self.key.as_ref().unwrap().clone(): { self.op.extract_operator(): value_bson } }
             }
