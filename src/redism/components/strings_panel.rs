@@ -11,7 +11,7 @@ use redis::RedisResult;
 
 use crate::{
     common::internationalization::I18n,
-    components::widgets::{text_edit_singleline_w100, ui_text_edit_singleline_hint},
+    components::widgets::ui_text_edit_singleline_hint,
     error,
     redism::{
         presenter::{self, RedisMenu, StringPresenter},

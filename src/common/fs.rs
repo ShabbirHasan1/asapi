@@ -50,7 +50,7 @@ pub fn load_state(file_name: &str) -> Result<AppState, IOError> {
 
 pub fn append_to_file(file_path: &str, text: &str) -> std::io::Result<()> {
     let mut file = OpenOptions::new()
-        .write(true)
+        // .write(true) // Innecesario por `append`.
         .append(true)
         .open(file_path)?;
 

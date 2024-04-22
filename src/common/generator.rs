@@ -6,6 +6,7 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
+#![allow(clippy::all)]
 // Puntos importantes
 // No puedo (no sé) usar trait porque al intentar usar Box<&dyn RGen> problemas porque en ciertos casos
 // me obliga a definir como fn para capturar el tipo de lo que defino, pero entonces es demaiaso específico

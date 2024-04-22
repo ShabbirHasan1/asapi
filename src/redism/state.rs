@@ -13,6 +13,23 @@ use std::collections::HashMap;
 
 use crate::{common::traits::ToUrl, redism::presenter::RedisMenu};
 
+/// No tengo muy claro cómo hacerlo mejor.
+/// Path y OsStr son más apropiadas pero problemáticas.
+/// Voy con String y ya se verá si necesito cambiar.
+#[derive(Clone, Serialize, Deserialize, Default, Debug)]
+pub struct RedisConnectionDefinition {
+    pub host: String,
+    pub port: String,
+    // pub user: String,
+    // pub password: String,
+}
+
+impl ToUrl for RedisConnectionDefinition {
+    fn to_url(&self) -> String {
+        format!("redis://{}:{}", self.host, self.port)
+    }
+}
+
 #[derive(Clone, Serialize, Deserialize, Default, Debug)]
 pub struct RedisAppState {
     pub show_sidebar: bool,
@@ -48,6 +65,18 @@ impl Default for PubSubState {
 }
 
 #[derive(Default)]
+pub struct RedisListState {
+    pub lpush_k: String,
+    pub lpush_vs: String,
+    pub lpop_k: String,
+    pub lpop_count: String,
+    pub rpush_k: String,
+    pub rpush_vs: String,
+    pub rpop_k: String,
+    pub rpop_count: String,
+}
+
+#[derive(Default)]
 pub struct RedisStringState {
     pub set_k: String,
     pub set_v: String,
@@ -73,12 +102,12 @@ pub struct RedisStringState {
 pub struct RedisLocalState {
     pub cmd_history: Vec<String>,
     pub strings: BTreeMap<String, String>,
-    pub jsons: Vec<(String, String)>,
-    pub sets: HashMap<String, Vec<String>>,
-    pub sorted_sets: HashMap<String, Vec<String>>,
     pub lists: HashMap<String, Vec<String>>,
-    pub streams: HashMap<String, Vec<String>>,
+    pub sets: HashMap<String, Vec<String>>,
     pub hashes: HashMap<String, Vec<(String, String)>>, // nombre_hash: Lista de pares
+    pub sorted_sets: HashMap<String, Vec<String>>,
+    pub jsons: Vec<(String, String)>,
+    pub streams: HashMap<String, Vec<String>>,
     // Para poder mostrar y quitar a voluntad, donde guardo los valores de los streams. No guardo todo el listado de
     // mensajes porque puede ser eterno. Cuando hago click busco y pongo, y cuando click otra vez borro.
     pub stream_id_values: HashMap<String, HashMap<String, redis::Value>>,
@@ -95,6 +124,7 @@ pub struct RedisLocalState {
     pub current_connection: RedisConnectionDefinition,
     pub current_connection_idx: usize,
     pub string_st: RedisStringState,
+    pub list_st: RedisListState,
 }
 
 impl Default for RedisLocalState {
@@ -122,6 +152,7 @@ impl Default for RedisLocalState {
             sets: Default::default(),
             sorted_sets: Default::default(),
             string_st: Default::default(),
+            list_st: Default::default(),
         }
     }
 }
@@ -140,22 +171,5 @@ impl RedisLocalState {
     pub fn reset_command(&mut self) {
         self.current_command.clear();
         self.command_last_result.clear();
-    }
-}
-
-/// No tengo muy claro cómo hacerlo mejor.
-/// Path y OsStr son más apropiadas pero problemáticas.
-/// Voy con String y ya se verá si necesito cambiar.
-#[derive(Clone, Serialize, Deserialize, Default, Debug)]
-pub struct RedisConnectionDefinition {
-    pub host: String,
-    pub port: String,
-    // pub user: String,
-    // pub password: String,
-}
-
-impl ToUrl for RedisConnectionDefinition {
-    fn to_url(&self) -> String {
-        format!("redis://{}:{}", self.host, self.port)
     }
 }

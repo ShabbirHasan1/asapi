@@ -6,8 +6,6 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
-use eframe::egui;
-
 #[macro_export]
 macro_rules! ui_button_w50 {
     ($ui:expr, $arg:expr) => {{

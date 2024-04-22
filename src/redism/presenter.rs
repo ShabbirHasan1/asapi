@@ -7,23 +7,14 @@
 // -------------------------------------------------------------------------
 
 use redis::streams::{StreamReadOptions, StreamReadReply};
+use redis::JsonCommands;
 use redis::{self, Client, Commands, Connection, Msg as PubSubMsg, RedisError, RedisResult, Value};
-use redis::{JsonCommands, ToRedisArgs};
 use std::collections::HashMap;
-use std::convert::Infallible;
-use std::num::ParseIntError;
-use std::str::FromStr;
-use std::string::ParseError;
+use std::num::NonZeroUsize;
 
 use crate::{error, info};
 
-use super::state::RedisLocalState;
-
-// #[derive(Debug)]
-// pub enum Command {
-//     Get { key: String },
-//     Set { key: String, val: Bytes },
-// }
+use super::state::{RedisConnectionDefinition, RedisListState, RedisLocalState};
 
 // ========================================================================
 // I do not create Presenter to share client/connection because reading the
@@ -42,58 +33,21 @@ use super::state::RedisLocalState;
 //     }
 // }
 
-// pub async fn create_async_conn() -> Result<aio::Connection, RedisError> {
-//     let client = redis::Client::open("redis://127.0.0.1/")?;
-//     client.get_async_connection().await
-// }
-
-// pub fn set_and_get(
-//     rt: &tokio::runtime::Runtime,
-//     _cmd: Command,
-//     tx: Sender<Command>,
-//     // ctx: egui::Context
-// ) -> Result<(), RedisError> {
-//     rt.spawn(async move {
-//         let mut conn = create_async_conn().await?;
-//         conn.set("my_key", "Hello world!").await?;
-//         let _result = conn.get("my_key").await?;
-
-//         let cmd2 = Command::Get {
-//             key: "foo".to_string(),
-//         };
-//         let _ = tx.send(cmd2);
-//         info!("-->> bar1");
-//         Ok::<(), RedisError>(())
-//         // ctx.request_repaint();
-//     });
-
-//     Ok(())
-// }
-
-// pub async fn set_value() -> Result<(), RedisError> {
-//     let mut con = create_async_conn().await?;
-//     let _ = con.set("my_key", "Hello world!").await?;
-//     let result: String = con.get("my_key").await?;
-
-//     info!("->> my_key: {}\n", result);
-
-//     Ok(())
-// }
-
 #[derive(Clone, Debug, PartialEq, Copy, Default)]
 pub enum RedisMenu {
     All,
-    #[default]
     String,
-    Json,
+    #[default]
     List,
     Set,
-    SortedSet,
     Hash,
+    SortedSet,
+    Json,
     Stream,
     PubSub,
 }
 
+#[inline(always)]
 pub fn create_conn(host: &str, port: i16) -> Result<redis::Connection, RedisError> {
     //if Redis server needs secure connection // https://medium.com/swlh/tutorial-getting-started-with-rust-and-redis-69041dd38279
     // let uri_scheme = match env::var("IS_TLS") {
@@ -105,9 +59,17 @@ pub fn create_conn(host: &str, port: i16) -> Result<redis::Connection, RedisErro
     client.get_connection()
 }
 
+#[inline(always)]
 pub fn create_conn_with_default(host: &str, port: &str) -> Result<redis::Connection, RedisError> {
     let port = port.parse::<i16>().unwrap_or(6379); // Using 6379 as default value;
     create_conn(host, port)
+}
+
+#[inline(always)]
+fn create_redis_connection(
+    conn: &RedisConnectionDefinition,
+) -> Result<redis::Connection, RedisError> {
+    create_conn_with_default(&conn.host, &conn.port)
 }
 
 /// Escaneo de toda la instancia de redis.
@@ -220,6 +182,35 @@ pub fn scan(state: &mut RedisLocalState, option: RedisMenu) -> RedisResult<()> {
     }
 
     Ok(())
+}
+
+fn redis_value_to_string(v: &redis::Value) -> String {
+    match v {
+        Value::Nil => "Nil".to_string(),
+        Value::Int(i) => i.to_string(),
+        Value::Data(d) => String::from_utf8(d.clone())
+            .unwrap_or_else(|err| format!("ERROR {err:?} parsing {d:?}")),
+        Value::Bulk(b) => b
+            .iter()
+            .map(redis_value_to_string)
+            .collect::<Vec<String>>()
+            .join(", "),
+        Value::Status(s) => s.clone(),
+        Value::Okay => "OK".to_string(),
+    }
+}
+
+pub fn run_redis_command<F: FnMut(&mut redis::Connection) -> String>(
+    conn_def: &RedisConnectionDefinition,
+    mut cb: F,
+) -> String {
+    let connection = create_redis_connection(conn_def);
+
+    if let Ok(mut conn) = connection {
+        cb(&mut conn)
+    } else {
+        "ERROR :: Not able to connect to {conn}.".to_string()
+    }
 }
 
 // Leemos los datos de un stream concreto
@@ -382,8 +373,7 @@ pub struct StringPresenter;
 
 impl StringPresenter {
     pub fn lcs(st: &mut RedisLocalState) {
-        let connection =
-            create_conn_with_default(&st.current_connection.host, &st.current_connection.port);
+        let connection = create_redis_connection(&st.current_connection);
 
         if let Ok(mut conn) = connection {
             let k1 = st.string_st.lcs_k1.clone();
@@ -416,8 +406,7 @@ impl StringPresenter {
     }
 
     pub fn str_len(st: &mut RedisLocalState) {
-        let connection =
-            create_conn_with_default(&st.current_connection.host, &st.current_connection.port);
+        let connection = create_redis_connection(&st.current_connection);
 
         if let Ok(mut conn) = connection {
             let k = st.string_st.strlen_k.clone();
@@ -434,8 +423,7 @@ impl StringPresenter {
     }
 
     pub fn append(st: &mut RedisLocalState) {
-        let connection =
-            create_conn_with_default(&st.current_connection.host, &st.current_connection.port);
+        let connection = create_redis_connection(&st.current_connection);
 
         if let Ok(mut conn) = connection {
             let (k, v) = (st.string_st.set_k.clone(), st.string_st.append_str.clone());
@@ -459,8 +447,7 @@ impl StringPresenter {
     }
 
     pub fn set(st: &mut RedisLocalState) {
-        let connection =
-            create_conn_with_default(&st.current_connection.host, &st.current_connection.port);
+        let connection = create_redis_connection(&st.current_connection);
 
         if let Ok(mut conn) = connection {
             let (k, v) = (st.string_st.set_k.clone(), st.string_st.set_v.clone());
@@ -480,8 +467,7 @@ impl StringPresenter {
     }
 
     pub fn set_nx(st: &mut RedisLocalState) {
-        let connection =
-            create_conn_with_default(&st.current_connection.host, &st.current_connection.port);
+        let connection = create_redis_connection(&st.current_connection);
 
         if let Ok(mut conn) = connection {
             let (k, v) = (st.string_st.set_k.clone(), st.string_st.set_v.clone());
@@ -501,8 +487,7 @@ impl StringPresenter {
     }
 
     pub fn set_range(st: &mut RedisLocalState) {
-        let connection =
-            create_conn_with_default(&st.current_connection.host, &st.current_connection.port);
+        let connection = create_redis_connection(&st.current_connection);
 
         if let Ok(mut conn) = connection {
             let (k, v) = (st.string_st.set_k.clone(), st.string_st.set_v.clone());
@@ -533,8 +518,7 @@ impl StringPresenter {
 
     // Muy rimbombante para ver cómo podía hacerlo. No queda muy bien.
     pub fn _incr(st: &mut RedisLocalState, v: &str, t: NumericValue) {
-        let connection =
-            create_conn_with_default(&st.current_connection.host, &st.current_connection.port);
+        let connection = create_redis_connection(&st.current_connection);
 
         if let Ok(mut conn) = connection {
             let k = st.string_st.incr_k.clone();
@@ -586,8 +570,7 @@ impl StringPresenter {
     }
 
     pub fn _decr(st: &mut RedisLocalState, v: &str) {
-        let connection =
-            create_conn_with_default(&st.current_connection.host, &st.current_connection.port);
+        let connection = create_redis_connection(&st.current_connection);
 
         if let Ok(mut conn) = connection {
             let k = st.string_st.decr_k.clone();
@@ -621,8 +604,7 @@ impl StringPresenter {
     }
 
     pub fn get(st: &mut RedisLocalState) {
-        let connection =
-            create_conn_with_default(&st.current_connection.host, &st.current_connection.port);
+        let connection = create_redis_connection(&st.current_connection);
 
         if let Ok(mut conn) = connection {
             let k = st.string_st.get_k.clone();
@@ -636,8 +618,7 @@ impl StringPresenter {
     }
 
     pub fn get_del(st: &mut RedisLocalState) {
-        let connection =
-            create_conn_with_default(&st.current_connection.host, &st.current_connection.port);
+        let connection = create_redis_connection(&st.current_connection);
 
         if let Ok(mut conn) = connection {
             let k = st.string_st.get_k.clone();
@@ -656,8 +637,7 @@ impl StringPresenter {
     }
 
     pub fn get_set(st: &mut RedisLocalState) {
-        let connection =
-            create_conn_with_default(&st.current_connection.host, &st.current_connection.port);
+        let connection = create_redis_connection(&st.current_connection);
 
         if let Ok(mut conn) = connection {
             let (k, v) = (st.string_st.get_k.clone(), st.string_st.getset_v.clone());
@@ -676,8 +656,7 @@ impl StringPresenter {
     }
 
     pub fn get_range(st: &mut RedisLocalState) {
-        let connection =
-            create_conn_with_default(&st.current_connection.host, &st.current_connection.port);
+        let connection = create_redis_connection(&st.current_connection);
 
         if let Ok(mut conn) = connection {
             let (k, from_s, to_s) = (
@@ -697,8 +676,7 @@ impl StringPresenter {
     }
 
     pub fn get_ex(st: &mut RedisLocalState) {
-        let connection =
-            create_conn_with_default(&st.current_connection.host, &st.current_connection.port);
+        let connection = create_redis_connection(&st.current_connection);
 
         if let Ok(mut conn) = connection {
             let (k, expire_at_s) = (
@@ -721,19 +699,188 @@ impl StringPresenter {
     }
 }
 
-// fn redis_value_to_string(v: redis::Value) -> &'static str {
-fn redis_value_to_string(v: &redis::Value) -> String {
-    match v {
-        Value::Nil => "Nil".to_string(),
-        Value::Int(i) => i.to_string(),
-        Value::Data(d) => String::from_utf8(d.clone())
-            .unwrap_or_else(|err| format!("ERROR {err:?} parsing {d:?}")),
-        Value::Bulk(b) => b
-            .iter()
-            .map(redis_value_to_string)
-            .collect::<Vec<String>>()
-            .join(", "),
-        Value::Status(s) => s.clone(),
-        Value::Okay => "OK".to_string(),
+pub struct ListPresenter;
+
+impl ListPresenter {
+    pub fn rpop(
+        conn: &mut redis::Connection,
+        hm: &mut HashMap<String, Vec<String>>,
+        st: &mut RedisListState,
+    ) -> String {
+        let count = st.rpop_count.parse::<usize>().ok().and_then(|v| {
+            if v > 0 {
+                NonZeroUsize::new(v)
+            } else {
+                None
+            }
+        });
+        let (k, v) = (st.rpop_k.clone(), count);
+        let result = conn.rpop(&k, v);
+
+        match result {
+            Ok(rresp) => {
+                // Lo más fácil tras éxito es recuperar los valores presentes en redis de nuevo
+                let value: Vec<String> = conn.lrange(&k, 0, isize::MAX).unwrap();
+                hm.insert(k, value);
+                let parsed_rresp = redis_value_to_string(&rresp);
+                format!("RPOP :: {parsed_rresp}")
+            }
+            Err(err) => {
+                format!("ERROR RPOP :: {err:?}")
+            }
+        }
+    }
+
+    pub fn lpop(
+        conn: &mut redis::Connection,
+        hm: &mut HashMap<String, Vec<String>>,
+        st: &mut RedisListState,
+    ) -> String {
+        let count = st.lpop_count.parse::<usize>().ok().and_then(|v| {
+            if v > 0 {
+                NonZeroUsize::new(v)
+            } else {
+                None
+            }
+        });
+        let (k, v) = (st.lpop_k.clone(), count);
+        let result = conn.lpop(&k, v);
+
+        match result {
+            Ok(rresp) => {
+                // Lo más fácil tras éxito es recuperar los valores presentes en redis de nuevo
+                let value: Vec<String> = conn.lrange(&k, 0, isize::MAX).unwrap();
+                hm.insert(k, value);
+                let parsed_rresp = redis_value_to_string(&rresp);
+                format!("LPOP :: {parsed_rresp}")
+            }
+            Err(err) => {
+                format!("ERROR LPOP :: {err:?}")
+            }
+        }
+    }
+
+    pub fn rpush(
+        conn: &mut redis::Connection,
+        hm: &mut HashMap<String, Vec<String>>,
+        st: &mut RedisListState,
+    ) -> String {
+        let vs = st
+            .rpush_vs
+            .split(' ')
+            .map(|s| s.to_owned())
+            .collect::<Vec<String>>();
+        let (k, v) = (st.rpush_k.clone(), vs);
+        let result = conn.rpush(&k, v);
+
+        match result {
+            Ok(rresp) => {
+                // Lo más fácil tras éxito es recuperar los valores presentes en redis de nuevo
+                let value: Vec<String> = conn.lrange(&k, 0, isize::MAX).unwrap();
+                hm.insert(k, value);
+                let parsed_rresp = redis_value_to_string(&rresp);
+                format!("RPUSH :: {parsed_rresp}")
+            }
+            Err(err) => {
+                format!("ERROR RPUSH :: {err:?}")
+            }
+        }
+    }
+
+    pub fn lpush(
+        conn: &mut redis::Connection,
+        hm: &mut HashMap<String, Vec<String>>,
+        st: &mut RedisListState,
+    ) -> String {
+        let vs = st
+            .lpush_vs
+            .split(' ')
+            .map(|s| s.to_owned())
+            .collect::<Vec<String>>();
+        let (k, v) = (st.lpush_k.clone(), vs);
+        let result = conn.lpush(&k, v);
+
+        match result {
+            Ok(rresp) => {
+                // Lo más fácil tras éxito es recuperar los valores presentes en redis de nuevo
+                let value: Vec<String> = conn.lrange(&k, 0, isize::MAX).unwrap();
+                hm.insert(k, value);
+                let parsed_rresp = redis_value_to_string(&rresp);
+                format!("LPUSH :: {parsed_rresp}")
+            }
+            Err(err) => {
+                format!("ERROR LPUSH :: {err:?}")
+            }
+        }
+    }
+
+    pub fn rpushx(
+        conn: &mut redis::Connection,
+        hm: &mut HashMap<String, Vec<String>>,
+        st: &mut RedisListState,
+    ) -> String {
+        let vs = st
+            .rpush_vs
+            .split(' ')
+            .map(|s| s.to_owned())
+            .collect::<Vec<String>>();
+        let (k, v) = (st.rpush_k.clone(), vs);
+        let result = conn.rpush_exists(&k, v);
+
+        match result {
+            Ok(rresp) => {
+                // Lo más fácil tras éxito es recuperar los valores presentes en redis de nuevo
+                match rresp {
+                    Value::Int(n_elements) => {
+                        if n_elements > 0 {
+                            let value: Vec<String> = conn.lrange(&k, 0, isize::MAX).unwrap();
+                            hm.insert(k, value);
+                        }
+                        let parsed_rresp = redis_value_to_string(&rresp);
+                        format!("RPUSHX :: {parsed_rresp}")
+                    }
+                    // Rama no alcanzable, lpushx devuelve n elementos insertados.
+                    _ => todo!(),
+                }
+            }
+            Err(err) => {
+                format!("ERROR RPUSHX :: {err:?}")
+            }
+        }
+    }
+
+    pub fn lpushx(
+        conn: &mut redis::Connection,
+        hm: &mut HashMap<String, Vec<String>>,
+        st: &mut RedisListState,
+    ) -> String {
+        let vs = st
+            .lpush_vs
+            .split(' ')
+            .map(|s| s.to_owned())
+            .collect::<Vec<String>>();
+        let (k, v) = (st.lpush_k.clone(), vs);
+        let result = conn.lpush_exists(&k, v);
+
+        match result {
+            Ok(rresp) => {
+                // Lo más fácil tras éxito es recuperar los valores presentes en redis de nuevo
+                match rresp {
+                    Value::Int(n_elements) => {
+                        if n_elements > 0 {
+                            let value: Vec<String> = conn.lrange(&k, 0, isize::MAX).unwrap();
+                            hm.insert(k, value);
+                        }
+                        let parsed_rresp = redis_value_to_string(&rresp);
+                        format!("LPUSHX :: {parsed_rresp}")
+                    }
+                    // Rama no alcanzable, lpushx devuelve n elementos insertados.
+                    _ => todo!(),
+                }
+            }
+            Err(err) => {
+                format!("ERROR LPUSHX :: {err:?}")
+            }
+        }
     }
 }
