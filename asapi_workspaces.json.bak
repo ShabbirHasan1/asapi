@@ -415,7 +415,7 @@
     "performance_table": false,
     "connections": [
       {
-        "path": "/home/nando/projects/gui-apps/asapi/sqlite-ddbb/db.sqlite3"
+        "path": "/home/nando/projects/asapi/app/sqlite-ddbb/db.sqlite3"
       }
     ]
   }
