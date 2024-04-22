@@ -39,7 +39,6 @@ pub enum RedisMenu {
     All,
     String,
     List,
-    #[default]
     Set,
     Hash,
     SortedSet,
