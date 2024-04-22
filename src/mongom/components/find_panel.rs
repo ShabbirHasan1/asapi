@@ -49,7 +49,11 @@ impl MongoView {
                                 );
                             },
                             None => {
-                                tx.send(MongoMessage::Error(format!("{:?} no parseable a ObjectId", id_string)));
+                                let msg = format!("{:?} no parseable a ObjectId", &id_string);
+                                let tx_cloned = tx.clone();
+                                rt.spawn(async move {
+                                    let _ = tx_cloned.send(MongoMessage::Error(msg)).await;
+                                });
                             },
                         }
 
