@@ -137,6 +137,12 @@ pub struct RedisSetsState {
     pub sintercard_ks: String,
     pub sinterstore_destination: String,
     pub sinterstore_ks: String,
+    pub sdiff_ks: String,
+    pub sdiffstore_destination: String,
+    pub sdiffstore_ks: String,
+    pub sunion_ks: String,
+    pub sunionstore_destination: String,
+    pub sunionstore_ks: String,
 }
 
 pub struct RedisLocalState {

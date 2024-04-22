@@ -16,7 +16,7 @@ use crate::{
         presenter::{self, run_redis_command, RedisMenu, SetsPresenter},
         view::RedisView,
     },
-    ui_button_w, ui_button_w100,
+    ui_button_w100,
 };
 
 ///
@@ -32,11 +32,11 @@ use crate::{
 /// done - SMEMBERS
 ///
 /// Operaciones Conjuntos
-/// SINTER
-/// SINTERCARD
-/// SINTERSTORE
-/// SDIFF
-/// SDIFFSTORE
+/// done - SINTER
+/// done - SINTERCARD
+/// done - SINTERSTORE
+/// done - SDIFF
+/// done - SDIFFSTORE
 /// SUNION
 /// SUNIONSTORE
 ///
@@ -54,7 +54,7 @@ impl RedisView {
 
                     ui.columns(2, |uis| {
                         self.inter_cmds(&mut uis[0]);
-                        // self.diff_and_union_cmds(&mut uis[1]);
+                        self.diff_and_union_cmds(&mut uis[1]);
                     });
                 });
 
@@ -466,6 +466,139 @@ impl RedisView {
                                     self.state.command_last_result =
                                         run_redis_command(&self.state.current_connection, |conn| {
                                             SetsPresenter::sinterstore(
+                                                conn,
+                                                &mut self.state.sets,
+                                                &mut self.state.sets_st,
+                                            )
+                                        });
+                                }
+                            });
+                        });
+                });
+            });
+    }
+
+    fn diff_and_union_cmds(&mut self, ui: &mut egui::Ui) {
+        StripBuilder::new(ui)
+            .size(Size::exact(20.0))
+            .size(Size::exact(20.0))
+            .size(Size::exact(20.0))
+            .size(Size::exact(20.0))
+            .vertical(|mut strip| {
+                strip.strip(|builder| {
+                    builder
+                        .size(Size::remainder())
+                        .size(Size::exact(108.0))
+                        .horizontal(|mut strip| {
+                            strip.cell(|ui| {
+                                ui.add(
+                                    egui::TextEdit::singleline(&mut self.state.sets_st.sdiff_ks)
+                                        .hint_text("Key (& Keys)"),
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                if ui_button_w100!(ui, "SDIFF") {
+                                    self.state.command_last_result =
+                                        run_redis_command(&self.state.current_connection, |conn| {
+                                            SetsPresenter::sdiff(conn, &mut self.state.sets_st)
+                                        });
+                                }
+                            });
+                        });
+                });
+
+                strip.strip(|builder| {
+                    builder
+                        .size(Size::remainder())
+                        .size(Size::remainder())
+                        .size(Size::exact(108.0))
+                        .horizontal(|mut strip| {
+                            strip.cell(|ui| {
+                                ui.add(
+                                    egui::TextEdit::singleline(
+                                        &mut self.state.sets_st.sdiffstore_destination,
+                                    )
+                                    .hint_text("Destination"),
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                ui.add(
+                                    egui::TextEdit::singleline(
+                                        &mut self.state.sets_st.sdiffstore_ks,
+                                    )
+                                    .hint_text("Key (& Keys)"),
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                if ui_button_w100!(ui, "SDIFFSTORE") {
+                                    self.state.command_last_result =
+                                        run_redis_command(&self.state.current_connection, |conn| {
+                                            SetsPresenter::sdiffstore(
+                                                conn,
+                                                &mut self.state.sets,
+                                                &mut self.state.sets_st,
+                                            )
+                                        });
+                                }
+                            });
+                        });
+                });
+
+                strip.strip(|builder| {
+                    builder
+                        .size(Size::remainder())
+                        .size(Size::exact(108.0))
+                        .horizontal(|mut strip| {
+                            strip.cell(|ui| {
+                                ui.add(
+                                    egui::TextEdit::singleline(&mut self.state.sets_st.sunion_ks)
+                                        .hint_text("Key (& Keys)"),
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                if ui_button_w100!(ui, "SUNION") {
+                                    self.state.command_last_result =
+                                        run_redis_command(&self.state.current_connection, |conn| {
+                                            SetsPresenter::sunion(conn, &mut self.state.sets_st)
+                                        });
+                                }
+                            });
+                        });
+                });
+
+                strip.strip(|builder| {
+                    builder
+                        .size(Size::remainder())
+                        .size(Size::remainder())
+                        .size(Size::exact(108.0))
+                        .horizontal(|mut strip| {
+                            strip.cell(|ui| {
+                                ui.add(
+                                    egui::TextEdit::singleline(
+                                        &mut self.state.sets_st.sunionstore_destination,
+                                    )
+                                    .hint_text("Destination"),
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                ui.add(
+                                    egui::TextEdit::singleline(
+                                        &mut self.state.sets_st.sunionstore_ks,
+                                    )
+                                    .hint_text("Key (& Keys)"),
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                if ui_button_w100!(ui, "SUNIONSTORE") {
+                                    self.state.command_last_result =
+                                        run_redis_command(&self.state.current_connection, |conn| {
+                                            SetsPresenter::sunionstore(
                                                 conn,
                                                 &mut self.state.sets,
                                                 &mut self.state.sets_st,

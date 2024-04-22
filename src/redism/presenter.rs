@@ -1219,6 +1219,82 @@ impl SetsPresenter {
             }
         }
     }
+
+    pub fn sdiff(conn: &mut redis::Connection, st: &mut RedisSetsState) -> String {
+        let ks = st.sdiff_ks.split(' ').collect::<Vec<&str>>();
+
+        match conn.sdiff::<Vec<&str>, Vec<String>>(ks) {
+            Ok(rresp) => {
+                format!("SDIFF :: {parsed_rresp}", parsed_rresp = rresp.join(", "))
+            }
+            Err(err) => {
+                format!("ERROR SDIFF :: {err:?}")
+            }
+        }
+    }
+
+    pub fn sdiffstore(
+        conn: &mut redis::Connection,
+        hm: &mut HashMap<String, Vec<String>>,
+        st: &mut RedisSetsState,
+    ) -> String {
+        let ks = st
+            .sdiffstore_ks
+            .split(' ')
+            .map(|s| s.to_owned())
+            .collect::<Vec<String>>();
+        let set_dst = st.sdiffstore_destination.clone();
+
+        match conn.sdiffstore::<&String, Vec<String>, redis::Value>(&set_dst, ks) {
+            Ok(rresp) => {
+                let response = format!("SDIFFSTORE :: {rresp:?}");
+                let _ = redis_smembers(conn, set_dst, hm);
+
+                response
+            }
+            Err(err) => {
+                format!("ERROR SDIFFSTORE :: {err:?}")
+            }
+        }
+    }
+
+    pub fn sunion(conn: &mut redis::Connection, st: &mut RedisSetsState) -> String {
+        let ks = st.sunion_ks.split(' ').collect::<Vec<&str>>();
+
+        match conn.sunion::<Vec<&str>, Vec<String>>(ks) {
+            Ok(rresp) => {
+                format!("SUNION :: {parsed_rresp}", parsed_rresp = rresp.join(", "))
+            }
+            Err(err) => {
+                format!("ERROR SUNION :: {err:?}")
+            }
+        }
+    }
+
+    pub fn sunionstore(
+        conn: &mut redis::Connection,
+        hm: &mut HashMap<String, Vec<String>>,
+        st: &mut RedisSetsState,
+    ) -> String {
+        let ks = st
+            .sunionstore_ks
+            .split(' ')
+            .map(|s| s.to_owned())
+            .collect::<Vec<String>>();
+        let set_dst = st.sunionstore_destination.clone();
+
+        match conn.sunionstore::<&String, Vec<String>, redis::Value>(&set_dst, ks) {
+            Ok(rresp) => {
+                let response = format!("SUNIONSTORE :: {rresp:?}");
+                let _ = redis_smembers(conn, set_dst, hm);
+
+                response
+            }
+            Err(err) => {
+                format!("ERROR SUNIONSTORE :: {err:?}")
+            }
+        }
+    }
 }
 
 fn redis_smembers(
