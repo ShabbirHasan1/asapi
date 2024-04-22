@@ -7,17 +7,16 @@
 // -------------------------------------------------------------------------
 use eframe::egui;
 use egui_extras::{Size, StripBuilder};
-use redis::RedisResult;
 
 use crate::{
     common::internationalization::I18n,
     components::widgets::ui_text_edit_singleline_hint,
     error, info,
     redism::{
-        presenter::{self, run_redis_command, RedisMenu, SetsPresenter, StringPresenter},
+        presenter::{self, run_redis_command, RedisMenu, SetsPresenter},
         view::RedisView,
     },
-    ui_button_w, ui_button_w100, ui_button_w50,
+    ui_button_w, ui_button_w100,
 };
 
 ///
@@ -28,9 +27,9 @@ use crate::{
 /// done - SRANDMEMBER
 ///
 /// Info Básica
-/// SISMBEMBER
-/// SCARD
-/// SMEMBERS
+/// done - SISMBEMBER
+/// done - SCARD
+/// done - SMEMBERS
 ///
 /// Operaciones Conjuntos
 /// SINTER
@@ -54,7 +53,7 @@ impl RedisView {
                     ui.separator();
 
                     ui.columns(2, |uis| {
-                        // self.inter_cmds(&mut uis[0]);
+                        self.inter_cmds(&mut uis[0]);
                         // self.diff_and_union_cmds(&mut uis[1]);
                     });
                 });
@@ -234,7 +233,7 @@ impl RedisView {
                             });
 
                             strip.cell(|ui| {
-                                if ui_button_w!(ui, "SRANDMEMBER", 108.0) {
+                                if ui_button_w100!(ui, "SRANDMEMBER") {
                                     self.state.command_last_result =
                                         run_redis_command(&self.state.current_connection, |conn| {
                                             SetsPresenter::srandmember(
@@ -277,7 +276,7 @@ impl RedisView {
                             });
 
                             strip.cell(|ui| {
-                                if ui_button_w!(ui, "SISMEMBER", 128.0) {
+                                if ui_button_w100!(ui, "SISMEMBER") {
                                     self.state.command_last_result =
                                         run_redis_command(&self.state.current_connection, |conn| {
                                             SetsPresenter::sismember(conn, &mut self.state.sets_st)
@@ -312,7 +311,7 @@ impl RedisView {
                             });
 
                             strip.cell(|ui| {
-                                if ui_button_w!(ui, "SMISMEMBER", 128.0) {
+                                if ui_button_w100!(ui, "SMISMEMBER") {
                                     self.state.command_last_result =
                                         run_redis_command(&self.state.current_connection, |conn| {
                                             SetsPresenter::smismember(conn, &mut self.state.sets_st)
@@ -335,7 +334,7 @@ impl RedisView {
                             });
 
                             strip.cell(|ui| {
-                                if ui_button_w!(ui, "SCARD", 128.0) {
+                                if ui_button_w100!(ui, "SCARD") {
                                     self.state.command_last_result =
                                         run_redis_command(&self.state.current_connection, |conn| {
                                             SetsPresenter::scard(conn, &mut self.state.sets_st)
@@ -358,10 +357,115 @@ impl RedisView {
                             });
 
                             strip.cell(|ui| {
-                                if ui_button_w!(ui, "SMEMBERS", 128.0) {
+                                if ui_button_w100!(ui, "SMEMBERS") {
                                     self.state.command_last_result =
                                         run_redis_command(&self.state.current_connection, |conn| {
                                             SetsPresenter::smembers(
+                                                conn,
+                                                &mut self.state.sets,
+                                                &mut self.state.sets_st,
+                                            )
+                                        });
+                                }
+                            });
+                        });
+                });
+            });
+    }
+
+    fn inter_cmds(&mut self, ui: &mut egui::Ui) {
+        StripBuilder::new(ui)
+            .size(Size::exact(20.0))
+            .size(Size::exact(20.0))
+            .size(Size::exact(20.0))
+            .vertical(|mut strip| {
+                strip.strip(|builder| {
+                    builder
+                        .size(Size::remainder())
+                        .size(Size::exact(108.0))
+                        .horizontal(|mut strip| {
+                            strip.cell(|ui| {
+                                ui.add(
+                                    egui::TextEdit::singleline(&mut self.state.sets_st.sinter_ks)
+                                        .hint_text("Key (& Keys)"),
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                if ui_button_w100!(ui, "SINTER") {
+                                    self.state.command_last_result =
+                                        run_redis_command(&self.state.current_connection, |conn| {
+                                            SetsPresenter::sinter(conn, &mut self.state.sets_st)
+                                        });
+                                }
+                            });
+                        });
+                });
+
+                strip.strip(|builder| {
+                    builder
+                        .size(Size::remainder())
+                        .size(Size::remainder())
+                        .size(Size::exact(108.0))
+                        .horizontal(|mut strip| {
+                            strip.cell(|ui| {
+                                ui.add(
+                                    egui::TextEdit::singleline(
+                                        &mut self.state.sets_st.sintercard_numkeys,
+                                    )
+                                    .hint_text("Numkeys"),
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                ui.add(
+                                    egui::TextEdit::singleline(
+                                        &mut self.state.sets_st.sintercard_ks,
+                                    )
+                                    .hint_text("Key (& Keys)"),
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                if ui_button_w100!(ui, "SINTERCARD") {
+                                    self.state.command_last_result =
+                                        run_redis_command(&self.state.current_connection, |conn| {
+                                            SetsPresenter::sintercard(conn, &mut self.state.sets_st)
+                                        });
+                                }
+                            });
+                        });
+                });
+
+                strip.strip(|builder| {
+                    builder
+                        .size(Size::remainder())
+                        .size(Size::remainder())
+                        .size(Size::exact(108.0))
+                        .horizontal(|mut strip| {
+                            strip.cell(|ui| {
+                                ui.add(
+                                    egui::TextEdit::singleline(
+                                        &mut self.state.sets_st.sinterstore_destination,
+                                    )
+                                    .hint_text("Destination"),
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                ui.add(
+                                    egui::TextEdit::singleline(
+                                        &mut self.state.sets_st.sinterstore_ks,
+                                    )
+                                    .hint_text("Key (& Keys)"),
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                if ui_button_w100!(ui, "SINTERSTORE") {
+                                    self.state.command_last_result =
+                                        run_redis_command(&self.state.current_connection, |conn| {
+                                            SetsPresenter::sinterstore(
                                                 conn,
                                                 &mut self.state.sets,
                                                 &mut self.state.sets_st,

@@ -132,6 +132,11 @@ pub struct RedisSetsState {
     pub smismember_ms: String,
     pub scard_k: String,
     pub smembers_k: String,
+    pub sinter_ks: String,
+    pub sintercard_numkeys: String,
+    pub sintercard_ks: String,
+    pub sinterstore_destination: String,
+    pub sinterstore_ks: String,
 }
 
 pub struct RedisLocalState {

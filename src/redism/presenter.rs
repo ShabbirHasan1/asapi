@@ -1039,11 +1039,7 @@ impl SetsPresenter {
         hm: &mut HashMap<String, Vec<String>>,
         st: &mut RedisSetsState,
     ) -> String {
-        let vs = st
-            .sadd_vs
-            .split(' ')
-            .map(|s| s.to_owned())
-            .collect::<Vec<String>>();
+        let vs = st.sadd_vs.split(' ').collect::<Vec<&str>>();
         let k = st.sadd_k.clone();
 
         match conn.sadd(&k, vs) {
@@ -1064,11 +1060,7 @@ impl SetsPresenter {
         hm: &mut HashMap<String, Vec<String>>,
         st: &mut RedisSetsState,
     ) -> String {
-        let vs = st
-            .srem_vs
-            .split(' ')
-            .map(|s| s.to_owned())
-            .collect::<Vec<String>>();
+        let vs = st.srem_vs.split(' ').collect::<Vec<&str>>();
         let k = st.srem_k.clone();
 
         match conn.srem(&k, vs) {
@@ -1137,11 +1129,7 @@ impl SetsPresenter {
     }
 
     pub fn smismember(conn: &mut redis::Connection, st: &mut RedisSetsState) -> String {
-        let vs = st
-            .smismember_ms
-            .split(' ')
-            .map(|s| s.to_owned())
-            .collect::<Vec<String>>();
+        let vs = st.smismember_ms.split(' ').collect::<Vec<&str>>();
 
         match conn.smismember(&st.smismember_k, &vs) {
             Ok(rresp) => {
@@ -1173,16 +1161,83 @@ impl SetsPresenter {
     ) -> String {
         let k = st.smembers_k.clone();
 
-        match conn.smembers::<&str, Vec<String>>(&k) {
-            Ok(rresp) => {
-                let resp = format!("SCARD :: {parsed_rresp}", parsed_rresp = rresp.join(", "));
-                hm.insert(k, rresp);
+        redis_smembers(conn, k, hm)
+    }
 
-                resp
+    pub fn sinter(conn: &mut redis::Connection, st: &mut RedisSetsState) -> String {
+        let ks = st.sinter_ks.split(' ').collect::<Vec<&str>>();
+
+        match conn.sinter::<Vec<&str>, Vec<String>>(ks) {
+            Ok(rresp) => {
+                format!("SINTER :: {parsed_rresp}", parsed_rresp = rresp.join(", "))
             }
             Err(err) => {
-                format!("ERROR SCARD :: {err:?}")
+                format!("ERROR SINTER :: {err:?}")
             }
+        }
+    }
+
+    pub fn sintercard(conn: &mut redis::Connection, st: &mut RedisSetsState) -> String {
+        let ks = st.sintercard_ks.split(' ').collect::<Vec<&str>>();
+        let result = redis::cmd("SINTERCARD")
+            .arg(&st.sintercard_numkeys)
+            .arg(ks)
+            .query::<Value>(conn);
+
+        match result {
+            Ok(rresp) => {
+                let parsed_rresp = redis_value_to_string(&rresp);
+                format!("SINTERCARD :: {parsed_rresp}")
+            }
+            Err(err) => {
+                format!("ERROR SINTERCARD :: {err:?}")
+            }
+        }
+    }
+
+    pub fn sinterstore(
+        conn: &mut redis::Connection,
+        hm: &mut HashMap<String, Vec<String>>,
+        st: &mut RedisSetsState,
+    ) -> String {
+        let ks = st
+            .sinterstore_ks
+            .split(' ')
+            .map(|s| s.to_owned())
+            .collect::<Vec<String>>();
+        let set_dst = st.sinterstore_destination.clone();
+
+        match conn.sinterstore::<&String, Vec<String>, redis::Value>(&set_dst, ks) {
+            Ok(rresp) => {
+                let response = format!("SINTERSTORE :: {rresp:?}");
+                let _ = redis_smembers(conn, set_dst, hm);
+
+                response
+            }
+            Err(err) => {
+                format!("ERROR SINTERSTORE :: {err:?}")
+            }
+        }
+    }
+}
+
+fn redis_smembers(
+    conn: &mut Connection,
+    k: String,
+    hm: &mut HashMap<String, Vec<String>>,
+) -> String {
+    match conn.smembers::<&str, Vec<String>>(&k) {
+        Ok(rresp) => {
+            let resp = format!(
+                "SMEMBERS :: {parsed_rresp}",
+                parsed_rresp = rresp.join(", ")
+            );
+            hm.insert(k, rresp);
+
+            resp
+        }
+        Err(err) => {
+            format!("ERROR SMEMBERS :: {err:?}")
         }
     }
 }
