@@ -117,6 +117,34 @@ pub struct RedisStringState {
     pub lcs_idx: String,
 }
 
+#[derive(Default)]
+pub struct RedisSetsState {
+    pub sadd_k: String,
+    pub sadd_vs: String,
+    pub srem_k: String,
+    pub srem_vs: String,
+    pub spop_k: String,
+    pub srandmember_k: String,
+    pub srandmember_count: String,
+    pub sismember_k: String,
+    pub sismember_m: String,
+    pub smismember_k: String,
+    pub smismember_ms: String,
+    pub scard_k: String,
+    pub smembers_k: String,
+    pub sinter_ks: String,
+    pub sintercard_numkeys: String,
+    pub sintercard_ks: String,
+    pub sinterstore_destination: String,
+    pub sinterstore_ks: String,
+    pub sdiff_ks: String,
+    pub sdiffstore_destination: String,
+    pub sdiffstore_ks: String,
+    pub sunion_ks: String,
+    pub sunionstore_destination: String,
+    pub sunionstore_ks: String,
+}
+
 pub struct RedisLocalState {
     pub cmd_history: Vec<String>,
     pub strings: BTreeMap<String, String>,
@@ -143,6 +171,7 @@ pub struct RedisLocalState {
     pub current_connection_idx: usize,
     pub string_st: RedisStringState,
     pub list_st: RedisListState,
+    pub sets_st: RedisSetsState,
 }
 
 impl Default for RedisLocalState {
@@ -171,6 +200,7 @@ impl Default for RedisLocalState {
             sorted_sets: Default::default(),
             string_st: Default::default(),
             list_st: Default::default(),
+            sets_st: Default::default(),
         }
     }
 }
