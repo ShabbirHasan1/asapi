@@ -26,7 +26,6 @@ use crate::{error, info};
 impl MongoView {
     fn show_filters(
         filters: &mut VecDeque<MongoFilter>,
-        i18n: &I18n,
         ui: &mut egui::Ui,
         level: usize,
         parent: Option<usize>,
@@ -58,19 +57,13 @@ impl MongoView {
                         }
                     });
 
-                    if ui.button("Delete").clicked() {
+                    if ui.button("\u{1f5d1}").clicked() {
                         action = UserAction::Delete(f.idx);
                     }
                 });
 
-                let child_action = MongoView::show_filters(
-                    &mut f.children,
-                    i18n,
-                    ui,
-                    level + 1,
-                    parent,
-                    f.op.clone(),
-                );
+                let child_action =
+                    MongoView::show_filters(&mut f.children, ui, level + 1, parent, f.op.clone());
                 if child_action != UserAction::None {
                     action = child_action;
                 }
@@ -162,7 +155,6 @@ impl MongoView {
         // --> Mostramos los filtros ya grabados <--
         let user_action = MongoView::show_filters(
             &mut self.state.filters,
-            i18n,
             ui,
             0,
             self.state.current_parent,
@@ -200,7 +192,7 @@ impl MongoView {
             ui.text_edit_singleline(&mut self.state.current_filter_value);
             self.select_bson_data_type(ui);
 
-            if ui.button("ADD").clicked() {
+            if ui.button("\u{271a}").clicked() {
                 let data: serde_json::Result<Value> =
                     serde_json::from_str(&self.state.current_filter_value);
                 match data {
