@@ -117,7 +117,6 @@ impl SQLiteSideNav {
                                         ui,
                                         tx,
                                         tx_sync,
-                                        sqlite_app_state,
                                         local_state,
                                         i18n,
                                     );
@@ -140,7 +139,6 @@ impl SQLiteSideNav {
                         ui,
                         tx,
                         tx_sync,
-                        sqlite_app_state,
                         local_state,
                         i18n,
                     );
@@ -167,7 +165,7 @@ impl SQLiteConnectionsSubpanel {
             for (idx, conn_definition) in sqlite_app_state.connections.iter_mut().enumerate() {
                 let sqlite_db_file_name = conn_definition
                     .path
-                    .rfind("/")
+                    .rfind('/')
                     .map_or(conn_definition.path.as_ref(), |last_slash_idx| {
                         &conn_definition.path.split_at(last_slash_idx).1[1..]
                     });
@@ -247,7 +245,6 @@ impl SQLiteTablesSubpanel {
         ui: &mut egui::Ui,
         tx: &Sender<SqlxMessage>,
         tx_sync: &std::sync::mpsc::Sender<SqlxMessage>,
-        _app_st: &mut SQLiteAppState,
         local_st: &mut SQLiteState,
         i18n: &I18n,
     ) {
@@ -290,12 +287,12 @@ impl SQLiteTablesSubpanel {
                                     &pool_ref,
                                     &tx_cloned,
                                     &t_name,
-                                    QuerySort::NONE,
+                                    QuerySort::None,
                                 )
                                 .await
                             });
                             // Para desmarcar orden de búsqueda.
-                            local_st.sql.query_sort = QuerySort::NONE;
+                            local_st.sql.query_sort = QuerySort::None;
                             local_st.sql.sql_statement = format!("SELECT * FROM {}", table_name);
                         }
 

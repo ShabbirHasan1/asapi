@@ -25,7 +25,7 @@ impl ShowVec for PgRow {
     }
 }
 
-pub fn pgrow_value_to_string<'a>(row: &PgRow, idx: usize, col: &PgColumn) -> String {
+pub fn pgrow_value_to_string(row: &PgRow, idx: usize, col: &PgColumn) -> String {
     let result = row.try_get_raw(idx);
     if let Err(_err) = result {
         return "NULL".to_string();
@@ -33,42 +33,42 @@ pub fn pgrow_value_to_string<'a>(row: &PgRow, idx: usize, col: &PgColumn) -> Str
 
     let pg_type_opt = ty_to_type(col.type_info());
 
-    if let None = pg_type_opt {
+    if pg_type_opt.is_none() {
         return "NULL".to_string();
     }
     let pg_type = pg_type_opt.as_ref().unwrap().clone();
 
     // https://docs.rs/sqlx/latest/sqlx/postgres/types/index.html
     match pg_type {
-        PgType::Bool => value_to_string::<bool>(&row, idx),
+        PgType::Bool => value_to_string::<bool>(row, idx),
         PgType::Int2 => value_to_string::<i16>(row, idx),
         PgType::Int4 => value_to_string::<i32>(row, idx),
         PgType::Int8 => value_to_string::<i64>(row, idx),
-        PgType::Float4 => value_to_string::<f32>(&row, idx),
-        PgType::Float8 => value_to_string::<f64>(&row, idx),
-        PgType::Uuid => value_to_string::<uuid::Uuid>(&row, idx),
+        PgType::Float4 => value_to_string::<f32>(row, idx),
+        PgType::Float8 => value_to_string::<f64>(row, idx),
+        PgType::Uuid => value_to_string::<uuid::Uuid>(row, idx),
         // chrono::DateTime<Utc>	TIMESTAMPTZ
         // chrono::DateTime<Local>	TIMESTAMPTZ
         // chrono::NaiveDateTime	TIMESTAMP
         // chrono::NaiveDate	DATE
         // chrono::NaiveTime	TIME
-        PgType::Date => value_to_string::<chrono::NaiveDate>(&row, idx),
-        PgType::Time => value_to_string::<chrono::NaiveTime>(&row, idx),
-        PgType::Timestamp => value_to_string::<chrono::NaiveDateTime>(&row, idx),
-        PgType::Timestamptz => value_to_string::<chrono::DateTime<chrono::Utc>>(&row, idx),
-        PgType::Float4Array => array_value_to_string::<f32>(&row, idx),
-        PgType::Float8Array => array_value_to_string::<f64>(&row, idx),
-        PgType::TimestampArray => array_value_to_string::<f64>(&row, idx),
-        PgType::DateArray => array_value_to_string::<chrono::NaiveDate>(&row, idx),
-        PgType::TimeArray => array_value_to_string::<chrono::NaiveTime>(&row, idx),
+        PgType::Date => value_to_string::<chrono::NaiveDate>(row, idx),
+        PgType::Time => value_to_string::<chrono::NaiveTime>(row, idx),
+        PgType::Timestamp => value_to_string::<chrono::NaiveDateTime>(row, idx),
+        PgType::Timestamptz => value_to_string::<chrono::DateTime<chrono::Utc>>(row, idx),
+        PgType::Float4Array => array_value_to_string::<f32>(row, idx),
+        PgType::Float8Array => array_value_to_string::<f64>(row, idx),
+        PgType::TimestampArray => array_value_to_string::<f64>(row, idx),
+        PgType::DateArray => array_value_to_string::<chrono::NaiveDate>(row, idx),
+        PgType::TimeArray => array_value_to_string::<chrono::NaiveTime>(row, idx),
         PgType::TimestamptzArray => {
-            array_value_to_string::<chrono::DateTime<chrono::Utc>>(&row, idx)
+            array_value_to_string::<chrono::DateTime<chrono::Utc>>(row, idx)
         }
-        PgType::UuidArray => array_value_to_string::<uuid::Uuid>(&row, idx),
-        PgType::BoolArray => array_value_to_string::<bool>(&row, idx),
-        PgType::Int2Array => array_value_to_string::<i16>(&row, idx),
-        PgType::Int4Array => array_value_to_string::<i32>(&row, idx),
-        PgType::Int8Array => array_value_to_string::<i64>(&row, idx),
+        PgType::UuidArray => array_value_to_string::<uuid::Uuid>(row, idx),
+        PgType::BoolArray => array_value_to_string::<bool>(row, idx),
+        PgType::Int2Array => array_value_to_string::<i16>(row, idx),
+        PgType::Int4Array => array_value_to_string::<i32>(row, idx),
+        PgType::Int8Array => array_value_to_string::<i64>(row, idx),
 
         // TODO:
         PgType::JsonArray => todo!(),
@@ -120,7 +120,7 @@ pub fn pgrow_value_to_string<'a>(row: &PgRow, idx: usize, col: &PgColumn) -> Str
         // PgType::DeclareWithName(_) => todo!(),
         // PgType::DeclareWithOid(_) => todo!(),
         PgType::Bytea => todo!(),
-        PgType::Name => value_to_string::<String>(&row, idx),
+        PgType::Name => value_to_string::<String>(row, idx),
         PgType::Oid => todo!(),
         PgType::Point => todo!(),
         PgType::Lseg => todo!(),

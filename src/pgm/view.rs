@@ -82,12 +82,12 @@ impl PostgresView {
                 .0
                 .clone();
             let stmt = match self.state.sql.query_sort {
-                QuerySort::NONE => self.state.sql.sql_statement.clone(),
-                QuerySort::ASC => format!(
+                QuerySort::None => self.state.sql.sql_statement.clone(),
+                QuerySort::Asc => format!(
                     "{} ORDER BY {} ASC",
                     self.state.sql.sql_statement, selected_column_name
                 ),
-                QuerySort::DESC => format!(
+                QuerySort::Desc => format!(
                     "{} ORDER BY {} DESC",
                     self.state.sql.sql_statement, selected_column_name
                 ),
@@ -178,11 +178,8 @@ impl PostgresView {
                 );
             }
 
-            match self.state.sql.last_response.clone() {
-                Some(err) => {
-                    ui.label(&err);
-                }
-                _ => (),
+            if let Some(err) = self.state.sql.last_response.clone() {
+                ui.label(&err);
             }
 
             let data_len = self.state.sql.current_table_rows.len();
@@ -254,7 +251,7 @@ impl PostgresView {
                     ctx,
                     &mut self.state.sql,
                     &t_name,
-                    &i18n,
+                    i18n,
                     &pr,
                     pg_type_from_string,
                     generate_pg_value,
@@ -266,7 +263,7 @@ impl PostgresView {
                     ctx,
                     &mut self.state.sql,
                     &t_name,
-                    &i18n,
+                    i18n,
                     |t| pr.should_be_wrapped(t.to_ascii_uppercase().as_str()),
                 )
             }

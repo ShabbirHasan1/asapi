@@ -18,6 +18,8 @@ use super::parser::mysql_type_from_string;
 use super::presenter::run_statement_with_delete_control;
 use super::state::{MySqlAppState, MySqlState};
 use crate::app_state::AppState;
+use crate::common::internationalization::I18n;
+use crate::common::syntax_highlighting::{highlight, CodeTheme};
 use crate::quote;
 use crate::sqlx_common::components::window_generator::GeneratorWindow;
 use crate::sqlx_common::components::window_insertion::InsertionWindow;
@@ -26,8 +28,6 @@ use crate::sqlx_common::presenter::SqlPresenter;
 use crate::sqlx_common::state::{QuerySort, SqlxMessage};
 use crate::sqlx_common::table::{PerformanceTable, RegularTable};
 use crate::sqlx_common::traits::{Presenter, Show};
-use crate::common::internationalization::I18n;
-use crate::common::syntax_highlighting::{highlight, CodeTheme};
 
 pub struct MySqlView {
     state: MySqlState,
@@ -83,12 +83,12 @@ impl MySqlView {
                 .0
                 .clone();
             let stmt = match self.state.sql.query_sort {
-                QuerySort::NONE => self.state.sql.sql_statement.clone(),
-                QuerySort::ASC => format!(
+                QuerySort::None => self.state.sql.sql_statement.clone(),
+                QuerySort::Asc => format!(
                     "{} ORDER BY {} ASC",
                     self.state.sql.sql_statement, selected_column_name
                 ),
-                QuerySort::DESC => format!(
+                QuerySort::Desc => format!(
                     "{} ORDER BY {} DESC",
                     self.state.sql.sql_statement, selected_column_name
                 ),
@@ -127,7 +127,6 @@ impl MySqlView {
         self.show_edit_row_window(ctx, rt, &mut app_state.mysql);
 
         egui::CentralPanel::default().show(ctx, |ui| {
-            // if self.state.sql.current_table_rows.len() > 0 {
             ui.set_width(ui.available_width());
             egui::CollapsingHeader::new("Table Columns")
                 .default_open(false)
@@ -179,11 +178,8 @@ impl MySqlView {
                 );
             }
 
-            match self.state.sql.last_response.clone() {
-                Some(err) => {
-                    ui.label(&err);
-                }
-                _ => (),
+            if let Some(err) = self.state.sql.last_response.clone() {
+                ui.label(&err);
             }
 
             let data_len = self.state.sql.current_table_rows.len();
@@ -248,7 +244,7 @@ impl MySqlView {
                     ctx,
                     &mut self.state.sql,
                     &t_name,
-                    &i18n,
+                    i18n,
                     &pr,
                     mysql_type_from_string,
                     generate_mysql_value,
@@ -260,7 +256,7 @@ impl MySqlView {
                     ctx,
                     &mut self.state.sql,
                     &t_name,
-                    &i18n,
+                    i18n,
                     |t| pr.should_be_wrapped(t.to_ascii_uppercase().as_str()),
                 )
             }

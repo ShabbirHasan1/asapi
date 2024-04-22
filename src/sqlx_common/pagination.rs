@@ -32,10 +32,8 @@ impl Show for Paginator {
 
             let new_index = state.first_row_idx + state.n_rows_to_show;
             ui.add_enabled_ui(new_index < data_len, |ui| {
-                if ui.button(">").clicked() {
-                    if new_index < data_len {
-                        state.first_row_idx = new_index;
-                    }
+                if ui.button(">").clicked() && new_index < data_len {
+                    state.first_row_idx = new_index;
                 }
             });
 

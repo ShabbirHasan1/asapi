@@ -78,10 +78,9 @@ impl HttpView {
             ctx.request_repaint();
         }
         if !self.state.has_been_updated {
-            if state.http.workspaces[state.http.current_workspace_idx]
+            if !state.http.workspaces[state.http.current_workspace_idx]
                 .requests
-                .len()
-                > 0
+                .is_empty()
             {
                 let idx = 0;
                 let request =
@@ -405,12 +404,11 @@ impl HttpView {
                     // ui.with_layout(egui::Layout::left_to_right(egui::Align::Max), |ui| {
                     // --> Solo mostramos el rendimiento en caso de que tengamos una petición seleccionada <--
                     // Esto implica que para poder testear rendimiento hay que guardar la petición.
-                    if let Some(_) = self.state.selected_request_idx {
-                        if self.request_allowed
-                            && ui.button(&i18n.http_send_to_http_performance).clicked()
-                        {
-                            self.state.panel = HttpPanel::Performance;
-                        }
+                    if self.state.selected_request_idx.is_some()
+                        && self.request_allowed
+                        && ui.button(&i18n.http_send_to_http_performance).clicked()
+                    {
+                        self.state.panel = HttpPanel::Performance;
                     }
                     // });
                 });
@@ -478,10 +476,7 @@ impl HttpView {
                 egui::ScrollArea::vertical().show(ui, |ui| {
                     if self.state.show_hide_json_response {
                         let v: Value = serde_json::from_str(
-                            &self
-                                .response
-                                .trim_start_matches("\"")
-                                .trim_end_matches("\""),
+                            self.response.trim_start_matches('"').trim_end_matches('"'),
                         )
                         .unwrap_or("Error Parsing".into());
                         ui.set_width(ui.available_width());
@@ -500,21 +495,15 @@ impl HttpView {
                         );
                     }
                 });
-            } else {
-                match self.state.selected_request_idx {
-                    Some(idx) => {
-                        let mut request = state.http.workspaces[state.http.current_workspace_idx]
-                            .requests[idx]
-                            .clone();
+            } else if let Some(idx) = self.state.selected_request_idx {
+                let mut request =
+                    state.http.workspaces[state.http.current_workspace_idx].requests[idx].clone();
 
-                        let close_performance_panel =
-                            self.state.performance_panel.ui(ui, rt, &i18n, &mut request);
+                let close_performance_panel =
+                    self.state.performance_panel.ui(ui, rt, i18n, &mut request);
 
-                        if close_performance_panel {
-                            self.state.panel = HttpPanel::Regular;
-                        }
-                    }
-                    None => (),
+                if close_performance_panel {
+                    self.state.panel = HttpPanel::Regular;
                 }
             }
         });

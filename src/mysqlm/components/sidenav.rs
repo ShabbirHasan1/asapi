@@ -112,7 +112,6 @@ impl MySqlSideNav {
                         .vertical(|mut strip| {
                             strip.cell(|ui| {
                                 MySqlConnectionsSubpanel::show(
-                                    ctx,
                                     rt,
                                     ui,
                                     mysql_app_state,
@@ -124,12 +123,10 @@ impl MySqlSideNav {
                                 ui.vertical_centered(|ui| {
                                     ui.separator();
                                     MySqlTablesSubpanel::show(
-                                        ctx,
                                         rt,
                                         ui,
                                         tx,
                                         tx_sync,
-                                        mysql_app_state,
                                         mysql_local_st,
                                         i18n,
                                     );
@@ -138,7 +135,6 @@ impl MySqlSideNav {
                         });
                 } else if !mysql_local_st.sql.hide_connections {
                     MySqlConnectionsSubpanel::show(
-                        ctx,
                         rt,
                         ui,
                         mysql_app_state,
@@ -147,12 +143,10 @@ impl MySqlSideNav {
                     );
                 } else if !mysql_local_st.sql.hide_tables {
                     MySqlTablesSubpanel::show(
-                        ctx,
                         rt,
                         ui,
                         tx,
                         tx_sync,
-                        mysql_app_state,
                         mysql_local_st,
                         i18n,
                     );
@@ -166,7 +160,6 @@ pub struct MySqlConnectionsSubpanel;
 
 impl MySqlConnectionsSubpanel {
     pub fn show(
-        _ctx: &egui::Context,
         rt: &Runtime,
         ui: &mut egui::Ui,
         pg_app_state: &mut MySqlAppState,
@@ -283,12 +276,10 @@ pub struct MySqlTablesSubpanel;
 
 impl MySqlTablesSubpanel {
     pub fn show(
-        _ctx: &egui::Context,
         rt: &Runtime,
         ui: &mut egui::Ui,
         tx: &Sender<SqlxMessage>,
         tx_sync: &std::sync::mpsc::Sender<SqlxMessage>,
-        _mysql_app_state: &mut MySqlAppState,
         local_state: &mut MySqlState,
         i18n: &I18n,
     ) {
@@ -333,12 +324,12 @@ impl MySqlTablesSubpanel {
                                     &pool_ref,
                                     &tx_cloned,
                                     &t_name_string,
-                                    QuerySort::NONE,
+                                    QuerySort::None,
                                 )
                                 .await
                             });
                             // Para desmarcar orden de búsqueda.
-                            local_state.sql.query_sort = QuerySort::NONE;
+                            local_state.sql.query_sort = QuerySort::None;
                             local_state.sql.sql_statement = format!("SELECT * FROM {}", t_name);
                         }
 

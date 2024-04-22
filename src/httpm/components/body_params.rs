@@ -34,11 +34,9 @@ impl BodyParams {
 
         ui.horizontal(|ui| {
             ui.label("Body");
-            if editable {
-                if ui.button("+").clicked() {
-                    self.params.push((String::new(), String::new()));
-                    has_changed = Some(true);
-                }
+            if editable && ui.button("+").clicked() {
+                self.params.push((String::new(), String::new()));
+                has_changed = Some(true);
             }
         });
 

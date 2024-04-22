@@ -35,7 +35,7 @@ pub async fn list_connection_tables(pool: &Pool<MySql>, db_name: &str) -> Vec<St
         )
         .as_str(),
     )
-    .fetch_all(&*pool)
+    .fetch_all(pool)
     .await
     .map_or(vec![], |rows| rows.iter().map(|row| row.get(0)).collect())
 }
@@ -43,7 +43,7 @@ pub async fn list_connection_tables(pool: &Pool<MySql>, db_name: &str) -> Vec<St
 pub async fn tables_info(
     pool: &Pool<MySql>,
     db_name: &str,
-    t_names: &Vec<String>,
+    t_names: &[String],
 ) -> Result<HashMap<String, Vec<Vec<String>>>, sqlx::Error> {
     let names_joined = t_names
         .iter()
@@ -77,7 +77,7 @@ pub async fn tables_info(
 
         result
             .entry(t_name)
-            .or_insert_with(Vec::new)
+            .or_default()
             .push(column_details);
     }
 
@@ -133,15 +133,15 @@ pub async fn run_statement(
         | Action::Insert(t_name)
         | Action::Update(t_name)
         | Action::DropTable(t_name)
-        | Action::CreateTable(t_name) => match sqlx::query(stmt).execute(&*pool).await {
+        | Action::CreateTable(t_name) => match sqlx::query(stmt).execute(pool).await {
             Ok(_) => {
-                select_all_with_column_description(pool, tx, &t_name, QuerySort::NONE).await;
+                select_all_with_column_description(pool, tx, &t_name, QuerySort::None).await;
             }
             Err(err) => {
                 let _ = tx.send(SqlxMessage::Error(err.to_string())).await;
             }
         },
-        Action::Select(_) => match sqlx::query(stmt).fetch_all(&*pool).await {
+        Action::Select(_) => match sqlx::query(stmt).fetch_all(pool).await {
             Ok(result) => match sqlpresenter::extract_info_from_stmt_result(result) {
                 Some(rows) => {
                     let _ = tx
@@ -160,7 +160,7 @@ pub async fn run_statement(
                 let _ = tx.send(SqlxMessage::Error(err.to_string())).await;
             }
         },
-        Action::NONE => {
+        Action::None => {
             let _ = tx
                 .send(SqlxMessage::Error("Acción no permitida".to_string()))
                 .await;
@@ -177,13 +177,13 @@ pub async fn select_all(
     sort_order: QuerySort,
 ) -> Vec<MySqlRow> {
     let order_by = match sort_order {
-        QuerySort::NONE => String::default(),
-        QuerySort::ASC => format!("ORDER BY {} ASC", table_name),
-        QuerySort::DESC => format!("ORDER BY {} DESC", table_name),
+        QuerySort::None => String::default(),
+        QuerySort::Asc => format!("ORDER BY {} ASC", table_name),
+        QuerySort::Desc => format!("ORDER BY {} DESC", table_name),
     };
 
     match sqlx::query(format!("SELECT * FROM {} {}", table_name, order_by).as_ref())
-        .fetch_all(&*pool)
+        .fetch_all(pool)
         .await
     {
         Ok(rows) => rows,

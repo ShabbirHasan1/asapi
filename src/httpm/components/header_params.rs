@@ -8,14 +8,9 @@
 
 use eframe::egui;
 
+#[derive(Default)]
 pub struct HeaderParams {
     pub params: Vec<(String, String)>,
-}
-
-impl Default for HeaderParams {
-    fn default() -> Self {
-        Self { params: Vec::new() }
-    }
 }
 
 impl HeaderParams {

@@ -116,12 +116,12 @@ impl SQLiteView {
                 .0
                 .clone();
             let stmt = match self.state.sql.query_sort {
-                QuerySort::NONE => self.state.sql.sql_statement.clone(),
-                QuerySort::ASC => format!(
+                QuerySort::None => self.state.sql.sql_statement.clone(),
+                QuerySort::Asc => format!(
                     "{} ORDER BY {} ASC",
                     self.state.sql.sql_statement, selected_column_name
                 ),
-                QuerySort::DESC => format!(
+                QuerySort::Desc => format!(
                     "{} ORDER BY {} DESC",
                     self.state.sql.sql_statement, selected_column_name
                 ),
@@ -212,24 +212,17 @@ impl SQLiteView {
                 );
             }
 
-            match self.state.sql.last_response.clone() {
-                Some(err) => {
-                    ui.label(&err);
-                }
-                _ => (),
+            if let Some(err) = self.state.sql.last_response.clone() {
+                ui.label(&err);
             }
 
             let data_len = self.state.sql.current_table_rows.len();
 
             // --> Ejecutamos la consulta introducida por el usuario <--
             ui.horizontal(|ui| {
-                if ui
-                    .button("\u{25b6}")
-                    .on_hover_ui(|ui| {
-                        ui.label("Lanzar con \u{27a1} + \u{2ba8}");
-                    })
-                    .clicked()
-                {
+                if ui.button("\u{25b6}").on_hover_ui(|ui| {
+                    ui.label("Lanzar con \u{27a1} + \u{2ba8}");
+                }).clicked() {
                     self.run_statement(
                         ctx,
                         rt,
@@ -281,9 +274,9 @@ impl SQLiteView {
                     ctx,
                     &mut self.state.sql,
                     &t_name,
-                    &i18n,
+                    i18n,
                     &pr,
-                    |t| SqliteType::from_string(t),
+                    SqliteType::from_string,
                     generate_sqlite_value,
                 )
             } else if self.state.sql.data_gen.show_insertion_window {
@@ -293,7 +286,7 @@ impl SQLiteView {
                     ctx,
                     &mut self.state.sql,
                     &t_name,
-                    &i18n,
+                    i18n,
                     |t| pr.should_be_wrapped(t.to_ascii_uppercase().as_str()),
                 )
             }

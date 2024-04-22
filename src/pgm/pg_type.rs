@@ -145,7 +145,7 @@ pub struct PgCustomType {
 
 pub fn ty_to_type(ty: &PgTypeInfo) -> Option<PgType> {
     let oid = ty.oid();
-    if None == oid {
+    if oid.is_none() {
         return None;
     }
 
