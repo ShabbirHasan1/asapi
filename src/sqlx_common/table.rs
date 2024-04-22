@@ -171,25 +171,25 @@ fn insert_header(state: &mut SqlState, header: &mut TableRow) {
                     });
                     if ui
                         .selectable_label(
-                            state.query_sort == QuerySort::ASC
+                            state.query_sort == QuerySort::Asc
                                 && state.column_index_selected == idx,
                             "\u{2b06}",
                         )
                         .clicked()
                     {
-                        state.query_sort = QuerySort::ASC;
+                        state.query_sort = QuerySort::Asc;
                         state.column_index_selected = idx;
                         state.change_order = true;
                     }
                     if ui
                         .selectable_label(
-                            state.query_sort == QuerySort::DESC
+                            state.query_sort == QuerySort::Desc
                                 && state.column_index_selected == idx,
                             "\u{2b07}",
                         )
                         .clicked()
                     {
-                        state.query_sort = QuerySort::DESC;
+                        state.query_sort = QuerySort::Desc;
                         state.column_index_selected = idx;
                         state.change_order = true;
                     }

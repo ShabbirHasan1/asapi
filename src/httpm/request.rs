@@ -31,12 +31,12 @@ pub async fn api_request(
             let body = JsonValue::Object(json_map);
             println!("{:?}", body);
             client
-                .request(method.to_reqwest_method(), url)
+                .request(method.parse_to_reqwest_method(), url)
                 .headers(headers_map)
                 .json(&body)
         }
         HttpMethod::Get => client
-            .request(method.to_reqwest_method(), url)
+            .request(method.parse_to_reqwest_method(), url)
             .headers(headers_map),
         HttpMethod::Put => {
             let json_map: serde_json::Map<String, JsonValue> = body_params
@@ -46,22 +46,22 @@ pub async fn api_request(
             let body = JsonValue::Object(json_map);
             println!("{:?}", body);
             client
-                .request(method.to_reqwest_method(), url)
+                .request(method.parse_to_reqwest_method(), url)
                 .headers(headers_map)
                 .json(&body)
         }
         _ => client
-            .request(method.to_reqwest_method(), url)
+            .request(method.parse_to_reqwest_method(), url)
             .headers(headers_map),
     };
 
     let response: Response = request_builder.send().await?;
-    let status = response.status().clone();
+    let status = response.status();
     let response_headers = response.headers().clone();
 
     match response.text().await {
-        Ok(text) => return Ok((text, response_headers)),
-        Err(_) => return Ok((status.to_string(), response_headers)),
+        Ok(text) => Ok((text, response_headers)),
+        Err(_) => Ok((status.to_string(), response_headers)),
     }
 }
 

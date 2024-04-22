@@ -129,7 +129,6 @@ impl PostgresSideNav {
                                         ui,
                                         tx,
                                         tx_sync,
-                                        pg_app_state,
                                         pg_local_st,
                                         i18n,
                                     );
@@ -145,7 +144,6 @@ impl PostgresSideNav {
                         ui,
                         tx,
                         tx_sync,
-                        pg_app_state,
                         pg_local_st,
                         i18n,
                     );
@@ -278,7 +276,6 @@ impl PostgresTablesSubpanel {
         ui: &mut egui::Ui,
         tx: &Sender<SqlxMessage>,
         tx_sync: &std::sync::mpsc::Sender<SqlxMessage>,
-        _pg_app_state: &mut PgAppState,
         local_st: &mut PostgresState,
         i18n: &I18n,
     ) {
@@ -321,12 +318,12 @@ impl PostgresTablesSubpanel {
                                     &pool_ref,
                                     &tx_cloned,
                                     &t_name,
-                                    QuerySort::NONE,
+                                    QuerySort::None,
                                 )
                                 .await
                             });
                             // Para desmarcar orden de búsqueda.
-                            local_st.sql.query_sort = QuerySort::NONE;
+                            local_st.sql.query_sort = QuerySort::None;
                             local_st.sql.sql_statement = format!("SELECT * FROM {}", table_name);
                         }
 

@@ -29,60 +29,60 @@ impl ShowVec for MySqlRow {
     }
 }
 
-pub fn mysqlrow_value_to_string<'a>(row: &MySqlRow, idx: usize, col: &MySqlColumn) -> String {
+pub fn mysqlrow_value_to_string(row: &MySqlRow, idx: usize, col: &MySqlColumn) -> String {
     let result = row.try_get_raw(idx);
-    if let Err(_) = result {
+    if result.is_err() {
         return "NULL".to_string();
     }
     let mysql_type_opt = ty_to_type(col.type_info());
-    if let None = mysql_type_opt {
+    if mysql_type_opt.is_none() {
         return "NULL".to_string();
     }
     let mysql_type = mysql_type_opt.as_ref().unwrap();
 
     // https://docs.rs/sqlx/latest/sqlx/mysql/types/index.html
     match mysql_type {
-        MySqlType::Bit => value_to_string::<String>(&row, idx),
-        MySqlType::Blob => value_vecu8_to_utf8_string(&row, idx),
-        MySqlType::BlobBinary => value_vecu8_to_utf8_string(&row, idx),
-        MySqlType::Boolean => value_to_string::<bool>(&row, idx),
-        MySqlType::Date => value_to_string::<chrono::NaiveDate>(&row, idx),
-        MySqlType::Datetime => value_to_string::<chrono::NaiveDateTime>(&row, idx),
+        MySqlType::Bit => value_to_string::<String>(row, idx),
+        MySqlType::Blob => value_vecu8_to_utf8_string(row, idx),
+        MySqlType::BlobBinary => value_vecu8_to_utf8_string(row, idx),
+        MySqlType::Boolean => value_to_string::<bool>(row, idx),
+        MySqlType::Date => value_to_string::<chrono::NaiveDate>(row, idx),
+        MySqlType::Datetime => value_to_string::<chrono::NaiveDateTime>(row, idx),
         MySqlType::Decimal => value_to_string::<Decimal>(row, idx),
-        MySqlType::Double => value_to_string::<f64>(&row, idx),
+        MySqlType::Double => value_to_string::<f64>(row, idx),
         MySqlType::Enum => todo!(),
-        MySqlType::Float => value_to_string::<f32>(&row, idx),
+        MySqlType::Float => value_to_string::<f32>(row, idx),
         MySqlType::Geometry => todo!(),
-        MySqlType::Int24 => value_to_string::<i64>(&row, idx),
-        MySqlType::Int24Unsigned => value_to_string::<u64>(&row, idx),
-        MySqlType::Json => value_vecu8_to_utf8_string(&row, idx),
-        MySqlType::Long => value_to_string::<i32>(&row, idx),
-        MySqlType::LongUnsigned => value_to_string::<u32>(&row, idx),
-        MySqlType::LongBlob => value_vecu8_to_utf8_string(&row, idx),
-        MySqlType::LongBlobBinary => value_vecu8_to_utf8_string(&row, idx),
-        MySqlType::LongLong => value_to_string::<i64>(&row, idx),
-        MySqlType::LongLongUnsigned => value_to_string::<u64>(&row, idx),
-        MySqlType::MediumBlob => value_vecu8_to_utf8_string(&row, idx),
-        MySqlType::MediumBlobBinary => value_vecu8_to_utf8_string(&row, idx),
+        MySqlType::Int24 => value_to_string::<i64>(row, idx),
+        MySqlType::Int24Unsigned => value_to_string::<u64>(row, idx),
+        MySqlType::Json => value_vecu8_to_utf8_string(row, idx),
+        MySqlType::Long => value_to_string::<i32>(row, idx),
+        MySqlType::LongUnsigned => value_to_string::<u32>(row, idx),
+        MySqlType::LongBlob => value_vecu8_to_utf8_string(row, idx),
+        MySqlType::LongBlobBinary => value_vecu8_to_utf8_string(row, idx),
+        MySqlType::LongLong => value_to_string::<i64>(row, idx),
+        MySqlType::LongLongUnsigned => value_to_string::<u64>(row, idx),
+        MySqlType::MediumBlob => value_vecu8_to_utf8_string(row, idx),
+        MySqlType::MediumBlobBinary => value_vecu8_to_utf8_string(row, idx),
         MySqlType::Null => String::from("NULL"),
         MySqlType::Set => todo!(),
-        MySqlType::Short => value_to_string::<i16>(&row, idx),
-        MySqlType::ShortUnsigned => value_to_string::<u16>(&row, idx),
-        MySqlType::String => value_to_string::<String>(&row, idx),
+        MySqlType::Short => value_to_string::<i16>(row, idx),
+        MySqlType::ShortUnsigned => value_to_string::<u16>(row, idx),
+        MySqlType::String => value_to_string::<String>(row, idx),
         MySqlType::StringBinary => todo!(),
-        MySqlType::Time => value_to_string::<chrono::NaiveTime>(&row, idx),
-        MySqlType::Timestamp => value_to_string::<chrono::DateTime<chrono::Utc>>(&row, idx)
+        MySqlType::Time => value_to_string::<chrono::NaiveTime>(row, idx),
+        MySqlType::Timestamp => value_to_string::<chrono::DateTime<chrono::Utc>>(row, idx)
             .to_string()
             .strip_suffix(" UTC")
             .unwrap()
             .to_owned(),
-        MySqlType::Tiny => value_to_string::<i8>(&row, idx),
-        MySqlType::TinyUnsigned => value_to_string::<u8>(&row, idx),
-        MySqlType::TinyBlob => value_vecu8_to_utf8_string(&row, idx),
-        MySqlType::TinyBlobBinary => value_vecu8_to_utf8_string(&row, idx),
-        MySqlType::Uuid => value_to_string::<String>(&row, idx),
-        MySqlType::VarChar => value_to_string::<String>(&row, idx),
-        MySqlType::VarCharBinary => value_vecu8_to_utf8_string(&row, idx),
+        MySqlType::Tiny => value_to_string::<i8>(row, idx),
+        MySqlType::TinyUnsigned => value_to_string::<u8>(row, idx),
+        MySqlType::TinyBlob => value_vecu8_to_utf8_string(row, idx),
+        MySqlType::TinyBlobBinary => value_vecu8_to_utf8_string(row, idx),
+        MySqlType::Uuid => value_to_string::<String>(row, idx),
+        MySqlType::VarChar => value_to_string::<String>(row, idx),
+        MySqlType::VarCharBinary => value_vecu8_to_utf8_string(row, idx),
         MySqlType::Year => todo!(),
     }
     // IpAddr	VARCHAR, TEXT
@@ -107,7 +107,7 @@ where
     }
 }
 
-fn value_vecu8_to_utf8_string<'r>(row: &'r MySqlRow, idx: usize) -> String {
+fn value_vecu8_to_utf8_string(row: &MySqlRow, idx: usize) -> String {
     // Option para poder representar columnas NULLABLE
     match row.try_get::<Option<Vec<u8>>, usize>(idx) {
         Ok(v) => v.map_or("NULL".to_string(), |v| {

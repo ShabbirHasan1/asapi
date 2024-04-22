@@ -22,7 +22,7 @@ pub enum Action {
     Select(String),
     CreateTable(String),
     DropTable(String),
-    NONE,
+    None,
 }
 
 pub struct SqlPresenter<DB>
@@ -67,7 +67,7 @@ pub fn extract_stmt_action(sql: &str) -> Action {
             } else if action_str == "DROP TABLE" {
                 CreateTable(table)
             } else {
-                NONE
+                None
             }
         }
         _ => match re_select.captures(sql) {
@@ -77,18 +77,18 @@ pub fn extract_stmt_action(sql: &str) -> Action {
 
                 Select(table)
             }
-            _ => NONE,
+            _ => None,
         },
     }
 }
 
-pub fn extract_info_from_stmt_result<T>(
-    data: Vec<T>,
-) -> Option<(Vec<Vec<String>>, Vec<(String, String)>)>
+type PairMatrixTupleString = (Vec<Vec<String>>, Vec<(String, String)>);
+
+pub fn extract_info_from_stmt_result<T>(data: Vec<T>) -> Option<PairMatrixTupleString>
 where
     T: Row + ShowVec,
 {
-    if data.len() == 0 {
+    if data.is_empty() {
         None
     } else {
         let rows_as_vecs = data.iter().map(|row| row.to_string_vec()).collect();

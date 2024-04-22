@@ -182,7 +182,7 @@ impl ShowVec for SqliteRow {
     }
 }
 
-pub fn sqlite_value_to_string<'a>(row: &SqliteRow, col: &SqliteColumn) -> String {
+pub fn sqlite_value_to_string(row: &SqliteRow, col: &SqliteColumn) -> String {
     let data_type = SqliteType::from_string(col.type_info().name());
     if data_type == SqliteType::Null {
         return "NULL".to_string();
@@ -191,10 +191,10 @@ pub fn sqlite_value_to_string<'a>(row: &SqliteRow, col: &SqliteColumn) -> String
     // Mejor usar `col.ordinal()` que `col.name()` porque al final este último recae en aquél
     // en la implementación dentro de sqlx.
     let col_idx = col.ordinal();
-    let repr = match data_type {
-        SqliteType::Int | SqliteType::Int64 => row_value_to_string::<i64>(&row, col_idx),
-        SqliteType::Text | SqliteType::Varchar(_) => row_value_to_string::<String>(&row, col_idx),
-        SqliteType::Float => row_value_to_string::<f64>(&row, col_idx),
+    match data_type {
+        SqliteType::Int | SqliteType::Int64 => row_value_to_string::<i64>(row, col_idx),
+        SqliteType::Text | SqliteType::Varchar(_) => row_value_to_string::<String>(row, col_idx),
+        SqliteType::Float => row_value_to_string::<f64>(row, col_idx),
         SqliteType::Blob => row
             .try_get::<Vec<u8>, usize>(col_idx)
             .map_or("NULL".to_string(), |v| {
@@ -219,14 +219,12 @@ pub fn sqlite_value_to_string<'a>(row: &SqliteRow, col: &SqliteColumn) -> String
             },
         ),
 
-        SqliteType::Bool => row_value_to_string::<bool>(&row, col_idx),
-        SqliteType::Date => row_value_to_string::<chrono::NaiveDate>(&row, col_idx),
-        SqliteType::Time => row_value_to_string::<chrono::NaiveTime>(&row, col_idx),
-        SqliteType::Datetime => row_value_to_string::<chrono::DateTime<chrono::Utc>>(&row, col_idx),
-        _ => row_value_to_string::<String>(&row, col_idx),
-    };
-
-    repr
+        SqliteType::Bool => row_value_to_string::<bool>(row, col_idx),
+        SqliteType::Date => row_value_to_string::<chrono::NaiveDate>(row, col_idx),
+        SqliteType::Time => row_value_to_string::<chrono::NaiveTime>(row, col_idx),
+        SqliteType::Datetime => row_value_to_string::<chrono::DateTime<chrono::Utc>>(row, col_idx),
+        _ => row_value_to_string::<String>(row, col_idx),
+    }
 }
 
 fn row_value_to_string<'r, T>(row: &'r SqliteRow, idx: usize) -> String

@@ -8,16 +8,11 @@
 
 use serde::{Deserialize, Serialize};
 
-#[derive(Copy, Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
+#[derive(Copy, Clone, PartialEq, Eq, Serialize, Deserialize, Debug, Default)]
 pub enum I18nOptions {
+    #[default]
     ES,
     EN,
-}
-
-impl Default for I18nOptions {
-    fn default() -> Self {
-        I18nOptions::ES
-    }
 }
 
 #[derive(Clone)]
@@ -66,6 +61,48 @@ pub struct I18n {
     pub mongo_connection_password: String,
     pub mongo_connection_srv: String,
     pub mongo_actions: String,
+    pub mongo_insert_one_error: String,
+    pub mongo_invalid_doc_to_insert: String,
+    pub mongo_clean_filter: String,
+    pub mongo_clean_parent: String,
+    pub mongo_previsualize_filter: String,
+    pub mongo_connections: String,
+    pub mongo_databases: String,
+    pub mongo_collections: String,
+    pub mongo_close_connection: String,
+    pub mongo_delete_connection: String,
+    pub mongo_copy_database_info: String,
+    pub mongo_copy_collection_info: String,
+    pub mongo_error_client_uninitialized: String,
+    pub mongo_delete_filter: String,
+    pub mongo_wrong_action: String,
+    pub mongo_filter_heading: String,
+    pub mongo_new_document_heading: String,
+    pub mongo_doc_menu_copy: String,
+    pub mongo_doc_menu_delete_by_id: String,
+
+    // Redis
+    pub redis_connections: String,
+    pub redis_data_structures: String,
+    pub redis_connection_host: String,
+    pub redis_connection_port: String,
+    pub redis_edit_connection_cancel: String,
+    pub redis_edit_connection_save: String,
+    pub redis_close_connection: String,
+    pub redis_delete_connection: String,
+    pub redis_channel: String,
+    pub redis_channel_value: String,
+    pub redis_channel_publish: String,
+    pub redis_close_channel: String,
+    pub redis_delete_channel: String,
+    pub redis_channel_subscribe: String,
+    pub redis_n_columns: String,
+    pub redis_clean_messages: String,
+    pub redis_close_subscription: String,
+    pub redis_delete_subscription: String,
+    pub redis_send_command: String,
+    pub redis_delete_ds: String,
+    pub redis_load: String,
 
     // Postgres
     pub pg_connection_host: String,
@@ -148,6 +185,48 @@ pub fn language_selector(i: I18nOptions) -> I18n {
             mongo_connection_password: "Password".to_owned(),
             mongo_connection_srv: "SRV".to_owned(),
             mongo_actions: "Seleccionar Acción".to_owned(),
+            mongo_insert_one_error: String::from("InsertOne acepta un único elemento"),
+            mongo_invalid_doc_to_insert: String::from("El Documento que se está intentando isnertar no es válido"),
+            mongo_clean_filter: String::from("Limpiar Filtro"),
+            mongo_clean_parent: String::from("Borrar Padre Actual"),
+            mongo_previsualize_filter: String::from("Previsualizar Filtro"),
+            mongo_connections: String::from("Conexiones"),
+            mongo_databases: String::from("Bases de Datos"),
+            mongo_collections: String::from("Colecciones"),
+            mongo_close_connection: String::from("Cerrar Conexión"),
+            mongo_delete_connection: String::from("Borrar Conexión"),
+            mongo_copy_database_info: String::from("Copiar Información de la Base de Datos"),
+            mongo_copy_collection_info: String::from("Copiar Información de la Colección"),
+            mongo_error_client_uninitialized: String::from("Cliente no Inicializado"),
+            mongo_delete_filter: String::from("Borrar Filtro"),
+            mongo_wrong_action: String::from("Acción Incorrecta"),
+            mongo_filter_heading: String::from("Filtro"),
+            mongo_new_document_heading: String::from("Nuevo Documento"),
+            mongo_doc_menu_copy: String::from("Copiar Documento"),
+            mongo_doc_menu_delete_by_id: String::from("Borrar usando _id"),
+
+            // Redis
+            redis_connections: String::from("Conexiones"),
+            redis_connection_host: String::from("Host"),
+            redis_connection_port: String::from("Puerto"),
+            redis_data_structures: String::from("Estructuras de Datos"),
+            redis_edit_connection_cancel: String::from("Cancelar"),
+            redis_edit_connection_save: String::from("Guardar"),
+            redis_close_connection: String::from("Editar Conexión"),
+            redis_delete_connection: String::from("Borrar Conexión"),
+            redis_channel: String::from("Canal"),
+            redis_close_channel: String::from("Cerrar Canal"),
+            redis_delete_channel: String::from("Borrar Canal"),
+            redis_channel_value: String::from("Valor"),
+            redis_channel_publish: String::from("Publicar"),
+            redis_channel_subscribe: String::from("Subscribir"),
+            redis_n_columns: String::from("Número de Columnas"),
+            redis_clean_messages: String::from("Limpiar Mensajes"),
+            redis_close_subscription: String::from("Cerrar Subscripción"),
+            redis_delete_subscription: String::from("Borrar Subscripción"),
+            redis_send_command: String::from("Ejecutar"),
+            redis_delete_ds: String::from("Borrar"),
+            redis_load: String::from("Cargar"),
 
             // Postgres
             pg_connection_host: "Host".to_owned(),
@@ -200,7 +279,7 @@ pub fn language_selector(i: I18nOptions) -> I18n {
             top_import_json_state: "Import state from JSON".to_owned(),
             top_export_json_state: "Export to JSON".to_owned(),
             top_export_warning: "Export will override data currently stored".to_owned(),
-            
+
             // Http
             http_btn_edit_ws_name: "Edit workspace name".to_owned(),
             http_btn_delete_ws: "Delete workspace".to_owned(),
@@ -228,6 +307,48 @@ pub fn language_selector(i: I18nOptions) -> I18n {
             mongo_connection_password: "Password".to_owned(),
             mongo_connection_srv: "SRV".to_owned(),
             mongo_actions: "Select Action".to_owned(),
+            mongo_insert_one_error: String::from("InsertOne only accepts one element"),
+            mongo_invalid_doc_to_insert: String::from("Invalid document"),
+            mongo_clean_filter: String::from("Clean Filter"),
+            mongo_clean_parent: String::from("Delete Current Parent"),
+            mongo_previsualize_filter: String::from("Filter Previsualization"),
+            mongo_connections: String::from("Connections"),
+            mongo_databases: String::from("Databases"),
+            mongo_collections: String::from("Colecciones"),
+            mongo_close_connection: String::from("Close Connection"),
+            mongo_delete_connection: String::from("Delete Connection"),
+            mongo_copy_database_info: String::from("Copy Database Info"),
+            mongo_copy_collection_info: String::from("Copy Collection Info"),
+            mongo_error_client_uninitialized: String::from("Client does not Exists"),
+            mongo_delete_filter: String::from("Delete Filter"),
+            mongo_wrong_action: String::from("Wrong Action"),
+            mongo_filter_heading: String::from("Filter"),
+            mongo_new_document_heading: String::from("New Document"),
+            mongo_doc_menu_copy: String::from("Copy Document"),
+            mongo_doc_menu_delete_by_id: String::from("Delete using _id"),
+
+            // Redis
+            redis_connections: String::from("Connections"),
+            redis_data_structures: String::from("Data Structures"),
+            redis_edit_connection_cancel: String::from("Cancel"),
+            redis_edit_connection_save: String::from("Save"),
+            redis_connection_host: String::from("Host"),
+            redis_connection_port: String::from("Port"),
+            redis_close_connection: String::from("Edit Connection"),
+            redis_delete_connection: String::from("Delete Connection"),
+            redis_channel: String::from("Channel"),
+            redis_close_channel: String::from("Close Channel"),
+            redis_delete_channel: String::from("Delete Channel"),
+            redis_channel_value: String::from("Value"),
+            redis_channel_publish: String::from("Publish"),
+            redis_channel_subscribe: String::from("Subscribe"),
+            redis_n_columns: String::from("Number of Columns"),
+            redis_clean_messages: String::from("Clear Messages"),
+            redis_close_subscription: String::from("Close Subscription"),
+            redis_delete_subscription: String::from("Delete Subscription"),
+            redis_send_command: String::from("Send Command"),
+            redis_delete_ds: String::from("Delete"),
+            redis_load: String::from("Load"),
 
             // Postgres
             pg_info_performance_table: "Deletion is forbidden for performance table.\nSelect this for massive quantity of cells (rows x columns), order of 1e5, or when massive amount of data inside the cells, like long varchar, big json/binaries/arrays or geographical data.".to_owned(),

@@ -10,17 +10,12 @@ use serde::{Deserialize, Serialize};
 use sqlx::{Database, Pool};
 use std::collections::HashMap;
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Default)]
 pub enum QuerySort {
-    NONE,
-    ASC,
-    DESC,
-}
-
-impl Default for QuerySort {
-    fn default() -> Self {
-        QuerySort::NONE
-    }
+    #[default]
+    None,
+    Asc,
+    Desc,
 }
 
 /// No tengo muy claro cómo hacerlo mejor.

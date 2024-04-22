@@ -152,11 +152,9 @@ impl HttpPerformanceView {
                 .create(ui, request.headers_params.clone(), "Headers".to_string());
         }
 
-        if !(method == HttpMethod::Get || method == HttpMethod::Delete) {
-            if self.show_body {
-                self.params
-                    .create(ui, request.body_params.clone(), "Body".to_string());
-            }
+        if !(method == HttpMethod::Get || method == HttpMethod::Delete) && self.show_body{
+            self.params
+                .create(ui, request.body_params.clone(), "Body".to_string());
         }
 
         ui.separator();
@@ -270,7 +268,7 @@ impl Default for LineDemo {
 }
 
 impl LineDemo {
-    fn ui(&mut self, ui: &mut egui::Ui, chart: &Vec<PerformanceRequestMessage>) -> Response {
+    fn ui(&mut self, ui: &mut egui::Ui, chart: &[PerformanceRequestMessage]) -> Response {
         let points: PlotPoints = chart
             .iter()
             .enumerate()
