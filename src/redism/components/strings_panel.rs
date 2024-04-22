@@ -20,8 +20,7 @@ use crate::{
     ui_button_w, ui_button_w100, ui_button_w50,
 };
 
-// TODO:
-// ===========
+/// Comandos a 240419
 // done - SET
 // done - SETNX
 // done - SETRANGE
@@ -36,8 +35,8 @@ use crate::{
 // done - INCRBYFLOAT
 // done - DECR
 // done - DECRBY
-// LCS
-// STRLEN
+// done - LCS
+// done - STRLEN
 impl RedisView {
     pub fn show_strings(&mut self, ui: &mut egui::Ui, i18n: &I18n) -> RedisResult<()> {
         if self.state.selected_menu == RedisMenu::String {

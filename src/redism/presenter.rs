@@ -707,6 +707,48 @@ pub enum RedisPosition {
 pub struct ListPresenter;
 
 impl ListPresenter {
+    pub fn lset(
+        conn: &mut redis::Connection,
+        hm: &mut HashMap<String, Vec<String>>,
+        st: &mut RedisListState,
+    ) -> String {
+        let index = st.lset_index.parse::<isize>().unwrap_or(0);
+        let k = st.lset_k.clone();
+
+        match conn.lset(&k, index, &st.lset_value) {
+            Ok(rresp) => {
+                let value: Vec<String> = conn.lrange(&k, 0, isize::MAX).unwrap();
+                hm.insert(k, value);
+                format!(
+                    "LSET :: {parsed_rresp}",
+                    parsed_rresp = redis_value_to_string(&rresp)
+                )
+            }
+            Err(err) => format!("ERROR LSET :: {err:?}"),
+        }
+    }
+
+    pub fn lrem(
+        conn: &mut redis::Connection,
+        hm: &mut HashMap<String, Vec<String>>,
+        st: &mut RedisListState,
+    ) -> String {
+        let count = st.lrem_count.parse::<isize>().unwrap_or(0);
+        let k = st.lrem_k.clone();
+
+        match conn.lrem(&k, count, &st.lrem_value) {
+            Ok(rresp) => {
+                let value: Vec<String> = conn.lrange(&k, 0, isize::MAX).unwrap();
+                hm.insert(k, value);
+                format!(
+                    "LREM :: {parsed_rresp}",
+                    parsed_rresp = redis_value_to_string(&rresp)
+                )
+            }
+            Err(err) => format!("ERROR LREM :: {err:?}"),
+        }
+    }
+
     pub fn linsert(
         conn: &mut redis::Connection,
         hm: &mut HashMap<String, Vec<String>>,

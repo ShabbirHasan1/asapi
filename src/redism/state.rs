@@ -86,6 +86,12 @@ pub struct RedisListState {
     pub linsert_k: String,
     pub linsert_pivot: String,
     pub linsert_value: String,
+    pub lrem_k: String,
+    pub lrem_count: String,
+    pub lrem_value: String,
+    pub lset_k: String,
+    pub lset_index: String,
+    pub lset_value: String,
 }
 
 #[derive(Default)]

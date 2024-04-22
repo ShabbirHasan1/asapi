@@ -20,7 +20,7 @@ use crate::{
 };
 
 ///
-/// Comandos
+/// Comandos a 240422
 /// acciones sobre izquierda que hay sobre derecha
 /// done - LPOP
 /// done - LPUSH
@@ -39,9 +39,8 @@ use crate::{
 /// ediciones
 /// done - LTRIM
 /// done - LINSERT
-/// LREM
-/// LSET
-/// LTRIM
+/// done - LREM
+/// done - LSET
 ///
 impl RedisView {
     pub fn show_lists(&mut self, ui: &mut egui::Ui, i18n: &I18n) {
@@ -71,6 +70,7 @@ impl RedisView {
 
     fn modifier_cmds(&mut self, ui: &mut egui::Ui) {
         StripBuilder::new(ui)
+            .size(Size::exact(20.0))
             .size(Size::exact(20.0))
             .size(Size::exact(20.0))
             .size(Size::exact(20.0))
@@ -176,6 +176,98 @@ impl RedisView {
                                                 &mut self.state.lists,
                                                 &mut self.state.list_st,
                                                 RedisPosition::End,
+                                            )
+                                        });
+                                }
+                            });
+                        });
+                });
+
+                strip.strip(|builder| {
+                    builder
+                        .size(Size::remainder())
+                        .size(Size::remainder())
+                        .size(Size::remainder())
+                        .size(Size::exact(128.0))
+                        .horizontal(|mut strip| {
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Key",
+                                    &mut self.state.list_st.lrem_k,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Count",
+                                    &mut self.state.list_st.lrem_count,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Value",
+                                    &mut self.state.list_st.lrem_value,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                if ui_button_w!(ui, "LREM", 128.0) {
+                                    self.state.command_last_result =
+                                        run_redis_command(&self.state.current_connection, |conn| {
+                                            ListPresenter::lrem(
+                                                conn,
+                                                &mut self.state.lists,
+                                                &mut self.state.list_st,
+                                            )
+                                        });
+                                }
+                            });
+                        });
+                });
+
+                strip.strip(|builder| {
+                    builder
+                        .size(Size::remainder())
+                        .size(Size::remainder())
+                        .size(Size::remainder())
+                        .size(Size::exact(128.0))
+                        .horizontal(|mut strip| {
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Key",
+                                    &mut self.state.list_st.lset_k,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Index",
+                                    &mut self.state.list_st.lset_index,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Value",
+                                    &mut self.state.list_st.lset_value,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                if ui_button_w!(ui, "LSET", 128.0) {
+                                    self.state.command_last_result =
+                                        run_redis_command(&self.state.current_connection, |conn| {
+                                            ListPresenter::lset(
+                                                conn,
+                                                &mut self.state.lists,
+                                                &mut self.state.list_st,
                                             )
                                         });
                                 }
