@@ -53,7 +53,7 @@ impl MongoView {
         // =======================================
         #[cfg(debug_assertions)]
         if self.state.conn.client.is_some() && !self.first_render {
-            if app_state.mongo.connections.len() > 0 {
+            if !app_state.mongo.connections.is_empty() {
                 self.state.current_selection.conn_idx = 0;
                 let tx = self.tx.clone();
                 let client = self.state.conn.client.as_ref().unwrap().clone();
@@ -62,7 +62,7 @@ impl MongoView {
                     presenter::list_database_names_in_connection(&tx, &client).await
                 });
 
-                if databases.len() > 0 {
+                if !databases.is_empty()  {
                     self.state.current_selection.db_name = databases.last().unwrap().to_owned();
                     self.state.current_selection.db_idx = databases.len() - 1;
                     let db_name = self.state.current_selection.db_name.to_owned();
@@ -71,7 +71,7 @@ impl MongoView {
                         presenter::list_database_collections(&tx, &client, &db_name).await
                     });
 
-                    if collections.len() > 0 {
+                    if !collections.is_empty() {
                         self.state.current_selection.col_name =
                             collections.last().unwrap().to_owned();
                         self.state.current_selection.col_idx = collections.len() - 1;
@@ -104,7 +104,7 @@ impl MongoView {
         // Paneles laterales
         // =======================================
         MongoSideNav::show(
-            &ctx,
+            ctx,
             rt,
             &self.tx,
             &mut app_state.mongo,

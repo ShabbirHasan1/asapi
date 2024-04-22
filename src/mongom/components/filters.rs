@@ -46,7 +46,7 @@ impl MongoView {
                             .show(ui);
                     }
 
-                    ui.add_enabled_ui(parent_operator != MongoOperator::NOT, |ui| {
+                    ui.add_enabled_ui(parent_operator != MongoOperator::Not, |ui| {
                         if ui.button("AND").clicked() {
                             action = UserAction::AddAnd(f.idx);
                         }
@@ -98,7 +98,7 @@ impl MongoView {
             }
         }
 
-        return filter;
+        filter
     }
 
     /// Buscamos índice y devolvemos filtro y padre
@@ -166,16 +166,16 @@ impl MongoView {
             ui,
             0,
             self.state.current_parent,
-            MongoOperator::AND, // Lo es de forma implícita.
+            MongoOperator::And, // Lo es de forma implícita.
         );
 
         // Según la acción y el índice, insertamos aquí o allá
         match user_action {
             UserAction::AddAnd(idx) | UserAction::AddOr(idx) | UserAction::AddNor(idx) => {
                 let op = match user_action {
-                    UserAction::AddAnd(_) => MongoOperator::AND,
-                    UserAction::AddNor(_) => MongoOperator::NOR,
-                    _ => MongoOperator::OR,
+                    UserAction::AddAnd(_) => MongoOperator::And,
+                    UserAction::AddNor(_) => MongoOperator::Nor,
+                    _ => MongoOperator::Or,
                 };
 
                 self.state.current_parent = Some(self.state.next_idx);
@@ -215,7 +215,7 @@ impl MongoView {
                         if self.state.current_selection.is_not {
                             self.state.next_idx += 1;
                             let mut not_filter = MongoFilter::new(
-                                MongoOperator::NOT,
+                                MongoOperator::Not,
                                 None,
                                 None,
                                 self.state.next_idx,

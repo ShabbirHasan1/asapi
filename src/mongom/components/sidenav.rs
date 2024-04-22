@@ -373,7 +373,7 @@ impl MongoDatabasesSubpanel {
                                     match rt.block_on(async move {
                                         presenter::get_db_stats(
                                             &client_ref,
-                                            &db_name,
+                                            db_name,
                                         )
                                         .await
                                     }) {

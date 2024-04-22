@@ -7,7 +7,7 @@
 // -------------------------------------------------------------------------
 
 use bson::{doc, Bson, Document};
-use serde_json::{Value, Map};
+use serde_json::{Map, Value};
 
 use crate::info;
 
@@ -117,10 +117,9 @@ pub fn json_value_to_bson(value: &Value) -> Bson {
 // }
 
 pub fn doc_to_pretty_string(docs: &[Document]) -> String {
-    let json: Vec<Value> = docs.iter().map(|doc| doc_to_serde_value(doc)).collect();
+    let json: Vec<Value> = docs.iter().map(doc_to_serde_value).collect();
     serde_json::to_string_pretty(&json).unwrap()
 }
-
 
 /// Convertimos BSON a serde_json::Value
 ///
@@ -132,7 +131,7 @@ pub fn doc_to_pretty_string(docs: &[Document]) -> String {
 ///     {"_id": {"$oid": "...."}}
 /// lo que es incorrecto.
 pub fn doc_to_serde_value(doc_bson: &Document) -> Value {
-    serde_json::to_value(&doc_bson)
+    serde_json::to_value(doc_bson)
         .ok()
         .map(|value: serde_json::Value| adjust_object_id(&value))
         .unwrap_or_else(|| serde_json::Value::Null)
@@ -154,14 +153,11 @@ fn adjust_object_id(value: &Value) -> Value {
                 }
             }
             Value::Object(new_obj)
-        },
-        Value::Array(arr) => {
-            Value::Array(arr.iter().map(adjust_object_id).collect())
-        },
-        _ => value.clone(),  // Los primitivos los copio.
+        }
+        Value::Array(arr) => Value::Array(arr.iter().map(adjust_object_id).collect()),
+        _ => value.clone(), // Los primitivos los copio.
     }
 }
-
 
 pub fn pprint_docs(docs: &[Document]) {
     info!("{}", doc_to_pretty_string(docs));
