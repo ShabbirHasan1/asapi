@@ -55,8 +55,8 @@ impl Default for PubSubState {
 
         Self {
             channel: String::default(),
-            value: String::default(),
             tx,
+            value: String::default(),
             rx,
             messages: HashMap::default(),
             n_columns: 0,
@@ -74,6 +74,18 @@ pub struct RedisListState {
     pub rpush_vs: String,
     pub rpop_k: String,
     pub rpop_count: String,
+    pub llen_k: String,
+    pub lrange_k: String,
+    pub lrange_start: String,
+    pub lrange_stop: String,
+    pub lindex_k: String,
+    pub lindex_idx: String,
+    pub ltrim_k: String,
+    pub ltrim_start: String,
+    pub ltrim_stop: String,
+    pub linsert_k: String,
+    pub linsert_pivot: String,
+    pub linsert_value: String,
 }
 
 #[derive(Default)]

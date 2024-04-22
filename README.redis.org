@@ -1,10 +1,13 @@
 #+STARTUP: logdone
 * General
-** TODO [#A] Ocultar introducción con texto cuando se muestran los paneles individuales
+** TODO Manejar cuando el resultado es más grande que el panel, porque el label no hace /wrap/.
 ** TODO [#B] Poder añadir nombre a la conexión
 ** TODO [#C] Vector database (familia de comandos =FT.loquesea=)
 ** TODO [#C] El comando, /MultiLine/ en vez de /SingleLine/, y que se pueda hacer grande estirando.
-** TODO [#C] Poder manejar varias sesiones cada una con una conexión distinta, similar a los distintos espacios de trabajo del módulo HTTP.
+** DONE [#A] Ocultar introducción con texto cuando se muestran los paneles individuales
+CLOSED: [2024-04-22 lun 13:11]
+** DONE [#C] Poder manejar varias sesiones cada una con una conexión distinta, similar a los distintos espacios de trabajo del módulo HTTP.
+CLOSED: [2024-04-22 lun 13:11]
 Aunque pueda parecer muy importane, tanto como hacerlo en Postgres, no creo que lo sea. Por eso C, no quiero gastar energía si no es necesario o útil o diferencial.
 ** DONE [#A] Poder cargar solamente los datos de la estructura de datos que he filtrado
 CLOSED: [2024-04-18 jue 15:22]
@@ -55,12 +58,13 @@ Esto se puede hacer simplemente con /del/, que borra cualquier estructura del ti
 *** DONE PubSub
 CLOSED: [2024-01-30 mar 06:54]
 
-* TODO Panel con acciones prefijadas [1/7]
+* TODO Panel con acciones prefijadas [2/7]
 Cuando seleccionems solamente una de las estructuras, hemos de mostrar el panel con acciones prefijadas. Es decir, cuando mostremos /All/ mostramos el campo para entrada con texto, cuando mostremos una estructura concreta solo el panel de ayuda.
 Las acciones prefijadas no se pueden hacer con texto, sino usando la API de alto nivel de /redis-rust/.
 *** DONE Strings
 CLOSED: [2024-04-22 lun 07:33]
-*** DOING Lists
+*** DONE Lists
+CLOSED: [2024-04-22 lun 13:11]
 *** TODO Sets
 *** TODO Hashes
 *** TODO Sorted Sets

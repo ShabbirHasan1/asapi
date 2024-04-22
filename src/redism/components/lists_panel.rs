@@ -13,10 +13,10 @@ use crate::{
     components::widgets::ui_text_edit_singleline_hint,
     error, info,
     redism::{
-        presenter::{self, run_redis_command, ListPresenter, RedisMenu},
+        presenter::{self, run_redis_command, ListPresenter, RedisMenu, RedisPosition},
         view::RedisView,
     },
-    ui_button_w, ui_button_w100, ui_button_w50,
+    ui_button_w, ui_button_w50,
 };
 
 ///
@@ -32,22 +32,16 @@ use crate::{
 /// done - RPUSHX
 ///
 /// info
-/// LLEN
-/// LRANGE
-/// LINDEX
+/// done - LLEN
+/// done - LRANGE
+/// done - LINDEX
 ///
 /// ediciones
-/// LMOVE
-/// LTRIM
-/// LINSERT
+/// done - LTRIM
+/// done - LINSERT
 /// LREM
 /// LSET
 /// LTRIM
-///
-/// acciones bloqueantes
-/// BLPOP
-/// BRPOP
-/// BLMOVE
 ///
 impl RedisView {
     pub fn show_lists(&mut self, ui: &mut egui::Ui, i18n: &I18n) {
@@ -61,10 +55,10 @@ impl RedisView {
                     });
                     ui.separator();
 
-                    ui.columns(2, |_uis| {});
-                    ui.separator();
-
-                    ui.columns(2, |_uis| {});
+                    ui.columns(2, |uis| {
+                        self.info_cmds(&mut uis[0]);
+                        self.modifier_cmds(&mut uis[1]);
+                    });
                 });
 
             if !self.state.command_last_result.is_empty() {
@@ -73,6 +67,229 @@ impl RedisView {
         }
 
         self.lists_display(ui, i18n);
+    }
+
+    fn modifier_cmds(&mut self, ui: &mut egui::Ui) {
+        StripBuilder::new(ui)
+            .size(Size::exact(20.0))
+            .size(Size::exact(20.0))
+            .size(Size::exact(20.0))
+            .vertical(|mut strip| {
+                strip.strip(|builder| {
+                    builder
+                        .size(Size::remainder())
+                        .size(Size::remainder())
+                        .size(Size::remainder())
+                        .size(Size::exact(128.0))
+                        .horizontal(|mut strip| {
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Key",
+                                    &mut self.state.list_st.ltrim_k,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Start",
+                                    &mut self.state.list_st.ltrim_start,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Stop",
+                                    &mut self.state.list_st.ltrim_stop,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                if ui_button_w!(ui, "LTRIM", 128.0) {
+                                    self.state.command_last_result =
+                                        run_redis_command(&self.state.current_connection, |conn| {
+                                            ListPresenter::ltrim(
+                                                conn,
+                                                &mut self.state.lists,
+                                                &mut self.state.list_st,
+                                            )
+                                        });
+                                }
+                            });
+                        });
+                });
+
+                strip.strip(|builder| {
+                    builder
+                        .size(Size::remainder())
+                        .size(Size::remainder())
+                        .size(Size::remainder())
+                        .size(Size::exact(60.0))
+                        .size(Size::exact(60.0))
+                        .horizontal(|mut strip| {
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Key to Insert",
+                                    &mut self.state.list_st.linsert_k,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Pivot Before/After",
+                                    &mut self.state.list_st.linsert_pivot,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Value",
+                                    &mut self.state.list_st.linsert_value,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                if ui_button_w!(ui, "BEFORE", 60.0) {
+                                    self.state.command_last_result =
+                                        run_redis_command(&self.state.current_connection, |conn| {
+                                            ListPresenter::linsert(
+                                                conn,
+                                                &mut self.state.lists,
+                                                &mut self.state.list_st,
+                                                RedisPosition::Before,
+                                            )
+                                        });
+                                }
+                            });
+
+                            strip.cell(|ui| {
+                                if ui_button_w!(ui, "AFTER", 60.0) {
+                                    self.state.command_last_result =
+                                        run_redis_command(&self.state.current_connection, |conn| {
+                                            ListPresenter::linsert(
+                                                conn,
+                                                &mut self.state.lists,
+                                                &mut self.state.list_st,
+                                                RedisPosition::End,
+                                            )
+                                        });
+                                }
+                            });
+                        });
+                });
+            });
+    }
+
+    fn info_cmds(&mut self, ui: &mut egui::Ui) {
+        StripBuilder::new(ui)
+            .size(Size::exact(20.0))
+            .size(Size::exact(20.0))
+            .size(Size::exact(20.0))
+            .vertical(|mut strip| {
+                strip.strip(|builder| {
+                    builder
+                        .size(Size::remainder())
+                        .size(Size::exact(128.0))
+                        .horizontal(|mut strip| {
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Key",
+                                    &mut self.state.list_st.llen_k,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                if ui_button_w!(ui, "LLEN", 128.0) {
+                                    self.state.command_last_result =
+                                        run_redis_command(&self.state.current_connection, |conn| {
+                                            ListPresenter::llen(conn, &mut self.state.list_st)
+                                        });
+                                }
+                            });
+                        });
+                });
+
+                strip.strip(|builder| {
+                    builder
+                        .size(Size::remainder())
+                        .size(Size::remainder())
+                        .size(Size::exact(128.0))
+                        .horizontal(|mut strip| {
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Key",
+                                    &mut self.state.list_st.lindex_k,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Index",
+                                    &mut self.state.list_st.lindex_idx,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                if ui_button_w!(ui, "LINDEX", 128.0) {
+                                    self.state.command_last_result =
+                                        run_redis_command(&self.state.current_connection, |conn| {
+                                            ListPresenter::lindex(conn, &mut self.state.list_st)
+                                        });
+                                }
+                            });
+                        });
+                });
+
+                strip.strip(|builder| {
+                    builder
+                        .size(Size::remainder())
+                        .size(Size::remainder())
+                        .size(Size::remainder())
+                        .size(Size::exact(128.0))
+                        .horizontal(|mut strip| {
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Key",
+                                    &mut self.state.list_st.lrange_k,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Start",
+                                    &mut self.state.list_st.lrange_start,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Stop",
+                                    &mut self.state.list_st.lrange_stop,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                if ui_button_w!(ui, "LRANGE", 128.0) {
+                                    self.state.command_last_result =
+                                        run_redis_command(&self.state.current_connection, |conn| {
+                                            ListPresenter::lrange(conn, &mut self.state.list_st)
+                                        });
+                                }
+                            });
+                        });
+                });
+            });
     }
 
     fn right_modify_cmds(&mut self, ui: &mut egui::Ui) {

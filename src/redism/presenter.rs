@@ -699,9 +699,118 @@ impl StringPresenter {
     }
 }
 
+pub enum RedisPosition {
+    Before,
+    End,
+}
+
 pub struct ListPresenter;
 
 impl ListPresenter {
+    pub fn linsert(
+        conn: &mut redis::Connection,
+        hm: &mut HashMap<String, Vec<String>>,
+        st: &mut RedisListState,
+        position: RedisPosition,
+    ) -> String {
+        let response = match position {
+            RedisPosition::Before => {
+                conn.linsert_before(&st.linsert_k, &st.linsert_pivot, &st.linsert_value)
+            }
+            RedisPosition::End => {
+                conn.linsert_after(&st.linsert_k, &st.linsert_pivot, &st.linsert_value)
+            }
+        };
+        match response {
+            Ok(rresp) => {
+                let value: Vec<String> = conn.lrange(&st.linsert_k, 0, isize::MAX).unwrap();
+                hm.insert(st.linsert_k.clone(), value);
+                format!(
+                    "LINSERT :: {parsed_rresp}",
+                    parsed_rresp = redis_value_to_string(&rresp)
+                )
+            }
+            Err(err) => format!("ERROR LINSERT :: {err:?}"),
+        }
+    }
+
+    pub fn ltrim(
+        conn: &mut redis::Connection,
+        hm: &mut HashMap<String, Vec<String>>,
+        st: &mut RedisListState,
+    ) -> String {
+        let (start, stop) = (
+            st.lrange_start.parse::<isize>(),
+            st.lrange_stop.parse::<isize>(),
+        );
+
+        match (start, stop) {
+            (Ok(b), Ok(e)) => match conn.ltrim(&st.ltrim_k, b, e) {
+                Ok(rresp) => {
+                    let value: Vec<String> = conn.lrange(&st.ltrim_k, 0, isize::MAX).unwrap();
+                    hm.insert(st.ltrim_k.clone(), value);
+                    format!(
+                        "LTRIM :: {parsed_rresp}",
+                        parsed_rresp = redis_value_to_string(&rresp)
+                    )
+                }
+                Err(err) => format!("ERROR LTRIM :: {err:?}"),
+            },
+            (Err(err1), Err(err2)) => {
+                format!("ERROR LTRIM (1) :: {err1:?}\nERROR LTRIM (2) :: {err2:?}")
+            }
+            (_, Err(err)) | (Err(err), _) => format!("ERROR LTRIM :: {err:?}"),
+        }
+    }
+
+    pub fn lrange(conn: &mut redis::Connection, st: &mut RedisListState) -> String {
+        // En caso del parseo fallar por la razón que sea devolvemos nada.
+        let (start, stop) = (
+            st.lrange_start.parse::<isize>().unwrap_or(0),
+            st.lrange_stop.parse::<isize>().unwrap_or(0),
+        );
+
+        match conn.lrange(&st.lindex_k, start, stop) {
+            Ok(rresp) => {
+                // Lo más fácil tras éxito es recuperar los valores presentes en redis de nuevo
+                let parsed_rresp = redis_value_to_string(&rresp);
+                format!("LLEN :: {parsed_rresp}")
+            }
+            Err(err) => {
+                format!("ERROR LLEN :: {err:?}")
+            }
+        }
+    }
+
+    pub fn lindex(conn: &mut redis::Connection, st: &mut RedisListState) -> String {
+        // En caso del parseo fallar por la razón que sea devolvemos nada.
+        let idx = st.lindex_idx.parse::<isize>().unwrap_or(0);
+
+        match conn.lindex(&st.lindex_k, idx) {
+            Ok(rresp) => {
+                // Lo más fácil tras éxito es recuperar los valores presentes en redis de nuevo
+                let parsed_rresp = redis_value_to_string(&rresp);
+                format!("LLEN :: {parsed_rresp}")
+            }
+            Err(err) => {
+                format!("ERROR LLEN :: {err:?}")
+            }
+        }
+    }
+
+    pub fn llen(conn: &mut redis::Connection, st: &mut RedisListState) -> String {
+        match conn.llen(&st.llen_k) {
+            Ok(rresp) => {
+                // Lo más fácil tras éxito es recuperar los valores presentes en redis de nuevo
+                let parsed_rresp = redis_value_to_string(&rresp);
+                format!("LLEN :: {parsed_rresp}")
+            }
+            Err(err) => {
+                format!("ERROR LLEN :: {err:?}")
+            }
+        }
+    }
+
     pub fn rpop(
         conn: &mut redis::Connection,
         hm: &mut HashMap<String, Vec<String>>,
@@ -744,9 +853,8 @@ impl ListPresenter {
             }
         });
         let (k, v) = (st.lpop_k.clone(), count);
-        let result = conn.lpop(&k, v);
 
-        match result {
+        match conn.lpop(&k, v) {
             Ok(rresp) => {
                 // Lo más fácil tras éxito es recuperar los valores presentes en redis de nuevo
                 let value: Vec<String> = conn.lrange(&k, 0, isize::MAX).unwrap();
@@ -771,9 +879,8 @@ impl ListPresenter {
             .map(|s| s.to_owned())
             .collect::<Vec<String>>();
         let (k, v) = (st.rpush_k.clone(), vs);
-        let result = conn.rpush(&k, v);
 
-        match result {
+        match conn.rpush(&k, v) {
             Ok(rresp) => {
                 // Lo más fácil tras éxito es recuperar los valores presentes en redis de nuevo
                 let value: Vec<String> = conn.lrange(&k, 0, isize::MAX).unwrap();
@@ -798,9 +905,8 @@ impl ListPresenter {
             .map(|s| s.to_owned())
             .collect::<Vec<String>>();
         let (k, v) = (st.lpush_k.clone(), vs);
-        let result = conn.lpush(&k, v);
 
-        match result {
+        match conn.lpush(&k, v) {
             Ok(rresp) => {
                 // Lo más fácil tras éxito es recuperar los valores presentes en redis de nuevo
                 let value: Vec<String> = conn.lrange(&k, 0, isize::MAX).unwrap();
@@ -825,9 +931,8 @@ impl ListPresenter {
             .map(|s| s.to_owned())
             .collect::<Vec<String>>();
         let (k, v) = (st.rpush_k.clone(), vs);
-        let result = conn.rpush_exists(&k, v);
 
-        match result {
+        match conn.rpush_exists(&k, v) {
             Ok(rresp) => {
                 // Lo más fácil tras éxito es recuperar los valores presentes en redis de nuevo
                 match rresp {
@@ -860,9 +965,8 @@ impl ListPresenter {
             .map(|s| s.to_owned())
             .collect::<Vec<String>>();
         let (k, v) = (st.lpush_k.clone(), vs);
-        let result = conn.lpush_exists(&k, v);
 
-        match result {
+        match conn.lpush_exists(&k, v) {
             Ok(rresp) => {
                 // Lo más fácil tras éxito es recuperar los valores presentes en redis de nuevo
                 match rresp {
