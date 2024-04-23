@@ -145,6 +145,45 @@ pub struct RedisSetsState {
     pub sunionstore_ks: String,
 }
 
+#[derive(Default)]
+pub struct RedisSortedSetsState {
+    pub zadd_k: String,
+    pub zadd_score: String,
+    pub zadd_v: String,
+    pub zrem_k: String,
+    pub zrem_vs: String,
+    pub zmpop_ks: String,
+    pub zmpop_min_max: String,
+    pub zmpop_count: String,
+    pub zrandmember_k: String,
+    pub zrandmember_count: String,
+    pub zcard_k: String,
+    pub zrange_k: String,
+    pub zrange_start: String,
+    pub zrange_stop: String,
+    pub zrangestore_k: String,
+    pub zrangestore_start: String,
+    pub zrangestore_stop: String,
+    pub zrangestore_destination: String,
+    pub zrangebylex_k: String,
+    pub zrangebylex_min: String,
+    pub zrangebylex_max: String,
+    pub zrangebyscore_k: String,
+    pub zrangebyscore_min: String,
+    pub zrangebyscore_max: String,
+    pub zinter_ks: String,
+    pub zintercard_ks: String,
+    pub zinterstore_ks: String,
+    pub zinterstore_destination: String,
+
+    pub zdiff_ks: String,
+    pub zdiffstore_destination: String,
+    pub zdiffstore_ks: String,
+    pub zunion_ks: String,
+    pub zunionstore_destination: String,
+    pub zunionstore_ks: String,
+}
+
 pub struct RedisLocalState {
     pub cmd_history: Vec<String>,
     pub strings: BTreeMap<String, String>,
@@ -172,6 +211,7 @@ pub struct RedisLocalState {
     pub string_st: RedisStringState,
     pub list_st: RedisListState,
     pub sets_st: RedisSetsState,
+    pub ssets_st: RedisSortedSetsState,
 }
 
 impl Default for RedisLocalState {
@@ -201,6 +241,7 @@ impl Default for RedisLocalState {
             string_st: Default::default(),
             list_st: Default::default(),
             sets_st: Default::default(),
+            ssets_st: Default::default(),
         }
     }
 }
