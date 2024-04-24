@@ -19,27 +19,6 @@ use crate::{
     ui_button_w100,
 };
 
-///
-/// Básico
-/// done - SADD
-/// done - SREM
-/// done - SPOP
-/// done - SRANDMEMBER
-///
-/// Info Básica
-/// done - SISMBEMBER
-/// done - SCARD
-/// done - SMEMBERS
-///
-/// Operaciones Conjuntos
-/// done - SINTER
-/// done - SINTERCARD
-/// done - SINTERSTORE
-/// done - SDIFF
-/// done - SDIFFSTORE
-/// done - SUNION
-/// done - SUNIONSTORE
-///
 impl RedisView {
     pub fn show_sets(&mut self, ui: &mut egui::Ui, i18n: &I18n) {
         if self.state.selected_menu == RedisMenu::Set {
@@ -79,7 +58,12 @@ impl RedisView {
 
                     ui.columns(2, |uis| {
                         self.sset_inter_cmds(&mut uis[0]);
-                        self.sset_diff_and_union_cmds(&mut uis[1]);
+                        self.sset_inter_and_union_cmds(&mut uis[1]);
+                    });
+                    ui.separator();
+
+                    ui.columns(2, |uis| {
+                        self.sset_rank_cmds(&mut uis[0]);
                     });
                 });
 
@@ -644,7 +628,7 @@ impl RedisView {
                         .size(Size::remainder())
                         .size(Size::remainder())
                         .size(Size::remainder())
-                        .size(Size::exact(108.0))
+                        .size(Size::exact(138.0))
                         .horizontal(|mut strip| {
                             strip.cell(|ui| {
                                 ui_text_edit_singleline_hint(
@@ -689,7 +673,7 @@ impl RedisView {
                     builder
                         .size(Size::remainder())
                         .size(Size::remainder())
-                        .size(Size::exact(108.0))
+                        .size(Size::exact(138.0))
                         .horizontal(|mut strip| {
                             strip.cell(|ui| {
                                 ui_text_edit_singleline_hint(
@@ -727,7 +711,7 @@ impl RedisView {
                         .size(Size::remainder())
                         .size(Size::remainder())
                         .size(Size::remainder())
-                        .size(Size::exact(108.0))
+                        .size(Size::exact(138.0))
                         .horizontal(|mut strip| {
                             strip.cell(|ui| {
                                 ui_text_edit_singleline_hint(
@@ -738,8 +722,9 @@ impl RedisView {
                             });
 
                             strip.cell(|ui| {
-                                let response = egui::ComboBox::from_id_source("zpop_min_max")
+                                egui::ComboBox::from_id_source("zpop_min_max")
                                     .selected_text(&self.state.ssets_st.zmpop_min_max)
+                                    .width(ui.available_width())
                                     .show_ui(ui, |ui| {
                                         ui.selectable_value(
                                             &mut self.state.ssets_st.zmpop_min_max,
@@ -781,7 +766,7 @@ impl RedisView {
                     builder
                         .size(Size::remainder())
                         .size(Size::remainder())
-                        .size(Size::exact(108.0))
+                        .size(Size::exact(138.0))
                         .horizontal(|mut strip| {
                             strip.cell(|ui| {
                                 ui_text_edit_singleline_hint(
@@ -826,7 +811,7 @@ impl RedisView {
                 strip.strip(|builder| {
                     builder
                         .size(Size::remainder())
-                        .size(Size::exact(108.0))
+                        .size(Size::exact(138.0))
                         .horizontal(|mut strip| {
                             strip.cell(|ui| {
                                 ui_text_edit_singleline_hint(
@@ -855,7 +840,7 @@ impl RedisView {
                         .size(Size::remainder())
                         .size(Size::remainder())
                         .size(Size::remainder())
-                        .size(Size::exact(128.0))
+                        .size(Size::exact(138.0))
                         .horizontal(|mut strip| {
                             strip.cell(|ui| {
                                 ui_text_edit_singleline_hint(
@@ -901,7 +886,7 @@ impl RedisView {
                         .size(Size::remainder())
                         .size(Size::remainder())
                         .size(Size::remainder())
-                        .size(Size::exact(128.0))
+                        .size(Size::exact(138.0))
                         .horizontal(|mut strip| {
                             strip.cell(|ui| {
                                 ui_text_edit_singleline_hint(
@@ -955,7 +940,7 @@ impl RedisView {
                         .size(Size::remainder())
                         .size(Size::remainder())
                         .size(Size::remainder())
-                        .size(Size::exact(128.0))
+                        .size(Size::exact(138.0))
                         .horizontal(|mut strip| {
                             strip.cell(|ui| {
                                 ui_text_edit_singleline_hint(
@@ -1000,7 +985,7 @@ impl RedisView {
                         .size(Size::remainder())
                         .size(Size::remainder())
                         .size(Size::remainder())
-                        .size(Size::exact(128.0))
+                        .size(Size::exact(138.0))
                         .horizontal(|mut strip| {
                             strip.cell(|ui| {
                                 ui_text_edit_singleline_hint(
@@ -1051,17 +1036,8 @@ impl RedisView {
                 strip.strip(|builder| {
                     builder
                         .size(Size::remainder())
-                        // .size(Size::remainder())
-                        .size(Size::exact(108.0))
+                        .size(Size::exact(138.0))
                         .horizontal(|mut strip| {
-                            // strip.cell(|ui| {
-                            //     ui_text_edit_singleline_hint(
-                            //         ui,
-                            //         "Numkeys",
-                            //         &mut self.state.ssets_st.zinter_numkeys,
-                            //     );
-                            // });
-
                             strip.cell(|ui| {
                                 ui_text_edit_singleline_hint(
                                     ui,
@@ -1086,18 +1062,9 @@ impl RedisView {
 
                 strip.strip(|builder| {
                     builder
-                        // .size(Size::remainder())
                         .size(Size::remainder())
-                        .size(Size::exact(108.0))
+                        .size(Size::exact(138.0))
                         .horizontal(|mut strip| {
-                            // strip.cell(|ui| {
-                            //     ui_text_edit_singleline_hint(
-                            //         ui,
-                            //         "Numkeys",
-                            //         &mut self.state.ssets_st.zintercard_numkeys,
-                            //     );
-                            // });
-
                             strip.cell(|ui| {
                                 ui_text_edit_singleline_hint(
                                     ui,
@@ -1124,8 +1091,7 @@ impl RedisView {
                     builder
                         .size(Size::remainder())
                         .size(Size::remainder())
-                        .size(Size::remainder())
-                        .size(Size::exact(108.0))
+                        .size(Size::exact(138.0))
                         .horizontal(|mut strip| {
                             strip.cell(|ui| {
                                 ui_text_edit_singleline_hint(
@@ -1160,7 +1126,7 @@ impl RedisView {
             });
     }
 
-    fn sset_diff_and_union_cmds(&mut self, ui: &mut egui::Ui) {
+    fn sset_inter_and_union_cmds(&mut self, ui: &mut egui::Ui) {
         StripBuilder::new(ui)
             .size(Size::exact(20.0))
             .size(Size::exact(20.0))
@@ -1170,7 +1136,7 @@ impl RedisView {
                         .size(Size::remainder())
                         .size(Size::remainder())
                         .size(Size::remainder())
-                        .size(Size::exact(108.0))
+                        .size(Size::exact(138.0))
                         .horizontal(|mut strip| {
                             strip.cell(|ui| {
                                 ui_text_edit_singleline_hint(
@@ -1189,26 +1155,26 @@ impl RedisView {
                             });
 
                             strip.cell(|ui| {
-                                let response =
-                                    egui::ComboBox::from_id_source("zunionstore_min_max")
-                                        .selected_text(&self.state.ssets_st.zunionstore_min_max)
-                                        .show_ui(ui, |ui| {
-                                            ui.selectable_value(
-                                                &mut self.state.ssets_st.zunionstore_min_max,
-                                                "NONE".to_string(),
-                                                " ",
-                                            );
-                                            ui.selectable_value(
-                                                &mut self.state.ssets_st.zunionstore_min_max,
-                                                "MIN".to_string(),
-                                                "Min",
-                                            );
-                                            ui.selectable_value(
-                                                &mut self.state.ssets_st.zunionstore_min_max,
-                                                "MAX".to_string(),
-                                                "Max",
-                                            );
-                                        });
+                                egui::ComboBox::from_id_source("zunionstore_min_max")
+                                    .selected_text(&self.state.ssets_st.zunionstore_min_max)
+                                    .width(ui.available_width())
+                                    .show_ui(ui, |ui| {
+                                        ui.selectable_value(
+                                            &mut self.state.ssets_st.zunionstore_min_max,
+                                            "NONE".to_string(),
+                                            " ",
+                                        );
+                                        ui.selectable_value(
+                                            &mut self.state.ssets_st.zunionstore_min_max,
+                                            "MIN".to_string(),
+                                            "Min",
+                                        );
+                                        ui.selectable_value(
+                                            &mut self.state.ssets_st.zunionstore_min_max,
+                                            "MAX".to_string(),
+                                            "Max",
+                                        );
+                                    });
                             });
 
                             strip.cell(|ui| {
@@ -1216,6 +1182,132 @@ impl RedisView {
                                     self.state.command_last_result =
                                         run_redis_command(&self.state.current_connection, |conn| {
                                             SortedSetsPresenter::zunionstore(
+                                                conn,
+                                                &mut self.state.sorted_sets,
+                                                &mut self.state.ssets_st,
+                                            )
+                                        });
+                                }
+                            });
+                        });
+                });
+            });
+    }
+
+    fn sset_rank_cmds(&mut self, ui: &mut egui::Ui) {
+        StripBuilder::new(ui)
+            .size(Size::exact(20.0))
+            .size(Size::exact(20.0))
+            .size(Size::exact(20.0))
+            .vertical(|mut strip| {
+                strip.strip(|builder| {
+                    builder
+                        .size(Size::remainder())
+                        .size(Size::remainder())
+                        .size(Size::exact(138.0))
+                        .horizontal(|mut strip| {
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Key",
+                                    &mut self.state.ssets_st.zrank_k,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Member",
+                                    &mut self.state.ssets_st.zrank_m,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                if ui_button_w100!(ui, "ZRANK") {
+                                    self.state.command_last_result =
+                                        run_redis_command(&self.state.current_connection, |conn| {
+                                            SortedSetsPresenter::zrank(
+                                                conn,
+                                                &mut self.state.ssets_st,
+                                            )
+                                        });
+                                }
+                            });
+                        });
+                });
+
+                strip.strip(|builder| {
+                    builder
+                        .size(Size::remainder())
+                        .size(Size::remainder())
+                        .size(Size::exact(138.0))
+                        .horizontal(|mut strip| {
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Key",
+                                    &mut self.state.ssets_st.zrevrank_k,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Member",
+                                    &mut self.state.ssets_st.zrevrank_m,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                if ui_button_w100!(ui, "ZREVRANK") {
+                                    self.state.command_last_result =
+                                        run_redis_command(&self.state.current_connection, |conn| {
+                                            SortedSetsPresenter::zrevrank(
+                                                conn,
+                                                &mut self.state.ssets_st,
+                                            )
+                                        });
+                                }
+                            });
+                        });
+                });
+
+                strip.strip(|builder| {
+                    builder
+                        .size(Size::remainder())
+                        .size(Size::remainder())
+                        .size(Size::remainder())
+                        .size(Size::exact(138.0))
+                        .horizontal(|mut strip| {
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Key",
+                                    &mut self.state.ssets_st.zremrangebyrank_k,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Start",
+                                    &mut self.state.ssets_st.zremrangebyrank_start,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Stop",
+                                    &mut self.state.ssets_st.zremrangebyrank_stop,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                if ui_button_w100!(ui, "ZREMRANGEBYRANK") {
+                                    self.state.command_last_result =
+                                        run_redis_command(&self.state.current_connection, |conn| {
+                                            SortedSetsPresenter::zremrangebyrank(
                                                 conn,
                                                 &mut self.state.sorted_sets,
                                                 &mut self.state.ssets_st,

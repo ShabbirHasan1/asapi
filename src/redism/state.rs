@@ -175,10 +175,16 @@ pub struct RedisSortedSetsState {
     pub zintercard_ks: String,
     pub zinterstore_ks: String,
     pub zinterstore_destination: String,
-
     pub zunionstore_ks: String,
     pub zunionstore_destination: String,
     pub zunionstore_min_max: String,
+    pub zrank_k: String,
+    pub zrank_m: String,
+    pub zrevrank_k: String,
+    pub zrevrank_m: String,
+    pub zremrangebyrank_k: String,
+    pub zremrangebyrank_start: String,
+    pub zremrangebyrank_stop: String,
 }
 
 pub struct RedisLocalState {

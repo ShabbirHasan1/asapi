@@ -41,9 +41,9 @@ pub enum RedisMenu {
     All,
     String,
     List,
-    #[default]
     Set,
     Hash,
+    #[default]
     SortedSet,
     Json,
     Stream,
@@ -1623,6 +1623,66 @@ impl SortedSetsPresenter {
             Err(err) => {
                 format!("ERROR ZUNIONSTORE :: {err:?}")
             }
+        }
+    }
+
+    pub fn zrank(conn: &mut redis::Connection, st: &mut RedisSortedSetsState) -> String {
+        match conn.zrank(&st.zrank_k, &st.zrank_m) {
+            Ok(rresp) => {
+                format!(
+                    "ZRANK :: {parsed_rresp}",
+                    parsed_rresp = redis_value_to_string(&rresp)
+                )
+            }
+            Err(err) => {
+                format!("ERROR ZRANK :: {err:?}")
+            }
+        }
+    }
+
+    pub fn zrevrank(conn: &mut redis::Connection, st: &mut RedisSortedSetsState) -> String {
+        match conn.zrevrank(&st.zrevrank_k, &st.zrevrank_m) {
+            Ok(rresp) => {
+                format!(
+                    "ZREVRANK :: {parsed_rresp}",
+                    parsed_rresp = redis_value_to_string(&rresp)
+                )
+            }
+            Err(err) => {
+                format!("ERROR ZREVRANK :: {err:?}")
+            }
+        }
+    }
+
+    pub fn zremrangebyrank(
+        conn: &mut redis::Connection,
+        hm: &mut HashMap<String, Vec<String>>,
+        st: &mut RedisSortedSetsState,
+    ) -> String {
+        let (b, e) = (
+            st.zremrangebyrank_start.parse::<isize>(),
+            st.zremrangebyrank_stop.parse::<isize>(),
+        );
+        let k = st.zrange_k.clone();
+
+        match (b, e) {
+            (Ok(bb), Ok(ee)) => match conn.zremrangebyrank(&k, bb, ee) {
+                Ok(rresp) => {
+                    let value: Vec<String> = conn.zrange(&k, 0, -1).unwrap();
+                    hm.insert(k, value);
+                    format!(
+                        "ZREMRANGEBYRANK :: {parsed_rresp}",
+                        parsed_rresp = redis_value_to_string(&rresp)
+                    )
+                }
+                Err(err) => format!("ERROR ZREMRANGEBYRANK :: {err:?}"),
+            },
+            (Err(err1), Err(err2)) => {
+                format!(
+                    "ERROR ZREMRANGEBYRANK (1) :: {err1:?}\nERROR ZREMRANGEBYRANK (2) :: {err2:?}"
+                )
+            }
+            (_, Err(err)) | (Err(err), _) => format!("ERROR ZREMRANGEBYRANK :: {err:?}"),
         }
     }
 }
