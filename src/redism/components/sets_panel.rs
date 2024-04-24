@@ -1164,126 +1164,61 @@ impl RedisView {
         StripBuilder::new(ui)
             .size(Size::exact(20.0))
             .size(Size::exact(20.0))
-            .size(Size::exact(20.0))
-            .size(Size::exact(20.0))
             .vertical(|mut strip| {
                 strip.strip(|builder| {
                     builder
                         .size(Size::remainder())
+                        .size(Size::remainder())
+                        .size(Size::remainder())
                         .size(Size::exact(108.0))
                         .horizontal(|mut strip| {
                             strip.cell(|ui| {
-                                ui.add(
-                                    egui::TextEdit::singleline(&mut self.state.sets_st.sdiff_ks)
-                                        .hint_text("Key (& Keys)"),
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Destination",
+                                    &mut self.state.ssets_st.zunionstore_destination,
                                 );
                             });
 
                             strip.cell(|ui| {
-                                if ui_button_w100!(ui, "SDIFF") {
-                                    self.state.command_last_result =
-                                        run_redis_command(&self.state.current_connection, |conn| {
-                                            SetsPresenter::sdiff(conn, &mut self.state.sets_st)
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Key (& Keys)",
+                                    &mut self.state.ssets_st.zunionstore_ks,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                let response =
+                                    egui::ComboBox::from_id_source("zunionstore_min_max")
+                                        .selected_text(&self.state.ssets_st.zunionstore_min_max)
+                                        .show_ui(ui, |ui| {
+                                            ui.selectable_value(
+                                                &mut self.state.ssets_st.zunionstore_min_max,
+                                                "NONE".to_string(),
+                                                " ",
+                                            );
+                                            ui.selectable_value(
+                                                &mut self.state.ssets_st.zunionstore_min_max,
+                                                "MIN".to_string(),
+                                                "Min",
+                                            );
+                                            ui.selectable_value(
+                                                &mut self.state.ssets_st.zunionstore_min_max,
+                                                "MAX".to_string(),
+                                                "Max",
+                                            );
                                         });
-                                }
-                            });
-                        });
-                });
-
-                strip.strip(|builder| {
-                    builder
-                        .size(Size::remainder())
-                        .size(Size::remainder())
-                        .size(Size::exact(108.0))
-                        .horizontal(|mut strip| {
-                            strip.cell(|ui| {
-                                ui.add(
-                                    egui::TextEdit::singleline(
-                                        &mut self.state.sets_st.sdiffstore_destination,
-                                    )
-                                    .hint_text("Destination"),
-                                );
                             });
 
                             strip.cell(|ui| {
-                                ui.add(
-                                    egui::TextEdit::singleline(
-                                        &mut self.state.sets_st.sdiffstore_ks,
-                                    )
-                                    .hint_text("Key (& Keys)"),
-                                );
-                            });
-
-                            strip.cell(|ui| {
-                                if ui_button_w100!(ui, "SDIFFSTORE") {
+                                if ui_button_w100!(ui, "ZUNIONSTORE") {
                                     self.state.command_last_result =
                                         run_redis_command(&self.state.current_connection, |conn| {
-                                            SetsPresenter::sdiffstore(
+                                            SortedSetsPresenter::zunionstore(
                                                 conn,
-                                                &mut self.state.sets,
-                                                &mut self.state.sets_st,
-                                            )
-                                        });
-                                }
-                            });
-                        });
-                });
-
-                strip.strip(|builder| {
-                    builder
-                        .size(Size::remainder())
-                        .size(Size::exact(108.0))
-                        .horizontal(|mut strip| {
-                            strip.cell(|ui| {
-                                ui.add(
-                                    egui::TextEdit::singleline(&mut self.state.sets_st.sunion_ks)
-                                        .hint_text("Key (& Keys)"),
-                                );
-                            });
-
-                            strip.cell(|ui| {
-                                if ui_button_w100!(ui, "SUNION") {
-                                    self.state.command_last_result =
-                                        run_redis_command(&self.state.current_connection, |conn| {
-                                            SetsPresenter::sunion(conn, &mut self.state.sets_st)
-                                        });
-                                }
-                            });
-                        });
-                });
-
-                strip.strip(|builder| {
-                    builder
-                        .size(Size::remainder())
-                        .size(Size::remainder())
-                        .size(Size::exact(108.0))
-                        .horizontal(|mut strip| {
-                            strip.cell(|ui| {
-                                ui.add(
-                                    egui::TextEdit::singleline(
-                                        &mut self.state.sets_st.sunionstore_destination,
-                                    )
-                                    .hint_text("Destination"),
-                                );
-                            });
-
-                            strip.cell(|ui| {
-                                ui.add(
-                                    egui::TextEdit::singleline(
-                                        &mut self.state.sets_st.sunionstore_ks,
-                                    )
-                                    .hint_text("Key (& Keys)"),
-                                );
-                            });
-
-                            strip.cell(|ui| {
-                                if ui_button_w100!(ui, "SUNIONSTORE") {
-                                    self.state.command_last_result =
-                                        run_redis_command(&self.state.current_connection, |conn| {
-                                            SetsPresenter::sunionstore(
-                                                conn,
-                                                &mut self.state.sets,
-                                                &mut self.state.sets_st,
+                                                &mut self.state.sorted_sets,
+                                                &mut self.state.ssets_st,
                                             )
                                         });
                                 }

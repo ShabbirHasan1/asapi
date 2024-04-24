@@ -176,12 +176,9 @@ pub struct RedisSortedSetsState {
     pub zinterstore_ks: String,
     pub zinterstore_destination: String,
 
-    pub zdiff_ks: String,
-    pub zdiffstore_destination: String,
-    pub zdiffstore_ks: String,
-    pub zunion_ks: String,
-    pub zunionstore_destination: String,
     pub zunionstore_ks: String,
+    pub zunionstore_destination: String,
+    pub zunionstore_min_max: String,
 }
 
 pub struct RedisLocalState {

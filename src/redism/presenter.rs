@@ -1582,7 +1582,7 @@ impl SortedSetsPresenter {
         hm: &mut HashMap<String, Vec<String>>,
         st: &mut RedisSortedSetsState,
     ) -> String {
-        let ks = st.zintercard_ks.split(' ').collect::<Vec<&str>>();
+        let ks = st.zinterstore_ks.split(' ').collect::<Vec<&str>>();
 
         match conn.zinterstore(&st.zinterstore_destination, &ks) {
             Ok(rresp) => {
@@ -1597,127 +1597,37 @@ impl SortedSetsPresenter {
         }
     }
 
-    // pub fn sintercard(conn: &mut redis::Connection, st: &mut RedisSortedSetsState) -> String {
-    //     let ks = st.sintercard_ks.split(' ').collect::<Vec<&str>>();
-    //     let result = redis::cmd("SINTERCARD")
-    //         .arg(&st.sintercard_numkeys)
-    //         .arg(ks)
-    //         .query::<Value>(conn);
+    pub fn zunionstore(
+        conn: &mut redis::Connection,
+        hm: &mut HashMap<String, Vec<String>>,
+        st: &mut RedisSortedSetsState,
+    ) -> String {
+        let ks = st.zunionstore_ks.split(' ').collect::<Vec<&str>>();
+        let set_dst = st.zunionstore_destination.clone();
 
-    //     match result {
-    //         Ok(rresp) => {
-    //             let parsed_rresp = redis_value_to_string(&rresp);
-    //             format!("SINTERCARD :: {parsed_rresp}")
-    //         }
-    //         Err(err) => {
-    //             format!("ERROR SINTERCARD :: {err:?}")
-    //         }
-    //     }
-    // }
+        let result: RedisResult<Value> = match st.zunionstore_min_max.as_ref() {
+            "MIN" => conn.zunionstore_min(&set_dst, &ks),
+            "MAX" => conn.zunionstore_max(&set_dst, &ks),
+            _ => conn.zunionstore(&set_dst, &ks),
+        };
 
-    // pub fn sinterstore(
-    //     conn: &mut redis::Connection,
-    //     hm: &mut HashMap<String, Vec<String>>,
-    //     st: &mut RedisSortedSetsState,
-    // ) -> String {
-    //     let ks = st
-    //         .sinterstore_ks
-    //         .split(' ')
-    //         .map(|s| s.to_owned())
-    //         .collect::<Vec<String>>();
-    //     let set_dst = st.sinterstore_destination.clone();
-
-    //     match conn.sinterstore::<&String, Vec<String>, redis::Value>(&set_dst, ks) {
-    //         Ok(rresp) => {
-    //             let response = format!("SINTERSTORE :: {rresp:?}");
-    //             let _ = redis_smembers(conn, set_dst, hm);
-
-    //             response
-    //         }
-    //         Err(err) => {
-    //             format!("ERROR SINTERSTORE :: {err:?}")
-    //         }
-    //     }
-    // }
-
-    // pub fn sdiff(conn: &mut redis::Connection, st: &mut RedisSortedSetsState) -> String {
-    //     let ks = st.sdiff_ks.split(' ').collect::<Vec<&str>>();
-
-    //     match conn.sdiff::<Vec<&str>, Vec<String>>(ks) {
-    //         Ok(rresp) => {
-    //             format!("SDIFF :: {parsed_rresp}", parsed_rresp = rresp.join(", "))
-    //         }
-    //         Err(err) => {
-    //             format!("ERROR SDIFF :: {err:?}")
-    //         }
-    //     }
-    // }
-
-    // pub fn sdiffstore(
-    //     conn: &mut redis::Connection,
-    //     hm: &mut HashMap<String, Vec<String>>,
-    //     st: &mut RedisSortedSetsState,
-    // ) -> String {
-    //     let ks = st
-    //         .sdiffstore_ks
-    //         .split(' ')
-    //         .map(|s| s.to_owned())
-    //         .collect::<Vec<String>>();
-    //     let set_dst = st.sdiffstore_destination.clone();
-
-    //     match conn.sdiffstore::<&String, Vec<String>, redis::Value>(&set_dst, ks) {
-    //         Ok(rresp) => {
-    //             let response = format!("SDIFFSTORE :: {rresp:?}");
-    //             let _ = redis_smembers(conn, set_dst, hm);
-
-    //             response
-    //         }
-    //         Err(err) => {
-    //             format!("ERROR SDIFFSTORE :: {err:?}")
-    //         }
-    //     }
-    // }
-
-    // pub fn sunion(conn: &mut redis::Connection, st: &mut RedisSortedSetsState) -> String {
-    //     let ks = st.sunion_ks.split(' ').collect::<Vec<&str>>();
-
-    //     match conn.sunion::<Vec<&str>, Vec<String>>(ks) {
-    //         Ok(rresp) => {
-    //             format!("SUNION :: {parsed_rresp}", parsed_rresp = rresp.join(", "))
-    //         }
-    //         Err(err) => {
-    //             format!("ERROR SUNION :: {err:?}")
-    //         }
-    //     }
-    // }
-
-    // pub fn sunionstore(
-    //     conn: &mut redis::Connection,
-    //     hm: &mut HashMap<String, Vec<String>>,
-    //     st: &mut RedisSortedSetsState,
-    // ) -> String {
-    //     let ks = st
-    //         .sunionstore_ks
-    //         .split(' ')
-    //         .map(|s| s.to_owned())
-    //         .collect::<Vec<String>>();
-    //     let set_dst = st.sunionstore_destination.clone();
-
-    //     match conn.sunionstore::<&String, Vec<String>, redis::Value>(&set_dst, ks) {
-    //         Ok(rresp) => {
-    //             let response = format!("SUNIONSTORE :: {rresp:?}");
-    //             let _ = redis_smembers(conn, set_dst, hm);
-
-    //             response
-    //         }
-    //         Err(err) => {
-    //             format!("ERROR SUNIONSTORE :: {err:?}")
-    //         }
-    //     }
-    // }
+        match result {
+            Ok(rresp) => {
+                let value: Vec<String> = conn.zrange(&set_dst, 0, -1).unwrap();
+                hm.insert(set_dst, value);
+                format!(
+                    "ZUNIONSTORE :: {parsed_rresp:?}",
+                    parsed_rresp = redis_value_to_string(&rresp)
+                )
+            }
+            Err(err) => {
+                format!("ERROR ZUNIONSTORE :: {err:?}")
+            }
+        }
+    }
 }
 
-fn redis_zmembers(
+fn _redis_zmembers(
     conn: &mut Connection,
     k: String,
     hm: &mut HashMap<String, Vec<String>>,
