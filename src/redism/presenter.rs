@@ -14,7 +14,10 @@ use std::num::NonZeroUsize;
 
 use crate::{error, info};
 
-use super::state::{RedisConnectionDefinition, RedisListState, RedisLocalState, RedisSetsState};
+use super::state::{
+    RedisConnectionDefinition, RedisListState, RedisLocalState, RedisSetsState,
+    RedisSortedSetsState,
+};
 
 // ========================================================================
 // I do not create Presenter to share client/connection because reading the
@@ -41,6 +44,7 @@ pub enum RedisMenu {
     List,
     Set,
     Hash,
+    #[default]
     SortedSet,
     Json,
     Stream,
@@ -1298,6 +1302,393 @@ impl SetsPresenter {
 }
 
 fn redis_smembers(
+    conn: &mut Connection,
+    k: String,
+    hm: &mut HashMap<String, Vec<String>>,
+) -> String {
+    match conn.smembers::<&str, Vec<String>>(&k) {
+        Ok(rresp) => {
+            let resp = format!(
+                "SMEMBERS :: {parsed_rresp}",
+                parsed_rresp = rresp.join(", ")
+            );
+            hm.insert(k, rresp);
+
+            resp
+        }
+        Err(err) => {
+            format!("ERROR SMEMBERS :: {err:?}")
+        }
+    }
+}
+
+pub struct SortedSetsPresenter;
+
+impl SortedSetsPresenter {
+    pub fn zadd(
+        conn: &mut redis::Connection,
+        hm: &mut HashMap<String, Vec<String>>,
+        st: &mut RedisSortedSetsState,
+    ) -> String {
+        let v = st.zadd_v.clone();
+        let k = st.zadd_k.clone();
+        let s = st.zadd_score.parse::<f64>().unwrap_or(0.0);
+
+        match conn.zadd(&k, &v, s) {
+            Ok(rresp) => {
+                let value: Vec<String> = conn.zrange(&k, 0, -1).unwrap();
+                hm.insert(k, value);
+                let parsed_rresp = redis_value_to_string(&rresp);
+                format!("ZADD :: {parsed_rresp}")
+            }
+            Err(err) => {
+                format!("ERROR ZADD :: {err:?}")
+            }
+        }
+    }
+
+    pub fn zrem(
+        conn: &mut redis::Connection,
+        hm: &mut HashMap<String, Vec<String>>,
+        st: &mut RedisSortedSetsState,
+    ) -> String {
+        let vs = st.zrem_vs.split(' ').collect::<Vec<&str>>();
+        let k = st.zrem_k.clone();
+
+        match conn.zrem(&k, vs) {
+            Ok(rresp) => {
+                let value: Vec<String> = conn.zrange(&k, 0, -1).unwrap();
+                hm.insert(k, value);
+                let parsed_rresp = redis_value_to_string(&rresp);
+                format!("ZREM :: {parsed_rresp}")
+            }
+            Err(err) => {
+                format!("ERROR ZREM :: {err:?}")
+            }
+        }
+    }
+
+    pub fn zmpop(
+        conn: &mut redis::Connection,
+        hm: &mut HashMap<String, Vec<String>>,
+        st: &mut RedisSortedSetsState,
+    ) -> String {
+        let ks = st.zmpop_ks.split(' ').collect::<Vec<&str>>();
+        let count = st.zmpop_count.parse::<isize>().unwrap_or_default();
+
+        let result = match st.zmpop_min_max.as_ref() {
+            "MIN" => conn.zmpop_min(&ks, count),
+            "MAX" => conn.zmpop_min(&ks, count),
+            _ => conn.zmpop_min(&ks, count),
+        };
+
+        match result {
+            Ok(rresp) => {
+                // TODO: Podría llamar a scan pero esto es menos costoso, aunque
+                // podemos bloquear si es salvaje la cantidad de info en `sorted_sets`.
+                // Implementar `zscan` basada en ZSCAN.
+                for k in ks {
+                    let value: Vec<String> = conn.zrange(k, 0, -1).unwrap();
+                    hm.insert(k.to_string(), value);
+                }
+                let parsed_rresp = redis_value_to_string(&rresp);
+                format!("ZMPOP :: {parsed_rresp}")
+            }
+            Err(err) => {
+                format!("ERROR ZMPOP :: {err:?}")
+            }
+        }
+    }
+
+    pub fn zrandmember(conn: &mut redis::Connection, st: &mut RedisSortedSetsState) -> String {
+        let k = st.zrandmember_k.clone();
+        let count = st.zrandmember_count.parse::<isize>().unwrap_or(1);
+        let value = if count <= 1 {
+            conn.zrandmember(&k, None)
+        } else {
+            conn.zrandmember(&k, Some(count))
+        };
+
+        match value {
+            Ok(rresp) => {
+                let parsed_rresp = redis_value_to_string(&rresp);
+                format!("ZRANDMEMBER :: {parsed_rresp}")
+            }
+            Err(err) => {
+                format!("ERROR ZRANDMEMBER :: {err:?}")
+            }
+        }
+    }
+
+    pub fn zcard(conn: &mut redis::Connection, st: &mut RedisSortedSetsState) -> String {
+        match conn.zcard(&st.zcard_k) {
+            Ok(rresp) => {
+                let parsed_rresp = redis_value_to_string(&rresp);
+                format!("ZCARD :: {parsed_rresp}")
+            }
+            Err(err) => {
+                format!("ERROR ZCARD :: {err:?}")
+            }
+        }
+    }
+
+    pub fn zrange(conn: &mut redis::Connection, st: &mut RedisSortedSetsState) -> String {
+        let (start, stop) = (
+            st.zrange_start.parse::<isize>(),
+            st.zrange_stop.parse::<isize>(),
+        );
+
+        match (start, stop) {
+            (Ok(b), Ok(e)) => match conn.zrange(&st.zrange_k, b, e) {
+                Ok(rresp) => {
+                    format!(
+                        "ZRANGE :: {parsed_rresp}",
+                        parsed_rresp = redis_value_to_string(&rresp)
+                    )
+                }
+                Err(err) => format!("ERROR ZRANGE :: {err:?}"),
+            },
+            (Err(err1), Err(err2)) => {
+                format!("ERROR ZRANGE (1) :: {err1:?}\nERROR ZRANGE (2) :: {err2:?}")
+            }
+            (_, Err(err)) | (Err(err), _) => format!("ERROR ZRANGE :: {err:?}"),
+        }
+    }
+
+    pub fn zrangestore(
+        conn: &mut redis::Connection,
+        hm: &mut HashMap<String, Vec<String>>,
+        st: &mut RedisSortedSetsState,
+    ) -> String {
+        let (start, stop) = (
+            st.zrange_start.parse::<isize>(),
+            st.zrange_stop.parse::<isize>(),
+        );
+
+        match (start, stop) {
+            (Ok(b), Ok(e)) => {
+                let result = redis::cmd("ZRANGESTORE")
+                    .arg(&st.zrangestore_destination)
+                    .arg(&st.zrange_k)
+                    .arg(b)
+                    .arg(e)
+                    .query::<Value>(conn);
+
+                match result {
+                    Ok(rresp) => {
+                        let value: Vec<String> =
+                            conn.zrange(&st.zrangestore_destination, 0, -1).unwrap();
+                        hm.insert(st.zrangestore_destination.clone(), value);
+                        format!(
+                            "ZRANGESTORE :: {parsed_rresp}",
+                            parsed_rresp = redis_value_to_string(&rresp)
+                        )
+                    }
+                    Err(err) => format!("ERROR ZRANGESTORE :: {err:?}"),
+                }
+            }
+            (Err(err1), Err(err2)) => {
+                format!("ERROR ZRANGESTORE (1) :: {err1:?}\nERROR ZRANGESTORE (2) :: {err2:?}")
+            }
+            (_, Err(err)) | (Err(err), _) => format!("ERROR ZRANGESTORE :: {err:?}"),
+        }
+    }
+
+    pub fn zrangebylex(conn: &mut redis::Connection, st: &mut RedisSortedSetsState) -> String {
+        let (min, max) = (
+            st.zrangebylex_min.parse::<isize>(),
+            st.zrangebylex_max.parse::<isize>(),
+        );
+        let k = st.zrange_k.clone();
+
+        match (min, max) {
+            (Ok(_min), Ok(_max)) => match conn.zrangebylex(k, _min, _max) {
+                Ok(rresp) => {
+                    format!(
+                        "ZRANGEBYLEX :: {parsed_rresp}",
+                        parsed_rresp = redis_value_to_string(&rresp)
+                    )
+                }
+                Err(err) => format!("ERROR ZRANGEBYLEX :: {err:?}"),
+            },
+            (Err(err1), Err(err2)) => {
+                format!("ERROR ZRANGEBYLEX (1) :: {err1:?}\nERROR ZRANGEBYLEX (2) :: {err2:?}")
+            }
+            (_, Err(err)) | (Err(err), _) => format!("ERROR ZRANGEBYLEX :: {err:?}"),
+        }
+    }
+
+    pub fn zrangebyscore(conn: &mut redis::Connection, st: &mut RedisSortedSetsState) -> String {
+        let (min, max) = (
+            st.zrangebyscore_min.parse::<isize>(),
+            st.zrangebyscore_max.parse::<isize>(),
+        );
+        let k = st.zrange_k.clone();
+
+        match (min, max) {
+            (Ok(_min), Ok(_max)) => match conn.zrangebyscore(k, _min, _max) {
+                Ok(rresp) => {
+                    format!(
+                        "ZRANGEBYSCORE :: {parsed_rresp}",
+                        parsed_rresp = redis_value_to_string(&rresp)
+                    )
+                }
+                Err(err) => format!("ERROR ZRANGEBYSCORE :: {err:?}"),
+            },
+            (Err(err1), Err(err2)) => {
+                format!("ERROR ZRANGEBYSCORE (1) :: {err1:?}\nERROR ZRANGEBYSCORE (2) :: {err2:?}")
+            }
+            (_, Err(err)) | (Err(err), _) => format!("ERROR ZRANGEBYSCORE :: {err:?}"),
+        }
+    }
+
+    pub fn zinter(conn: &mut redis::Connection, st: &mut RedisSortedSetsState) -> String {
+        let ks = st.zinter_ks.split(' ').collect::<Vec<&str>>();
+        let result = redis::cmd("ZINTER")
+            .arg(ks.len())
+            .arg(ks)
+            .query::<Value>(conn);
+
+        match result {
+            Ok(rresp) => {
+                let parsed_rresp = redis_value_to_string(&rresp);
+                format!("ZINTER :: {parsed_rresp}")
+            }
+            Err(err) => {
+                format!("ERROR ZINTER :: {err:?}")
+            }
+        }
+    }
+
+    pub fn zintercard(conn: &mut redis::Connection, st: &mut RedisSortedSetsState) -> String {
+        let ks = st.zintercard_ks.split(' ').collect::<Vec<&str>>();
+        let result = redis::cmd("ZINTECARD")
+            .arg(ks.len())
+            .arg(ks)
+            .query::<Value>(conn);
+
+        match result {
+            Ok(rresp) => {
+                let parsed_rresp = redis_value_to_string(&rresp);
+                format!("ZINTERCARD :: {parsed_rresp}")
+            }
+            Err(err) => {
+                format!("ERROR ZINTERCARD :: {err:?}")
+            }
+        }
+    }
+
+    pub fn zinterstore(
+        conn: &mut redis::Connection,
+        hm: &mut HashMap<String, Vec<String>>,
+        st: &mut RedisSortedSetsState,
+    ) -> String {
+        let ks = st.zinterstore_ks.split(' ').collect::<Vec<&str>>();
+
+        match conn.zinterstore(&st.zinterstore_destination, &ks) {
+            Ok(rresp) => {
+                let parsed_rresp = redis_value_to_string(&rresp);
+                let value: Vec<String> = conn.zrange(&st.zinterstore_destination, 0, -1).unwrap();
+                hm.insert(st.zinterstore_destination.clone(), value);
+                format!("ZINTERCARD :: {parsed_rresp}")
+            }
+            Err(err) => {
+                format!("ERROR ZINTERCARD :: {err:?}")
+            }
+        }
+    }
+
+    pub fn zunionstore(
+        conn: &mut redis::Connection,
+        hm: &mut HashMap<String, Vec<String>>,
+        st: &mut RedisSortedSetsState,
+    ) -> String {
+        let ks = st.zunionstore_ks.split(' ').collect::<Vec<&str>>();
+        let set_dst = st.zunionstore_destination.clone();
+
+        let result: RedisResult<Value> = match st.zunionstore_min_max.as_ref() {
+            "MIN" => conn.zunionstore_min(&set_dst, &ks),
+            "MAX" => conn.zunionstore_max(&set_dst, &ks),
+            _ => conn.zunionstore(&set_dst, &ks),
+        };
+
+        match result {
+            Ok(rresp) => {
+                let value: Vec<String> = conn.zrange(&set_dst, 0, -1).unwrap();
+                hm.insert(set_dst, value);
+                format!(
+                    "ZUNIONSTORE :: {parsed_rresp:?}",
+                    parsed_rresp = redis_value_to_string(&rresp)
+                )
+            }
+            Err(err) => {
+                format!("ERROR ZUNIONSTORE :: {err:?}")
+            }
+        }
+    }
+
+    pub fn zrank(conn: &mut redis::Connection, st: &mut RedisSortedSetsState) -> String {
+        match conn.zrank(&st.zrank_k, &st.zrank_m) {
+            Ok(rresp) => {
+                format!(
+                    "ZRANK :: {parsed_rresp}",
+                    parsed_rresp = redis_value_to_string(&rresp)
+                )
+            }
+            Err(err) => {
+                format!("ERROR ZRANK :: {err:?}")
+            }
+        }
+    }
+
+    pub fn zrevrank(conn: &mut redis::Connection, st: &mut RedisSortedSetsState) -> String {
+        match conn.zrevrank(&st.zrevrank_k, &st.zrevrank_m) {
+            Ok(rresp) => {
+                format!(
+                    "ZREVRANK :: {parsed_rresp}",
+                    parsed_rresp = redis_value_to_string(&rresp)
+                )
+            }
+            Err(err) => {
+                format!("ERROR ZREVRANK :: {err:?}")
+            }
+        }
+    }
+
+    pub fn zremrangebyrank(
+        conn: &mut redis::Connection,
+        hm: &mut HashMap<String, Vec<String>>,
+        st: &mut RedisSortedSetsState,
+    ) -> String {
+        let (b, e) = (
+            st.zremrangebyrank_start.parse::<isize>(),
+            st.zremrangebyrank_stop.parse::<isize>(),
+        );
+        let k = st.zrange_k.clone();
+
+        match (b, e) {
+            (Ok(bb), Ok(ee)) => match conn.zremrangebyrank(&k, bb, ee) {
+                Ok(rresp) => {
+                    let value: Vec<String> = conn.zrange(&k, 0, -1).unwrap();
+                    hm.insert(k, value);
+                    format!(
+                        "ZREMRANGEBYRANK :: {parsed_rresp}",
+                        parsed_rresp = redis_value_to_string(&rresp)
+                    )
+                }
+                Err(err) => format!("ERROR ZREMRANGEBYRANK :: {err:?}"),
+            },
+            (Err(err1), Err(err2)) => {
+                format!(
+                    "ERROR ZREMRANGEBYRANK (1) :: {err1:?}\nERROR ZREMRANGEBYRANK (2) :: {err2:?}"
+                )
+            }
+            (_, Err(err)) | (Err(err), _) => format!("ERROR ZREMRANGEBYRANK :: {err:?}"),
+        }
+    }
+}
+
+fn _redis_zmembers(
     conn: &mut Connection,
     k: String,
     hm: &mut HashMap<String, Vec<String>>,

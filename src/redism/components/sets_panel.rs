@@ -13,33 +13,12 @@ use crate::{
     components::widgets::ui_text_edit_singleline_hint,
     error, info,
     redism::{
-        presenter::{self, run_redis_command, RedisMenu, SetsPresenter},
+        presenter::{self, run_redis_command, RedisMenu, SetsPresenter, SortedSetsPresenter},
         view::RedisView,
     },
     ui_button_w100,
 };
 
-///
-/// Básico
-/// done - SADD
-/// done - SREM
-/// done - SPOP
-/// done - SRANDMEMBER
-///
-/// Info Básica
-/// done - SISMBEMBER
-/// done - SCARD
-/// done - SMEMBERS
-///
-/// Operaciones Conjuntos
-/// done - SINTER
-/// done - SINTERCARD
-/// done - SINTERSTORE
-/// done - SDIFF
-/// done - SDIFFSTORE
-/// SUNION
-/// SUNIONSTORE
-///
 impl RedisView {
     pub fn show_sets(&mut self, ui: &mut egui::Ui, i18n: &I18n) {
         if self.state.selected_menu == RedisMenu::Set {
@@ -67,6 +46,32 @@ impl RedisView {
     }
 
     pub fn show_sorted_sets(&mut self, ui: &mut egui::Ui, i18n: &I18n) {
+        if self.state.selected_menu == RedisMenu::SortedSet {
+            egui::CollapsingHeader::new("Comandos Disponibles")
+                .default_open(true)
+                .show(ui, |ui| {
+                    ui.columns(2, |uis| {
+                        self.sset_basic_cmds(&mut uis[0]);
+                        self.sset_set_info_cmds(&mut uis[1]);
+                    });
+                    ui.separator();
+
+                    ui.columns(2, |uis| {
+                        self.sset_inter_cmds(&mut uis[0]);
+                        self.sset_inter_and_union_cmds(&mut uis[1]);
+                    });
+                    ui.separator();
+
+                    ui.columns(2, |uis| {
+                        self.sset_rank_cmds(&mut uis[0]);
+                    });
+                });
+
+            if !self.state.command_last_result.is_empty() {
+                ui.label(&self.state.command_last_result);
+            }
+        }
+
         self.show(ui, i18n, RedisMenu::SortedSet);
     }
 
@@ -327,9 +332,10 @@ impl RedisView {
                         .size(Size::exact(108.0))
                         .horizontal(|mut strip| {
                             strip.cell(|ui| {
-                                ui.add(
-                                    egui::TextEdit::singleline(&mut self.state.sets_st.scard_k)
-                                        .hint_text("Key"),
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Key",
+                                    &mut self.state.sets_st.scard_k,
                                 );
                             });
 
@@ -350,9 +356,10 @@ impl RedisView {
                         .size(Size::exact(108.0))
                         .horizontal(|mut strip| {
                             strip.cell(|ui| {
-                                ui.add(
-                                    egui::TextEdit::singleline(&mut self.state.sets_st.smembers_k)
-                                        .hint_text("Key"),
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Key",
+                                    &mut self.state.sets_st.smembers_k,
                                 );
                             });
 
@@ -385,9 +392,10 @@ impl RedisView {
                         .size(Size::exact(108.0))
                         .horizontal(|mut strip| {
                             strip.cell(|ui| {
-                                ui.add(
-                                    egui::TextEdit::singleline(&mut self.state.sets_st.sinter_ks)
-                                        .hint_text("Key (& Keys)"),
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Key (& Keys)",
+                                    &mut self.state.sets_st.sinter_ks,
                                 );
                             });
 
@@ -409,20 +417,18 @@ impl RedisView {
                         .size(Size::exact(108.0))
                         .horizontal(|mut strip| {
                             strip.cell(|ui| {
-                                ui.add(
-                                    egui::TextEdit::singleline(
-                                        &mut self.state.sets_st.sintercard_numkeys,
-                                    )
-                                    .hint_text("Numkeys"),
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Numkeys",
+                                    &mut self.state.sets_st.sintercard_numkeys,
                                 );
                             });
 
                             strip.cell(|ui| {
-                                ui.add(
-                                    egui::TextEdit::singleline(
-                                        &mut self.state.sets_st.sintercard_ks,
-                                    )
-                                    .hint_text("Key (& Keys)"),
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Key (& Keys)",
+                                    &mut self.state.sets_st.sintercard_ks,
                                 );
                             });
 
@@ -444,20 +450,18 @@ impl RedisView {
                         .size(Size::exact(108.0))
                         .horizontal(|mut strip| {
                             strip.cell(|ui| {
-                                ui.add(
-                                    egui::TextEdit::singleline(
-                                        &mut self.state.sets_st.sinterstore_destination,
-                                    )
-                                    .hint_text("Destination"),
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Destination",
+                                    &mut self.state.sets_st.sinterstore_destination,
                                 );
                             });
 
                             strip.cell(|ui| {
-                                ui.add(
-                                    egui::TextEdit::singleline(
-                                        &mut self.state.sets_st.sinterstore_ks,
-                                    )
-                                    .hint_text("Key (& Keys)"),
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Key (& Keys)",
+                                    &mut self.state.sets_st.sinterstore_ks,
                                 );
                             });
 
@@ -491,9 +495,10 @@ impl RedisView {
                         .size(Size::exact(108.0))
                         .horizontal(|mut strip| {
                             strip.cell(|ui| {
-                                ui.add(
-                                    egui::TextEdit::singleline(&mut self.state.sets_st.sdiff_ks)
-                                        .hint_text("Key (& Keys)"),
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Key (& Keys)",
+                                    &mut self.state.sets_st.sdiff_ks,
                                 );
                             });
 
@@ -515,20 +520,18 @@ impl RedisView {
                         .size(Size::exact(108.0))
                         .horizontal(|mut strip| {
                             strip.cell(|ui| {
-                                ui.add(
-                                    egui::TextEdit::singleline(
-                                        &mut self.state.sets_st.sdiffstore_destination,
-                                    )
-                                    .hint_text("Destination"),
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Destination",
+                                    &mut self.state.sets_st.sdiffstore_destination,
                                 );
                             });
 
                             strip.cell(|ui| {
-                                ui.add(
-                                    egui::TextEdit::singleline(
-                                        &mut self.state.sets_st.sdiffstore_ks,
-                                    )
-                                    .hint_text("Key (& Keys)"),
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Key (& Keys)",
+                                    &mut self.state.sets_st.sdiffstore_ks,
                                 );
                             });
 
@@ -553,9 +556,10 @@ impl RedisView {
                         .size(Size::exact(108.0))
                         .horizontal(|mut strip| {
                             strip.cell(|ui| {
-                                ui.add(
-                                    egui::TextEdit::singleline(&mut self.state.sets_st.sunion_ks)
-                                        .hint_text("Key (& Keys)"),
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Key (& Keys)",
+                                    &mut self.state.sets_st.sunion_ks,
                                 );
                             });
 
@@ -577,20 +581,18 @@ impl RedisView {
                         .size(Size::exact(108.0))
                         .horizontal(|mut strip| {
                             strip.cell(|ui| {
-                                ui.add(
-                                    egui::TextEdit::singleline(
-                                        &mut self.state.sets_st.sunionstore_destination,
-                                    )
-                                    .hint_text("Destination"),
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Destination",
+                                    &mut self.state.sets_st.sunionstore_destination,
                                 );
                             });
 
                             strip.cell(|ui| {
-                                ui.add(
-                                    egui::TextEdit::singleline(
-                                        &mut self.state.sets_st.sunionstore_ks,
-                                    )
-                                    .hint_text("Key (& Keys)"),
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Key (& Keys)",
+                                    &mut self.state.sets_st.sunionstore_ks,
                                 );
                             });
 
@@ -602,6 +604,713 @@ impl RedisView {
                                                 conn,
                                                 &mut self.state.sets,
                                                 &mut self.state.sets_st,
+                                            )
+                                        });
+                                }
+                            });
+                        });
+                });
+            });
+    }
+
+    // -------------------------------------------------------
+    // -------------------------------------------------------
+    // -------------------------------------------------------
+    fn sset_basic_cmds(&mut self, ui: &mut egui::Ui) {
+        StripBuilder::new(ui)
+            .size(Size::exact(20.0))
+            .size(Size::exact(20.0))
+            .size(Size::exact(20.0))
+            .size(Size::exact(20.0))
+            .vertical(|mut strip| {
+                strip.strip(|builder| {
+                    builder
+                        .size(Size::remainder())
+                        .size(Size::remainder())
+                        .size(Size::remainder())
+                        .size(Size::exact(138.0))
+                        .horizontal(|mut strip| {
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Key",
+                                    &mut self.state.ssets_st.zadd_k,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Score",
+                                    &mut self.state.ssets_st.zadd_score,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Member",
+                                    &mut self.state.ssets_st.zadd_v,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                if ui_button_w100!(ui, "ZADD") {
+                                    self.state.command_last_result =
+                                        run_redis_command(&self.state.current_connection, |conn| {
+                                            SortedSetsPresenter::zadd(
+                                                conn,
+                                                &mut self.state.sorted_sets,
+                                                &mut self.state.ssets_st,
+                                            )
+                                        });
+                                }
+                            });
+                        });
+                });
+
+                strip.strip(|builder| {
+                    builder
+                        .size(Size::remainder())
+                        .size(Size::remainder())
+                        .size(Size::exact(138.0))
+                        .horizontal(|mut strip| {
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Key",
+                                    &mut self.state.ssets_st.zrem_k,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Value (& Values)",
+                                    &mut self.state.ssets_st.zrem_vs,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                if ui_button_w100!(ui, "ZREM") {
+                                    self.state.command_last_result =
+                                        run_redis_command(&self.state.current_connection, |conn| {
+                                            SortedSetsPresenter::zrem(
+                                                conn,
+                                                &mut self.state.sets,
+                                                &mut self.state.ssets_st,
+                                            )
+                                        });
+                                }
+                            });
+                        });
+                });
+
+                strip.strip(|builder| {
+                    builder
+                        .size(Size::remainder())
+                        .size(Size::remainder())
+                        .size(Size::remainder())
+                        .size(Size::exact(138.0))
+                        .horizontal(|mut strip| {
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Key (& Keys)",
+                                    &mut self.state.ssets_st.zmpop_ks,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                egui::ComboBox::from_id_source("zpop_min_max")
+                                    .selected_text(&self.state.ssets_st.zmpop_min_max)
+                                    .width(ui.available_width())
+                                    .show_ui(ui, |ui| {
+                                        ui.selectable_value(
+                                            &mut self.state.ssets_st.zmpop_min_max,
+                                            "MIN".to_string(),
+                                            "Min",
+                                        );
+                                        ui.selectable_value(
+                                            &mut self.state.ssets_st.zmpop_min_max,
+                                            "MAX".to_string(),
+                                            "Max",
+                                        );
+                                    });
+                            });
+
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "(Count)",
+                                    &mut self.state.ssets_st.zmpop_count,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                if ui_button_w100!(ui, "ZMPOP") {
+                                    self.state.command_last_result =
+                                        run_redis_command(&self.state.current_connection, |conn| {
+                                            SortedSetsPresenter::zmpop(
+                                                conn,
+                                                &mut self.state.sorted_sets,
+                                                &mut self.state.ssets_st,
+                                            )
+                                        });
+                                }
+                            });
+                        });
+                });
+
+                strip.strip(|builder| {
+                    builder
+                        .size(Size::remainder())
+                        .size(Size::remainder())
+                        .size(Size::exact(138.0))
+                        .horizontal(|mut strip| {
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Key",
+                                    &mut self.state.sets_st.srandmember_k,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Count (1 if no value provided)",
+                                    &mut self.state.sets_st.srandmember_count,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                if ui_button_w100!(ui, "ZRANDMEMBER") {
+                                    self.state.command_last_result =
+                                        run_redis_command(&self.state.current_connection, |conn| {
+                                            SortedSetsPresenter::zrandmember(
+                                                conn,
+                                                &mut self.state.ssets_st,
+                                            )
+                                        });
+                                }
+                            });
+                        });
+                });
+            });
+    }
+
+    fn sset_set_info_cmds(&mut self, ui: &mut egui::Ui) {
+        StripBuilder::new(ui)
+            .size(Size::exact(20.0))
+            .size(Size::exact(20.0))
+            .size(Size::exact(20.0))
+            .size(Size::exact(20.0))
+            .size(Size::exact(20.0))
+            .vertical(|mut strip| {
+                strip.strip(|builder| {
+                    builder
+                        .size(Size::remainder())
+                        .size(Size::exact(138.0))
+                        .horizontal(|mut strip| {
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Key",
+                                    &mut self.state.ssets_st.zcard_k,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                if ui_button_w100!(ui, "ZCARD") {
+                                    self.state.command_last_result =
+                                        run_redis_command(&self.state.current_connection, |conn| {
+                                            SortedSetsPresenter::zcard(
+                                                conn,
+                                                &mut self.state.ssets_st,
+                                            )
+                                        });
+                                }
+                            });
+                        });
+                });
+
+                strip.strip(|builder| {
+                    builder
+                        .size(Size::remainder())
+                        .size(Size::remainder())
+                        .size(Size::remainder())
+                        .size(Size::exact(138.0))
+                        .horizontal(|mut strip| {
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Key",
+                                    &mut self.state.ssets_st.zrange_k,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Start",
+                                    &mut self.state.ssets_st.zrange_start,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Stop",
+                                    &mut self.state.ssets_st.zrange_stop,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                if ui_button_w100!(ui, "ZRANGE") {
+                                    self.state.command_last_result =
+                                        run_redis_command(&self.state.current_connection, |conn| {
+                                            SortedSetsPresenter::zrange(
+                                                conn,
+                                                &mut self.state.ssets_st,
+                                            )
+                                        });
+                                }
+                            });
+                        });
+                });
+
+                strip.strip(|builder| {
+                    builder
+                        .size(Size::remainder())
+                        .size(Size::remainder())
+                        .size(Size::remainder())
+                        .size(Size::remainder())
+                        .size(Size::exact(138.0))
+                        .horizontal(|mut strip| {
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Destination",
+                                    &mut self.state.ssets_st.zrangestore_destination,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Key",
+                                    &mut self.state.ssets_st.zrangestore_k,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Start",
+                                    &mut self.state.ssets_st.zrangestore_start,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Stop",
+                                    &mut self.state.ssets_st.zrangestore_stop,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                if ui_button_w100!(ui, "ZRANGESTORE") {
+                                    self.state.command_last_result =
+                                        run_redis_command(&self.state.current_connection, |conn| {
+                                            SortedSetsPresenter::zrangestore(
+                                                conn,
+                                                &mut self.state.sorted_sets,
+                                                &mut self.state.ssets_st,
+                                            )
+                                        });
+                                }
+                            });
+                        });
+                });
+
+                strip.strip(|builder| {
+                    builder
+                        .size(Size::remainder())
+                        .size(Size::remainder())
+                        .size(Size::remainder())
+                        .size(Size::exact(138.0))
+                        .horizontal(|mut strip| {
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Key",
+                                    &mut self.state.ssets_st.zrangebylex_k,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Min",
+                                    &mut self.state.ssets_st.zrangebylex_min,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Max",
+                                    &mut self.state.ssets_st.zrangebylex_max,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                if ui_button_w100!(ui, "ZRANGEBYLEX") {
+                                    self.state.command_last_result =
+                                        run_redis_command(&self.state.current_connection, |conn| {
+                                            SortedSetsPresenter::zrangebylex(
+                                                conn,
+                                                &mut self.state.ssets_st,
+                                            )
+                                        });
+                                }
+                            });
+                        });
+                });
+
+                strip.strip(|builder| {
+                    builder
+                        .size(Size::remainder())
+                        .size(Size::remainder())
+                        .size(Size::remainder())
+                        .size(Size::exact(138.0))
+                        .horizontal(|mut strip| {
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Key",
+                                    &mut self.state.ssets_st.zrangebyscore_k,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Min",
+                                    &mut self.state.ssets_st.zrangebyscore_min,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Max",
+                                    &mut self.state.ssets_st.zrangebyscore_max,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                if ui_button_w100!(ui, "ZRANGEBYSCORE") {
+                                    self.state.command_last_result =
+                                        run_redis_command(&self.state.current_connection, |conn| {
+                                            SortedSetsPresenter::zrangebyscore(
+                                                conn,
+                                                &mut self.state.ssets_st,
+                                            )
+                                        });
+                                }
+                            });
+                        });
+                });
+            });
+    }
+
+    fn sset_inter_cmds(&mut self, ui: &mut egui::Ui) {
+        StripBuilder::new(ui)
+            .size(Size::exact(20.0))
+            .size(Size::exact(20.0))
+            .size(Size::exact(20.0))
+            .vertical(|mut strip| {
+                strip.strip(|builder| {
+                    builder
+                        .size(Size::remainder())
+                        .size(Size::exact(138.0))
+                        .horizontal(|mut strip| {
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Key (& Keys)",
+                                    &mut self.state.ssets_st.zinter_ks,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                if ui_button_w100!(ui, "ZINTER") {
+                                    self.state.command_last_result =
+                                        run_redis_command(&self.state.current_connection, |conn| {
+                                            SortedSetsPresenter::zinter(
+                                                conn,
+                                                &mut self.state.ssets_st,
+                                            )
+                                        });
+                                }
+                            });
+                        });
+                });
+
+                strip.strip(|builder| {
+                    builder
+                        .size(Size::remainder())
+                        .size(Size::exact(138.0))
+                        .horizontal(|mut strip| {
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Key (& Keys)",
+                                    &mut self.state.ssets_st.zintercard_ks,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                if ui_button_w100!(ui, "ZINTERCARD") {
+                                    self.state.command_last_result =
+                                        run_redis_command(&self.state.current_connection, |conn| {
+                                            SortedSetsPresenter::zintercard(
+                                                conn,
+                                                &mut self.state.ssets_st,
+                                            )
+                                        });
+                                }
+                            });
+                        });
+                });
+
+                strip.strip(|builder| {
+                    builder
+                        .size(Size::remainder())
+                        .size(Size::remainder())
+                        .size(Size::exact(138.0))
+                        .horizontal(|mut strip| {
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Destination",
+                                    &mut self.state.ssets_st.zinterstore_destination,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Key (& Keys)",
+                                    &mut self.state.ssets_st.zinterstore_ks,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                if ui_button_w100!(ui, "ZINTERSTORE") {
+                                    self.state.command_last_result =
+                                        run_redis_command(&self.state.current_connection, |conn| {
+                                            SortedSetsPresenter::zinterstore(
+                                                conn,
+                                                &mut self.state.sorted_sets,
+                                                &mut self.state.ssets_st,
+                                            )
+                                        });
+                                }
+                            });
+                        });
+                });
+            });
+    }
+
+    fn sset_inter_and_union_cmds(&mut self, ui: &mut egui::Ui) {
+        StripBuilder::new(ui)
+            .size(Size::exact(20.0))
+            .size(Size::exact(20.0))
+            .vertical(|mut strip| {
+                strip.strip(|builder| {
+                    builder
+                        .size(Size::remainder())
+                        .size(Size::remainder())
+                        .size(Size::remainder())
+                        .size(Size::exact(138.0))
+                        .horizontal(|mut strip| {
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Destination",
+                                    &mut self.state.ssets_st.zunionstore_destination,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Key (& Keys)",
+                                    &mut self.state.ssets_st.zunionstore_ks,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                egui::ComboBox::from_id_source("zunionstore_min_max")
+                                    .selected_text(&self.state.ssets_st.zunionstore_min_max)
+                                    .width(ui.available_width())
+                                    .show_ui(ui, |ui| {
+                                        ui.selectable_value(
+                                            &mut self.state.ssets_st.zunionstore_min_max,
+                                            "NONE".to_string(),
+                                            " ",
+                                        );
+                                        ui.selectable_value(
+                                            &mut self.state.ssets_st.zunionstore_min_max,
+                                            "MIN".to_string(),
+                                            "Min",
+                                        );
+                                        ui.selectable_value(
+                                            &mut self.state.ssets_st.zunionstore_min_max,
+                                            "MAX".to_string(),
+                                            "Max",
+                                        );
+                                    });
+                            });
+
+                            strip.cell(|ui| {
+                                if ui_button_w100!(ui, "ZUNIONSTORE") {
+                                    self.state.command_last_result =
+                                        run_redis_command(&self.state.current_connection, |conn| {
+                                            SortedSetsPresenter::zunionstore(
+                                                conn,
+                                                &mut self.state.sorted_sets,
+                                                &mut self.state.ssets_st,
+                                            )
+                                        });
+                                }
+                            });
+                        });
+                });
+            });
+    }
+
+    fn sset_rank_cmds(&mut self, ui: &mut egui::Ui) {
+        StripBuilder::new(ui)
+            .size(Size::exact(20.0))
+            .size(Size::exact(20.0))
+            .size(Size::exact(20.0))
+            .vertical(|mut strip| {
+                strip.strip(|builder| {
+                    builder
+                        .size(Size::remainder())
+                        .size(Size::remainder())
+                        .size(Size::exact(138.0))
+                        .horizontal(|mut strip| {
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Key",
+                                    &mut self.state.ssets_st.zrank_k,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Member",
+                                    &mut self.state.ssets_st.zrank_m,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                if ui_button_w100!(ui, "ZRANK") {
+                                    self.state.command_last_result =
+                                        run_redis_command(&self.state.current_connection, |conn| {
+                                            SortedSetsPresenter::zrank(
+                                                conn,
+                                                &mut self.state.ssets_st,
+                                            )
+                                        });
+                                }
+                            });
+                        });
+                });
+
+                strip.strip(|builder| {
+                    builder
+                        .size(Size::remainder())
+                        .size(Size::remainder())
+                        .size(Size::exact(138.0))
+                        .horizontal(|mut strip| {
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Key",
+                                    &mut self.state.ssets_st.zrevrank_k,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Member",
+                                    &mut self.state.ssets_st.zrevrank_m,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                if ui_button_w100!(ui, "ZREVRANK") {
+                                    self.state.command_last_result =
+                                        run_redis_command(&self.state.current_connection, |conn| {
+                                            SortedSetsPresenter::zrevrank(
+                                                conn,
+                                                &mut self.state.ssets_st,
+                                            )
+                                        });
+                                }
+                            });
+                        });
+                });
+
+                strip.strip(|builder| {
+                    builder
+                        .size(Size::remainder())
+                        .size(Size::remainder())
+                        .size(Size::remainder())
+                        .size(Size::exact(138.0))
+                        .horizontal(|mut strip| {
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Key",
+                                    &mut self.state.ssets_st.zremrangebyrank_k,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Start",
+                                    &mut self.state.ssets_st.zremrangebyrank_start,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Stop",
+                                    &mut self.state.ssets_st.zremrangebyrank_stop,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                if ui_button_w100!(ui, "ZREMRANGEBYRANK") {
+                                    self.state.command_last_result =
+                                        run_redis_command(&self.state.current_connection, |conn| {
+                                            SortedSetsPresenter::zremrangebyrank(
+                                                conn,
+                                                &mut self.state.sorted_sets,
+                                                &mut self.state.ssets_st,
                                             )
                                         });
                                 }
