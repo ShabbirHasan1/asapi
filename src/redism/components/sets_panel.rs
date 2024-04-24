@@ -35,6 +35,7 @@ impl RedisView {
                         self.inter_cmds(&mut uis[0]);
                         self.diff_and_union_cmds(&mut uis[1]);
                     });
+                    ui.separator();
                 });
 
             if !self.state.command_last_result.is_empty() {
@@ -65,6 +66,7 @@ impl RedisView {
                     ui.columns(2, |uis| {
                         self.sset_rank_cmds(&mut uis[0]);
                     });
+                    ui.separator();
                 });
 
             if !self.state.command_last_result.is_empty() {
