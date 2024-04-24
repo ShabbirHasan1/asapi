@@ -15,7 +15,7 @@ use std::num::NonZeroUsize;
 use crate::{error, info};
 
 use super::state::{
-    RedisConnectionDefinition, RedisListState, RedisLocalState, RedisSetsState,
+    RedisConnectionDefinition, RedisHashState, RedisListState, RedisLocalState, RedisSetsState,
     RedisSortedSetsState,
 };
 
@@ -43,8 +43,8 @@ pub enum RedisMenu {
     String,
     List,
     Set,
-    Hash,
     #[default]
+    Hash,
     SortedSet,
     Json,
     Stream,
@@ -116,47 +116,46 @@ pub fn scan(state: &mut RedisLocalState, option: RedisMenu) -> RedisResult<()> {
                 Ok(value) => match value.as_str() {
                     "string" => {
                         if option == RedisMenu::String || option == RedisMenu::All {
-                            let value = con.get(key.clone()).unwrap();
+                            let value = con.get(&key).unwrap();
                             state.strings.insert(key, value);
                         }
                     }
                     "ReJSON-RL" => {
                         if option == RedisMenu::Json || option == RedisMenu::All {
-                            let value = con.json_get(key.clone(), "$").unwrap();
+                            let value = con.json_get(&key, "$").unwrap();
                             state.jsons.push((key, value));
                         }
                     }
                     "list" => {
                         if option == RedisMenu::List || option == RedisMenu::All {
-                            let value = con.lrange(key.clone(), 0, isize::MAX).unwrap();
+                            let value = con.lrange(&key, 0, isize::MAX).unwrap();
                             state.lists.insert(key, value);
                         }
                     }
                     "set" => {
                         if option == RedisMenu::Set || option == RedisMenu::All {
-                            let value = con.smembers(key.clone()).unwrap();
+                            let value = con.smembers(&key).unwrap();
                             state.sets.insert(key, value);
                         }
                     }
                     "zset" => {
                         if option == RedisMenu::SortedSet || option == RedisMenu::All {
-                            let value = con.zrange(key.clone(), 0, -1).unwrap();
+                            let value = con.zrange(&key, 0, -1).unwrap();
                             state.sorted_sets.insert(key, value);
                         }
                     }
                     "hash" => {
                         if option == RedisMenu::Hash || option == RedisMenu::All {
-                            let result = con.hgetall(key.clone()).unwrap();
-                            state.hashes.insert(key.clone(), result);
+                            let result = con.hgetall(&key).unwrap();
+                            state.hashes.insert(key, result);
                         }
                     }
                     "stream" => {
                         if option == RedisMenu::Stream || option == RedisMenu::All {
-                            let key_c = key.clone();
-                            state.streams.insert(key_c, Vec::new());
                             let opts = StreamReadOptions::default(); //.count(10);
                             let result: RedisResult<StreamReadReply> =
-                                con.xread_options(&[key.as_str()], &["0"], &opts);
+                                con.xread_options(&[&key], &["0"], &opts);
+                            state.streams.insert(key.clone(), Vec::new());
 
                             match result {
                                 Ok(stream_keys) => {
@@ -380,21 +379,22 @@ impl StringPresenter {
         let connection = create_redis_connection(&st.current_connection);
 
         if let Ok(mut conn) = connection {
-            let k1 = st.string_st.lcs_k1.clone();
-            let k2 = st.string_st.lcs_k2.clone();
             let is_len_filled = !st.string_st.lcs_len.is_empty();
             let is_idx_filled = !st.string_st.lcs_idx.is_empty();
 
             // let response = redis::cmd(command).arg(&args).query::<Value>(&mut c);
             let result = if is_len_filled && is_idx_filled {
                 redis::cmd("LCS")
-                    .arg(k1)
-                    .arg(k2)
+                    .arg(&st.string_st.lcs_k1)
+                    .arg(&st.string_st.lcs_k2)
                     .arg(&st.string_st.lcs_len)
                     .arg(&st.string_st.lcs_idx)
                     .query::<Value>(&mut conn)
             } else {
-                redis::cmd("LCS").arg(k1).arg(k2).query::<Value>(&mut conn)
+                redis::cmd("LCS")
+                    .arg(&st.string_st.lcs_k1)
+                    .arg(&st.string_st.lcs_k2)
+                    .query::<Value>(&mut conn)
             };
 
             match result {
@@ -1688,23 +1688,262 @@ impl SortedSetsPresenter {
     }
 }
 
-fn _redis_zmembers(
-    conn: &mut Connection,
-    k: String,
-    hm: &mut HashMap<String, Vec<String>>,
-) -> String {
-    match conn.smembers::<&str, Vec<String>>(&k) {
-        Ok(rresp) => {
-            let resp = format!(
-                "SMEMBERS :: {parsed_rresp}",
-                parsed_rresp = rresp.join(", ")
-            );
-            hm.insert(k, rresp);
+pub struct HashPresenter;
 
-            resp
+impl HashPresenter {
+    pub fn hrandfield(conn: &mut redis::Connection, st: &mut RedisHashState) -> String {
+        let result = redis::cmd("STRLEN")
+            .arg(&st.hrandfield_k)
+            .arg(&st.hrandfield_count)
+            .arg("WITHVALUES")
+            .query::<Value>(conn);
+
+        match result {
+            Ok(rresp) => {
+                format!(
+                    "HRANDFIELD :: {parsed_rresp}",
+                    parsed_rresp = redis_value_to_string(&rresp)
+                )
+            }
+            Err(err) => {
+                format!("ERROR HRANDFIELD :: {err:?}")
+            }
         }
-        Err(err) => {
-            format!("ERROR SMEMBERS :: {err:?}")
+    }
+
+    pub fn hexists(conn: &mut redis::Connection, st: &mut RedisHashState) -> String {
+        match conn.hexists(&st.hexists_f, &st.hexists_k) {
+            Ok(rresp) => {
+                format!(
+                    "HEXISTS :: {parsed_rresp}",
+                    parsed_rresp = redis_value_to_string(&rresp)
+                )
+            }
+            Err(err) => {
+                format!("ERROR HEXISTS :: {err:?}")
+            }
+        }
+    }
+
+    pub fn hstrlen(conn: &mut redis::Connection, st: &mut RedisHashState) -> String {
+        let result = redis::cmd("STRLEN")
+            .arg(&st.hstrlen_k)
+            .arg(&st.hstrlen_f)
+            .query::<Value>(conn);
+
+        match result {
+            Ok(rresp) => {
+                format!(
+                    "HSTRLEN :: {parsed_rresp}",
+                    parsed_rresp = redis_value_to_string(&rresp)
+                )
+            }
+            Err(err) => {
+                format!("ERROR HSTRLEN :: {err:?}")
+            }
+        }
+    }
+
+    pub fn hlen(conn: &mut redis::Connection, st: &mut RedisHashState) -> String {
+        match conn.hlen(&st.hlen_k) {
+            Ok(rresp) => {
+                format!(
+                    "HLEN :: {parsed_rresp}",
+                    parsed_rresp = redis_value_to_string(&rresp)
+                )
+            }
+            Err(err) => {
+                format!("ERROR HLEN :: {err:?}")
+            }
+        }
+    }
+
+    pub fn hincrbyfloat(
+        conn: &mut redis::Connection,
+        hm: &mut HashMap<String, Vec<(String, String)>>,
+        st: &mut RedisHashState,
+    ) -> String {
+        let f = st.hincrbyfloat_increment.parse::<f64>().unwrap_or_default();
+
+        HashPresenter::_hincrby(
+            conn,
+            &st.hincrbyfloat_k,
+            &st.hincrbyfloat_f,
+            f,
+            hm,
+            "HINCRBYFLOAT",
+        )
+    }
+
+    pub fn hincrby(
+        conn: &mut redis::Connection,
+        hm: &mut HashMap<String, Vec<(String, String)>>,
+        st: &mut RedisHashState,
+    ) -> String {
+        let i = st.hincrby_increment.parse::<i64>().unwrap_or_default();
+
+        HashPresenter::_hincrby(conn, &st.hincrby_k, &st.hincrby_f, i as f64, hm, "HINCRBY")
+    }
+
+    fn _hincrby(
+        conn: &mut Connection,
+        k: &str,
+        f: &str,
+        value: f64,
+        hm: &mut HashMap<String, Vec<(String, String)>>,
+        name: &str,
+    ) -> String {
+        match conn.hincr(k, f, value) {
+            Ok(rresp) => {
+                let value: Vec<(String, String)> = conn.hgetall(k).unwrap();
+                hm.insert(k.to_string(), value);
+                format!(
+                    "{} :: {parsed_rresp}",
+                    name,
+                    parsed_rresp = redis_value_to_string(&rresp)
+                )
+            }
+            Err(err) => {
+                format!("ERROR {} :: {err:?}", name)
+            }
+        }
+    }
+
+    pub fn hsetnx(
+        conn: &mut redis::Connection,
+        hm: &mut HashMap<String, Vec<(String, String)>>,
+        st: &mut RedisHashState,
+    ) -> String {
+        match conn.hset_nx(&st.hsetnx_k, &st.hsetnx_f, &st.hset_v) {
+            Ok(rresp) => {
+                let value: Vec<(String, String)> = conn.hgetall(&st.hset_k).unwrap();
+                hm.insert(st.hsetnx_k.clone(), value);
+                format!(
+                    "HSETNX :: {parsed_rresp}",
+                    parsed_rresp = redis_value_to_string(&rresp)
+                )
+            }
+            Err(err) => {
+                format!("ERROR HSETNX :: {err:?}")
+            }
+        }
+    }
+
+    pub fn hset(
+        conn: &mut redis::Connection,
+        hm: &mut HashMap<String, Vec<(String, String)>>,
+        st: &mut RedisHashState,
+    ) -> String {
+        // let k = st.hset_k.clone();
+        // let fs = st.hset_fs.split(' ').collect::<Vec<&str>>();
+
+        match conn.hset(&st.hset_k, &st.hset_f, &st.hset_v) {
+            Ok(rresp) => {
+                let value: Vec<(String, String)> = conn.hgetall(&st.hset_k).unwrap();
+                hm.insert(st.hset_k.clone(), value);
+                format!(
+                    "HSET :: {parsed_rresp}",
+                    parsed_rresp = redis_value_to_string(&rresp)
+                )
+            }
+            Err(err) => {
+                format!("ERROR HSET :: {err:?}")
+            }
+        }
+    }
+
+    pub fn hdel(
+        conn: &mut redis::Connection,
+        hm: &mut HashMap<String, Vec<(String, String)>>,
+        st: &mut RedisHashState,
+    ) -> String {
+        let k = st.hdel_k.clone();
+        let fs = st.hdel_fs.split(' ').collect::<Vec<&str>>();
+
+        match conn.hdel(&st.hdel_k, &fs) {
+            Ok(rresp) => {
+                let value: Vec<(String, String)> = conn.hgetall(&k).unwrap_or_default();
+                hm.insert(k, value);
+                format!(
+                    "HDEL :: {parsed_rresp}",
+                    parsed_rresp = redis_value_to_string(&rresp)
+                )
+            }
+            Err(err) => {
+                format!("ERROR HDEL :: {err:?}")
+            }
+        }
+    }
+
+    pub fn hvals(conn: &mut redis::Connection, st: &mut RedisHashState) -> String {
+        match conn.hvals(&st.hvals_k) {
+            Ok(rresp) => {
+                format!(
+                    "HVALS :: {parsed_rresp}",
+                    parsed_rresp = redis_value_to_string(&rresp)
+                )
+            }
+            Err(err) => {
+                format!("ERROR HVALS :: {err:?}")
+            }
+        }
+    }
+
+    pub fn hkeys(conn: &mut redis::Connection, st: &mut RedisHashState) -> String {
+        match conn.hkeys(&st.hkeys_k) {
+            Ok(rresp) => {
+                format!(
+                    "HKEYS :: {parsed_rresp}",
+                    parsed_rresp = redis_value_to_string(&rresp)
+                )
+            }
+            Err(err) => {
+                format!("ERROR HKEYS :: {err:?}")
+            }
+        }
+    }
+
+    pub fn hgetall(conn: &mut redis::Connection, st: &mut RedisHashState) -> String {
+        match conn.hgetall(&st.hgetall_k) {
+            Ok(rresp) => {
+                format!(
+                    "HGETALL :: {parsed_rresp}",
+                    parsed_rresp = redis_value_to_string(&rresp)
+                )
+            }
+            Err(err) => {
+                format!("ERROR HGETALL :: {err:?}")
+            }
+        }
+    }
+
+    pub fn hmget(conn: &mut redis::Connection, st: &mut RedisHashState) -> String {
+        let fs = st.hmget_fs.split(' ').collect::<Vec<&str>>();
+
+        match conn.hget(&st.hmget_k, &fs) {
+            Ok(rresp) => {
+                format!(
+                    "HMGET :: {parsed_rresp}",
+                    parsed_rresp = redis_value_to_string(&rresp)
+                )
+            }
+            Err(err) => {
+                format!("ERROR HMGET :: {err:?}")
+            }
+        }
+    }
+
+    pub fn hget(conn: &mut redis::Connection, st: &mut RedisHashState) -> String {
+        match conn.hget(&st.hget_k, &st.hget_f) {
+            Ok(rresp) => {
+                format!(
+                    "HGET :: {parsed_rresp}",
+                    parsed_rresp = redis_value_to_string(&rresp)
+                )
+            }
+            Err(err) => {
+                format!("ERROR HGET :: {err:?}")
+            }
         }
     }
 }

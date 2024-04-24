@@ -118,6 +118,38 @@ pub struct RedisStringState {
 }
 
 #[derive(Default)]
+pub struct RedisHashState {
+    pub hget_k: String,
+    pub hget_f: String,
+    pub hmget_k: String,
+    pub hmget_fs: String,
+    pub hgetall_k: String,
+    pub hkeys_k: String,
+    pub hvals_k: String,
+    pub hdel_k: String,
+    pub hdel_fs: String,
+    pub hset_k: String,
+    pub hset_f: String,
+    pub hset_v: String,
+    pub hsetnx_k: String,
+    pub hsetnx_f: String,
+    pub hsetnx_v: String,
+    pub hincrby_k: String,
+    pub hincrby_f: String,
+    pub hincrby_increment: String,
+    pub hincrbyfloat_k: String,
+    pub hincrbyfloat_f: String,
+    pub hincrbyfloat_increment: String,
+    pub hlen_k: String,
+    pub hstrlen_k: String,
+    pub hstrlen_f: String,
+    pub hexists_k: String,
+    pub hexists_f: String,
+    pub hrandfield_k: String,
+    pub hrandfield_count: String,
+}
+
+#[derive(Default)]
 pub struct RedisSetsState {
     pub sadd_k: String,
     pub sadd_vs: String,
@@ -214,6 +246,7 @@ pub struct RedisLocalState {
     pub string_st: RedisStringState,
     pub list_st: RedisListState,
     pub sets_st: RedisSetsState,
+    pub hash_st: RedisHashState,
     pub ssets_st: RedisSortedSetsState,
 }
 
@@ -244,6 +277,7 @@ impl Default for RedisLocalState {
             string_st: Default::default(),
             list_st: Default::default(),
             sets_st: Default::default(),
+            hash_st: Default::default(),
             ssets_st: Default::default(),
         }
     }

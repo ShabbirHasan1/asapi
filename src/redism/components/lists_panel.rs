@@ -19,29 +19,6 @@ use crate::{
     ui_button_w, ui_button_w50,
 };
 
-///
-/// Comandos a 240422
-/// acciones sobre izquierda que hay sobre derecha
-/// done - LPOP
-/// done - LPUSH
-/// done - LPUSHX
-///
-/// acciones sobre derecha
-/// done - RPOP
-/// done - RPUSH
-/// done - RPUSHX
-///
-/// info
-/// done - LLEN
-/// done - LRANGE
-/// done - LINDEX
-///
-/// ediciones
-/// done - LTRIM
-/// done - LINSERT
-/// done - LREM
-/// done - LSET
-///
 impl RedisView {
     pub fn show_lists(&mut self, ui: &mut egui::Ui, i18n: &I18n) {
         if self.state.selected_menu == RedisMenu::List {
@@ -58,6 +35,7 @@ impl RedisView {
                         self.info_cmds(&mut uis[0]);
                         self.modifier_cmds(&mut uis[1]);
                     });
+                    ui.separator();
                 });
 
             if !self.state.command_last_result.is_empty() {

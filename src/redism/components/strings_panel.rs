@@ -58,6 +58,7 @@ impl RedisView {
                     ui.columns(2, |uis| {
                         self.info_commands(&mut uis[1]);
                     });
+                    ui.separator();
                 });
 
             if !self.state.command_last_result.is_empty() {
