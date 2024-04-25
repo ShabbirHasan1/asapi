@@ -8,6 +8,7 @@
 
 pub mod hash;
 pub mod json;
+pub mod list;
 pub mod set;
 pub mod zset;
 
