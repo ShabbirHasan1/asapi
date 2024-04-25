@@ -161,7 +161,7 @@ impl RedisView {
                     // Si estamos ya mostrando esta conexión, clicar sobre ella no lanza ninguna acción.
                     if connection_button.clicked() && self.state.current_connection_idx != idx {
                         self.state.current_connection_idx = idx;
-                        self.state.reset();
+                        self.state.reset(RedisMenu::All);
 
                         // Si no conexión o la que existe no es la que clico, la defino
                         let conn = RedisConnectionDefinition {

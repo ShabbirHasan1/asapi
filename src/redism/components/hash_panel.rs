@@ -14,10 +14,10 @@ use crate::{
     components::widgets::ui_text_edit_singleline_hint,
     error, info,
     redism::{
-        presenter::{self, run_redis_command, HashPresenter, RedisMenu, StringPresenter},
+        presenter::{self, run_redis_command, HashPresenter, RedisMenu},
         view::RedisView,
     },
-    ui_button_w, ui_button_w100, ui_button_w50,
+    ui_button_w100,
 };
 
 impl RedisView {
