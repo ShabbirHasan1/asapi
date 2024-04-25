@@ -13,8 +13,8 @@ use crate::{
     components::widgets::ui_text_edit_singleline_hint,
     error, info,
     redism::{
-        presenter::{self, run_redis_command, RedisMenu, SetsPresenter},
-        presenters::{run_cmd, zset::SortedSetsPresenter},
+        presenter::{self, RedisMenu},
+        presenters::{run_cmd, set::SetsPresenter, zset::SortedSetsPresenter},
         view::RedisView,
     },
     ui_button_w100,
@@ -140,8 +140,8 @@ impl RedisView {
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "SADD") {
-                                    self.state.last_result =
-                                        run_redis_command(&self.state.current_connection, |conn| {
+                                    self.state.opt_last_result =
+                                        run_cmd(&self.state.current_connection, |conn| {
                                             SetsPresenter::sadd(
                                                 conn,
                                                 &mut self.state.sets,
@@ -177,8 +177,8 @@ impl RedisView {
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "SREM") {
-                                    self.state.last_result =
-                                        run_redis_command(&self.state.current_connection, |conn| {
+                                    self.state.opt_last_result =
+                                        run_cmd(&self.state.current_connection, |conn| {
                                             SetsPresenter::srem(
                                                 conn,
                                                 &mut self.state.sets,
@@ -205,8 +205,8 @@ impl RedisView {
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "SPOP") {
-                                    self.state.last_result =
-                                        run_redis_command(&self.state.current_connection, |conn| {
+                                    self.state.opt_last_result =
+                                        run_cmd(&self.state.current_connection, |conn| {
                                             SetsPresenter::spop(
                                                 conn,
                                                 &mut self.state.sets,
@@ -242,8 +242,8 @@ impl RedisView {
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "SRANDMEMBER") {
-                                    self.state.last_result =
-                                        run_redis_command(&self.state.current_connection, |conn| {
+                                    self.state.opt_last_result =
+                                        run_cmd(&self.state.current_connection, |conn| {
                                             SetsPresenter::srandmember(
                                                 conn,
                                                 &mut self.state.sets_st,
@@ -285,8 +285,8 @@ impl RedisView {
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "SISMEMBER") {
-                                    self.state.last_result =
-                                        run_redis_command(&self.state.current_connection, |conn| {
+                                    self.state.opt_last_result =
+                                        run_cmd(&self.state.current_connection, |conn| {
                                             SetsPresenter::sismember(conn, &mut self.state.sets_st)
                                         });
                                 }
@@ -320,8 +320,8 @@ impl RedisView {
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "SMISMEMBER") {
-                                    self.state.last_result =
-                                        run_redis_command(&self.state.current_connection, |conn| {
+                                    self.state.opt_last_result =
+                                        run_cmd(&self.state.current_connection, |conn| {
                                             SetsPresenter::smismember(conn, &mut self.state.sets_st)
                                         });
                                 }
@@ -344,8 +344,8 @@ impl RedisView {
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "SCARD") {
-                                    self.state.last_result =
-                                        run_redis_command(&self.state.current_connection, |conn| {
+                                    self.state.opt_last_result =
+                                        run_cmd(&self.state.current_connection, |conn| {
                                             SetsPresenter::scard(conn, &mut self.state.sets_st)
                                         });
                                 }
@@ -368,8 +368,8 @@ impl RedisView {
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "SMEMBERS") {
-                                    self.state.last_result =
-                                        run_redis_command(&self.state.current_connection, |conn| {
+                                    self.state.opt_last_result =
+                                        run_cmd(&self.state.current_connection, |conn| {
                                             SetsPresenter::smembers(
                                                 conn,
                                                 &mut self.state.sets,
@@ -404,8 +404,8 @@ impl RedisView {
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "SINTER") {
-                                    self.state.last_result =
-                                        run_redis_command(&self.state.current_connection, |conn| {
+                                    self.state.opt_last_result =
+                                        run_cmd(&self.state.current_connection, |conn| {
                                             SetsPresenter::sinter(conn, &mut self.state.sets_st)
                                         });
                                 }
@@ -437,8 +437,8 @@ impl RedisView {
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "SINTERCARD") {
-                                    self.state.last_result =
-                                        run_redis_command(&self.state.current_connection, |conn| {
+                                    self.state.opt_last_result =
+                                        run_cmd(&self.state.current_connection, |conn| {
                                             SetsPresenter::sintercard(conn, &mut self.state.sets_st)
                                         });
                                 }
@@ -470,8 +470,8 @@ impl RedisView {
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "SINTERSTORE") {
-                                    self.state.last_result =
-                                        run_redis_command(&self.state.current_connection, |conn| {
+                                    self.state.opt_last_result =
+                                        run_cmd(&self.state.current_connection, |conn| {
                                             SetsPresenter::sinterstore(
                                                 conn,
                                                 &mut self.state.sets,
@@ -507,8 +507,8 @@ impl RedisView {
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "SDIFF") {
-                                    self.state.last_result =
-                                        run_redis_command(&self.state.current_connection, |conn| {
+                                    self.state.opt_last_result =
+                                        run_cmd(&self.state.current_connection, |conn| {
                                             SetsPresenter::sdiff(conn, &mut self.state.sets_st)
                                         });
                                 }
@@ -540,8 +540,8 @@ impl RedisView {
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "SDIFFSTORE") {
-                                    self.state.last_result =
-                                        run_redis_command(&self.state.current_connection, |conn| {
+                                    self.state.opt_last_result =
+                                        run_cmd(&self.state.current_connection, |conn| {
                                             SetsPresenter::sdiffstore(
                                                 conn,
                                                 &mut self.state.sets,
@@ -568,8 +568,8 @@ impl RedisView {
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "SUNION") {
-                                    self.state.last_result =
-                                        run_redis_command(&self.state.current_connection, |conn| {
+                                    self.state.opt_last_result =
+                                        run_cmd(&self.state.current_connection, |conn| {
                                             SetsPresenter::sunion(conn, &mut self.state.sets_st)
                                         });
                                 }
@@ -601,8 +601,8 @@ impl RedisView {
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "SUNIONSTORE") {
-                                    self.state.last_result =
-                                        run_redis_command(&self.state.current_connection, |conn| {
+                                    self.state.opt_last_result =
+                                        run_cmd(&self.state.current_connection, |conn| {
                                             SetsPresenter::sunionstore(
                                                 conn,
                                                 &mut self.state.sets,

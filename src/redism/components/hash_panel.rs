@@ -7,7 +7,6 @@
 // -------------------------------------------------------------------------
 use eframe::egui;
 use egui_extras::{Size, StripBuilder};
-use redis::RedisResult;
 
 use crate::{
     common::internationalization::I18n,
@@ -22,7 +21,7 @@ use crate::{
 };
 
 impl RedisView {
-    pub fn show_hashes(&mut self, ui: &mut egui::Ui, i18n: &I18n) -> RedisResult<()> {
+    pub fn show_hashes(&mut self, ui: &mut egui::Ui, i18n: &I18n) {
         if self.state.selected_menu == RedisMenu::Hash {
             egui::CollapsingHeader::new("Comandos Disponibles")
                 .default_open(true)
@@ -48,8 +47,6 @@ impl RedisView {
         }
 
         self.hashes_display(ui, i18n);
-
-        Ok(())
     }
 
     fn hash_other_cmds(&mut self, ui: &mut egui::Ui) {

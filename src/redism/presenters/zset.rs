@@ -273,7 +273,7 @@ impl SortedSetsPresenter {
         let result = cl(conn);
         match result {
             Ok(rresp) => {
-                let value: Vec<String> = conn.zrange(&k, 0, -1).unwrap_or_default();
+                let value: Vec<String> = conn.zrange(k, 0, -1).unwrap_or_default();
                 hm.insert(k.to_string(), value);
                 Ok(format!("{m} :: {rr}", rr = redis_value_to_string(&rresp)))
             }

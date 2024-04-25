@@ -36,7 +36,6 @@ fn job_fn(text: String, pixels_per_point: f32) -> LayoutJob {
         max_width: MAX_WIDTH,
         break_anywhere: BREAK_ANYWHERE,
         overflow_character: Some(OVERFLOW_CHARACTER),
-        ..Default::default()
     };
     job
 }

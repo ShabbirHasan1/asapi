@@ -147,7 +147,7 @@ impl HashPresenter {
         let result = cl(conn);
         match result {
             Ok(rresp) => {
-                let value: Vec<(String, String)> = conn.hgetall(&k).unwrap_or_default();
+                let value: Vec<(String, String)> = conn.hgetall(k).unwrap_or_default();
                 hm.insert(k.to_string(), value);
                 Ok(format!("{m} :: {rr}", rr = redis_value_to_string(&rresp)))
             }
