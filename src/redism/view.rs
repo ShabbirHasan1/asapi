@@ -12,6 +12,7 @@ use tokio::runtime::Runtime;
 
 use crate::common::fs::append_to_file;
 use crate::common::internationalization::I18n;
+use crate::components::result_panel::ui_response_panel;
 use crate::error;
 use crate::info;
 
@@ -87,20 +88,22 @@ impl RedisView {
                         let file_path = "redis-history";
 
                         // --> Ejecución de Comandos <--
-                        match presenter::run_command(
+                        match presenter::run_user_string_command(
                             &self.state.current_connection.host,
                             &self.state.current_connection.port,
                             self.state.current_command.as_str(),
                         ) {
                             Ok(result) => {
                                 let option = self.state.selected_menu;
-                                self.state.command_last_result = result;
                                 let _ = presenter::scan(&mut self.state, option);
+                                self.state.last_result = result.clone();
+                                self.state.opt_last_result = Some(Ok(result.clone()));
                             }
                             // TODO: Change color
                             Err(e) => {
                                 info!("Error: {:?}", e);
-                                self.state.command_last_result = e;
+                                self.state.last_result = e.clone();
+                                self.state.opt_last_result = Some(Err(e.clone()));
                             }
                         }
                         if let Err(e) =
@@ -138,9 +141,7 @@ impl RedisView {
                     }
                 });
 
-                if !self.state.command_last_result.is_empty() {
-                    ui.label(&self.state.command_last_result);
-                }
+                ui_response_panel(ui, &self.state.opt_last_result);
             }
 
             // ===========================================
@@ -206,18 +207,5 @@ impl RedisView {
         egui::CollapsingHeader::new("Sorted Sets")
             .default_open(true)
             .show(ui, |ui| self.show_sorted_sets(ui, i18n));
-    }
-
-    pub fn connect(&mut self) {
-        if let Ok(port) = self.state.current_connection.port.parse::<i16>() {
-            match presenter::create_conn(&self.state.current_connection.host, port) {
-                Ok(conn) => {
-                    self.state.conn = Some(conn);
-                }
-                Err(_) => {
-                    self.state.conn = None;
-                }
-            }
-        }
     }
 }

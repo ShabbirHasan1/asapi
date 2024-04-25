@@ -178,7 +178,7 @@ pub struct RedisSetsState {
 }
 
 #[derive(Default)]
-pub struct RedisSortedSetsState {
+pub struct RedisZSetsState {
     pub zadd_k: String,
     pub zadd_score: String,
     pub zadd_v: String,
@@ -219,6 +219,67 @@ pub struct RedisSortedSetsState {
     pub zremrangebyrank_stop: String,
 }
 
+#[derive(Default)]
+pub struct RedisJsonState {
+    pub json_get_k: String,
+    pub json_get_p: String,
+    pub json_mget_ks: String,
+    pub json_mget_p: String,
+    pub json_objkeys_k: String,
+    pub json_objkeys_p: String,
+    pub json_objlen_k: String,
+    pub json_objlen_p: String,
+    pub json_strlen_k: String,
+    pub json_strlen_p: String,
+    pub json_set_k: String,
+    pub json_set_p: String,
+    pub json_set_v: String,
+    pub json_set_nx_xx: String,
+    pub json_del_k: String,
+    pub json_del_p: String,
+    pub json_forget_k: String,
+    pub json_forget_p: String,
+    pub json_clear_k: String,
+    pub json_clear_p: String,
+    pub json_strappend_k: String,
+    pub json_strappend_p: String,
+    pub json_strappend_v: String,
+    pub json_arrappend_k: String,
+    pub json_arrappend_p: String,
+    pub json_arrappend_vs: String,
+    pub json_arrindex_k: String,
+    pub json_arrindex_p: String,
+    pub json_arrindex_v: String,
+    pub json_arrindex_start: String,
+    pub json_arrlen_k: String,
+    pub json_arrlen_p: String,
+    pub json_arrindex_stop: String,
+    pub json_arrinsert_k: String,
+    pub json_arrinsert_p: String,
+    pub json_arrinsert_vs: String,
+    pub json_arrinsert_idx: String,
+    pub json_arrpop_k: String,
+    pub json_arrpop_p: String,
+    pub json_arrpop_idx: String,
+    pub json_arrtrim_k: String,
+    pub json_arrtrim_p: String,
+    pub json_arrtrim_start: String,
+    pub json_arrtrim_stop: String,
+    pub json_numincrby_k: String,
+    pub json_numincrby_p: String,
+    pub json_numincrby_v: String,
+    pub json_nummultby_k: String,
+    pub json_nummultby_p: String,
+    pub json_nummultby_v: String,
+    pub json_type_k: String,
+    pub json_type_p: String,
+    pub json_merge_k: String,
+    pub json_merge_p: String,
+    pub json_merge_v: String,
+    pub json_toggle_k: String,
+    pub json_toggle_p: String,
+}
+
 pub struct RedisLocalState {
     pub cmd_history: Vec<String>,
     pub strings: BTreeMap<String, String>,
@@ -226,7 +287,8 @@ pub struct RedisLocalState {
     pub sets: HashMap<String, Vec<String>>,
     pub hashes: HashMap<String, Vec<(String, String)>>, // nombre_hash: Lista de pares
     pub sorted_sets: HashMap<String, Vec<String>>,
-    pub jsons: Vec<(String, String)>,
+    // El valor es el json como string.
+    pub jsons: BTreeMap<String, String>,
     pub streams: HashMap<String, Vec<String>>,
     // Para poder mostrar y quitar a voluntad, donde guardo los valores de los streams. No guardo todo el listado de
     // mensajes porque puede ser eterno. Cuando hago click busco y pongo, y cuando click otra vez borro.
@@ -235,7 +297,8 @@ pub struct RedisLocalState {
     pub current_command: String,
     pub is_first_update: bool,
     pub must_scan: bool,
-    pub command_last_result: String,
+    pub last_result: String,
+    pub opt_last_result: Option<Result<String, String>>,
     pub conn: Option<redis::Connection>, // La estoy gastando?
     pub selected_menu: RedisMenu,
     pub hide_connections: bool,
@@ -247,7 +310,8 @@ pub struct RedisLocalState {
     pub list_st: RedisListState,
     pub sets_st: RedisSetsState,
     pub hash_st: RedisHashState,
-    pub ssets_st: RedisSortedSetsState,
+    pub ssets_st: RedisZSetsState,
+    pub json_st: RedisJsonState,
 }
 
 impl Default for RedisLocalState {
@@ -262,7 +326,8 @@ impl Default for RedisLocalState {
             current_command: Default::default(),
             is_first_update: Default::default(),
             must_scan: Default::default(),
-            command_last_result: Default::default(),
+            last_result: Default::default(),
+            opt_last_result: Default::default(),
             conn: Default::default(),
             selected_menu: Default::default(),
             hide_connections: Default::default(),
@@ -279,12 +344,27 @@ impl Default for RedisLocalState {
             sets_st: Default::default(),
             hash_st: Default::default(),
             ssets_st: Default::default(),
+            json_st: Default::default(),
         }
     }
 }
 
 impl RedisLocalState {
-    pub fn reset(&mut self) {
+    pub fn reset(&mut self, menu_option: RedisMenu) {
+        match menu_option {
+            RedisMenu::All => self.clean_all(),
+            RedisMenu::String => self.strings.clear(),
+            RedisMenu::Json => self.jsons.clear(),
+            RedisMenu::List => self.lists.clear(),
+            RedisMenu::Set => self.sets.clear(),
+            RedisMenu::Hash => self.hashes.clear(),
+            RedisMenu::SortedSet => self.sorted_sets.clear(),
+            RedisMenu::Stream => self.streams.clear(),
+            _ => (),
+        };
+    }
+
+    fn clean_all(&mut self) {
         self.strings.clear();
         self.streams.clear();
         self.hashes.clear();
@@ -296,6 +376,6 @@ impl RedisLocalState {
 
     pub fn reset_command(&mut self) {
         self.current_command.clear();
-        self.command_last_result.clear();
+        self.last_result.clear();
     }
 }

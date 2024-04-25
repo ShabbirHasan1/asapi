@@ -36,7 +36,7 @@ pub fn selectable_and_info(
     .context_menu(|ui| {
         if ui.button(&i18n.redis_load).clicked() {
             if let Err(err) = presenter::scan(st, menu_option) {
-                st.command_last_result = format!("{err}");
+                st.last_result = format!("{err}");
             }
             ui.close_menu();
         }

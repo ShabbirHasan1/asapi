@@ -12,29 +12,11 @@ use redis::{self, Client, Commands, Connection, Msg as PubSubMsg, RedisError, Re
 use std::collections::HashMap;
 use std::num::NonZeroUsize;
 
+use crate::redism::parser::redis_value_to_string;
 use crate::{error, info};
 
-use super::state::{
-    RedisConnectionDefinition, RedisHashState, RedisListState, RedisLocalState, RedisSetsState,
-    RedisSortedSetsState,
-};
-
-// ========================================================================
-// I do not create Presenter to share client/connection because reading the
-// docs, seems like the way to go is creating new pair each time we want to
-// make something and not sharing it in any other place.
-// ========================================================================
-// pub struct RedisPresenter {
-//     client: Option<redis::Client>,
-// }
-
-// impl RedisPresenter {
-//     fn new(host: String, port: i8) -> Self {
-//         Self {
-//             client: redis::Client::open(format!("redis://{}:{}", host, port)),
-//         }
-//     }
-// }
+use super::presenters::RedisResponse;
+use super::state::{RedisConnectionDefinition, RedisListState, RedisLocalState};
 
 #[derive(Clone, Debug, PartialEq, Copy, Default)]
 pub enum RedisMenu {
@@ -43,9 +25,9 @@ pub enum RedisMenu {
     String,
     List,
     Set,
-    #[default]
     Hash,
     SortedSet,
+    #[default]
     Json,
     Stream,
     PubSub,
@@ -81,28 +63,12 @@ fn create_redis_connection(
 /// Pasamos de forma explícita la opción elegida aunque ya hay una en el estado
 /// para permitir recarga bajo demanda en menú contextual de cada estructura de datos.
 pub fn scan(state: &mut RedisLocalState, option: RedisMenu) -> RedisResult<()> {
-    // let option = state.selected_menu;
-    // let client = Client::open("redis://127.0.0.1/")?;
-    // let mut con: Connection = client.get_connection()?;
-    // let port = app_state.redis.port.parse::<i16>().unwrap_or(6379); // Using 6379 as default value;
-    // let mut con: Connection = create_conn(&app_state.redis.host, port)?;
     let mut con: Connection = create_conn_with_default(
         &state.current_connection.host,
         &state.current_connection.port,
     )?;
     let mut cursor: u64 = 0;
-
-    match option {
-        RedisMenu::All => state.reset(),
-        RedisMenu::String => state.strings.clear(),
-        RedisMenu::Json => state.jsons.clear(),
-        RedisMenu::List => state.lists.clear(),
-        RedisMenu::Set => state.sets.clear(),
-        RedisMenu::Hash => state.hashes.clear(),
-        RedisMenu::SortedSet => state.sorted_sets.clear(),
-        RedisMenu::Stream => state.streams.clear(),
-        _ => (),
-    };
+    state.reset(option);
 
     loop {
         let scan_result: (u64, Vec<String>) = redis::cmd("SCAN").arg(cursor).query(&mut con)?;
@@ -123,7 +89,7 @@ pub fn scan(state: &mut RedisLocalState, option: RedisMenu) -> RedisResult<()> {
                     "ReJSON-RL" => {
                         if option == RedisMenu::Json || option == RedisMenu::All {
                             let value = con.json_get(&key, "$").unwrap();
-                            state.jsons.push((key, value));
+                            state.jsons.insert(key, value);
                         }
                     }
                     "list" => {
@@ -185,22 +151,6 @@ pub fn scan(state: &mut RedisLocalState, option: RedisMenu) -> RedisResult<()> {
     }
 
     Ok(())
-}
-
-fn redis_value_to_string(v: &redis::Value) -> String {
-    match v {
-        Value::Nil => "Nil".to_string(),
-        Value::Int(i) => i.to_string(),
-        Value::Data(d) => String::from_utf8(d.clone())
-            .unwrap_or_else(|err| format!("ERROR {err:?} parsing {d:?}")),
-        Value::Bulk(b) => b
-            .iter()
-            .map(redis_value_to_string)
-            .collect::<Vec<String>>()
-            .join(", "),
-        Value::Status(s) => s.clone(),
-        Value::Okay => "OK".to_string(),
-    }
 }
 
 pub fn run_redis_command<F: FnMut(&mut redis::Connection) -> String>(
@@ -271,7 +221,7 @@ pub fn read_stream_id(
     Ok(())
 }
 
-pub fn run_command(host: &str, port: &str, cmd: &str) -> Result<String, String> {
+pub fn run_user_string_command(host: &str, port: &str, cmd: &str) -> RedisResponse {
     if let Some((command, args)) = parse_command(cmd) {
         info!("\nCommando\n{:?}\n{:?}", command, args);
 
@@ -400,10 +350,10 @@ impl StringPresenter {
             match result {
                 Ok(v) => {
                     let parsed_v = redis_value_to_string(&v);
-                    st.command_last_result = format!("LCS :: {parsed_v}");
+                    st.last_result = format!("LCS :: {parsed_v}");
                 }
                 Err(err) => {
-                    st.command_last_result = format!("ERROR LCS :: {err:?}");
+                    st.last_result = format!("ERROR LCS :: {err:?}");
                 }
             }
         }
@@ -417,10 +367,10 @@ impl StringPresenter {
 
             match conn.strlen::<&str, i64>(&k) {
                 Ok(len) => {
-                    st.command_last_result = format!("STRLEN :: Key: {k}, Len: {len}");
+                    st.last_result = format!("STRLEN :: Key: {k}, Len: {len}");
                 }
                 Err(err) => {
-                    st.command_last_result = format!("ERROR STRLEN :: {err:?}");
+                    st.last_result = format!("ERROR STRLEN :: {err:?}");
                 }
             }
         }
@@ -438,13 +388,13 @@ impl StringPresenter {
                         k.clone(),
                         st.strings.get(&k).unwrap_or(&"".to_string()).to_owned() + &v,
                     );
-                    st.command_last_result = format!(
+                    st.last_result = format!(
                         "APPEND :: Resultado: {v} caracteres totales",
                         v = redis_value_to_string(&redis_v)
                     );
                 }
                 Err(err) => {
-                    st.command_last_result = format!("ERROR APPEND :: {err:?}");
+                    st.last_result = format!("ERROR APPEND :: {err:?}");
                 }
             }
         }
@@ -461,10 +411,10 @@ impl StringPresenter {
                 Ok(rresp) => {
                     st.strings.insert(k, v);
                     let parsed_rresp = redis_value_to_string(&rresp);
-                    st.command_last_result = format!("SET :: {parsed_rresp}");
+                    st.last_result = format!("SET :: {parsed_rresp}");
                 }
                 Err(err) => {
-                    st.command_last_result = format!("ERROR SET :: {err:?}");
+                    st.last_result = format!("ERROR SET :: {err:?}");
                 }
             }
         }
@@ -481,10 +431,10 @@ impl StringPresenter {
                 Ok(rresp) => {
                     st.strings.insert(k, v);
                     let parsed_rresp = redis_value_to_string(&rresp);
-                    st.command_last_result = format!("SETNX :: {parsed_rresp}");
+                    st.last_result = format!("SETNX :: {parsed_rresp}");
                 }
                 Err(err) => {
-                    st.command_last_result = format!("ERROR SETNX: {err:?}");
+                    st.last_result = format!("ERROR SETNX: {err:?}");
                 }
             }
         }
@@ -506,15 +456,15 @@ impl StringPresenter {
                         Ok(rresp) => {
                             st.strings.insert(k, v.to_string());
                             let parsed_rresp = redis_value_to_string(&rresp);
-                            st.command_last_result = format!("SETRANGE :: {parsed_rresp}");
+                            st.last_result = format!("SETRANGE :: {parsed_rresp}");
                         }
                         Err(err) => {
-                            st.command_last_result = format!("ERROR SETRANGE :: {err:?}");
+                            st.last_result = format!("ERROR SETRANGE :: {err:?}");
                         }
                     }
                 }
                 Err(err) => {
-                    st.command_last_result = format!("PARSE ERROR :: {err:?}");
+                    st.last_result = format!("PARSE ERROR :: {err:?}");
                 }
             }
         }
@@ -548,10 +498,10 @@ impl StringPresenter {
             match response {
                 Ok(v) => {
                     st.strings.insert(k, v.clone());
-                    st.command_last_result = format!("INCR :: {v}");
+                    st.last_result = format!("INCR :: {v}");
                 }
                 Err(err) => {
-                    st.command_last_result = format!("ERROR INCR :: {err:?}");
+                    st.last_result = format!("ERROR INCR :: {err:?}");
                 }
             }
         }
@@ -590,10 +540,10 @@ impl StringPresenter {
             match response {
                 Ok(v) => {
                     st.strings.insert(k, v.clone());
-                    st.command_last_result = format!("DECR :: {v}");
+                    st.last_result = format!("DECR :: {v}");
                 }
                 Err(err) => {
-                    st.command_last_result = format!("ERROR DECR :: {err:?}");
+                    st.last_result = format!("ERROR DECR :: {err:?}");
                 }
             }
         }
@@ -614,7 +564,7 @@ impl StringPresenter {
             let k = st.string_st.get_k.clone();
             let result = conn.get::<&str, String>(&k);
 
-            st.command_last_result = match result {
+            st.last_result = match result {
                 Ok(msg) => format!("GET :: Key: {k}, Value: {msg}"),
                 Err(err) => format!("ERROR GET :: {err:?}"),
             }
@@ -631,10 +581,10 @@ impl StringPresenter {
             match result {
                 Ok(msg) => {
                     st.strings.remove(&k);
-                    st.command_last_result = format!("GETDEL :: Key: {k}, Value: {msg}");
+                    st.last_result = format!("GETDEL :: Key: {k}, Value: {msg}");
                 }
                 Err(err) => {
-                    st.command_last_result = format!("ERROR GETDEL :: {err:?}");
+                    st.last_result = format!("ERROR GETDEL :: {err:?}");
                 }
             }
         }
@@ -650,10 +600,10 @@ impl StringPresenter {
             match result {
                 Ok(msg) => {
                     st.strings.insert(k.clone(), v.to_string());
-                    st.command_last_result = format!("GETSET :: Key: {k}, Old Value: {msg}");
+                    st.last_result = format!("GETSET :: Key: {k}, Old Value: {msg}");
                 }
                 Err(err) => {
-                    st.command_last_result = format!("ERROR GETSET :: {err:?}");
+                    st.last_result = format!("ERROR GETSET :: {err:?}");
                 }
             }
         }
@@ -671,7 +621,7 @@ impl StringPresenter {
 
             if let (Ok(f), Ok(t)) = (from_s.parse::<isize>(), to_s.parse::<isize>()) {
                 let result = conn.getrange::<&str, String>(&k, f, t);
-                st.command_last_result = match result {
+                st.last_result = match result {
                     Ok(msg) => format!("GETRANGE :: Key: {k}, Value: {msg}"),
                     Err(err) => format!("ERROR GETRANGE :: {err:?}"),
                 }
@@ -689,11 +639,14 @@ impl StringPresenter {
             );
 
             if let Ok(ex) = expire_at_s.parse::<usize>() {
-                let result = conn.get_ex::<&str, String>(&k, redis::Expiry::EX(ex));
-                st.command_last_result = match result {
-                    Ok(msg) => format!("GETEX :: Key: {k}, Value: {msg}"),
-                    Err(err) => format!("ERROR GETEX :: {err:?}"),
-                }
+                let result = conn
+                    .get_ex::<&str, String>(&k, redis::Expiry::EX(ex))
+                    .map_or_else(
+                        |err| Err(format!("GETEX :: {err:?}")),
+                        |msg| Ok(format!("GETEX :: Key: {k}, Value: {msg}")),
+                    );
+                st.last_result = result.clone().map_or_else(|e| e, |e| e);
+                st.opt_last_result = Some(result);
             }
         }
     }
@@ -1030,919 +983,6 @@ impl ListPresenter {
             }
             Err(err) => {
                 format!("ERROR LPUSHX :: {err:?}")
-            }
-        }
-    }
-}
-
-pub struct SetsPresenter;
-
-impl SetsPresenter {
-    pub fn sadd(
-        conn: &mut redis::Connection,
-        hm: &mut HashMap<String, Vec<String>>,
-        st: &mut RedisSetsState,
-    ) -> String {
-        let vs = st.sadd_vs.split(' ').collect::<Vec<&str>>();
-        let k = st.sadd_k.clone();
-
-        match conn.sadd(&k, vs) {
-            Ok(rresp) => {
-                let value: Vec<String> = conn.smembers(&k).unwrap();
-                hm.insert(k, value);
-                let parsed_rresp = redis_value_to_string(&rresp);
-                format!("SADD :: {parsed_rresp}")
-            }
-            Err(err) => {
-                format!("ERROR SADD :: {err:?}")
-            }
-        }
-    }
-
-    pub fn srem(
-        conn: &mut redis::Connection,
-        hm: &mut HashMap<String, Vec<String>>,
-        st: &mut RedisSetsState,
-    ) -> String {
-        let vs = st.srem_vs.split(' ').collect::<Vec<&str>>();
-        let k = st.srem_k.clone();
-
-        match conn.srem(&k, vs) {
-            Ok(rresp) => {
-                let value: Vec<String> = conn.smembers(&k).unwrap();
-                hm.insert(k, value);
-                let parsed_rresp = redis_value_to_string(&rresp);
-                format!("SREM :: {parsed_rresp}")
-            }
-            Err(err) => {
-                format!("ERROR SREM :: {err:?}")
-            }
-        }
-    }
-
-    pub fn spop(
-        conn: &mut redis::Connection,
-        hm: &mut HashMap<String, Vec<String>>,
-        st: &mut RedisSetsState,
-    ) -> String {
-        let k = st.spop_k.clone();
-
-        match conn.spop(&k) {
-            Ok(rresp) => {
-                let value: Vec<String> = conn.smembers(&k).unwrap();
-                hm.insert(k, value);
-                let parsed_rresp = redis_value_to_string(&rresp);
-                format!("SPOP :: {parsed_rresp}")
-            }
-            Err(err) => {
-                format!("ERROR SPOP :: {err:?}")
-            }
-        }
-    }
-
-    pub fn srandmember(conn: &mut redis::Connection, st: &mut RedisSetsState) -> String {
-        let k = st.srandmember_k.clone();
-        let count = st.srandmember_count.parse::<usize>().unwrap_or(1);
-        let value = if count <= 1 {
-            conn.srandmember_multiple(&k, 1)
-        } else {
-            conn.srandmember_multiple(&k, count)
-        };
-
-        match value {
-            Ok(rresp) => {
-                let parsed_rresp = redis_value_to_string(&rresp);
-                format!("SRANDMEMBER :: {parsed_rresp}")
-            }
-            Err(err) => {
-                format!("ERROR SRANDMEMBER :: {err:?}")
-            }
-        }
-    }
-
-    pub fn sismember(conn: &mut redis::Connection, st: &mut RedisSetsState) -> String {
-        match conn.sismember(&st.sismember_k, &st.sismember_m) {
-            Ok(rresp) => {
-                let parsed_rresp = redis_value_to_string(&rresp);
-                format!("SISMEMBER :: {parsed_rresp}")
-            }
-            Err(err) => {
-                format!("ERROR SISMEMBER :: {err:?}")
-            }
-        }
-    }
-
-    pub fn smismember(conn: &mut redis::Connection, st: &mut RedisSetsState) -> String {
-        let vs = st.smismember_ms.split(' ').collect::<Vec<&str>>();
-
-        match conn.smismember(&st.smismember_k, &vs) {
-            Ok(rresp) => {
-                let parsed_rresp = redis_value_to_string(&rresp);
-                format!("SMISMEMBER :: {parsed_rresp}")
-            }
-            Err(err) => {
-                format!("ERROR SMISMEMBER :: {err:?}")
-            }
-        }
-    }
-
-    pub fn scard(conn: &mut redis::Connection, st: &mut RedisSetsState) -> String {
-        match conn.scard(&st.scard_k) {
-            Ok(rresp) => {
-                let parsed_rresp = redis_value_to_string(&rresp);
-                format!("SCARD :: {parsed_rresp}")
-            }
-            Err(err) => {
-                format!("ERROR SCARD :: {err:?}")
-            }
-        }
-    }
-
-    pub fn smembers(
-        conn: &mut redis::Connection,
-        hm: &mut HashMap<String, Vec<String>>,
-        st: &mut RedisSetsState,
-    ) -> String {
-        let k = st.smembers_k.clone();
-
-        redis_smembers(conn, k, hm)
-    }
-
-    pub fn sinter(conn: &mut redis::Connection, st: &mut RedisSetsState) -> String {
-        let ks = st.sinter_ks.split(' ').collect::<Vec<&str>>();
-
-        match conn.sinter::<Vec<&str>, Vec<String>>(ks) {
-            Ok(rresp) => {
-                format!("SINTER :: {parsed_rresp}", parsed_rresp = rresp.join(", "))
-            }
-            Err(err) => {
-                format!("ERROR SINTER :: {err:?}")
-            }
-        }
-    }
-
-    pub fn sintercard(conn: &mut redis::Connection, st: &mut RedisSetsState) -> String {
-        let ks = st.sintercard_ks.split(' ').collect::<Vec<&str>>();
-        let result = redis::cmd("SINTERCARD")
-            .arg(&st.sintercard_numkeys)
-            .arg(ks)
-            .query::<Value>(conn);
-
-        match result {
-            Ok(rresp) => {
-                let parsed_rresp = redis_value_to_string(&rresp);
-                format!("SINTERCARD :: {parsed_rresp}")
-            }
-            Err(err) => {
-                format!("ERROR SINTERCARD :: {err:?}")
-            }
-        }
-    }
-
-    pub fn sinterstore(
-        conn: &mut redis::Connection,
-        hm: &mut HashMap<String, Vec<String>>,
-        st: &mut RedisSetsState,
-    ) -> String {
-        let ks = st
-            .sinterstore_ks
-            .split(' ')
-            .map(|s| s.to_owned())
-            .collect::<Vec<String>>();
-        let set_dst = st.sinterstore_destination.clone();
-
-        match conn.sinterstore::<&String, Vec<String>, redis::Value>(&set_dst, ks) {
-            Ok(rresp) => {
-                let response = format!("SINTERSTORE :: {rresp:?}");
-                let _ = redis_smembers(conn, set_dst, hm);
-
-                response
-            }
-            Err(err) => {
-                format!("ERROR SINTERSTORE :: {err:?}")
-            }
-        }
-    }
-
-    pub fn sdiff(conn: &mut redis::Connection, st: &mut RedisSetsState) -> String {
-        let ks = st.sdiff_ks.split(' ').collect::<Vec<&str>>();
-
-        match conn.sdiff::<Vec<&str>, Vec<String>>(ks) {
-            Ok(rresp) => {
-                format!("SDIFF :: {parsed_rresp}", parsed_rresp = rresp.join(", "))
-            }
-            Err(err) => {
-                format!("ERROR SDIFF :: {err:?}")
-            }
-        }
-    }
-
-    pub fn sdiffstore(
-        conn: &mut redis::Connection,
-        hm: &mut HashMap<String, Vec<String>>,
-        st: &mut RedisSetsState,
-    ) -> String {
-        let ks = st
-            .sdiffstore_ks
-            .split(' ')
-            .map(|s| s.to_owned())
-            .collect::<Vec<String>>();
-        let set_dst = st.sdiffstore_destination.clone();
-
-        match conn.sdiffstore::<&String, Vec<String>, redis::Value>(&set_dst, ks) {
-            Ok(rresp) => {
-                let response = format!("SDIFFSTORE :: {rresp:?}");
-                let _ = redis_smembers(conn, set_dst, hm);
-
-                response
-            }
-            Err(err) => {
-                format!("ERROR SDIFFSTORE :: {err:?}")
-            }
-        }
-    }
-
-    pub fn sunion(conn: &mut redis::Connection, st: &mut RedisSetsState) -> String {
-        let ks = st.sunion_ks.split(' ').collect::<Vec<&str>>();
-
-        match conn.sunion::<Vec<&str>, Vec<String>>(ks) {
-            Ok(rresp) => {
-                format!("SUNION :: {parsed_rresp}", parsed_rresp = rresp.join(", "))
-            }
-            Err(err) => {
-                format!("ERROR SUNION :: {err:?}")
-            }
-        }
-    }
-
-    pub fn sunionstore(
-        conn: &mut redis::Connection,
-        hm: &mut HashMap<String, Vec<String>>,
-        st: &mut RedisSetsState,
-    ) -> String {
-        let ks = st
-            .sunionstore_ks
-            .split(' ')
-            .map(|s| s.to_owned())
-            .collect::<Vec<String>>();
-        let set_dst = st.sunionstore_destination.clone();
-
-        match conn.sunionstore::<&String, Vec<String>, redis::Value>(&set_dst, ks) {
-            Ok(rresp) => {
-                let response = format!("SUNIONSTORE :: {rresp:?}");
-                let _ = redis_smembers(conn, set_dst, hm);
-
-                response
-            }
-            Err(err) => {
-                format!("ERROR SUNIONSTORE :: {err:?}")
-            }
-        }
-    }
-}
-
-fn redis_smembers(
-    conn: &mut Connection,
-    k: String,
-    hm: &mut HashMap<String, Vec<String>>,
-) -> String {
-    match conn.smembers::<&str, Vec<String>>(&k) {
-        Ok(rresp) => {
-            let resp = format!(
-                "SMEMBERS :: {parsed_rresp}",
-                parsed_rresp = rresp.join(", ")
-            );
-            hm.insert(k, rresp);
-
-            resp
-        }
-        Err(err) => {
-            format!("ERROR SMEMBERS :: {err:?}")
-        }
-    }
-}
-
-pub struct SortedSetsPresenter;
-
-impl SortedSetsPresenter {
-    pub fn zadd(
-        conn: &mut redis::Connection,
-        hm: &mut HashMap<String, Vec<String>>,
-        st: &mut RedisSortedSetsState,
-    ) -> String {
-        let v = st.zadd_v.clone();
-        let k = st.zadd_k.clone();
-        let s = st.zadd_score.parse::<f64>().unwrap_or(0.0);
-
-        match conn.zadd(&k, &v, s) {
-            Ok(rresp) => {
-                let value: Vec<String> = conn.zrange(&k, 0, -1).unwrap();
-                hm.insert(k, value);
-                let parsed_rresp = redis_value_to_string(&rresp);
-                format!("ZADD :: {parsed_rresp}")
-            }
-            Err(err) => {
-                format!("ERROR ZADD :: {err:?}")
-            }
-        }
-    }
-
-    pub fn zrem(
-        conn: &mut redis::Connection,
-        hm: &mut HashMap<String, Vec<String>>,
-        st: &mut RedisSortedSetsState,
-    ) -> String {
-        let vs = st.zrem_vs.split(' ').collect::<Vec<&str>>();
-        let k = st.zrem_k.clone();
-
-        match conn.zrem(&k, vs) {
-            Ok(rresp) => {
-                let value: Vec<String> = conn.zrange(&k, 0, -1).unwrap();
-                hm.insert(k, value);
-                let parsed_rresp = redis_value_to_string(&rresp);
-                format!("ZREM :: {parsed_rresp}")
-            }
-            Err(err) => {
-                format!("ERROR ZREM :: {err:?}")
-            }
-        }
-    }
-
-    pub fn zmpop(
-        conn: &mut redis::Connection,
-        hm: &mut HashMap<String, Vec<String>>,
-        st: &mut RedisSortedSetsState,
-    ) -> String {
-        let ks = st.zmpop_ks.split(' ').collect::<Vec<&str>>();
-        let count = st.zmpop_count.parse::<isize>().unwrap_or_default();
-
-        let result = match st.zmpop_min_max.as_ref() {
-            "MIN" => conn.zmpop_min(&ks, count),
-            "MAX" => conn.zmpop_min(&ks, count),
-            _ => conn.zmpop_min(&ks, count),
-        };
-
-        match result {
-            Ok(rresp) => {
-                // TODO: Podría llamar a scan pero esto es menos costoso, aunque
-                // podemos bloquear si es salvaje la cantidad de info en `sorted_sets`.
-                // Implementar `zscan` basada en ZSCAN.
-                for k in ks {
-                    let value: Vec<String> = conn.zrange(k, 0, -1).unwrap();
-                    hm.insert(k.to_string(), value);
-                }
-                let parsed_rresp = redis_value_to_string(&rresp);
-                format!("ZMPOP :: {parsed_rresp}")
-            }
-            Err(err) => {
-                format!("ERROR ZMPOP :: {err:?}")
-            }
-        }
-    }
-
-    pub fn zrandmember(conn: &mut redis::Connection, st: &mut RedisSortedSetsState) -> String {
-        let k = st.zrandmember_k.clone();
-        let count = st.zrandmember_count.parse::<isize>().unwrap_or(1);
-        let value = if count <= 1 {
-            conn.zrandmember(&k, None)
-        } else {
-            conn.zrandmember(&k, Some(count))
-        };
-
-        match value {
-            Ok(rresp) => {
-                let parsed_rresp = redis_value_to_string(&rresp);
-                format!("ZRANDMEMBER :: {parsed_rresp}")
-            }
-            Err(err) => {
-                format!("ERROR ZRANDMEMBER :: {err:?}")
-            }
-        }
-    }
-
-    pub fn zcard(conn: &mut redis::Connection, st: &mut RedisSortedSetsState) -> String {
-        match conn.zcard(&st.zcard_k) {
-            Ok(rresp) => {
-                let parsed_rresp = redis_value_to_string(&rresp);
-                format!("ZCARD :: {parsed_rresp}")
-            }
-            Err(err) => {
-                format!("ERROR ZCARD :: {err:?}")
-            }
-        }
-    }
-
-    pub fn zrange(conn: &mut redis::Connection, st: &mut RedisSortedSetsState) -> String {
-        let (start, stop) = (
-            st.zrange_start.parse::<isize>(),
-            st.zrange_stop.parse::<isize>(),
-        );
-
-        match (start, stop) {
-            (Ok(b), Ok(e)) => match conn.zrange(&st.zrange_k, b, e) {
-                Ok(rresp) => {
-                    format!(
-                        "ZRANGE :: {parsed_rresp}",
-                        parsed_rresp = redis_value_to_string(&rresp)
-                    )
-                }
-                Err(err) => format!("ERROR ZRANGE :: {err:?}"),
-            },
-            (Err(err1), Err(err2)) => {
-                format!("ERROR ZRANGE (1) :: {err1:?}\nERROR ZRANGE (2) :: {err2:?}")
-            }
-            (_, Err(err)) | (Err(err), _) => format!("ERROR ZRANGE :: {err:?}"),
-        }
-    }
-
-    pub fn zrangestore(
-        conn: &mut redis::Connection,
-        hm: &mut HashMap<String, Vec<String>>,
-        st: &mut RedisSortedSetsState,
-    ) -> String {
-        let (start, stop) = (
-            st.zrange_start.parse::<isize>(),
-            st.zrange_stop.parse::<isize>(),
-        );
-
-        match (start, stop) {
-            (Ok(b), Ok(e)) => {
-                let result = redis::cmd("ZRANGESTORE")
-                    .arg(&st.zrangestore_destination)
-                    .arg(&st.zrange_k)
-                    .arg(b)
-                    .arg(e)
-                    .query::<Value>(conn);
-
-                match result {
-                    Ok(rresp) => {
-                        let value: Vec<String> =
-                            conn.zrange(&st.zrangestore_destination, 0, -1).unwrap();
-                        hm.insert(st.zrangestore_destination.clone(), value);
-                        format!(
-                            "ZRANGESTORE :: {parsed_rresp}",
-                            parsed_rresp = redis_value_to_string(&rresp)
-                        )
-                    }
-                    Err(err) => format!("ERROR ZRANGESTORE :: {err:?}"),
-                }
-            }
-            (Err(err1), Err(err2)) => {
-                format!("ERROR ZRANGESTORE (1) :: {err1:?}\nERROR ZRANGESTORE (2) :: {err2:?}")
-            }
-            (_, Err(err)) | (Err(err), _) => format!("ERROR ZRANGESTORE :: {err:?}"),
-        }
-    }
-
-    pub fn zrangebylex(conn: &mut redis::Connection, st: &mut RedisSortedSetsState) -> String {
-        let (min, max) = (
-            st.zrangebylex_min.parse::<isize>(),
-            st.zrangebylex_max.parse::<isize>(),
-        );
-        let k = st.zrange_k.clone();
-
-        match (min, max) {
-            (Ok(_min), Ok(_max)) => match conn.zrangebylex(k, _min, _max) {
-                Ok(rresp) => {
-                    format!(
-                        "ZRANGEBYLEX :: {parsed_rresp}",
-                        parsed_rresp = redis_value_to_string(&rresp)
-                    )
-                }
-                Err(err) => format!("ERROR ZRANGEBYLEX :: {err:?}"),
-            },
-            (Err(err1), Err(err2)) => {
-                format!("ERROR ZRANGEBYLEX (1) :: {err1:?}\nERROR ZRANGEBYLEX (2) :: {err2:?}")
-            }
-            (_, Err(err)) | (Err(err), _) => format!("ERROR ZRANGEBYLEX :: {err:?}"),
-        }
-    }
-
-    pub fn zrangebyscore(conn: &mut redis::Connection, st: &mut RedisSortedSetsState) -> String {
-        let (min, max) = (
-            st.zrangebyscore_min.parse::<isize>(),
-            st.zrangebyscore_max.parse::<isize>(),
-        );
-        let k = st.zrange_k.clone();
-
-        match (min, max) {
-            (Ok(_min), Ok(_max)) => match conn.zrangebyscore(k, _min, _max) {
-                Ok(rresp) => {
-                    format!(
-                        "ZRANGEBYSCORE :: {parsed_rresp}",
-                        parsed_rresp = redis_value_to_string(&rresp)
-                    )
-                }
-                Err(err) => format!("ERROR ZRANGEBYSCORE :: {err:?}"),
-            },
-            (Err(err1), Err(err2)) => {
-                format!("ERROR ZRANGEBYSCORE (1) :: {err1:?}\nERROR ZRANGEBYSCORE (2) :: {err2:?}")
-            }
-            (_, Err(err)) | (Err(err), _) => format!("ERROR ZRANGEBYSCORE :: {err:?}"),
-        }
-    }
-
-    pub fn zinter(conn: &mut redis::Connection, st: &mut RedisSortedSetsState) -> String {
-        let ks = st.zinter_ks.split(' ').collect::<Vec<&str>>();
-        let result = redis::cmd("ZINTER")
-            .arg(ks.len())
-            .arg(ks)
-            .query::<Value>(conn);
-
-        match result {
-            Ok(rresp) => {
-                let parsed_rresp = redis_value_to_string(&rresp);
-                format!("ZINTER :: {parsed_rresp}")
-            }
-            Err(err) => {
-                format!("ERROR ZINTER :: {err:?}")
-            }
-        }
-    }
-
-    pub fn zintercard(conn: &mut redis::Connection, st: &mut RedisSortedSetsState) -> String {
-        let ks = st.zintercard_ks.split(' ').collect::<Vec<&str>>();
-        let result = redis::cmd("ZINTECARD")
-            .arg(ks.len())
-            .arg(ks)
-            .query::<Value>(conn);
-
-        match result {
-            Ok(rresp) => {
-                let parsed_rresp = redis_value_to_string(&rresp);
-                format!("ZINTERCARD :: {parsed_rresp}")
-            }
-            Err(err) => {
-                format!("ERROR ZINTERCARD :: {err:?}")
-            }
-        }
-    }
-
-    pub fn zinterstore(
-        conn: &mut redis::Connection,
-        hm: &mut HashMap<String, Vec<String>>,
-        st: &mut RedisSortedSetsState,
-    ) -> String {
-        let ks = st.zinterstore_ks.split(' ').collect::<Vec<&str>>();
-
-        match conn.zinterstore(&st.zinterstore_destination, &ks) {
-            Ok(rresp) => {
-                let parsed_rresp = redis_value_to_string(&rresp);
-                let value: Vec<String> = conn.zrange(&st.zinterstore_destination, 0, -1).unwrap();
-                hm.insert(st.zinterstore_destination.clone(), value);
-                format!("ZINTERCARD :: {parsed_rresp}")
-            }
-            Err(err) => {
-                format!("ERROR ZINTERCARD :: {err:?}")
-            }
-        }
-    }
-
-    pub fn zunionstore(
-        conn: &mut redis::Connection,
-        hm: &mut HashMap<String, Vec<String>>,
-        st: &mut RedisSortedSetsState,
-    ) -> String {
-        let ks = st.zunionstore_ks.split(' ').collect::<Vec<&str>>();
-        let set_dst = st.zunionstore_destination.clone();
-
-        let result: RedisResult<Value> = match st.zunionstore_min_max.as_ref() {
-            "MIN" => conn.zunionstore_min(&set_dst, &ks),
-            "MAX" => conn.zunionstore_max(&set_dst, &ks),
-            _ => conn.zunionstore(&set_dst, &ks),
-        };
-
-        match result {
-            Ok(rresp) => {
-                let value: Vec<String> = conn.zrange(&set_dst, 0, -1).unwrap();
-                hm.insert(set_dst, value);
-                format!(
-                    "ZUNIONSTORE :: {parsed_rresp:?}",
-                    parsed_rresp = redis_value_to_string(&rresp)
-                )
-            }
-            Err(err) => {
-                format!("ERROR ZUNIONSTORE :: {err:?}")
-            }
-        }
-    }
-
-    pub fn zrank(conn: &mut redis::Connection, st: &mut RedisSortedSetsState) -> String {
-        match conn.zrank(&st.zrank_k, &st.zrank_m) {
-            Ok(rresp) => {
-                format!(
-                    "ZRANK :: {parsed_rresp}",
-                    parsed_rresp = redis_value_to_string(&rresp)
-                )
-            }
-            Err(err) => {
-                format!("ERROR ZRANK :: {err:?}")
-            }
-        }
-    }
-
-    pub fn zrevrank(conn: &mut redis::Connection, st: &mut RedisSortedSetsState) -> String {
-        match conn.zrevrank(&st.zrevrank_k, &st.zrevrank_m) {
-            Ok(rresp) => {
-                format!(
-                    "ZREVRANK :: {parsed_rresp}",
-                    parsed_rresp = redis_value_to_string(&rresp)
-                )
-            }
-            Err(err) => {
-                format!("ERROR ZREVRANK :: {err:?}")
-            }
-        }
-    }
-
-    pub fn zremrangebyrank(
-        conn: &mut redis::Connection,
-        hm: &mut HashMap<String, Vec<String>>,
-        st: &mut RedisSortedSetsState,
-    ) -> String {
-        let (b, e) = (
-            st.zremrangebyrank_start.parse::<isize>(),
-            st.zremrangebyrank_stop.parse::<isize>(),
-        );
-        let k = st.zrange_k.clone();
-
-        match (b, e) {
-            (Ok(bb), Ok(ee)) => match conn.zremrangebyrank(&k, bb, ee) {
-                Ok(rresp) => {
-                    let value: Vec<String> = conn.zrange(&k, 0, -1).unwrap();
-                    hm.insert(k, value);
-                    format!(
-                        "ZREMRANGEBYRANK :: {parsed_rresp}",
-                        parsed_rresp = redis_value_to_string(&rresp)
-                    )
-                }
-                Err(err) => format!("ERROR ZREMRANGEBYRANK :: {err:?}"),
-            },
-            (Err(err1), Err(err2)) => {
-                format!(
-                    "ERROR ZREMRANGEBYRANK (1) :: {err1:?}\nERROR ZREMRANGEBYRANK (2) :: {err2:?}"
-                )
-            }
-            (_, Err(err)) | (Err(err), _) => format!("ERROR ZREMRANGEBYRANK :: {err:?}"),
-        }
-    }
-}
-
-pub struct HashPresenter;
-
-impl HashPresenter {
-    pub fn hrandfield(conn: &mut redis::Connection, st: &mut RedisHashState) -> String {
-        let result = redis::cmd("STRLEN")
-            .arg(&st.hrandfield_k)
-            .arg(&st.hrandfield_count)
-            .arg("WITHVALUES")
-            .query::<Value>(conn);
-
-        match result {
-            Ok(rresp) => {
-                format!(
-                    "HRANDFIELD :: {parsed_rresp}",
-                    parsed_rresp = redis_value_to_string(&rresp)
-                )
-            }
-            Err(err) => {
-                format!("ERROR HRANDFIELD :: {err:?}")
-            }
-        }
-    }
-
-    pub fn hexists(conn: &mut redis::Connection, st: &mut RedisHashState) -> String {
-        match conn.hexists(&st.hexists_f, &st.hexists_k) {
-            Ok(rresp) => {
-                format!(
-                    "HEXISTS :: {parsed_rresp}",
-                    parsed_rresp = redis_value_to_string(&rresp)
-                )
-            }
-            Err(err) => {
-                format!("ERROR HEXISTS :: {err:?}")
-            }
-        }
-    }
-
-    pub fn hstrlen(conn: &mut redis::Connection, st: &mut RedisHashState) -> String {
-        let result = redis::cmd("STRLEN")
-            .arg(&st.hstrlen_k)
-            .arg(&st.hstrlen_f)
-            .query::<Value>(conn);
-
-        match result {
-            Ok(rresp) => {
-                format!(
-                    "HSTRLEN :: {parsed_rresp}",
-                    parsed_rresp = redis_value_to_string(&rresp)
-                )
-            }
-            Err(err) => {
-                format!("ERROR HSTRLEN :: {err:?}")
-            }
-        }
-    }
-
-    pub fn hlen(conn: &mut redis::Connection, st: &mut RedisHashState) -> String {
-        match conn.hlen(&st.hlen_k) {
-            Ok(rresp) => {
-                format!(
-                    "HLEN :: {parsed_rresp}",
-                    parsed_rresp = redis_value_to_string(&rresp)
-                )
-            }
-            Err(err) => {
-                format!("ERROR HLEN :: {err:?}")
-            }
-        }
-    }
-
-    pub fn hincrbyfloat(
-        conn: &mut redis::Connection,
-        hm: &mut HashMap<String, Vec<(String, String)>>,
-        st: &mut RedisHashState,
-    ) -> String {
-        let f = st.hincrbyfloat_increment.parse::<f64>().unwrap_or_default();
-
-        HashPresenter::_hincrby(
-            conn,
-            &st.hincrbyfloat_k,
-            &st.hincrbyfloat_f,
-            f,
-            hm,
-            "HINCRBYFLOAT",
-        )
-    }
-
-    pub fn hincrby(
-        conn: &mut redis::Connection,
-        hm: &mut HashMap<String, Vec<(String, String)>>,
-        st: &mut RedisHashState,
-    ) -> String {
-        let i = st.hincrby_increment.parse::<i64>().unwrap_or_default();
-
-        HashPresenter::_hincrby(conn, &st.hincrby_k, &st.hincrby_f, i as f64, hm, "HINCRBY")
-    }
-
-    fn _hincrby(
-        conn: &mut Connection,
-        k: &str,
-        f: &str,
-        value: f64,
-        hm: &mut HashMap<String, Vec<(String, String)>>,
-        name: &str,
-    ) -> String {
-        match conn.hincr(k, f, value) {
-            Ok(rresp) => {
-                let value: Vec<(String, String)> = conn.hgetall(k).unwrap();
-                hm.insert(k.to_string(), value);
-                format!(
-                    "{} :: {parsed_rresp}",
-                    name,
-                    parsed_rresp = redis_value_to_string(&rresp)
-                )
-            }
-            Err(err) => {
-                format!("ERROR {} :: {err:?}", name)
-            }
-        }
-    }
-
-    pub fn hsetnx(
-        conn: &mut redis::Connection,
-        hm: &mut HashMap<String, Vec<(String, String)>>,
-        st: &mut RedisHashState,
-    ) -> String {
-        match conn.hset_nx(&st.hsetnx_k, &st.hsetnx_f, &st.hset_v) {
-            Ok(rresp) => {
-                let value: Vec<(String, String)> = conn.hgetall(&st.hset_k).unwrap();
-                hm.insert(st.hsetnx_k.clone(), value);
-                format!(
-                    "HSETNX :: {parsed_rresp}",
-                    parsed_rresp = redis_value_to_string(&rresp)
-                )
-            }
-            Err(err) => {
-                format!("ERROR HSETNX :: {err:?}")
-            }
-        }
-    }
-
-    pub fn hset(
-        conn: &mut redis::Connection,
-        hm: &mut HashMap<String, Vec<(String, String)>>,
-        st: &mut RedisHashState,
-    ) -> String {
-        // let k = st.hset_k.clone();
-        // let fs = st.hset_fs.split(' ').collect::<Vec<&str>>();
-
-        match conn.hset(&st.hset_k, &st.hset_f, &st.hset_v) {
-            Ok(rresp) => {
-                let value: Vec<(String, String)> = conn.hgetall(&st.hset_k).unwrap();
-                hm.insert(st.hset_k.clone(), value);
-                format!(
-                    "HSET :: {parsed_rresp}",
-                    parsed_rresp = redis_value_to_string(&rresp)
-                )
-            }
-            Err(err) => {
-                format!("ERROR HSET :: {err:?}")
-            }
-        }
-    }
-
-    pub fn hdel(
-        conn: &mut redis::Connection,
-        hm: &mut HashMap<String, Vec<(String, String)>>,
-        st: &mut RedisHashState,
-    ) -> String {
-        let k = st.hdel_k.clone();
-        let fs = st.hdel_fs.split(' ').collect::<Vec<&str>>();
-
-        match conn.hdel(&st.hdel_k, &fs) {
-            Ok(rresp) => {
-                let value: Vec<(String, String)> = conn.hgetall(&k).unwrap_or_default();
-                hm.insert(k, value);
-                format!(
-                    "HDEL :: {parsed_rresp}",
-                    parsed_rresp = redis_value_to_string(&rresp)
-                )
-            }
-            Err(err) => {
-                format!("ERROR HDEL :: {err:?}")
-            }
-        }
-    }
-
-    pub fn hvals(conn: &mut redis::Connection, st: &mut RedisHashState) -> String {
-        match conn.hvals(&st.hvals_k) {
-            Ok(rresp) => {
-                format!(
-                    "HVALS :: {parsed_rresp}",
-                    parsed_rresp = redis_value_to_string(&rresp)
-                )
-            }
-            Err(err) => {
-                format!("ERROR HVALS :: {err:?}")
-            }
-        }
-    }
-
-    pub fn hkeys(conn: &mut redis::Connection, st: &mut RedisHashState) -> String {
-        match conn.hkeys(&st.hkeys_k) {
-            Ok(rresp) => {
-                format!(
-                    "HKEYS :: {parsed_rresp}",
-                    parsed_rresp = redis_value_to_string(&rresp)
-                )
-            }
-            Err(err) => {
-                format!("ERROR HKEYS :: {err:?}")
-            }
-        }
-    }
-
-    pub fn hgetall(conn: &mut redis::Connection, st: &mut RedisHashState) -> String {
-        match conn.hgetall(&st.hgetall_k) {
-            Ok(rresp) => {
-                format!(
-                    "HGETALL :: {parsed_rresp}",
-                    parsed_rresp = redis_value_to_string(&rresp)
-                )
-            }
-            Err(err) => {
-                format!("ERROR HGETALL :: {err:?}")
-            }
-        }
-    }
-
-    pub fn hmget(conn: &mut redis::Connection, st: &mut RedisHashState) -> String {
-        let fs = st.hmget_fs.split(' ').collect::<Vec<&str>>();
-
-        match conn.hget(&st.hmget_k, &fs) {
-            Ok(rresp) => {
-                format!(
-                    "HMGET :: {parsed_rresp}",
-                    parsed_rresp = redis_value_to_string(&rresp)
-                )
-            }
-            Err(err) => {
-                format!("ERROR HMGET :: {err:?}")
-            }
-        }
-    }
-
-    pub fn hget(conn: &mut redis::Connection, st: &mut RedisHashState) -> String {
-        match conn.hget(&st.hget_k, &st.hget_f) {
-            Ok(rresp) => {
-                format!(
-                    "HGET :: {parsed_rresp}",
-                    parsed_rresp = redis_value_to_string(&rresp)
-                )
-            }
-            Err(err) => {
-                format!("ERROR HGET :: {err:?}")
             }
         }
     }

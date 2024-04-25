@@ -61,8 +61,8 @@ impl RedisView {
                     ui.separator();
                 });
 
-            if !self.state.command_last_result.is_empty() {
-                ui.label(&self.state.command_last_result);
+            if !self.state.last_result.is_empty() {
+                ui.label(&self.state.last_result);
             }
         }
 
