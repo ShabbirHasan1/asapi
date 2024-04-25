@@ -8,6 +8,7 @@
 
 pub mod hash;
 pub mod json;
+pub mod zset;
 
 use redis::{Client, RedisError, RedisResult, Value};
 

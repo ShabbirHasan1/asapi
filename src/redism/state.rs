@@ -178,7 +178,7 @@ pub struct RedisSetsState {
 }
 
 #[derive(Default)]
-pub struct RedisSortedSetsState {
+pub struct RedisZSetsState {
     pub zadd_k: String,
     pub zadd_score: String,
     pub zadd_v: String,
@@ -310,7 +310,7 @@ pub struct RedisLocalState {
     pub list_st: RedisListState,
     pub sets_st: RedisSetsState,
     pub hash_st: RedisHashState,
-    pub ssets_st: RedisSortedSetsState,
+    pub ssets_st: RedisZSetsState,
     pub json_st: RedisJsonState,
 }
 

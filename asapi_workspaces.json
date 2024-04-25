@@ -1,0 +1,13 @@
+{
+  "app_config": {
+    "version": 0,
+    "dark_theme": false,
+    "language": "ES"
+  },
+  "selected_view": "Redis",
+  "show_settings": false,
+  "redis": {
+    "show_sidebar": false,
+    "connections": []
+  }
+}
