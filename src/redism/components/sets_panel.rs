@@ -38,8 +38,8 @@ impl RedisView {
                     ui.separator();
                 });
 
-            if !self.state.command_last_result.is_empty() {
-                ui.label(&self.state.command_last_result);
+            if !self.state.last_result.is_empty() {
+                ui.label(&self.state.last_result);
             }
         }
 
@@ -69,8 +69,8 @@ impl RedisView {
                     ui.separator();
                 });
 
-            if !self.state.command_last_result.is_empty() {
-                ui.label(&self.state.command_last_result);
+            if !self.state.last_result.is_empty() {
+                ui.label(&self.state.last_result);
             }
         }
 
@@ -139,7 +139,7 @@ impl RedisView {
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "SADD") {
-                                    self.state.command_last_result =
+                                    self.state.last_result =
                                         run_redis_command(&self.state.current_connection, |conn| {
                                             SetsPresenter::sadd(
                                                 conn,
@@ -176,7 +176,7 @@ impl RedisView {
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "SREM") {
-                                    self.state.command_last_result =
+                                    self.state.last_result =
                                         run_redis_command(&self.state.current_connection, |conn| {
                                             SetsPresenter::srem(
                                                 conn,
@@ -204,7 +204,7 @@ impl RedisView {
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "SPOP") {
-                                    self.state.command_last_result =
+                                    self.state.last_result =
                                         run_redis_command(&self.state.current_connection, |conn| {
                                             SetsPresenter::spop(
                                                 conn,
@@ -241,7 +241,7 @@ impl RedisView {
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "SRANDMEMBER") {
-                                    self.state.command_last_result =
+                                    self.state.last_result =
                                         run_redis_command(&self.state.current_connection, |conn| {
                                             SetsPresenter::srandmember(
                                                 conn,
@@ -284,7 +284,7 @@ impl RedisView {
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "SISMEMBER") {
-                                    self.state.command_last_result =
+                                    self.state.last_result =
                                         run_redis_command(&self.state.current_connection, |conn| {
                                             SetsPresenter::sismember(conn, &mut self.state.sets_st)
                                         });
@@ -319,7 +319,7 @@ impl RedisView {
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "SMISMEMBER") {
-                                    self.state.command_last_result =
+                                    self.state.last_result =
                                         run_redis_command(&self.state.current_connection, |conn| {
                                             SetsPresenter::smismember(conn, &mut self.state.sets_st)
                                         });
@@ -343,7 +343,7 @@ impl RedisView {
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "SCARD") {
-                                    self.state.command_last_result =
+                                    self.state.last_result =
                                         run_redis_command(&self.state.current_connection, |conn| {
                                             SetsPresenter::scard(conn, &mut self.state.sets_st)
                                         });
@@ -367,7 +367,7 @@ impl RedisView {
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "SMEMBERS") {
-                                    self.state.command_last_result =
+                                    self.state.last_result =
                                         run_redis_command(&self.state.current_connection, |conn| {
                                             SetsPresenter::smembers(
                                                 conn,
@@ -403,7 +403,7 @@ impl RedisView {
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "SINTER") {
-                                    self.state.command_last_result =
+                                    self.state.last_result =
                                         run_redis_command(&self.state.current_connection, |conn| {
                                             SetsPresenter::sinter(conn, &mut self.state.sets_st)
                                         });
@@ -436,7 +436,7 @@ impl RedisView {
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "SINTERCARD") {
-                                    self.state.command_last_result =
+                                    self.state.last_result =
                                         run_redis_command(&self.state.current_connection, |conn| {
                                             SetsPresenter::sintercard(conn, &mut self.state.sets_st)
                                         });
@@ -469,7 +469,7 @@ impl RedisView {
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "SINTERSTORE") {
-                                    self.state.command_last_result =
+                                    self.state.last_result =
                                         run_redis_command(&self.state.current_connection, |conn| {
                                             SetsPresenter::sinterstore(
                                                 conn,
@@ -506,7 +506,7 @@ impl RedisView {
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "SDIFF") {
-                                    self.state.command_last_result =
+                                    self.state.last_result =
                                         run_redis_command(&self.state.current_connection, |conn| {
                                             SetsPresenter::sdiff(conn, &mut self.state.sets_st)
                                         });
@@ -539,7 +539,7 @@ impl RedisView {
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "SDIFFSTORE") {
-                                    self.state.command_last_result =
+                                    self.state.last_result =
                                         run_redis_command(&self.state.current_connection, |conn| {
                                             SetsPresenter::sdiffstore(
                                                 conn,
@@ -567,7 +567,7 @@ impl RedisView {
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "SUNION") {
-                                    self.state.command_last_result =
+                                    self.state.last_result =
                                         run_redis_command(&self.state.current_connection, |conn| {
                                             SetsPresenter::sunion(conn, &mut self.state.sets_st)
                                         });
@@ -600,7 +600,7 @@ impl RedisView {
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "SUNIONSTORE") {
-                                    self.state.command_last_result =
+                                    self.state.last_result =
                                         run_redis_command(&self.state.current_connection, |conn| {
                                             SetsPresenter::sunionstore(
                                                 conn,
@@ -658,7 +658,7 @@ impl RedisView {
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "ZADD") {
-                                    self.state.command_last_result =
+                                    self.state.last_result =
                                         run_redis_command(&self.state.current_connection, |conn| {
                                             SortedSetsPresenter::zadd(
                                                 conn,
@@ -695,7 +695,7 @@ impl RedisView {
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "ZREM") {
-                                    self.state.command_last_result =
+                                    self.state.last_result =
                                         run_redis_command(&self.state.current_connection, |conn| {
                                             SortedSetsPresenter::zrem(
                                                 conn,
@@ -751,7 +751,7 @@ impl RedisView {
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "ZMPOP") {
-                                    self.state.command_last_result =
+                                    self.state.last_result =
                                         run_redis_command(&self.state.current_connection, |conn| {
                                             SortedSetsPresenter::zmpop(
                                                 conn,
@@ -788,7 +788,7 @@ impl RedisView {
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "ZRANDMEMBER") {
-                                    self.state.command_last_result =
+                                    self.state.last_result =
                                         run_redis_command(&self.state.current_connection, |conn| {
                                             SortedSetsPresenter::zrandmember(
                                                 conn,
@@ -825,7 +825,7 @@ impl RedisView {
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "ZCARD") {
-                                    self.state.command_last_result =
+                                    self.state.last_result =
                                         run_redis_command(&self.state.current_connection, |conn| {
                                             SortedSetsPresenter::zcard(
                                                 conn,
@@ -870,7 +870,7 @@ impl RedisView {
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "ZRANGE") {
-                                    self.state.command_last_result =
+                                    self.state.last_result =
                                         run_redis_command(&self.state.current_connection, |conn| {
                                             SortedSetsPresenter::zrange(
                                                 conn,
@@ -924,7 +924,7 @@ impl RedisView {
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "ZRANGESTORE") {
-                                    self.state.command_last_result =
+                                    self.state.last_result =
                                         run_redis_command(&self.state.current_connection, |conn| {
                                             SortedSetsPresenter::zrangestore(
                                                 conn,
@@ -970,7 +970,7 @@ impl RedisView {
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "ZRANGEBYLEX") {
-                                    self.state.command_last_result =
+                                    self.state.last_result =
                                         run_redis_command(&self.state.current_connection, |conn| {
                                             SortedSetsPresenter::zrangebylex(
                                                 conn,
@@ -1015,7 +1015,7 @@ impl RedisView {
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "ZRANGEBYSCORE") {
-                                    self.state.command_last_result =
+                                    self.state.last_result =
                                         run_redis_command(&self.state.current_connection, |conn| {
                                             SortedSetsPresenter::zrangebyscore(
                                                 conn,
@@ -1050,7 +1050,7 @@ impl RedisView {
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "ZINTER") {
-                                    self.state.command_last_result =
+                                    self.state.last_result =
                                         run_redis_command(&self.state.current_connection, |conn| {
                                             SortedSetsPresenter::zinter(
                                                 conn,
@@ -1077,7 +1077,7 @@ impl RedisView {
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "ZINTERCARD") {
-                                    self.state.command_last_result =
+                                    self.state.last_result =
                                         run_redis_command(&self.state.current_connection, |conn| {
                                             SortedSetsPresenter::zintercard(
                                                 conn,
@@ -1113,7 +1113,7 @@ impl RedisView {
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "ZINTERSTORE") {
-                                    self.state.command_last_result =
+                                    self.state.last_result =
                                         run_redis_command(&self.state.current_connection, |conn| {
                                             SortedSetsPresenter::zinterstore(
                                                 conn,
@@ -1181,7 +1181,7 @@ impl RedisView {
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "ZUNIONSTORE") {
-                                    self.state.command_last_result =
+                                    self.state.last_result =
                                         run_redis_command(&self.state.current_connection, |conn| {
                                             SortedSetsPresenter::zunionstore(
                                                 conn,
@@ -1226,7 +1226,7 @@ impl RedisView {
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "ZRANK") {
-                                    self.state.command_last_result =
+                                    self.state.last_result =
                                         run_redis_command(&self.state.current_connection, |conn| {
                                             SortedSetsPresenter::zrank(
                                                 conn,
@@ -1262,7 +1262,7 @@ impl RedisView {
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "ZREVRANK") {
-                                    self.state.command_last_result =
+                                    self.state.last_result =
                                         run_redis_command(&self.state.current_connection, |conn| {
                                             SortedSetsPresenter::zrevrank(
                                                 conn,
@@ -1307,7 +1307,7 @@ impl RedisView {
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "ZREMRANGEBYRANK") {
-                                    self.state.command_last_result =
+                                    self.state.last_result =
                                         run_redis_command(&self.state.current_connection, |conn| {
                                             SortedSetsPresenter::zremrangebyrank(
                                                 conn,

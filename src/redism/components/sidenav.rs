@@ -160,25 +160,40 @@ impl RedisView {
                     // --> Al clicar sobre conexión, conectamos y listamos tablas <--
                     // Si estamos ya mostrando esta conexión, clicar sobre ella no lanza ninguna acción.
                     if connection_button.clicked() && self.state.current_connection_idx != idx {
-                        self.state.current_connection_idx = idx;
                         self.state.reset(RedisMenu::All);
 
-                        // Si no conexión o la que existe no es la que clico, la defino
                         let conn = RedisConnectionDefinition {
                             host: conn_definition.host.clone(),
                             port: conn_definition.port.clone(),
                         };
 
                         self.state.current_connection = conn.clone();
-                        self.connect();
-                        self.state.command_last_result = "".to_owned();
-                        // TODO: No compruebo la existencia de conexión porque `scan` crea la suya
-                        // propia. Habría que pasársela para no necesitar dicha conexión local,
-                        // aunque realmente podemos crear todas las que queramos.
+                        // Esto lo he traído de una función a incluir aquí, para ser más claro
+                        // qué ocurre.
+                        // Realmente no necesito `conn` en el estado, pero lo hago porque para
+                        // saber si puedo conectar, y por hacer algo con esta conexión.
+                        if let Ok(port) = self.state.current_connection.port.parse::<i16>() {
+                            match presenter::create_conn(&self.state.current_connection.host, port)
+                            {
+                                Ok(conn) => {
+                                    self.state.current_connection_idx = idx;
+                                    self.state.conn = Some(conn);
+                                    self.state.last_result = "".to_owned();
+                                    let option = self.state.selected_menu;
+                                    if let Err(err) = presenter::scan(&mut self.state, option) {
+                                        self.state.last_result = format!("ERROR {:?}", err);
+                                    }
+                                }
+                                Err(err) => {
+                                    self.state.conn = None;
+                                    self.state.last_result = format!("ERROR {:?}", err);
+                                }
+                            }
+                        }
+                        self.state.last_result = "".to_owned();
                         let option = self.state.selected_menu;
                         if let Err(err) = presenter::scan(&mut self.state, option) {
-                            // TODO: Mostrar con color rojo.
-                            self.state.command_last_result = format!("ERROR {:?}", err);
+                            self.state.last_result = format!("ERROR {:?}", err);
                         }
                     }
                 });

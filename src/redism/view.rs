@@ -12,6 +12,7 @@ use tokio::runtime::Runtime;
 
 use crate::common::fs::append_to_file;
 use crate::common::internationalization::I18n;
+use crate::components::result_panel::ui_response_panel;
 use crate::error;
 use crate::info;
 
@@ -94,13 +95,13 @@ impl RedisView {
                         ) {
                             Ok(result) => {
                                 let option = self.state.selected_menu;
-                                self.state.command_last_result = result;
                                 let _ = presenter::scan(&mut self.state, option);
+                                self.state.last_result = Some(Ok(result));
                             }
                             // TODO: Change color
                             Err(e) => {
                                 info!("Error: {:?}", e);
-                                self.state.command_last_result = e;
+                                self.state.last_result = Some(Err(e));
                             }
                         }
                         if let Err(e) =
@@ -138,9 +139,7 @@ impl RedisView {
                     }
                 });
 
-                if !self.state.command_last_result.is_empty() {
-                    ui.label(&self.state.command_last_result);
-                }
+                ui_response_panel(ui, &self.state.last_result);
             }
 
             // ===========================================
@@ -206,18 +205,5 @@ impl RedisView {
         egui::CollapsingHeader::new("Sorted Sets")
             .default_open(true)
             .show(ui, |ui| self.show_sorted_sets(ui, i18n));
-    }
-
-    pub fn connect(&mut self) {
-        if let Ok(port) = self.state.current_connection.port.parse::<i16>() {
-            match presenter::create_conn(&self.state.current_connection.host, port) {
-                Ok(conn) => {
-                    self.state.conn = Some(conn);
-                }
-                Err(_) => {
-                    self.state.conn = None;
-                }
-            }
-        }
     }
 }

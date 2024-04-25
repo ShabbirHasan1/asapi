@@ -380,10 +380,10 @@ impl StringPresenter {
             match result {
                 Ok(v) => {
                     let parsed_v = redis_value_to_string(&v);
-                    st.command_last_result = format!("LCS :: {parsed_v}");
+                    st.last_result = format!("LCS :: {parsed_v}");
                 }
                 Err(err) => {
-                    st.command_last_result = format!("ERROR LCS :: {err:?}");
+                    st.last_result = format!("ERROR LCS :: {err:?}");
                 }
             }
         }
@@ -397,10 +397,10 @@ impl StringPresenter {
 
             match conn.strlen::<&str, i64>(&k) {
                 Ok(len) => {
-                    st.command_last_result = format!("STRLEN :: Key: {k}, Len: {len}");
+                    st.last_result = format!("STRLEN :: Key: {k}, Len: {len}");
                 }
                 Err(err) => {
-                    st.command_last_result = format!("ERROR STRLEN :: {err:?}");
+                    st.last_result = format!("ERROR STRLEN :: {err:?}");
                 }
             }
         }
@@ -418,13 +418,13 @@ impl StringPresenter {
                         k.clone(),
                         st.strings.get(&k).unwrap_or(&"".to_string()).to_owned() + &v,
                     );
-                    st.command_last_result = format!(
+                    st.last_result = format!(
                         "APPEND :: Resultado: {v} caracteres totales",
                         v = redis_value_to_string(&redis_v)
                     );
                 }
                 Err(err) => {
-                    st.command_last_result = format!("ERROR APPEND :: {err:?}");
+                    st.last_result = format!("ERROR APPEND :: {err:?}");
                 }
             }
         }
@@ -441,10 +441,10 @@ impl StringPresenter {
                 Ok(rresp) => {
                     st.strings.insert(k, v);
                     let parsed_rresp = redis_value_to_string(&rresp);
-                    st.command_last_result = format!("SET :: {parsed_rresp}");
+                    st.last_result = format!("SET :: {parsed_rresp}");
                 }
                 Err(err) => {
-                    st.command_last_result = format!("ERROR SET :: {err:?}");
+                    st.last_result = format!("ERROR SET :: {err:?}");
                 }
             }
         }
@@ -461,10 +461,10 @@ impl StringPresenter {
                 Ok(rresp) => {
                     st.strings.insert(k, v);
                     let parsed_rresp = redis_value_to_string(&rresp);
-                    st.command_last_result = format!("SETNX :: {parsed_rresp}");
+                    st.last_result = format!("SETNX :: {parsed_rresp}");
                 }
                 Err(err) => {
-                    st.command_last_result = format!("ERROR SETNX: {err:?}");
+                    st.last_result = format!("ERROR SETNX: {err:?}");
                 }
             }
         }
@@ -486,15 +486,15 @@ impl StringPresenter {
                         Ok(rresp) => {
                             st.strings.insert(k, v.to_string());
                             let parsed_rresp = redis_value_to_string(&rresp);
-                            st.command_last_result = format!("SETRANGE :: {parsed_rresp}");
+                            st.last_result = format!("SETRANGE :: {parsed_rresp}");
                         }
                         Err(err) => {
-                            st.command_last_result = format!("ERROR SETRANGE :: {err:?}");
+                            st.last_result = format!("ERROR SETRANGE :: {err:?}");
                         }
                     }
                 }
                 Err(err) => {
-                    st.command_last_result = format!("PARSE ERROR :: {err:?}");
+                    st.last_result = format!("PARSE ERROR :: {err:?}");
                 }
             }
         }
@@ -528,10 +528,10 @@ impl StringPresenter {
             match response {
                 Ok(v) => {
                     st.strings.insert(k, v.clone());
-                    st.command_last_result = format!("INCR :: {v}");
+                    st.last_result = format!("INCR :: {v}");
                 }
                 Err(err) => {
-                    st.command_last_result = format!("ERROR INCR :: {err:?}");
+                    st.last_result = format!("ERROR INCR :: {err:?}");
                 }
             }
         }
@@ -570,10 +570,10 @@ impl StringPresenter {
             match response {
                 Ok(v) => {
                     st.strings.insert(k, v.clone());
-                    st.command_last_result = format!("DECR :: {v}");
+                    st.last_result = format!("DECR :: {v}");
                 }
                 Err(err) => {
-                    st.command_last_result = format!("ERROR DECR :: {err:?}");
+                    st.last_result = format!("ERROR DECR :: {err:?}");
                 }
             }
         }
@@ -594,7 +594,7 @@ impl StringPresenter {
             let k = st.string_st.get_k.clone();
             let result = conn.get::<&str, String>(&k);
 
-            st.command_last_result = match result {
+            st.last_result = match result {
                 Ok(msg) => format!("GET :: Key: {k}, Value: {msg}"),
                 Err(err) => format!("ERROR GET :: {err:?}"),
             }
@@ -611,10 +611,10 @@ impl StringPresenter {
             match result {
                 Ok(msg) => {
                     st.strings.remove(&k);
-                    st.command_last_result = format!("GETDEL :: Key: {k}, Value: {msg}");
+                    st.last_result = format!("GETDEL :: Key: {k}, Value: {msg}");
                 }
                 Err(err) => {
-                    st.command_last_result = format!("ERROR GETDEL :: {err:?}");
+                    st.last_result = format!("ERROR GETDEL :: {err:?}");
                 }
             }
         }
@@ -630,10 +630,10 @@ impl StringPresenter {
             match result {
                 Ok(msg) => {
                     st.strings.insert(k.clone(), v.to_string());
-                    st.command_last_result = format!("GETSET :: Key: {k}, Old Value: {msg}");
+                    st.last_result = format!("GETSET :: Key: {k}, Old Value: {msg}");
                 }
                 Err(err) => {
-                    st.command_last_result = format!("ERROR GETSET :: {err:?}");
+                    st.last_result = format!("ERROR GETSET :: {err:?}");
                 }
             }
         }
@@ -651,7 +651,7 @@ impl StringPresenter {
 
             if let (Ok(f), Ok(t)) = (from_s.parse::<isize>(), to_s.parse::<isize>()) {
                 let result = conn.getrange::<&str, String>(&k, f, t);
-                st.command_last_result = match result {
+                st.last_result = match result {
                     Ok(msg) => format!("GETRANGE :: Key: {k}, Value: {msg}"),
                     Err(err) => format!("ERROR GETRANGE :: {err:?}"),
                 }
@@ -669,11 +669,11 @@ impl StringPresenter {
             );
 
             if let Ok(ex) = expire_at_s.parse::<usize>() {
-                let result = conn.get_ex::<&str, String>(&k, redis::Expiry::EX(ex));
-                st.command_last_result = match result {
-                    Ok(msg) => format!("GETEX :: Key: {k}, Value: {msg}"),
-                    Err(err) => format!("ERROR GETEX :: {err:?}"),
-                }
+                let result = conn
+                    .get_ex::<&str, String>(&k, redis::Expiry::EX(ex))
+                    .map(|msg| format!("GETEX :: Key: {k}, Value: {msg}"))
+                    .or_else(|err| Err(format!("GETEX :: {err:?}")));
+                st.last_result = Some(result);
             }
         }
     }
