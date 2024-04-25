@@ -7,14 +7,14 @@
 // -------------------------------------------------------------------------
 use eframe::egui;
 use egui_extras::{Size, StripBuilder};
-use redis::RedisResult;
 
 use crate::{
     common::internationalization::I18n,
-    components::widgets::ui_text_edit_singleline_hint,
+    components::{result_panel::ui_response_panel, widgets::ui_text_edit_singleline_hint},
     error, info,
     redism::{
-        presenter::{self, run_redis_command, JsonPresenter, RedisMenu},
+        presenter::{self, RedisMenu},
+        presenters::{json::JsonPresenter, run_cmd},
         view::RedisView,
     },
     ui_button_w100,
@@ -46,6 +46,8 @@ impl RedisView {
             if !self.state.last_result.is_empty() {
                 ui.label(&self.state.last_result);
             }
+
+            ui_response_panel(ui, &self.state.opt_last_result);
         }
         self.display_json(ui, i18n)
     }
@@ -83,8 +85,8 @@ impl RedisView {
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "JSON.TYPE") {
-                                    self.state.last_result =
-                                        run_redis_command(&self.state.current_connection, |conn| {
+                                    self.state.opt_last_result =
+                                        run_cmd(&self.state.current_connection, |conn| {
                                             JsonPresenter::json_type(conn, &mut self.state.json_st)
                                         });
                                 }
@@ -125,8 +127,8 @@ impl RedisView {
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "J.NUMINCRBY") {
-                                    self.state.last_result =
-                                        run_redis_command(&self.state.current_connection, |conn| {
+                                    self.state.opt_last_result =
+                                        run_cmd(&self.state.current_connection, |conn| {
                                             JsonPresenter::json_numincrby(
                                                 conn,
                                                 &mut self.state.jsons,
@@ -171,8 +173,8 @@ impl RedisView {
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "J.NUMMULTBY") {
-                                    self.state.last_result =
-                                        run_redis_command(&self.state.current_connection, |conn| {
+                                    self.state.opt_last_result =
+                                        run_cmd(&self.state.current_connection, |conn| {
                                             JsonPresenter::json_nummultby(
                                                 conn,
                                                 &mut self.state.jsons,
@@ -217,8 +219,8 @@ impl RedisView {
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "JSON.MERGE") {
-                                    self.state.last_result =
-                                        run_redis_command(&self.state.current_connection, |conn| {
+                                    self.state.opt_last_result =
+                                        run_cmd(&self.state.current_connection, |conn| {
                                             JsonPresenter::json_merge(
                                                 conn,
                                                 &mut self.state.jsons,
@@ -254,8 +256,8 @@ impl RedisView {
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "JSON.TOGGLE") {
-                                    self.state.last_result =
-                                        run_redis_command(&self.state.current_connection, |conn| {
+                                    self.state.opt_last_result =
+                                        run_cmd(&self.state.current_connection, |conn| {
                                             JsonPresenter::json_toggle(
                                                 conn,
                                                 &mut self.state.jsons,
@@ -329,8 +331,8 @@ impl RedisView {
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "JSON.ARRINDEX") {
-                                    self.state.last_result =
-                                        run_redis_command(&self.state.current_connection, |conn| {
+                                    self.state.opt_last_result =
+                                        run_cmd(&self.state.current_connection, |conn| {
                                             JsonPresenter::json_arrindex(
                                                 conn,
                                                 &mut self.state.json_st,
@@ -365,8 +367,8 @@ impl RedisView {
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "JSON.ARRLEN") {
-                                    self.state.last_result =
-                                        run_redis_command(&self.state.current_connection, |conn| {
+                                    self.state.opt_last_result =
+                                        run_cmd(&self.state.current_connection, |conn| {
                                             JsonPresenter::json_arrlen(
                                                 conn,
                                                 &mut self.state.json_st,
@@ -419,8 +421,8 @@ impl RedisView {
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "J.ARRINSERT") {
-                                    self.state.last_result =
-                                        run_redis_command(&self.state.current_connection, |conn| {
+                                    self.state.opt_last_result =
+                                        run_cmd(&self.state.current_connection, |conn| {
                                             JsonPresenter::json_arrinsert(
                                                 conn,
                                                 &mut self.state.jsons,
@@ -465,8 +467,8 @@ impl RedisView {
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "J.ARRAPPEND") {
-                                    self.state.last_result =
-                                        run_redis_command(&self.state.current_connection, |conn| {
+                                    self.state.opt_last_result =
+                                        run_cmd(&self.state.current_connection, |conn| {
                                             JsonPresenter::json_arrappend(
                                                 conn,
                                                 &mut self.state.jsons,
@@ -511,8 +513,8 @@ impl RedisView {
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "JSON.ARRPOP") {
-                                    self.state.last_result =
-                                        run_redis_command(&self.state.current_connection, |conn| {
+                                    self.state.opt_last_result =
+                                        run_cmd(&self.state.current_connection, |conn| {
                                             JsonPresenter::json_arrpop(
                                                 conn,
                                                 &mut self.state.jsons,
@@ -566,8 +568,8 @@ impl RedisView {
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "JSON.ARRTRIM") {
-                                    self.state.last_result =
-                                        run_redis_command(&self.state.current_connection, |conn| {
+                                    self.state.opt_last_result =
+                                        run_cmd(&self.state.current_connection, |conn| {
                                             JsonPresenter::json_arrtrim(
                                                 conn,
                                                 &mut self.state.jsons,
@@ -646,8 +648,8 @@ impl RedisView {
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "JSON.SET") {
-                                    self.state.last_result =
-                                        run_redis_command(&self.state.current_connection, |conn| {
+                                    self.state.opt_last_result =
+                                        run_cmd(&self.state.current_connection, |conn| {
                                             JsonPresenter::json_set(
                                                 conn,
                                                 &mut self.state.jsons,
@@ -683,8 +685,8 @@ impl RedisView {
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "JSON.DEL") {
-                                    self.state.last_result =
-                                        run_redis_command(&self.state.current_connection, |conn| {
+                                    self.state.opt_last_result =
+                                        run_cmd(&self.state.current_connection, |conn| {
                                             JsonPresenter::json_del(
                                                 conn,
                                                 &mut self.state.jsons,
@@ -720,8 +722,8 @@ impl RedisView {
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "JSON.FORGET") {
-                                    self.state.last_result =
-                                        run_redis_command(&self.state.current_connection, |conn| {
+                                    self.state.opt_last_result =
+                                        run_cmd(&self.state.current_connection, |conn| {
                                             JsonPresenter::json_forget(
                                                 conn,
                                                 &mut self.state.jsons,
@@ -757,8 +759,8 @@ impl RedisView {
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "JSON.CLEAR") {
-                                    self.state.last_result =
-                                        run_redis_command(&self.state.current_connection, |conn| {
+                                    self.state.opt_last_result =
+                                        run_cmd(&self.state.current_connection, |conn| {
                                             JsonPresenter::json_clear(
                                                 conn,
                                                 &mut self.state.jsons,
@@ -803,8 +805,8 @@ impl RedisView {
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "J.STRAPPEND") {
-                                    self.state.last_result =
-                                        run_redis_command(&self.state.current_connection, |conn| {
+                                    self.state.opt_last_result =
+                                        run_cmd(&self.state.current_connection, |conn| {
                                             JsonPresenter::json_strappend(
                                                 conn,
                                                 &mut self.state.jsons,
@@ -850,8 +852,8 @@ impl RedisView {
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "JSON.GET") {
-                                    self.state.last_result =
-                                        run_redis_command(&self.state.current_connection, |conn| {
+                                    self.state.opt_last_result =
+                                        run_cmd(&self.state.current_connection, |conn| {
                                             JsonPresenter::json_get(conn, &mut self.state.json_st)
                                         });
                                 }
@@ -883,8 +885,8 @@ impl RedisView {
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "JSON.MGET") {
-                                    self.state.last_result =
-                                        run_redis_command(&self.state.current_connection, |conn| {
+                                    self.state.opt_last_result =
+                                        run_cmd(&self.state.current_connection, |conn| {
                                             JsonPresenter::json_mget(conn, &mut self.state.json_st)
                                         });
                                 }
@@ -916,8 +918,8 @@ impl RedisView {
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "JSON.OBJKEYS") {
-                                    self.state.last_result =
-                                        run_redis_command(&self.state.current_connection, |conn| {
+                                    self.state.opt_last_result =
+                                        run_cmd(&self.state.current_connection, |conn| {
                                             JsonPresenter::json_objkeys(
                                                 conn,
                                                 &mut self.state.json_st,
@@ -952,8 +954,8 @@ impl RedisView {
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "JSON.OBJLEN") {
-                                    self.state.last_result =
-                                        run_redis_command(&self.state.current_connection, |conn| {
+                                    self.state.opt_last_result =
+                                        run_cmd(&self.state.current_connection, |conn| {
                                             JsonPresenter::json_objlen(
                                                 conn,
                                                 &mut self.state.json_st,
@@ -988,8 +990,8 @@ impl RedisView {
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "JSON.STRLEN") {
-                                    self.state.last_result =
-                                        run_redis_command(&self.state.current_connection, |conn| {
+                                    self.state.opt_last_result =
+                                        run_cmd(&self.state.current_connection, |conn| {
                                             JsonPresenter::json_strlen(
                                                 conn,
                                                 &mut self.state.json_st,
