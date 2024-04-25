@@ -297,7 +297,8 @@ pub struct RedisLocalState {
     pub current_command: String,
     pub is_first_update: bool,
     pub must_scan: bool,
-    pub last_result: Option<Result<String, String>>,
+    pub last_result: String,
+    pub opt_last_result: Option<Result<String, String>>,
     pub conn: Option<redis::Connection>, // La estoy gastando?
     pub selected_menu: RedisMenu,
     pub hide_connections: bool,
@@ -326,6 +327,7 @@ impl Default for RedisLocalState {
             is_first_update: Default::default(),
             must_scan: Default::default(),
             last_result: Default::default(),
+            opt_last_result: Default::default(),
             conn: Default::default(),
             selected_menu: Default::default(),
             hide_connections: Default::default(),
