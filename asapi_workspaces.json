@@ -4,7 +4,7 @@
     "dark_theme": false,
     "language": "ES"
   },
-  "selected_view": "Redis",
+  "selected_view": "Mongo",
   "show_settings": false,
   "redis": {
     "show_sidebar": true,

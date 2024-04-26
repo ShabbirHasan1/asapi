@@ -17,7 +17,7 @@ use crate::{
     redism::{
         connection::RedisMenu,
         presenters::{delete_key, run_cmd, string::StringPresenter, RedisResponse},
-        state::{RedisConnectionDefinition, RedisStringState},
+        state::RedisStringState,
         view::RedisView,
     },
     ui_button_w, ui_button_w100, ui_button_w50,
