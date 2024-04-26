@@ -25,7 +25,7 @@ impl ListPresenter {
     pub fn lset(
         conn: &mut redis::Connection,
         hm: &mut HashMap<String, Vec<String>>,
-        st: &mut RedisListState,
+        st: &RedisListState,
     ) -> RedisResponse {
         let index = st.lset_index.parse::<isize>().unwrap_or(0);
         let k = st.lset_k.clone();
@@ -43,7 +43,7 @@ impl ListPresenter {
     pub fn lrem(
         conn: &mut redis::Connection,
         hm: &mut HashMap<String, Vec<String>>,
-        st: &mut RedisListState,
+        st: &RedisListState,
     ) -> RedisResponse {
         let count = st.lrem_count.parse::<isize>().unwrap_or(0);
         let k = st.lrem_k.clone();
@@ -61,7 +61,7 @@ impl ListPresenter {
     pub fn linsert(
         conn: &mut redis::Connection,
         hm: &mut HashMap<String, Vec<String>>,
-        st: &mut RedisListState,
+        st: &RedisListState,
         position: RedisPosition,
     ) -> RedisResponse {
         let response = match position {
@@ -88,7 +88,7 @@ impl ListPresenter {
     pub fn ltrim(
         conn: &mut redis::Connection,
         hm: &mut HashMap<String, Vec<String>>,
-        st: &mut RedisListState,
+        st: &RedisListState,
     ) -> RedisResponse {
         let (start, stop) = (
             st.lrange_start.parse::<isize>(),
@@ -109,7 +109,7 @@ impl ListPresenter {
         }
     }
 
-    pub fn lrange(conn: &mut redis::Connection, st: &mut RedisListState) -> RedisResponse {
+    pub fn lrange(conn: &mut redis::Connection, st: &RedisListState) -> RedisResponse {
         // En caso del parseo fallar por la razón que sea devolvemos nada.
         let (start, stop) = (
             st.lrange_start.parse::<isize>().unwrap_or(0),
@@ -125,7 +125,7 @@ impl ListPresenter {
         }
     }
 
-    pub fn lindex(conn: &mut redis::Connection, st: &mut RedisListState) -> RedisResponse {
+    pub fn lindex(conn: &mut redis::Connection, st: &RedisListState) -> RedisResponse {
         // En caso del parseo fallar por la razón que sea devolvemos nada.
         let idx = st.lindex_idx.parse::<isize>().unwrap_or(0);
 
@@ -138,7 +138,7 @@ impl ListPresenter {
         }
     }
 
-    pub fn llen(conn: &mut redis::Connection, st: &mut RedisListState) -> RedisResponse {
+    pub fn llen(conn: &mut redis::Connection, st: &RedisListState) -> RedisResponse {
         match conn.llen(&st.llen_k) {
             Ok(rresp) => Ok(format!("LLEN :: {rr}", rr = redis_value_to_string(&rresp))),
             Err(err) => Err(format!("LLEN :: {err:?}")),
@@ -148,7 +148,7 @@ impl ListPresenter {
     pub fn rpop(
         conn: &mut redis::Connection,
         hm: &mut HashMap<String, Vec<String>>,
-        st: &mut RedisListState,
+        st: &RedisListState,
     ) -> RedisResponse {
         let count = st.rpop_count.parse::<usize>().ok().and_then(|v| {
             if v > 0 {
@@ -174,7 +174,7 @@ impl ListPresenter {
     pub fn lpop(
         conn: &mut redis::Connection,
         hm: &mut HashMap<String, Vec<String>>,
-        st: &mut RedisListState,
+        st: &RedisListState,
     ) -> RedisResponse {
         let count = st.lpop_count.parse::<usize>().ok().and_then(|v| {
             if v > 0 {
@@ -199,7 +199,7 @@ impl ListPresenter {
     pub fn rpush(
         conn: &mut redis::Connection,
         hm: &mut HashMap<String, Vec<String>>,
-        st: &mut RedisListState,
+        st: &RedisListState,
     ) -> RedisResponse {
         let vs = st
             .rpush_vs
@@ -222,7 +222,7 @@ impl ListPresenter {
     pub fn lpush(
         conn: &mut redis::Connection,
         hm: &mut HashMap<String, Vec<String>>,
-        st: &mut RedisListState,
+        st: &RedisListState,
     ) -> RedisResponse {
         let vs = st
             .lpush_vs
@@ -245,7 +245,7 @@ impl ListPresenter {
     pub fn rpushx(
         conn: &mut redis::Connection,
         hm: &mut HashMap<String, Vec<String>>,
-        st: &mut RedisListState,
+        st: &RedisListState,
     ) -> RedisResponse {
         let vs = st
             .rpush_vs
@@ -279,7 +279,7 @@ impl ListPresenter {
     pub fn lpushx(
         conn: &mut redis::Connection,
         hm: &mut HashMap<String, Vec<String>>,
-        st: &mut RedisListState,
+        st: &RedisListState,
     ) -> RedisResponse {
         let vs = st
             .lpush_vs

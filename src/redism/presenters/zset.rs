@@ -20,7 +20,7 @@ impl SortedSetsPresenter {
     pub fn zadd(
         conn: &mut redis::Connection,
         hm: &mut HashMap<String, Vec<String>>,
-        st: &mut RedisZSetsState,
+        st: &RedisZSetsState,
     ) -> RedisResponse {
         let s = st.zadd_score.parse::<f64>().unwrap_or(0.0);
 
@@ -32,7 +32,7 @@ impl SortedSetsPresenter {
     pub fn zrem(
         conn: &mut redis::Connection,
         hm: &mut HashMap<String, Vec<String>>,
-        st: &mut RedisZSetsState,
+        st: &RedisZSetsState,
     ) -> RedisResponse {
         SortedSetsPresenter::write_zset_operation(conn, "ZREM", &st.zrem_k, hm, |conn| {
             conn.zrem(&st.zrem_k, st.zrem_vs.split(' ').collect::<Vec<&str>>())
@@ -42,7 +42,7 @@ impl SortedSetsPresenter {
     pub fn zmpop(
         conn: &mut redis::Connection,
         hm: &mut HashMap<String, Vec<String>>,
-        st: &mut RedisZSetsState,
+        st: &RedisZSetsState,
     ) -> RedisResponse {
         let ks = st.zmpop_ks.split(' ').collect::<Vec<&str>>();
         let count = st.zmpop_count.parse::<isize>().unwrap_or_default();
@@ -69,7 +69,7 @@ impl SortedSetsPresenter {
         }
     }
 
-    pub fn zrandmember(conn: &mut redis::Connection, st: &mut RedisZSetsState) -> RedisResponse {
+    pub fn zrandmember(conn: &mut redis::Connection, st: &RedisZSetsState) -> RedisResponse {
         let k = st.zrandmember_k.clone();
         let count = st.zrandmember_count.parse::<isize>().unwrap_or(1);
         let response = if count <= 1 {
@@ -81,11 +81,11 @@ impl SortedSetsPresenter {
         read_operation("ZRANDMEMBER", response)
     }
 
-    pub fn zcard(conn: &mut redis::Connection, st: &mut RedisZSetsState) -> RedisResponse {
+    pub fn zcard(conn: &mut redis::Connection, st: &RedisZSetsState) -> RedisResponse {
         read_operation("ZCARD", conn.zcard(&st.zcard_k))
     }
 
-    pub fn zrange(conn: &mut redis::Connection, st: &mut RedisZSetsState) -> RedisResponse {
+    pub fn zrange(conn: &mut redis::Connection, st: &RedisZSetsState) -> RedisResponse {
         let (start, stop) = (
             st.zrange_start.parse::<isize>(),
             st.zrange_stop.parse::<isize>(),
@@ -105,7 +105,7 @@ impl SortedSetsPresenter {
     pub fn zrangestore(
         conn: &mut redis::Connection,
         hm: &mut HashMap<String, Vec<String>>,
-        st: &mut RedisZSetsState,
+        st: &RedisZSetsState,
     ) -> RedisResponse {
         let (start, stop) = (
             st.zrange_start.parse::<isize>(),
@@ -138,7 +138,7 @@ impl SortedSetsPresenter {
         }
     }
 
-    pub fn zrangebylex(conn: &mut redis::Connection, st: &mut RedisZSetsState) -> RedisResponse {
+    pub fn zrangebylex(conn: &mut redis::Connection, st: &RedisZSetsState) -> RedisResponse {
         let (min, max) = (
             st.zrangebylex_min.parse::<isize>(),
             st.zrangebylex_max.parse::<isize>(),
@@ -154,7 +154,7 @@ impl SortedSetsPresenter {
         }
     }
 
-    pub fn zrangebyscore(conn: &mut redis::Connection, st: &mut RedisZSetsState) -> RedisResponse {
+    pub fn zrangebyscore(conn: &mut redis::Connection, st: &RedisZSetsState) -> RedisResponse {
         let (min, max) = (
             st.zrangebyscore_min.parse::<isize>(),
             st.zrangebyscore_max.parse::<isize>(),
@@ -171,7 +171,7 @@ impl SortedSetsPresenter {
         }
     }
 
-    pub fn zinter(conn: &mut redis::Connection, st: &mut RedisZSetsState) -> RedisResponse {
+    pub fn zinter(conn: &mut redis::Connection, st: &RedisZSetsState) -> RedisResponse {
         let ks = st.zinter_ks.split(' ').collect::<Vec<&str>>();
         let result = redis::cmd("ZINTER")
             .arg(ks.len())
@@ -181,7 +181,7 @@ impl SortedSetsPresenter {
         read_operation("ZINTER", result)
     }
 
-    pub fn zintercard(conn: &mut redis::Connection, st: &mut RedisZSetsState) -> RedisResponse {
+    pub fn zintercard(conn: &mut redis::Connection, st: &RedisZSetsState) -> RedisResponse {
         let ks = st.zintercard_ks.split(' ').collect::<Vec<&str>>();
         let result = redis::cmd("ZINTECARD")
             .arg(ks.len())
@@ -194,7 +194,7 @@ impl SortedSetsPresenter {
     pub fn zinterstore(
         conn: &mut redis::Connection,
         hm: &mut HashMap<String, Vec<String>>,
-        st: &mut RedisZSetsState,
+        st: &RedisZSetsState,
     ) -> RedisResponse {
         let ks = st.zinterstore_ks.split(' ').collect::<Vec<&str>>();
 
@@ -210,7 +210,7 @@ impl SortedSetsPresenter {
     pub fn zunionstore(
         conn: &mut redis::Connection,
         hm: &mut HashMap<String, Vec<String>>,
-        st: &mut RedisZSetsState,
+        st: &RedisZSetsState,
     ) -> RedisResponse {
         let ks = st.zunionstore_ks.split(' ').collect::<Vec<&str>>();
 
@@ -229,18 +229,18 @@ impl SortedSetsPresenter {
         )
     }
 
-    pub fn zrank(conn: &mut redis::Connection, st: &mut RedisZSetsState) -> RedisResponse {
+    pub fn zrank(conn: &mut redis::Connection, st: &RedisZSetsState) -> RedisResponse {
         read_operation("ZRANK", conn.zrank(&st.zrank_k, &st.zrank_m))
     }
 
-    pub fn zrevrank(conn: &mut redis::Connection, st: &mut RedisZSetsState) -> RedisResponse {
+    pub fn zrevrank(conn: &mut redis::Connection, st: &RedisZSetsState) -> RedisResponse {
         read_operation("ZREVRANK", conn.zrevrank(&st.zrevrank_k, &st.zrevrank_m))
     }
 
     pub fn zremrangebyrank(
         conn: &mut redis::Connection,
         hm: &mut HashMap<String, Vec<String>>,
-        st: &mut RedisZSetsState,
+        st: &RedisZSetsState,
     ) -> RedisResponse {
         let (b, e) = (
             st.zremrangebyrank_start.parse::<isize>(),

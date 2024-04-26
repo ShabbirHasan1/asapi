@@ -21,7 +21,7 @@ impl JsonPresenter {
     pub fn json_toggle(
         conn: &mut redis::Connection,
         jsons: &mut BTreeMap<String, String>,
-        st: &mut RedisJsonState,
+        st: &RedisJsonState,
     ) -> RedisResponse {
         JsonPresenter::_write_json_operation(
             conn,
@@ -35,7 +35,7 @@ impl JsonPresenter {
     pub fn json_merge(
         conn: &mut redis::Connection,
         jsons: &mut BTreeMap<String, String>,
-        st: &mut RedisJsonState,
+        st: &RedisJsonState,
     ) -> RedisResponse {
         JsonPresenter::_write_json_operation(
             conn,
@@ -52,7 +52,7 @@ impl JsonPresenter {
         )
     }
 
-    pub fn json_type(conn: &mut redis::Connection, st: &mut RedisJsonState) -> RedisResponse {
+    pub fn json_type(conn: &mut redis::Connection, st: &RedisJsonState) -> RedisResponse {
         read_operation(
             "JSON.TYPE",
             conn.json_type(&st.json_type_k, &st.json_type_p),
@@ -62,7 +62,7 @@ impl JsonPresenter {
     pub fn json_nummultby(
         conn: &mut redis::Connection,
         jsons: &mut BTreeMap<String, String>,
-        st: &mut RedisJsonState,
+        st: &RedisJsonState,
     ) -> RedisResponse {
         JsonPresenter::_write_json_operation(
             conn,
@@ -82,7 +82,7 @@ impl JsonPresenter {
     pub fn json_numincrby(
         conn: &mut redis::Connection,
         jsons: &mut BTreeMap<String, String>,
-        st: &mut RedisJsonState,
+        st: &RedisJsonState,
     ) -> RedisResponse {
         JsonPresenter::_write_json_operation(
             conn,
@@ -102,7 +102,7 @@ impl JsonPresenter {
     pub fn json_arrtrim(
         conn: &mut redis::Connection,
         jsons: &mut BTreeMap<String, String>,
-        st: &mut RedisJsonState,
+        st: &RedisJsonState,
     ) -> RedisResponse {
         let callback = |conn: &mut redis::Connection| {
             conn.json_arr_trim(
@@ -125,7 +125,7 @@ impl JsonPresenter {
     pub fn json_arrpop(
         conn: &mut redis::Connection,
         jsons: &mut BTreeMap<String, String>,
-        st: &mut RedisJsonState,
+        st: &RedisJsonState,
     ) -> RedisResponse {
         let callback = |conn: &mut redis::Connection| {
             conn.json_arr_pop(
@@ -147,7 +147,7 @@ impl JsonPresenter {
     pub fn json_arrinsert(
         conn: &mut redis::Connection,
         jsons: &mut BTreeMap<String, String>,
-        st: &mut RedisJsonState,
+        st: &RedisJsonState,
     ) -> RedisResponse {
         let vs = &st.json_arrinsert_vs.split(' ').collect::<Vec<&str>>();
         let callback = |conn: &mut redis::Connection| {
@@ -168,14 +168,14 @@ impl JsonPresenter {
         )
     }
 
-    pub fn json_arrlen(conn: &mut redis::Connection, st: &mut RedisJsonState) -> RedisResponse {
+    pub fn json_arrlen(conn: &mut redis::Connection, st: &RedisJsonState) -> RedisResponse {
         read_operation(
             "JSON.ARRLEN",
             conn.json_arr_len(&st.json_arrlen_k, &st.json_arrlen_p),
         )
     }
 
-    pub fn json_arrindex(conn: &mut redis::Connection, st: &mut RedisJsonState) -> RedisResponse {
+    pub fn json_arrindex(conn: &mut redis::Connection, st: &RedisJsonState) -> RedisResponse {
         let (start, stop) = (
             st.json_arrindex_start.parse::<isize>().unwrap_or_default(),
             st.json_arrindex_stop.parse::<isize>().unwrap_or_default(),
@@ -194,7 +194,7 @@ impl JsonPresenter {
     pub fn json_arrappend(
         conn: &mut redis::Connection,
         jsons: &mut BTreeMap<String, String>,
-        st: &mut RedisJsonState,
+        st: &RedisJsonState,
     ) -> RedisResponse {
         let vs = &st.json_arrappend_vs.split(' ').collect::<Vec<&str>>();
         let callback = |conn: &mut redis::Connection| {
@@ -213,7 +213,7 @@ impl JsonPresenter {
     pub fn json_strappend(
         conn: &mut redis::Connection,
         jsons: &mut BTreeMap<String, String>,
-        st: &mut RedisJsonState,
+        st: &RedisJsonState,
     ) -> RedisResponse {
         let callback = |conn: &mut redis::Connection| {
             conn.json_str_append(
@@ -235,7 +235,7 @@ impl JsonPresenter {
     pub fn json_clear(
         conn: &mut redis::Connection,
         jsons: &mut BTreeMap<String, String>,
-        st: &mut RedisJsonState,
+        st: &RedisJsonState,
     ) -> RedisResponse {
         let callback = |conn: &mut redis::Connection| {
             redis::cmd("JSON.CLEAR")
@@ -256,7 +256,7 @@ impl JsonPresenter {
     pub fn json_forget(
         conn: &mut redis::Connection,
         jsons: &mut BTreeMap<String, String>,
-        st: &mut RedisJsonState,
+        st: &RedisJsonState,
     ) -> RedisResponse {
         let callback = |conn: &mut redis::Connection| {
             redis::cmd("JSON.DEL")
@@ -277,7 +277,7 @@ impl JsonPresenter {
     pub fn json_del(
         conn: &mut redis::Connection,
         jsons: &mut BTreeMap<String, String>,
-        st: &mut RedisJsonState,
+        st: &RedisJsonState,
     ) -> RedisResponse {
         let callback = |conn: &mut redis::Connection| conn.json_del(&st.json_del_k, &st.json_del_p);
         JsonPresenter::_write_json_operation(
@@ -292,7 +292,7 @@ impl JsonPresenter {
     pub fn json_set(
         conn: &mut redis::Connection,
         jsons: &mut BTreeMap<String, String>,
-        st: &mut RedisJsonState,
+        st: &RedisJsonState,
     ) -> RedisResponse {
         let k = st.json_set_k.clone();
         let callback = |conn: &mut redis::Connection| match st.json_set_nx_xx.as_ref() {
@@ -320,30 +320,30 @@ impl JsonPresenter {
         )
     }
 
-    pub fn json_mget(conn: &mut redis::Connection, st: &mut RedisJsonState) -> RedisResponse {
+    pub fn json_mget(conn: &mut redis::Connection, st: &RedisJsonState) -> RedisResponse {
         let ks = st.json_mget_ks.split(' ').collect::<Vec<&str>>();
         JsonPresenter::_json_get(conn, "JSON.MGET", &ks, &st.json_mget_p)
     }
 
-    pub fn json_get(conn: &mut redis::Connection, st: &mut RedisJsonState) -> RedisResponse {
+    pub fn json_get(conn: &mut redis::Connection, st: &RedisJsonState) -> RedisResponse {
         JsonPresenter::_json_get(conn, "JSON.GET", &[&st.json_get_k], &st.json_mget_p)
     }
 
-    pub fn json_objlen(conn: &mut redis::Connection, st: &mut RedisJsonState) -> RedisResponse {
+    pub fn json_objlen(conn: &mut redis::Connection, st: &RedisJsonState) -> RedisResponse {
         read_operation(
             "JSON.OBJLEN",
             conn.json_obj_len(&st.json_objlen_k, &st.json_objlen_p),
         )
     }
 
-    pub fn json_objkeys(conn: &mut redis::Connection, st: &mut RedisJsonState) -> RedisResponse {
+    pub fn json_objkeys(conn: &mut redis::Connection, st: &RedisJsonState) -> RedisResponse {
         read_operation(
             "JSON.OBJKEYS",
             conn.json_obj_keys(&st.json_objkeys_k, &st.json_objkeys_p),
         )
     }
 
-    pub fn json_strlen(conn: &mut redis::Connection, st: &mut RedisJsonState) -> RedisResponse {
+    pub fn json_strlen(conn: &mut redis::Connection, st: &RedisJsonState) -> RedisResponse {
         read_operation(
             "JSON.STRLEN",
             conn.json_str_len(&st.json_strlen_k, &st.json_strlen_p),

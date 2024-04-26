@@ -1,5 +1,3 @@
-use std::collections::BTreeMap;
-
 // -------------------------------------------------------------------------
 // Copyright (C) 2024 Fernando López Laso - All Rights Reserved
 //
@@ -10,6 +8,7 @@ use std::collections::BTreeMap;
 use eframe::egui;
 use egui_extras::{Size, StripBuilder};
 use redis::{Connection, RedisResult};
+use std::collections::BTreeMap;
 
 use crate::{
     common::internationalization::I18n,
@@ -18,7 +17,7 @@ use crate::{
     redism::{
         connection::RedisMenu,
         presenters::{delete_key, run_cmd, string::StringPresenter, RedisResponse},
-        state::RedisStringState,
+        state::{RedisConnectionDefinition, RedisStringState},
         view::RedisView,
     },
     ui_button_w, ui_button_w100, ui_button_w50,
@@ -139,7 +138,8 @@ impl RedisView {
                             });
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "LCS") {
-                                    self.state.last_result = self.run_read(StringPresenter::lcs);
+                                    self.state.last_result =
+                                        self.run_read_string(StringPresenter::lcs);
                                 }
                             });
                         });
@@ -167,7 +167,8 @@ impl RedisView {
                             });
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "INCR") {
-                                    self.state.last_result = self.run_write(StringPresenter::incr);
+                                    self.state.last_result =
+                                        self.run_write_string(StringPresenter::incr);
                                 }
                             });
                         });
@@ -188,7 +189,7 @@ impl RedisView {
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "INCRBY") {
                                     self.state.last_result =
-                                        self.run_write(StringPresenter::incr_by);
+                                        self.run_write_string(StringPresenter::incr_by);
                                 }
                             });
                         });
@@ -209,7 +210,7 @@ impl RedisView {
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "INCRBYFLOAT") {
                                     self.state.last_result =
-                                        self.run_write(StringPresenter::incr_byfloat);
+                                        self.run_write_string(StringPresenter::incr_byfloat);
                                 }
                             });
                         });
@@ -236,7 +237,8 @@ impl RedisView {
                             });
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "DECR") {
-                                    self.state.last_result = self.run_write(StringPresenter::decr);
+                                    self.state.last_result =
+                                        self.run_write_string(StringPresenter::decr);
                                 }
                             });
                         });
@@ -257,7 +259,7 @@ impl RedisView {
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "DECRBY") {
                                     self.state.last_result =
-                                        self.run_write(StringPresenter::decr_by);
+                                        self.run_write_string(StringPresenter::decr_by);
                                 }
                             });
                         });
@@ -293,13 +295,14 @@ impl RedisView {
                             });
                             strip.cell(|ui| {
                                 if ui_button_w50!(ui, "SET") {
-                                    self.state.last_result = self.run_write(StringPresenter::set);
+                                    self.state.last_result =
+                                        self.run_write_string(StringPresenter::set);
                                 }
                             });
                             strip.cell(|ui| {
                                 if ui_button_w50!(ui, "SETNX") {
                                     self.state.last_result =
-                                        self.run_write(StringPresenter::set_nx);
+                                        self.run_write_string(StringPresenter::set_nx);
                                 }
                             });
                         });
@@ -319,7 +322,7 @@ impl RedisView {
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "SETRANGE") {
                                     self.state.last_result =
-                                        self.run_write(StringPresenter::set_range);
+                                        self.run_write_string(StringPresenter::set_range);
                                 }
                             });
                         });
@@ -339,7 +342,7 @@ impl RedisView {
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "APPEND") {
                                     self.state.last_result =
-                                        self.run_write(StringPresenter::append);
+                                        self.run_write_string(StringPresenter::append);
                                 }
                             });
                         });
@@ -369,13 +372,14 @@ impl RedisView {
                             });
                             strip.cell(|ui| {
                                 if ui_button_w!(ui, "GET", 26.0) {
-                                    self.state.last_result = self.run_read(StringPresenter::get);
+                                    self.state.last_result =
+                                        self.run_read_string(StringPresenter::get);
                                 }
                             });
                             strip.cell(|ui| {
                                 if ui_button_w!(ui, "GETDEL", 64.0) {
                                     self.state.last_result =
-                                        self.run_write(StringPresenter::get_del);
+                                        self.run_write_string(StringPresenter::get_del);
                                 }
                             });
                         });
@@ -396,7 +400,7 @@ impl RedisView {
                             strip.cell(|ui| {
                                 if ui_button_w50!(ui, "GETSET") {
                                     self.state.last_result =
-                                        self.run_write(StringPresenter::get_set);
+                                        self.run_write_string(StringPresenter::get_set);
                                 }
                             });
                         });
@@ -425,7 +429,7 @@ impl RedisView {
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "GETRANGE") {
                                     self.state.last_result =
-                                        self.run_read(StringPresenter::get_range);
+                                        self.run_read_string(StringPresenter::get_range);
                                 }
                             });
                         });
@@ -445,7 +449,8 @@ impl RedisView {
                             });
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "GETEX") {
-                                    self.state.last_result = self.run_read(StringPresenter::get_ex);
+                                    self.state.last_result =
+                                        self.run_read_string(StringPresenter::get_ex);
                                 }
                             });
                         });
@@ -480,7 +485,7 @@ impl RedisView {
     }
 
     #[inline(always)]
-    fn run_read(
+    fn run_read_string(
         &mut self,
         mut cb: impl FnMut(&mut Connection, &RedisStringState) -> RedisResponse,
     ) -> Option<RedisResponse> {
@@ -490,7 +495,7 @@ impl RedisView {
     }
 
     #[inline(always)]
-    fn run_write(
+    fn run_write_string(
         &mut self,
         mut cb: impl FnMut(
             &mut Connection,

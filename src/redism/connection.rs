@@ -102,7 +102,7 @@ pub fn scan(state: &mut RedisLocalState, option: RedisMenu) -> RedisResult<()> {
                     "zset" => {
                         if option == RedisMenu::SortedSet || option == RedisMenu::All {
                             let value = con.zrange(&key, 0, -1).unwrap();
-                            state.sorted_sets.insert(key, value);
+                            state.zsets.insert(key, value);
                         }
                     }
                     "hash" => {

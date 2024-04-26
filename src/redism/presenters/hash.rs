@@ -17,7 +17,7 @@ use super::{read_operation, RedisResponse};
 pub struct HashPresenter;
 
 impl HashPresenter {
-    pub fn hrandfield(conn: &mut redis::Connection, st: &mut RedisHashState) -> RedisResponse {
+    pub fn hrandfield(conn: &mut redis::Connection, st: &RedisHashState) -> RedisResponse {
         let result = redis::cmd("STRLEN")
             .arg(&st.hrandfield_k)
             .arg(&st.hrandfield_count)
@@ -27,11 +27,11 @@ impl HashPresenter {
         read_operation("HRANDFIELD", result)
     }
 
-    pub fn hexists(conn: &mut redis::Connection, st: &mut RedisHashState) -> RedisResponse {
+    pub fn hexists(conn: &mut redis::Connection, st: &RedisHashState) -> RedisResponse {
         read_operation("HEXISTS", conn.hexists(&st.hexists_f, &st.hexists_k))
     }
 
-    pub fn hstrlen(conn: &mut redis::Connection, st: &mut RedisHashState) -> RedisResponse {
+    pub fn hstrlen(conn: &mut redis::Connection, st: &RedisHashState) -> RedisResponse {
         let result = redis::cmd("STRLEN")
             .arg(&st.hstrlen_k)
             .arg(&st.hstrlen_f)
@@ -40,14 +40,14 @@ impl HashPresenter {
         read_operation("HSTRLEN", result)
     }
 
-    pub fn hlen(conn: &mut redis::Connection, st: &mut RedisHashState) -> RedisResponse {
+    pub fn hlen(conn: &mut redis::Connection, st: &RedisHashState) -> RedisResponse {
         read_operation("HLEN", conn.hlen(&st.hlen_k))
     }
 
     pub fn hincrbyfloat(
         conn: &mut redis::Connection,
         hm: &mut HashMap<String, Vec<(String, String)>>,
-        st: &mut RedisHashState,
+        st: &RedisHashState,
     ) -> RedisResponse {
         let f = st.hincrbyfloat_increment.parse::<f64>().unwrap_or_default();
 
@@ -64,7 +64,7 @@ impl HashPresenter {
     pub fn hincrby(
         conn: &mut redis::Connection,
         hm: &mut HashMap<String, Vec<(String, String)>>,
-        st: &mut RedisHashState,
+        st: &RedisHashState,
     ) -> RedisResponse {
         let i = st.hincrby_increment.parse::<i64>().unwrap_or_default();
 
@@ -87,7 +87,7 @@ impl HashPresenter {
     pub fn hsetnx(
         conn: &mut redis::Connection,
         hm: &mut HashMap<String, Vec<(String, String)>>,
-        st: &mut RedisHashState,
+        st: &RedisHashState,
     ) -> RedisResponse {
         let callback = |conn: &mut Connection| conn.hset_nx(&st.hsetnx_k, &st.hsetnx_f, &st.hset_v);
 
@@ -97,7 +97,7 @@ impl HashPresenter {
     pub fn hset(
         conn: &mut redis::Connection,
         hm: &mut HashMap<String, Vec<(String, String)>>,
-        st: &mut RedisHashState,
+        st: &RedisHashState,
     ) -> RedisResponse {
         let callback = |conn: &mut Connection| conn.hset(&st.hset_k, &st.hset_f, &st.hset_v);
 
@@ -107,7 +107,7 @@ impl HashPresenter {
     pub fn hdel(
         conn: &mut redis::Connection,
         hm: &mut HashMap<String, Vec<(String, String)>>,
-        st: &mut RedisHashState,
+        st: &RedisHashState,
     ) -> RedisResponse {
         let fs = st.hdel_fs.split(' ').collect::<Vec<&str>>();
         let callback = |conn: &mut Connection| conn.hdel(&st.hdel_k, &fs);
@@ -115,24 +115,24 @@ impl HashPresenter {
         HashPresenter::_write_hash_operation(conn, "HDEL", &st.hdel_k, hm, callback)
     }
 
-    pub fn hvals(conn: &mut redis::Connection, st: &mut RedisHashState) -> RedisResponse {
+    pub fn hvals(conn: &mut redis::Connection, st: &RedisHashState) -> RedisResponse {
         read_operation("HVALS", conn.hvals(&st.hvals_k))
     }
 
-    pub fn hkeys(conn: &mut redis::Connection, st: &mut RedisHashState) -> RedisResponse {
+    pub fn hkeys(conn: &mut redis::Connection, st: &RedisHashState) -> RedisResponse {
         read_operation("HKEYS", conn.hkeys(&st.hkeys_k))
     }
 
-    pub fn hgetall(conn: &mut redis::Connection, st: &mut RedisHashState) -> RedisResponse {
+    pub fn hgetall(conn: &mut redis::Connection, st: &RedisHashState) -> RedisResponse {
         read_operation("HGETALL", conn.hgetall(&st.hgetall_k))
     }
 
-    pub fn hmget(conn: &mut redis::Connection, st: &mut RedisHashState) -> RedisResponse {
+    pub fn hmget(conn: &mut redis::Connection, st: &RedisHashState) -> RedisResponse {
         let fs = st.hmget_fs.split(' ').collect::<Vec<&str>>();
         read_operation("HMGET", conn.hget(&st.hmget_k, &fs))
     }
 
-    pub fn hget(conn: &mut redis::Connection, st: &mut RedisHashState) -> RedisResponse {
+    pub fn hget(conn: &mut redis::Connection, st: &RedisHashState) -> RedisResponse {
         read_operation("HGET", conn.hget(&st.hget_k, &st.hget_f))
     }
 
