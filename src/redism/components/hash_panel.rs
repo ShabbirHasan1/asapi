@@ -43,7 +43,7 @@ impl RedisView {
                     ui.separator();
                 });
 
-            ui_response_panel(ui, &self.state.opt_last_result);
+            ui_response_panel(ui, &self.state.last_result);
         }
 
         self.hashes_display(ui, i18n);
@@ -78,7 +78,7 @@ impl RedisView {
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "HEXISTS") {
-                                    self.state.opt_last_result =
+                                    self.state.last_result =
                                         run_cmd(&self.state.current_connection, |conn| {
                                             HashPresenter::hexists(conn, &mut self.state.hash_st)
                                         });
@@ -111,7 +111,7 @@ impl RedisView {
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "HRANDFIELD") {
-                                    self.state.opt_last_result =
+                                    self.state.last_result =
                                         run_cmd(&self.state.current_connection, |conn| {
                                             HashPresenter::hrandfield(conn, &mut self.state.hash_st)
                                         });
@@ -142,7 +142,7 @@ impl RedisView {
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "HLEN") {
-                                    self.state.opt_last_result =
+                                    self.state.last_result =
                                         run_cmd(&self.state.current_connection, |conn| {
                                             HashPresenter::hlen(conn, &mut self.state.hash_st)
                                         });
@@ -175,7 +175,7 @@ impl RedisView {
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "HSTRLEN") {
-                                    self.state.opt_last_result =
+                                    self.state.last_result =
                                         run_cmd(&self.state.current_connection, |conn| {
                                             HashPresenter::hstrlen(conn, &mut self.state.hash_st)
                                         });
@@ -218,7 +218,7 @@ impl RedisView {
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "HDEL") {
-                                    self.state.opt_last_result =
+                                    self.state.last_result =
                                         run_cmd(&self.state.current_connection, |conn| {
                                             HashPresenter::hdel(
                                                 conn,
@@ -264,7 +264,7 @@ impl RedisView {
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "HSET") {
-                                    self.state.opt_last_result =
+                                    self.state.last_result =
                                         run_cmd(&self.state.current_connection, |conn| {
                                             HashPresenter::hset(
                                                 conn,
@@ -310,7 +310,7 @@ impl RedisView {
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "HSETNX") {
-                                    self.state.opt_last_result =
+                                    self.state.last_result =
                                         run_cmd(&self.state.current_connection, |conn| {
                                             HashPresenter::hsetnx(
                                                 conn,
@@ -356,7 +356,7 @@ impl RedisView {
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "HINCRBY") {
-                                    self.state.opt_last_result =
+                                    self.state.last_result =
                                         run_cmd(&self.state.current_connection, |conn| {
                                             HashPresenter::hincrby(
                                                 conn,
@@ -402,7 +402,7 @@ impl RedisView {
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "HINCRBYFLOAT") {
-                                    self.state.opt_last_result =
+                                    self.state.last_result =
                                         run_cmd(&self.state.current_connection, |conn| {
                                             HashPresenter::hincrbyfloat(
                                                 conn,
@@ -449,7 +449,7 @@ impl RedisView {
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "HGET") {
-                                    self.state.opt_last_result =
+                                    self.state.last_result =
                                         run_cmd(&self.state.current_connection, |conn| {
                                             HashPresenter::hget(conn, &mut self.state.hash_st)
                                         });
@@ -482,7 +482,7 @@ impl RedisView {
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "HMGET") {
-                                    self.state.opt_last_result =
+                                    self.state.last_result =
                                         run_cmd(&self.state.current_connection, |conn| {
                                             HashPresenter::hmget(conn, &mut self.state.hash_st)
                                         });
@@ -506,7 +506,7 @@ impl RedisView {
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "HGETALL") {
-                                    self.state.opt_last_result =
+                                    self.state.last_result =
                                         run_cmd(&self.state.current_connection, |conn| {
                                             HashPresenter::hgetall(conn, &mut self.state.hash_st)
                                         });
@@ -530,7 +530,7 @@ impl RedisView {
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "HKEYS") {
-                                    self.state.opt_last_result =
+                                    self.state.last_result =
                                         run_cmd(&self.state.current_connection, |conn| {
                                             HashPresenter::hkeys(conn, &mut self.state.hash_st)
                                         });
@@ -554,7 +554,7 @@ impl RedisView {
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "HVALS") {
-                                    self.state.opt_last_result =
+                                    self.state.last_result =
                                         run_cmd(&self.state.current_connection, |conn| {
                                             HashPresenter::hvals(conn, &mut self.state.hash_st)
                                         });

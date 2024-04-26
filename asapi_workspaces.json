@@ -7,7 +7,12 @@
   "selected_view": "Redis",
   "show_settings": false,
   "redis": {
-    "show_sidebar": false,
-    "connections": []
+    "show_sidebar": true,
+    "connections": [
+      {
+        "host": "localhost",
+        "port": "6380"
+      }
+    ]
   }
 }

@@ -178,22 +178,22 @@ impl RedisView {
                                 Ok(conn) => {
                                     self.state.current_connection_idx = idx;
                                     self.state.conn = Some(conn);
-                                    self.state.last_result = "".to_owned();
+                                    self.state.last_result = None;
                                     let option = self.state.selected_menu;
                                     if let Err(err) = presenter::scan(&mut self.state, option) {
-                                        self.state.last_result = format!("ERROR {:?}", err);
+                                        self.state.last_result = Some(Err(err.to_string()));
                                     }
                                 }
                                 Err(err) => {
                                     self.state.conn = None;
-                                    self.state.last_result = format!("ERROR {:?}", err);
+                                    self.state.last_result = Some(Err(err.to_string()));
                                 }
                             }
                         }
-                        self.state.last_result = "".to_owned();
+                        self.state.last_result = None;
                         let option = self.state.selected_menu;
                         if let Err(err) = presenter::scan(&mut self.state, option) {
-                            self.state.last_result = format!("ERROR {:?}", err);
+                            self.state.last_result = Some(Err(err.to_string()));
                         }
                     }
                 });

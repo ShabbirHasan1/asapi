@@ -96,14 +96,12 @@ impl RedisView {
                             Ok(result) => {
                                 let option = self.state.selected_menu;
                                 let _ = presenter::scan(&mut self.state, option);
-                                self.state.last_result = result.clone();
-                                self.state.opt_last_result = Some(Ok(result.clone()));
+                                self.state.last_result = Some(Ok(result));
                             }
                             // TODO: Change color
                             Err(e) => {
                                 info!("Error: {:?}", e);
-                                self.state.last_result = e.clone();
-                                self.state.opt_last_result = Some(Err(e.clone()));
+                                self.state.last_result = Some(Err(e));
                             }
                         }
                         if let Err(e) =
@@ -141,7 +139,7 @@ impl RedisView {
                     }
                 });
 
-                ui_response_panel(ui, &self.state.opt_last_result);
+                ui_response_panel(ui, &self.state.last_result);
             }
 
             // ===========================================

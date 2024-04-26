@@ -6,17 +6,14 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
+use crate::{error, info};
 use redis::streams::{StreamReadOptions, StreamReadReply};
 use redis::JsonCommands;
 use redis::{self, Client, Commands, Connection, Msg as PubSubMsg, RedisError, RedisResult, Value};
 use std::collections::HashMap;
-use std::num::NonZeroUsize;
-
-use crate::redism::parser::redis_value_to_string;
-use crate::{error, info};
 
 use super::presenters::RedisResponse;
-use super::state::{RedisConnectionDefinition, RedisListState, RedisLocalState};
+use super::state::RedisLocalState;
 
 #[derive(Clone, Debug, PartialEq, Copy, Default)]
 pub enum RedisMenu {
@@ -27,6 +24,7 @@ pub enum RedisMenu {
     Hash,
     SortedSet,
     Json,
+    #[default]
     Stream,
     PubSub,
 }
@@ -47,13 +45,6 @@ pub fn create_conn(host: &str, port: i16) -> Result<redis::Connection, RedisErro
 pub fn create_conn_with_default(host: &str, port: &str) -> Result<redis::Connection, RedisError> {
     let port = port.parse::<i16>().unwrap_or(6379); // Using 6379 as default value;
     create_conn(host, port)
-}
-
-#[inline(always)]
-fn create_redis_connection(
-    conn: &RedisConnectionDefinition,
-) -> Result<redis::Connection, RedisError> {
-    create_conn_with_default(&conn.host, &conn.port)
 }
 
 /// Escaneo de toda la instancia de redis.
@@ -151,18 +142,18 @@ pub fn scan(state: &mut RedisLocalState, option: RedisMenu) -> RedisResult<()> {
     Ok(())
 }
 
-pub fn run_redis_command<F: FnMut(&mut redis::Connection) -> String>(
-    conn_def: &RedisConnectionDefinition,
-    mut cb: F,
-) -> String {
-    let connection = create_redis_connection(conn_def);
+// pub fn run_redis_command<F: FnMut(&mut redis::Connection) -> String>(
+//     conn_def: &RedisConnectionDefinition,
+//     mut cb: F,
+// ) -> String {
+//     let connection = create_redis_connection(conn_def);
 
-    if let Ok(mut conn) = connection {
-        cb(&mut conn)
-    } else {
-        "ERROR :: Not able to connect to {conn}.".to_string()
-    }
-}
+//     if let Ok(mut conn) = connection {
+//         cb(&mut conn)
+//     } else {
+//         "ERROR :: Not able to connect to {conn}.".to_string()
+//     }
+// }
 
 // Leemos los datos de un stream concreto
 // TODO: ... no tengo muy claro aún para qué lo gasto.
@@ -187,29 +178,9 @@ pub fn read_stream_id(
                 info!("Stream keys: {}, asked for {}", entry.key, id);
                 info!("  {}", entry.ids.len());
                 for stream_id in entry.ids {
-                    // if stream_id.id != id {
-                    //     continue;
-                    // }
                     info!(" - entry id: {}", stream_id.id);
                     state.insert(stream_id.id, stream_id.map.clone());
                     info!("{:?}", stream_id.map);
-                    // .stream_id_values
-                    // for (k, v) in stream_id.map {
-                    //     match v {
-                    //         redis::Value::Nil => info!("     NIL       k: {}", k),
-                    //         redis::Value::Int(i) => info!("     INT       k: {}, {}", k, i),
-                    //         redis::Value::Data(d) => {
-                    //             info!(
-                    //                 "     DATA      k: {}, {}",
-                    //                 k,
-                    //                 String::from_utf8(d).unwrap()
-                    //             )
-                    //         }
-                    //         redis::Value::Bulk(b) => info!("     BULK      k: {}", k),
-                    //         redis::Value::Status(s) => info!("     STATUS    k: {}", k),
-                    //         redis::Value::Okay => info!("     OKAY      k: {}", k),
-                    //     }
-                    // }
                 }
             }
         }
@@ -313,343 +284,4 @@ pub fn subscribe_to_channel_std_thread(
         Ok(())
     });
     Ok(())
-}
-
-pub enum NumericValue {
-    Int,
-    Float,
-}
-
-pub struct StringPresenter;
-
-impl StringPresenter {
-    pub fn lcs(st: &mut RedisLocalState) {
-        let connection = create_redis_connection(&st.current_connection);
-
-        if let Ok(mut conn) = connection {
-            let is_len_filled = !st.string_st.lcs_len.is_empty();
-            let is_idx_filled = !st.string_st.lcs_idx.is_empty();
-
-            // let response = redis::cmd(command).arg(&args).query::<Value>(&mut c);
-            let result = if is_len_filled && is_idx_filled {
-                redis::cmd("LCS")
-                    .arg(&st.string_st.lcs_k1)
-                    .arg(&st.string_st.lcs_k2)
-                    .arg(&st.string_st.lcs_len)
-                    .arg(&st.string_st.lcs_idx)
-                    .query::<Value>(&mut conn)
-            } else {
-                redis::cmd("LCS")
-                    .arg(&st.string_st.lcs_k1)
-                    .arg(&st.string_st.lcs_k2)
-                    .query::<Value>(&mut conn)
-            };
-
-            match result {
-                Ok(v) => {
-                    let parsed_v = redis_value_to_string(&v);
-                    st.last_result = format!("LCS :: {parsed_v}");
-                }
-                Err(err) => {
-                    st.last_result = format!("ERROR LCS :: {err:?}");
-                }
-            }
-        }
-    }
-
-    pub fn str_len(st: &mut RedisLocalState) {
-        let connection = create_redis_connection(&st.current_connection);
-
-        if let Ok(mut conn) = connection {
-            let k = st.string_st.strlen_k.clone();
-
-            match conn.strlen::<&str, i64>(&k) {
-                Ok(len) => {
-                    st.last_result = format!("STRLEN :: Key: {k}, Len: {len}");
-                }
-                Err(err) => {
-                    st.last_result = format!("ERROR STRLEN :: {err:?}");
-                }
-            }
-        }
-    }
-
-    pub fn append(st: &mut RedisLocalState) {
-        let connection = create_redis_connection(&st.current_connection);
-
-        if let Ok(mut conn) = connection {
-            let (k, v) = (st.string_st.set_k.clone(), st.string_st.append_str.clone());
-
-            match conn.append::<&str, &str, redis::Value>(&k, &v) {
-                Ok(redis_v) => {
-                    st.strings.insert(
-                        k.clone(),
-                        st.strings.get(&k).unwrap_or(&"".to_string()).to_owned() + &v,
-                    );
-                    st.last_result = format!(
-                        "APPEND :: Resultado: {v} caracteres totales",
-                        v = redis_value_to_string(&redis_v)
-                    );
-                }
-                Err(err) => {
-                    st.last_result = format!("ERROR APPEND :: {err:?}");
-                }
-            }
-        }
-    }
-
-    pub fn set(st: &mut RedisLocalState) {
-        let connection = create_redis_connection(&st.current_connection);
-
-        if let Ok(mut conn) = connection {
-            let (k, v) = (st.string_st.set_k.clone(), st.string_st.set_v.clone());
-            let result = conn.set(&k, &v);
-
-            match result {
-                Ok(rresp) => {
-                    st.strings.insert(k, v);
-                    let parsed_rresp = redis_value_to_string(&rresp);
-                    st.last_result = format!("SET :: {parsed_rresp}");
-                }
-                Err(err) => {
-                    st.last_result = format!("ERROR SET :: {err:?}");
-                }
-            }
-        }
-    }
-
-    pub fn set_nx(st: &mut RedisLocalState) {
-        let connection = create_redis_connection(&st.current_connection);
-
-        if let Ok(mut conn) = connection {
-            let (k, v) = (st.string_st.set_k.clone(), st.string_st.set_v.clone());
-            let result = conn.set_nx(&k, &v);
-
-            match result {
-                Ok(rresp) => {
-                    st.strings.insert(k, v);
-                    let parsed_rresp = redis_value_to_string(&rresp);
-                    st.last_result = format!("SETNX :: {parsed_rresp}");
-                }
-                Err(err) => {
-                    st.last_result = format!("ERROR SETNX: {err:?}");
-                }
-            }
-        }
-    }
-
-    pub fn set_range(st: &mut RedisLocalState) {
-        let connection = create_redis_connection(&st.current_connection);
-
-        if let Ok(mut conn) = connection {
-            let (k, v) = (st.string_st.set_k.clone(), st.string_st.set_v.clone());
-
-            let i_result = st.string_st.set_offset.parse::<isize>();
-
-            match i_result {
-                Ok(i) => {
-                    let result = conn.setrange(&k, i, &v);
-
-                    match result {
-                        Ok(rresp) => {
-                            st.strings.insert(k, v.to_string());
-                            let parsed_rresp = redis_value_to_string(&rresp);
-                            st.last_result = format!("SETRANGE :: {parsed_rresp}");
-                        }
-                        Err(err) => {
-                            st.last_result = format!("ERROR SETRANGE :: {err:?}");
-                        }
-                    }
-                }
-                Err(err) => {
-                    st.last_result = format!("PARSE ERROR :: {err:?}");
-                }
-            }
-        }
-    }
-
-    // Muy rimbombante para ver cómo podía hacerlo. No queda muy bien.
-    pub fn _incr(st: &mut RedisLocalState, v: &str, t: NumericValue) {
-        let connection = create_redis_connection(&st.current_connection);
-
-        if let Ok(mut conn) = connection {
-            let k = st.string_st.incr_k.clone();
-            let response = match t {
-                NumericValue::Int => v
-                    .parse::<i64>()
-                    .map_err(|err| format!("PARSE ERROR :: {err:?}"))
-                    .and_then(|i| {
-                        conn.incr::<&str, i64, redis::Value>(&k, i)
-                            .map_err(|err| format!("{err:?}"))
-                            .map(|v| redis_value_to_string(&v))
-                    }),
-                NumericValue::Float => v
-                    .parse::<f32>()
-                    .map_err(|err| format!("PARSE ERROR :: {err:?}"))
-                    .and_then(|i| {
-                        conn.incr::<&str, f32, redis::Value>(&k, i)
-                            .map_err(|err| format!("{err:?}"))
-                            .map(|v| redis_value_to_string(&v))
-                    }),
-            };
-
-            match response {
-                Ok(v) => {
-                    st.strings.insert(k, v.clone());
-                    st.last_result = format!("INCR :: {v}");
-                }
-                Err(err) => {
-                    st.last_result = format!("ERROR INCR :: {err:?}");
-                }
-            }
-        }
-    }
-
-    pub fn incr(st: &mut RedisLocalState) {
-        Self::_incr(st, "1", NumericValue::Int);
-    }
-
-    pub fn incr_by(st: &mut RedisLocalState) {
-        Self::_incr(st, &st.string_st.incr_by_v.to_owned(), NumericValue::Int);
-    }
-
-    pub fn incr_byfloat(st: &mut RedisLocalState) {
-        Self::_incr(
-            st,
-            &st.string_st.incr_byfloat_v.to_owned(),
-            NumericValue::Float,
-        );
-    }
-
-    pub fn _decr(st: &mut RedisLocalState, v: &str) {
-        let connection = create_redis_connection(&st.current_connection);
-
-        if let Ok(mut conn) = connection {
-            let k = st.string_st.decr_k.clone();
-            let response = v
-                .parse::<i64>()
-                .map_err(|err| format!("{err:?}"))
-                .and_then(|i| {
-                    conn.decr::<&str, i64, redis::Value>(&k, i)
-                        .map_err(|err| format!("{err:?}"))
-                        .map(|value| redis_value_to_string(&value))
-                });
-
-            match response {
-                Ok(v) => {
-                    st.strings.insert(k, v.clone());
-                    st.last_result = format!("DECR :: {v}");
-                }
-                Err(err) => {
-                    st.last_result = format!("ERROR DECR :: {err:?}");
-                }
-            }
-        }
-    }
-
-    pub fn decr(st: &mut RedisLocalState) {
-        Self::_decr(st, "1");
-    }
-
-    pub fn decr_by(st: &mut RedisLocalState) {
-        Self::_decr(st, &st.string_st.decr_by_v.to_owned());
-    }
-
-    pub fn get(st: &mut RedisLocalState) {
-        let connection = create_redis_connection(&st.current_connection);
-
-        if let Ok(mut conn) = connection {
-            let k = st.string_st.get_k.clone();
-            let result = conn.get::<&str, String>(&k);
-
-            st.last_result = match result {
-                Ok(msg) => format!("GET :: Key: {k}, Value: {msg}"),
-                Err(err) => format!("ERROR GET :: {err:?}"),
-            }
-        }
-    }
-
-    pub fn get_del(st: &mut RedisLocalState) {
-        let connection = create_redis_connection(&st.current_connection);
-
-        if let Ok(mut conn) = connection {
-            let k = st.string_st.get_k.clone();
-            let result = conn.get_del::<&str, String>(&k);
-
-            match result {
-                Ok(msg) => {
-                    st.strings.remove(&k);
-                    st.last_result = format!("GETDEL :: Key: {k}, Value: {msg}");
-                }
-                Err(err) => {
-                    st.last_result = format!("ERROR GETDEL :: {err:?}");
-                }
-            }
-        }
-    }
-
-    pub fn get_set(st: &mut RedisLocalState) {
-        let connection = create_redis_connection(&st.current_connection);
-
-        if let Ok(mut conn) = connection {
-            let (k, v) = (st.string_st.get_k.clone(), st.string_st.getset_v.clone());
-            let result = conn.getset::<&str, &str, String>(&k, &v);
-
-            match result {
-                Ok(msg) => {
-                    st.strings.insert(k.clone(), v.to_string());
-                    st.last_result = format!("GETSET :: Key: {k}, Old Value: {msg}");
-                }
-                Err(err) => {
-                    st.last_result = format!("ERROR GETSET :: {err:?}");
-                }
-            }
-        }
-    }
-
-    pub fn get_range(st: &mut RedisLocalState) {
-        let connection = create_redis_connection(&st.current_connection);
-
-        if let Ok(mut conn) = connection {
-            let (k, from_s, to_s) = (
-                st.string_st.get_k.clone(),
-                st.string_st.get_offset_from.clone(),
-                st.string_st.get_offset_to.clone(),
-            );
-
-            if let (Ok(f), Ok(t)) = (from_s.parse::<isize>(), to_s.parse::<isize>()) {
-                let result = conn.getrange::<&str, String>(&k, f, t);
-                st.last_result = match result {
-                    Ok(msg) => format!("GETRANGE :: Key: {k}, Value: {msg}"),
-                    Err(err) => format!("ERROR GETRANGE :: {err:?}"),
-                }
-            }
-        }
-    }
-
-    pub fn get_ex(st: &mut RedisLocalState) {
-        let connection = create_redis_connection(&st.current_connection);
-
-        if let Ok(mut conn) = connection {
-            let (k, expire_at_s) = (
-                st.string_st.get_k.clone(),
-                st.string_st.get_expire_seconds.clone(),
-            );
-
-            if let Ok(ex) = expire_at_s.parse::<usize>() {
-                let result = conn
-                    .get_ex::<&str, String>(&k, redis::Expiry::EX(ex))
-                    .map_or_else(
-                        |err| Err(format!("GETEX :: {err:?}")),
-                        |msg| Ok(format!("GETEX :: Key: {k}, Value: {msg}")),
-                    );
-                st.last_result = result.clone().map_or_else(|e| e, |e| e);
-                st.opt_last_result = Some(result);
-            }
-        }
-    }
-
-    pub fn _get(conn: &mut redis::Connection, k: &str) -> Result<String, RedisError> {
-        conn.get::<&str, String>(k)
-    }
 }

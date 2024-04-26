@@ -10,6 +10,7 @@ pub mod hash;
 pub mod json;
 pub mod list;
 pub mod set;
+pub mod string;
 pub mod zset;
 
 use redis::{Client, RedisError, RedisResult, Value};
@@ -54,15 +55,13 @@ pub fn read_operation(m: &str, result: RedisResult<Value>) -> RedisResponse {
     }
 }
 
+#[inline(always)]
 pub fn run_cmd<F: FnMut(&mut redis::Connection) -> RedisResponse>(
     conn_def: &RedisConnectionDefinition,
     mut cb: F,
 ) -> Option<RedisResponse> {
-    let connection = create_redis_connection(conn_def);
-
-    Some(if let Ok(mut conn) = connection {
-        cb(&mut conn)
-    } else {
-        Err(":: Not able to connect to {conn}.".to_string())
-    })
+    Some(create_redis_connection(conn_def).map_or_else(
+        |err| Err(format!(":: Not able to connect to {conn_def} ({err:?}).")),
+        |mut conn| cb(&mut conn),
+    ))
 }
