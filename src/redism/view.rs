@@ -16,7 +16,7 @@ use crate::components::result_panel::ui_response_panel;
 use crate::error;
 use crate::info;
 
-use super::presenter::{self, RedisMenu};
+use super::connection::{self, RedisMenu};
 use super::state::RedisAppState;
 use super::state::{PubSubState, RedisLocalState};
 
@@ -45,7 +45,7 @@ impl RedisView {
 
         if self.state.must_scan {
             let option = self.state.selected_menu;
-            let _ = presenter::scan(&mut self.state, option);
+            let _ = connection::scan(&mut self.state, option);
             self.state.must_scan = false;
         }
         if self.state.is_first_update {
@@ -88,22 +88,20 @@ impl RedisView {
                         let file_path = "redis-history";
 
                         // --> Ejecución de Comandos <--
-                        match presenter::run_user_string_command(
+                        match connection::run_user_string_command(
                             &self.state.current_connection.host,
                             &self.state.current_connection.port,
                             self.state.current_command.as_str(),
                         ) {
                             Ok(result) => {
                                 let option = self.state.selected_menu;
-                                let _ = presenter::scan(&mut self.state, option);
-                                self.state.last_result = result.clone();
-                                self.state.opt_last_result = Some(Ok(result.clone()));
+                                let _ = connection::scan(&mut self.state, option);
+                                self.state.last_result = Some(Ok(result));
                             }
                             // TODO: Change color
                             Err(e) => {
                                 info!("Error: {:?}", e);
-                                self.state.last_result = e.clone();
-                                self.state.opt_last_result = Some(Err(e.clone()));
+                                self.state.last_result = Some(Err(e));
                             }
                         }
                         if let Err(e) =
@@ -141,7 +139,7 @@ impl RedisView {
                     }
                 });
 
-                ui_response_panel(ui, &self.state.opt_last_result);
+                ui_response_panel(ui, &self.state.last_result);
             }
 
             // ===========================================

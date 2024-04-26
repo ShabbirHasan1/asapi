@@ -13,7 +13,11 @@ use eframe::egui;
 use crate::{
     common::internationalization::I18n,
     info,
-    redism::{presenter, view::RedisView},
+    redism::{
+        connection::scan,
+        presenters::pubsub::{publish_to_channel, subscribe_to_channel_std_thread},
+        view::RedisView,
+    },
 };
 
 impl RedisView {
@@ -31,7 +35,7 @@ impl RedisView {
                             .hint_text(&i18n.redis_channel_value),
                     );
                     if ui.button(&i18n.redis_channel_publish).clicked() {
-                        let publish_response = presenter::publish_to_channel(
+                        let publish_response = publish_to_channel(
                             &self.state.current_connection.host,
                             &self.state.current_connection.port,
                             &self.pubsub.channel,
@@ -55,7 +59,7 @@ impl RedisView {
                         if self.pubsub.messages.contains_key(&self.pubsub.channel) {
                             info!("Already subscribed to {}", self.pubsub.channel);
                         } else {
-                            let subscription = presenter::subscribe_to_channel_std_thread(
+                            let subscription = subscribe_to_channel_std_thread(
                                 &self.state.current_connection.host,
                                 &self.state.current_connection.port,
                                 &self.pubsub.channel,
@@ -142,7 +146,7 @@ impl RedisView {
 
                                 // Para cerrar publicamos mensaje concreto en el canal que queremos cerrar.
                                 if ui.button(&i18n.redis_close_subscription).clicked() {
-                                    let _ = presenter::publish_to_channel(
+                                    let _ = publish_to_channel(
                                         &self.state.current_connection.host,
                                         &self.state.current_connection.port,
                                         chan,
@@ -151,7 +155,7 @@ impl RedisView {
                                 }
 
                                 if ui.button(&i18n.redis_delete_subscription).clicked() {
-                                    let _ = presenter::publish_to_channel(
+                                    let _ = publish_to_channel(
                                         &self.state.current_connection.host,
                                         &self.state.current_connection.port,
                                         chan,

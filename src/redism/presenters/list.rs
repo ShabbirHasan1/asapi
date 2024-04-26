@@ -6,12 +6,12 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
-use redis::{self, Commands, Connection, RedisResult, Value};
+use redis::{self, Commands, Value};
 use std::{collections::HashMap, num::NonZeroUsize};
 
 use crate::redism::parser::redis_value_to_string;
 
-use super::{read_operation, RedisResponse};
+use super::RedisResponse;
 use crate::redism::state::RedisListState;
 
 pub enum RedisPosition {

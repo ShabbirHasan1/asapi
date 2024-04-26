@@ -9,42 +9,22 @@
 pub mod hash;
 pub mod json;
 pub mod list;
+pub mod pubsub;
 pub mod set;
+pub mod stream;
+pub mod string;
 pub mod zset;
 
-use redis::{Client, RedisError, RedisResult, Value};
+use redis::{Commands as _, RedisResult, Value};
 
 use crate::redism::parser::redis_value_to_string;
 
-use super::state::RedisConnectionDefinition;
+use super::{
+    connection::{create_conn_with_default, create_redis_connection},
+    state::RedisConnectionDefinition,
+};
 
 pub type RedisResponse = Result<String, String>;
-
-#[inline(always)]
-pub fn create_conn(host: &str, port: i16) -> Result<redis::Connection, RedisError> {
-    //if Redis server needs secure connection
-    // https://medium.com/swlh/tutorial-getting-started-with-rust-and-redis-69041dd38279
-    // let uri_scheme = match env::var("IS_TLS") {
-    //     Ok(_) => "rediss",
-    //     Err(_) => "redis",
-    // };
-
-    let client = Client::open(format!("redis://{}:{}", host, port))?;
-    client.get_connection()
-}
-
-#[inline(always)]
-pub fn create_conn_with_default(host: &str, port: &str) -> Result<redis::Connection, RedisError> {
-    let port = port.parse::<i16>().unwrap_or(6379); // Using 6379 as default value;
-    create_conn(host, port)
-}
-
-#[inline(always)]
-fn create_redis_connection(
-    conn: &RedisConnectionDefinition,
-) -> Result<redis::Connection, RedisError> {
-    create_conn_with_default(&conn.host, &conn.port)
-}
 
 #[inline(always)]
 pub fn read_operation(m: &str, result: RedisResult<Value>) -> RedisResponse {
@@ -54,15 +34,24 @@ pub fn read_operation(m: &str, result: RedisResult<Value>) -> RedisResponse {
     }
 }
 
+#[inline(always)]
 pub fn run_cmd<F: FnMut(&mut redis::Connection) -> RedisResponse>(
     conn_def: &RedisConnectionDefinition,
     mut cb: F,
 ) -> Option<RedisResponse> {
-    let connection = create_redis_connection(conn_def);
+    Some(create_redis_connection(conn_def).map_or_else(
+        |err| Err(format!(":: Not able to connect to {conn_def} ({err:?}).")),
+        |mut conn| cb(&mut conn),
+    ))
+}
 
-    Some(if let Ok(mut conn) = connection {
-        cb(&mut conn)
-    } else {
-        Err(":: Not able to connect to {conn}.".to_string())
-    })
+#[inline(always)]
+pub fn delete_key(host: &str, port: &str, key: &str) -> RedisResult<i8> {
+    create_conn_with_default(host, port).and_then(|mut con| con.del(key))
+}
+
+// Borrado por entrada, un hash entero no se puede borrar. Se borra cuando no le quedan entradas.
+#[inline(always)]
+pub fn delete_hashkey(host: &str, port: &str, hash_name: &str, field_key: &str) -> RedisResult<i8> {
+    create_conn_with_default(host, port).and_then(|mut con| con.hdel(hash_name, field_key))
 }

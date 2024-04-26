@@ -12,7 +12,11 @@ use egui_json_tree::JsonTree;
 use crate::{
     common::internationalization::I18n,
     error, info,
-    redism::{presenter, utils::value_map_to_string_btree_map, view::RedisView},
+    redism::{
+        presenters::{delete_key, stream::read_stream_id},
+        utils::value_map_to_string_btree_map,
+        view::RedisView,
+    },
 };
 
 use super::contextual_menus;
@@ -54,24 +58,11 @@ impl RedisView {
                                     // que me devuelve es el siguiente al que selecciono, por
                                     // eso me hace falta el `idx-1`.
                                     let from_when = if idx == 0 { "0" } else { &v[idx - 1] };
-                                    let _ = presenter::read_stream_id(
+                                    let _ = read_stream_id(
                                         stream_name,
                                         from_when,
                                         &mut self.state.stream_id_values,
                                     );
-                                    // if idx == 0 {
-                                    //     let _ = presenter::read_stream_id(
-                                    //         &stream_name,
-                                    //         "0",
-                                    //         &mut self.state.stream_id_values,
-                                    //     );
-                                    // } else {
-                                    //     let _ = presenter::read_stream_id(
-                                    //         &stream_name,
-                                    //         &v[idx - 1],
-                                    //         &mut self.state.stream_id_values,
-                                    //     );
-                                    // }
                                 }
                             }
                         }
@@ -90,7 +81,7 @@ impl RedisView {
                 .header_response
                 .context_menu(|ui| {
                     if ui.button("Delete").clicked() {
-                        match presenter::delete_key(
+                        match delete_key(
                             &self.state.current_connection.host,
                             &self.state.current_connection.port,
                             stream_name,

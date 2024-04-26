@@ -10,8 +10,9 @@ use redis::Msg as PubSubMsg;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::collections::HashMap;
+use std::fmt::Display;
 
-use crate::{common::traits::ToUrl, redism::presenter::RedisMenu};
+use crate::{common::traits::ToUrl, redism::connection::RedisMenu};
 
 /// No tengo muy claro cómo hacerlo mejor.
 /// Path y OsStr son más apropiadas pero problemáticas.
@@ -22,6 +23,12 @@ pub struct RedisConnectionDefinition {
     pub port: String,
     // pub user: String,
     // pub password: String,
+}
+
+impl Display for RedisConnectionDefinition {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Redis {{ host: {}, port: {} }}", self.host, self.port)
+    }
 }
 
 impl ToUrl for RedisConnectionDefinition {
@@ -297,8 +304,8 @@ pub struct RedisLocalState {
     pub current_command: String,
     pub is_first_update: bool,
     pub must_scan: bool,
-    pub last_result: String,
-    pub opt_last_result: Option<Result<String, String>>,
+    // pub last_result: String,
+    pub last_result: Option<Result<String, String>>,
     pub conn: Option<redis::Connection>, // La estoy gastando?
     pub selected_menu: RedisMenu,
     pub hide_connections: bool,
@@ -326,8 +333,8 @@ impl Default for RedisLocalState {
             current_command: Default::default(),
             is_first_update: Default::default(),
             must_scan: Default::default(),
+            // last_result: Default::default(),
             last_result: Default::default(),
-            opt_last_result: Default::default(),
             conn: Default::default(),
             selected_menu: Default::default(),
             hide_connections: Default::default(),
@@ -376,6 +383,6 @@ impl RedisLocalState {
 
     pub fn reset_command(&mut self) {
         self.current_command.clear();
-        self.last_result.clear();
+        self.last_result = None;
     }
 }

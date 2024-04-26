@@ -9,7 +9,7 @@
 use crate::{
     error, info,
     redism::{
-        presenter::delete_stream_message,
+        presenters::stream::delete_stream_message,
         utils::{value_map_to_string, value_map_to_string_map},
     },
 };
