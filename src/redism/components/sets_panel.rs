@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 // -------------------------------------------------------------------------
 // Copyright (C) 2024 Fernando López Laso - All Rights Reserved
 //
@@ -7,6 +9,7 @@
 // -------------------------------------------------------------------------
 use eframe::egui;
 use egui_extras::{Size, StripBuilder};
+use redis::Connection;
 
 use crate::{
     common::internationalization::I18n,
@@ -14,7 +17,11 @@ use crate::{
     error, info,
     redism::{
         connection::RedisMenu,
-        presenters::{delete_key, run_cmd, set::SetsPresenter, zset::SortedSetsPresenter},
+        presenters::{
+            delete_key, run_cmd, run_read_generic, run_write_generic, set::SetsPresenter,
+            zset::SortedSetsPresenter, RedisResponse,
+        },
+        state::{RedisSetsState, RedisZSetsState},
         view::RedisView,
     },
     ui_button_w100,
@@ -79,7 +86,7 @@ impl RedisView {
         let tmp = if menu == RedisMenu::Set {
             &self.state.sets
         } else {
-            &self.state.sorted_sets
+            &self.state.zsets
         };
 
         for (set_key, set_values) in tmp {
@@ -137,13 +144,7 @@ impl RedisView {
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "SADD") {
                                     self.state.last_result =
-                                        run_cmd(&self.state.current_connection, |conn| {
-                                            SetsPresenter::sadd(
-                                                conn,
-                                                &mut self.state.sets,
-                                                &mut self.state.sets_st,
-                                            )
-                                        });
+                                        self.run_write_set(SetsPresenter::sadd);
                                 }
                             });
                         });
@@ -174,13 +175,7 @@ impl RedisView {
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "SREM") {
                                     self.state.last_result =
-                                        run_cmd(&self.state.current_connection, |conn| {
-                                            SetsPresenter::srem(
-                                                conn,
-                                                &mut self.state.sets,
-                                                &mut self.state.sets_st,
-                                            )
-                                        });
+                                        self.run_write_set(SetsPresenter::srem);
                                 }
                             });
                         });
@@ -202,13 +197,7 @@ impl RedisView {
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "SPOP") {
                                     self.state.last_result =
-                                        run_cmd(&self.state.current_connection, |conn| {
-                                            SetsPresenter::spop(
-                                                conn,
-                                                &mut self.state.sets,
-                                                &mut self.state.sets_st,
-                                            )
-                                        });
+                                        self.run_write_set(SetsPresenter::spop);
                                 }
                             });
                         });
@@ -239,12 +228,7 @@ impl RedisView {
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "SRANDMEMBER") {
                                     self.state.last_result =
-                                        run_cmd(&self.state.current_connection, |conn| {
-                                            SetsPresenter::srandmember(
-                                                conn,
-                                                &mut self.state.sets_st,
-                                            )
-                                        });
+                                        self.run_read_set(SetsPresenter::srandmember);
                                 }
                             });
                         });
@@ -282,9 +266,7 @@ impl RedisView {
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "SISMEMBER") {
                                     self.state.last_result =
-                                        run_cmd(&self.state.current_connection, |conn| {
-                                            SetsPresenter::sismember(conn, &mut self.state.sets_st)
-                                        });
+                                        self.run_read_set(SetsPresenter::sismember);
                                 }
                             });
                         });
@@ -317,9 +299,7 @@ impl RedisView {
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "SMISMEMBER") {
                                     self.state.last_result =
-                                        run_cmd(&self.state.current_connection, |conn| {
-                                            SetsPresenter::smismember(conn, &mut self.state.sets_st)
-                                        });
+                                        self.run_read_set(SetsPresenter::smismember);
                                 }
                             });
                         });
@@ -341,9 +321,7 @@ impl RedisView {
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "SCARD") {
                                     self.state.last_result =
-                                        run_cmd(&self.state.current_connection, |conn| {
-                                            SetsPresenter::scard(conn, &mut self.state.sets_st)
-                                        });
+                                        self.run_read_set(SetsPresenter::scard);
                                 }
                             });
                         });
@@ -365,13 +343,7 @@ impl RedisView {
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "SMEMBERS") {
                                     self.state.last_result =
-                                        run_cmd(&self.state.current_connection, |conn| {
-                                            SetsPresenter::smembers(
-                                                conn,
-                                                &mut self.state.sets,
-                                                &mut self.state.sets_st,
-                                            )
-                                        });
+                                        self.run_write_set(SetsPresenter::smembers);
                                 }
                             });
                         });
@@ -401,9 +373,7 @@ impl RedisView {
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "SINTER") {
                                     self.state.last_result =
-                                        run_cmd(&self.state.current_connection, |conn| {
-                                            SetsPresenter::sinter(conn, &mut self.state.sets_st)
-                                        });
+                                        self.run_read_set(SetsPresenter::sinter);
                                 }
                             });
                         });
@@ -434,9 +404,7 @@ impl RedisView {
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "SINTERCARD") {
                                     self.state.last_result =
-                                        run_cmd(&self.state.current_connection, |conn| {
-                                            SetsPresenter::sintercard(conn, &mut self.state.sets_st)
-                                        });
+                                        self.run_read_set(SetsPresenter::sintercard);
                                 }
                             });
                         });
@@ -467,13 +435,7 @@ impl RedisView {
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "SINTERSTORE") {
                                     self.state.last_result =
-                                        run_cmd(&self.state.current_connection, |conn| {
-                                            SetsPresenter::sinterstore(
-                                                conn,
-                                                &mut self.state.sets,
-                                                &mut self.state.sets_st,
-                                            )
-                                        });
+                                        self.run_write_set(SetsPresenter::sinterstore);
                                 }
                             });
                         });
@@ -504,9 +466,7 @@ impl RedisView {
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "SDIFF") {
                                     self.state.last_result =
-                                        run_cmd(&self.state.current_connection, |conn| {
-                                            SetsPresenter::sdiff(conn, &mut self.state.sets_st)
-                                        });
+                                        self.run_read_set(SetsPresenter::sdiff);
                                 }
                             });
                         });
@@ -537,13 +497,7 @@ impl RedisView {
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "SDIFFSTORE") {
                                     self.state.last_result =
-                                        run_cmd(&self.state.current_connection, |conn| {
-                                            SetsPresenter::sdiffstore(
-                                                conn,
-                                                &mut self.state.sets,
-                                                &mut self.state.sets_st,
-                                            )
-                                        });
+                                        self.run_write_set(SetsPresenter::sdiffstore);
                                 }
                             });
                         });
@@ -565,9 +519,7 @@ impl RedisView {
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "SUNION") {
                                     self.state.last_result =
-                                        run_cmd(&self.state.current_connection, |conn| {
-                                            SetsPresenter::sunion(conn, &mut self.state.sets_st)
-                                        });
+                                        self.run_read_set(SetsPresenter::sunion);
                                 }
                             });
                         });
@@ -598,13 +550,7 @@ impl RedisView {
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "SUNIONSTORE") {
                                     self.state.last_result =
-                                        run_cmd(&self.state.current_connection, |conn| {
-                                            SetsPresenter::sunionstore(
-                                                conn,
-                                                &mut self.state.sets,
-                                                &mut self.state.sets_st,
-                                            )
-                                        });
+                                        self.run_write_set(SetsPresenter::sunionstore);
                                 }
                             });
                         });
@@ -633,7 +579,7 @@ impl RedisView {
                                 ui_text_edit_singleline_hint(
                                     ui,
                                     "Key",
-                                    &mut self.state.ssets_st.zadd_k,
+                                    &mut self.state.zsets_st.zadd_k,
                                 );
                             });
 
@@ -641,7 +587,7 @@ impl RedisView {
                                 ui_text_edit_singleline_hint(
                                     ui,
                                     "Score",
-                                    &mut self.state.ssets_st.zadd_score,
+                                    &mut self.state.zsets_st.zadd_score,
                                 );
                             });
 
@@ -649,20 +595,14 @@ impl RedisView {
                                 ui_text_edit_singleline_hint(
                                     ui,
                                     "Member",
-                                    &mut self.state.ssets_st.zadd_v,
+                                    &mut self.state.zsets_st.zadd_v,
                                 );
                             });
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "ZADD") {
                                     self.state.last_result =
-                                        run_cmd(&self.state.current_connection, |conn| {
-                                            SortedSetsPresenter::zadd(
-                                                conn,
-                                                &mut self.state.sorted_sets,
-                                                &mut self.state.ssets_st,
-                                            )
-                                        });
+                                        self.run_write_zset(SortedSetsPresenter::zadd);
                                 }
                             });
                         });
@@ -678,7 +618,7 @@ impl RedisView {
                                 ui_text_edit_singleline_hint(
                                     ui,
                                     "Key",
-                                    &mut self.state.ssets_st.zrem_k,
+                                    &mut self.state.zsets_st.zrem_k,
                                 );
                             });
 
@@ -686,20 +626,14 @@ impl RedisView {
                                 ui_text_edit_singleline_hint(
                                     ui,
                                     "Value (& Values)",
-                                    &mut self.state.ssets_st.zrem_vs,
+                                    &mut self.state.zsets_st.zrem_vs,
                                 );
                             });
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "ZREM") {
                                     self.state.last_result =
-                                        run_cmd(&self.state.current_connection, |conn| {
-                                            SortedSetsPresenter::zrem(
-                                                conn,
-                                                &mut self.state.sets,
-                                                &mut self.state.ssets_st,
-                                            )
-                                        });
+                                        self.run_write_zset(SortedSetsPresenter::zrem);
                                 }
                             });
                         });
@@ -716,22 +650,22 @@ impl RedisView {
                                 ui_text_edit_singleline_hint(
                                     ui,
                                     "Key (& Keys)",
-                                    &mut self.state.ssets_st.zmpop_ks,
+                                    &mut self.state.zsets_st.zmpop_ks,
                                 );
                             });
 
                             strip.cell(|ui| {
                                 egui::ComboBox::from_id_source("zpop_min_max")
-                                    .selected_text(&self.state.ssets_st.zmpop_min_max)
+                                    .selected_text(&self.state.zsets_st.zmpop_min_max)
                                     .width(ui.available_width())
                                     .show_ui(ui, |ui| {
                                         ui.selectable_value(
-                                            &mut self.state.ssets_st.zmpop_min_max,
+                                            &mut self.state.zsets_st.zmpop_min_max,
                                             "MIN".to_string(),
                                             "Min",
                                         );
                                         ui.selectable_value(
-                                            &mut self.state.ssets_st.zmpop_min_max,
+                                            &mut self.state.zsets_st.zmpop_min_max,
                                             "MAX".to_string(),
                                             "Max",
                                         );
@@ -742,20 +676,14 @@ impl RedisView {
                                 ui_text_edit_singleline_hint(
                                     ui,
                                     "(Count)",
-                                    &mut self.state.ssets_st.zmpop_count,
+                                    &mut self.state.zsets_st.zmpop_count,
                                 );
                             });
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "ZMPOP") {
                                     self.state.last_result =
-                                        run_cmd(&self.state.current_connection, |conn| {
-                                            SortedSetsPresenter::zmpop(
-                                                conn,
-                                                &mut self.state.sorted_sets,
-                                                &mut self.state.ssets_st,
-                                            )
-                                        });
+                                        self.run_write_zset(SortedSetsPresenter::zmpop);
                                 }
                             });
                         });
@@ -786,12 +714,7 @@ impl RedisView {
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "ZRANDMEMBER") {
                                     self.state.last_result =
-                                        run_cmd(&self.state.current_connection, |conn| {
-                                            SortedSetsPresenter::zrandmember(
-                                                conn,
-                                                &mut self.state.ssets_st,
-                                            )
-                                        });
+                                        self.run_read_zset(SortedSetsPresenter::zrandmember);
                                 }
                             });
                         });
@@ -816,19 +739,14 @@ impl RedisView {
                                 ui_text_edit_singleline_hint(
                                     ui,
                                     "Key",
-                                    &mut self.state.ssets_st.zcard_k,
+                                    &mut self.state.zsets_st.zcard_k,
                                 );
                             });
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "ZCARD") {
                                     self.state.last_result =
-                                        run_cmd(&self.state.current_connection, |conn| {
-                                            SortedSetsPresenter::zcard(
-                                                conn,
-                                                &mut self.state.ssets_st,
-                                            )
-                                        });
+                                        self.run_read_zset(SortedSetsPresenter::zcard);
                                 }
                             });
                         });
@@ -845,7 +763,7 @@ impl RedisView {
                                 ui_text_edit_singleline_hint(
                                     ui,
                                     "Key",
-                                    &mut self.state.ssets_st.zrange_k,
+                                    &mut self.state.zsets_st.zrange_k,
                                 );
                             });
 
@@ -853,7 +771,7 @@ impl RedisView {
                                 ui_text_edit_singleline_hint(
                                     ui,
                                     "Start",
-                                    &mut self.state.ssets_st.zrange_start,
+                                    &mut self.state.zsets_st.zrange_start,
                                 );
                             });
 
@@ -861,19 +779,14 @@ impl RedisView {
                                 ui_text_edit_singleline_hint(
                                     ui,
                                     "Stop",
-                                    &mut self.state.ssets_st.zrange_stop,
+                                    &mut self.state.zsets_st.zrange_stop,
                                 );
                             });
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "ZRANGE") {
                                     self.state.last_result =
-                                        run_cmd(&self.state.current_connection, |conn| {
-                                            SortedSetsPresenter::zrange(
-                                                conn,
-                                                &mut self.state.ssets_st,
-                                            )
-                                        });
+                                        self.run_read_zset(SortedSetsPresenter::zrange);
                                 }
                             });
                         });
@@ -891,7 +804,7 @@ impl RedisView {
                                 ui_text_edit_singleline_hint(
                                     ui,
                                     "Destination",
-                                    &mut self.state.ssets_st.zrangestore_destination,
+                                    &mut self.state.zsets_st.zrangestore_destination,
                                 );
                             });
 
@@ -899,7 +812,7 @@ impl RedisView {
                                 ui_text_edit_singleline_hint(
                                     ui,
                                     "Key",
-                                    &mut self.state.ssets_st.zrangestore_k,
+                                    &mut self.state.zsets_st.zrangestore_k,
                                 );
                             });
 
@@ -907,7 +820,7 @@ impl RedisView {
                                 ui_text_edit_singleline_hint(
                                     ui,
                                     "Start",
-                                    &mut self.state.ssets_st.zrangestore_start,
+                                    &mut self.state.zsets_st.zrangestore_start,
                                 );
                             });
 
@@ -915,20 +828,14 @@ impl RedisView {
                                 ui_text_edit_singleline_hint(
                                     ui,
                                     "Stop",
-                                    &mut self.state.ssets_st.zrangestore_stop,
+                                    &mut self.state.zsets_st.zrangestore_stop,
                                 );
                             });
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "ZRANGESTORE") {
                                     self.state.last_result =
-                                        run_cmd(&self.state.current_connection, |conn| {
-                                            SortedSetsPresenter::zrangestore(
-                                                conn,
-                                                &mut self.state.sorted_sets,
-                                                &mut self.state.ssets_st,
-                                            )
-                                        });
+                                        self.run_write_zset(SortedSetsPresenter::zrangestore);
                                 }
                             });
                         });
@@ -945,7 +852,7 @@ impl RedisView {
                                 ui_text_edit_singleline_hint(
                                     ui,
                                     "Key",
-                                    &mut self.state.ssets_st.zrangebylex_k,
+                                    &mut self.state.zsets_st.zrangebylex_k,
                                 );
                             });
 
@@ -953,7 +860,7 @@ impl RedisView {
                                 ui_text_edit_singleline_hint(
                                     ui,
                                     "Min",
-                                    &mut self.state.ssets_st.zrangebylex_min,
+                                    &mut self.state.zsets_st.zrangebylex_min,
                                 );
                             });
 
@@ -961,19 +868,14 @@ impl RedisView {
                                 ui_text_edit_singleline_hint(
                                     ui,
                                     "Max",
-                                    &mut self.state.ssets_st.zrangebylex_max,
+                                    &mut self.state.zsets_st.zrangebylex_max,
                                 );
                             });
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "ZRANGEBYLEX") {
                                     self.state.last_result =
-                                        run_cmd(&self.state.current_connection, |conn| {
-                                            SortedSetsPresenter::zrangebylex(
-                                                conn,
-                                                &mut self.state.ssets_st,
-                                            )
-                                        });
+                                        self.run_read_zset(SortedSetsPresenter::zrangebylex);
                                 }
                             });
                         });
@@ -990,7 +892,7 @@ impl RedisView {
                                 ui_text_edit_singleline_hint(
                                     ui,
                                     "Key",
-                                    &mut self.state.ssets_st.zrangebyscore_k,
+                                    &mut self.state.zsets_st.zrangebyscore_k,
                                 );
                             });
 
@@ -998,7 +900,7 @@ impl RedisView {
                                 ui_text_edit_singleline_hint(
                                     ui,
                                     "Min",
-                                    &mut self.state.ssets_st.zrangebyscore_min,
+                                    &mut self.state.zsets_st.zrangebyscore_min,
                                 );
                             });
 
@@ -1006,19 +908,14 @@ impl RedisView {
                                 ui_text_edit_singleline_hint(
                                     ui,
                                     "Max",
-                                    &mut self.state.ssets_st.zrangebyscore_max,
+                                    &mut self.state.zsets_st.zrangebyscore_max,
                                 );
                             });
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "ZRANGEBYSCORE") {
                                     self.state.last_result =
-                                        run_cmd(&self.state.current_connection, |conn| {
-                                            SortedSetsPresenter::zrangebyscore(
-                                                conn,
-                                                &mut self.state.ssets_st,
-                                            )
-                                        });
+                                        self.run_read_zset(SortedSetsPresenter::zrangebyscore);
                                 }
                             });
                         });
@@ -1041,19 +938,14 @@ impl RedisView {
                                 ui_text_edit_singleline_hint(
                                     ui,
                                     "Key (& Keys)",
-                                    &mut self.state.ssets_st.zinter_ks,
+                                    &mut self.state.zsets_st.zinter_ks,
                                 );
                             });
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "ZINTER") {
                                     self.state.last_result =
-                                        run_cmd(&self.state.current_connection, |conn| {
-                                            SortedSetsPresenter::zinter(
-                                                conn,
-                                                &mut self.state.ssets_st,
-                                            )
-                                        });
+                                        self.run_read_zset(SortedSetsPresenter::zinter);
                                 }
                             });
                         });
@@ -1068,19 +960,14 @@ impl RedisView {
                                 ui_text_edit_singleline_hint(
                                     ui,
                                     "Key (& Keys)",
-                                    &mut self.state.ssets_st.zintercard_ks,
+                                    &mut self.state.zsets_st.zintercard_ks,
                                 );
                             });
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "ZINTERCARD") {
                                     self.state.last_result =
-                                        run_cmd(&self.state.current_connection, |conn| {
-                                            SortedSetsPresenter::zintercard(
-                                                conn,
-                                                &mut self.state.ssets_st,
-                                            )
-                                        });
+                                        self.run_read_zset(SortedSetsPresenter::zintercard);
                                 }
                             });
                         });
@@ -1096,7 +983,7 @@ impl RedisView {
                                 ui_text_edit_singleline_hint(
                                     ui,
                                     "Destination",
-                                    &mut self.state.ssets_st.zinterstore_destination,
+                                    &mut self.state.zsets_st.zinterstore_destination,
                                 );
                             });
 
@@ -1104,20 +991,14 @@ impl RedisView {
                                 ui_text_edit_singleline_hint(
                                     ui,
                                     "Key (& Keys)",
-                                    &mut self.state.ssets_st.zinterstore_ks,
+                                    &mut self.state.zsets_st.zinterstore_ks,
                                 );
                             });
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "ZINTERSTORE") {
                                     self.state.last_result =
-                                        run_cmd(&self.state.current_connection, |conn| {
-                                            SortedSetsPresenter::zinterstore(
-                                                conn,
-                                                &mut self.state.sorted_sets,
-                                                &mut self.state.ssets_st,
-                                            )
-                                        });
+                                        self.run_write_zset(SortedSetsPresenter::zinterstore);
                                 }
                             });
                         });
@@ -1141,7 +1022,7 @@ impl RedisView {
                                 ui_text_edit_singleline_hint(
                                     ui,
                                     "Destination",
-                                    &mut self.state.ssets_st.zunionstore_destination,
+                                    &mut self.state.zsets_st.zunionstore_destination,
                                 );
                             });
 
@@ -1149,27 +1030,27 @@ impl RedisView {
                                 ui_text_edit_singleline_hint(
                                     ui,
                                     "Key (& Keys)",
-                                    &mut self.state.ssets_st.zunionstore_ks,
+                                    &mut self.state.zsets_st.zunionstore_ks,
                                 );
                             });
 
                             strip.cell(|ui| {
                                 egui::ComboBox::from_id_source("zunionstore_min_max")
-                                    .selected_text(&self.state.ssets_st.zunionstore_min_max)
+                                    .selected_text(&self.state.zsets_st.zunionstore_min_max)
                                     .width(ui.available_width())
                                     .show_ui(ui, |ui| {
                                         ui.selectable_value(
-                                            &mut self.state.ssets_st.zunionstore_min_max,
+                                            &mut self.state.zsets_st.zunionstore_min_max,
                                             "NONE".to_string(),
                                             " ",
                                         );
                                         ui.selectable_value(
-                                            &mut self.state.ssets_st.zunionstore_min_max,
+                                            &mut self.state.zsets_st.zunionstore_min_max,
                                             "MIN".to_string(),
                                             "Min",
                                         );
                                         ui.selectable_value(
-                                            &mut self.state.ssets_st.zunionstore_min_max,
+                                            &mut self.state.zsets_st.zunionstore_min_max,
                                             "MAX".to_string(),
                                             "Max",
                                         );
@@ -1179,13 +1060,7 @@ impl RedisView {
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "ZUNIONSTORE") {
                                     self.state.last_result =
-                                        run_cmd(&self.state.current_connection, |conn| {
-                                            SortedSetsPresenter::zunionstore(
-                                                conn,
-                                                &mut self.state.sorted_sets,
-                                                &mut self.state.ssets_st,
-                                            )
-                                        });
+                                        self.run_write_zset(SortedSetsPresenter::zunionstore);
                                 }
                             });
                         });
@@ -1209,7 +1084,7 @@ impl RedisView {
                                 ui_text_edit_singleline_hint(
                                     ui,
                                     "Key",
-                                    &mut self.state.ssets_st.zrank_k,
+                                    &mut self.state.zsets_st.zrank_k,
                                 );
                             });
 
@@ -1217,19 +1092,14 @@ impl RedisView {
                                 ui_text_edit_singleline_hint(
                                     ui,
                                     "Member",
-                                    &mut self.state.ssets_st.zrank_m,
+                                    &mut self.state.zsets_st.zrank_m,
                                 );
                             });
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "ZRANK") {
                                     self.state.last_result =
-                                        run_cmd(&self.state.current_connection, |conn| {
-                                            SortedSetsPresenter::zrank(
-                                                conn,
-                                                &mut self.state.ssets_st,
-                                            )
-                                        });
+                                        self.run_read_zset(SortedSetsPresenter::zrank);
                                 }
                             });
                         });
@@ -1245,7 +1115,7 @@ impl RedisView {
                                 ui_text_edit_singleline_hint(
                                     ui,
                                     "Key",
-                                    &mut self.state.ssets_st.zrevrank_k,
+                                    &mut self.state.zsets_st.zrevrank_k,
                                 );
                             });
 
@@ -1253,19 +1123,14 @@ impl RedisView {
                                 ui_text_edit_singleline_hint(
                                     ui,
                                     "Member",
-                                    &mut self.state.ssets_st.zrevrank_m,
+                                    &mut self.state.zsets_st.zrevrank_m,
                                 );
                             });
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "ZREVRANK") {
                                     self.state.last_result =
-                                        run_cmd(&self.state.current_connection, |conn| {
-                                            SortedSetsPresenter::zrevrank(
-                                                conn,
-                                                &mut self.state.ssets_st,
-                                            )
-                                        });
+                                        self.run_read_zset(SortedSetsPresenter::zrevrank);
                                 }
                             });
                         });
@@ -1282,7 +1147,7 @@ impl RedisView {
                                 ui_text_edit_singleline_hint(
                                     ui,
                                     "Key",
-                                    &mut self.state.ssets_st.zremrangebyrank_k,
+                                    &mut self.state.zsets_st.zremrangebyrank_k,
                                 );
                             });
 
@@ -1290,7 +1155,7 @@ impl RedisView {
                                 ui_text_edit_singleline_hint(
                                     ui,
                                     "Start",
-                                    &mut self.state.ssets_st.zremrangebyrank_start,
+                                    &mut self.state.zsets_st.zremrangebyrank_start,
                                 );
                             });
 
@@ -1298,24 +1163,68 @@ impl RedisView {
                                 ui_text_edit_singleline_hint(
                                     ui,
                                     "Stop",
-                                    &mut self.state.ssets_st.zremrangebyrank_stop,
+                                    &mut self.state.zsets_st.zremrangebyrank_stop,
                                 );
                             });
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "ZREMRANGEBYRANK") {
                                     self.state.last_result =
-                                        run_cmd(&self.state.current_connection, |conn| {
-                                            SortedSetsPresenter::zremrangebyrank(
-                                                conn,
-                                                &mut self.state.sorted_sets,
-                                                &mut self.state.ssets_st,
-                                            )
-                                        });
+                                        self.run_write_zset(SortedSetsPresenter::zremrangebyrank);
                                 }
                             });
                         });
                 });
             });
+    }
+
+    #[inline(always)]
+    fn run_read_set(
+        &mut self,
+        cb: impl Fn(&mut Connection, &RedisSetsState) -> RedisResponse,
+    ) -> Option<RedisResponse> {
+        run_read_generic(&self.state.current_connection, &self.state.sets_st, cb)
+    }
+
+    #[inline(always)]
+    fn run_read_zset(
+        &mut self,
+        cb: impl Fn(&mut Connection, &RedisZSetsState) -> RedisResponse,
+    ) -> Option<RedisResponse> {
+        run_read_generic(&self.state.current_connection, &self.state.zsets_st, cb)
+    }
+
+    #[inline(always)]
+    fn run_write_set(
+        &mut self,
+        cb: impl Fn(
+            &mut Connection,
+            &mut HashMap<String, Vec<String>>,
+            &RedisSetsState,
+        ) -> RedisResponse,
+    ) -> Option<RedisResponse> {
+        run_write_generic(
+            &self.state.current_connection,
+            &self.state.sets_st,
+            &mut self.state.sets,
+            cb,
+        )
+    }
+
+    #[inline(always)]
+    fn run_write_zset(
+        &mut self,
+        cb: impl Fn(
+            &mut Connection,
+            &mut HashMap<String, Vec<String>>,
+            &RedisZSetsState,
+        ) -> RedisResponse,
+    ) -> Option<RedisResponse> {
+        run_write_generic(
+            &self.state.current_connection,
+            &self.state.zsets_st,
+            &mut self.state.zsets,
+            cb,
+        )
     }
 }

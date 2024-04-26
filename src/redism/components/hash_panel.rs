@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 // -------------------------------------------------------------------------
 // Copyright (C) 2024 Fernando López Laso - All Rights Reserved
 //
@@ -7,6 +9,7 @@
 // -------------------------------------------------------------------------
 use eframe::egui;
 use egui_extras::{Size, StripBuilder};
+use redis::Connection;
 
 use crate::{
     common::internationalization::I18n,
@@ -14,7 +17,11 @@ use crate::{
     error, info,
     redism::{
         connection::RedisMenu,
-        presenters::{delete_hashkey, hash::HashPresenter, run_cmd},
+        presenters::{
+            delete_hashkey, hash::HashPresenter, run_cmd, run_read_generic, run_write_generic,
+            RedisResponse,
+        },
+        state::RedisHashState,
         view::RedisView,
     },
     ui_button_w100,
@@ -79,9 +86,7 @@ impl RedisView {
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "HEXISTS") {
                                     self.state.last_result =
-                                        run_cmd(&self.state.current_connection, |conn| {
-                                            HashPresenter::hexists(conn, &mut self.state.hash_st)
-                                        });
+                                        self.run_read_hash(HashPresenter::hexists);
                                 }
                             });
                         });
@@ -112,9 +117,7 @@ impl RedisView {
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "HRANDFIELD") {
                                     self.state.last_result =
-                                        run_cmd(&self.state.current_connection, |conn| {
-                                            HashPresenter::hrandfield(conn, &mut self.state.hash_st)
-                                        });
+                                        self.run_read_hash(HashPresenter::hrandfield);
                                 }
                             });
                         });
@@ -143,9 +146,7 @@ impl RedisView {
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "HLEN") {
                                     self.state.last_result =
-                                        run_cmd(&self.state.current_connection, |conn| {
-                                            HashPresenter::hlen(conn, &mut self.state.hash_st)
-                                        });
+                                        self.run_read_hash(HashPresenter::hlen);
                                 }
                             });
                         });
@@ -176,9 +177,7 @@ impl RedisView {
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "HSTRLEN") {
                                     self.state.last_result =
-                                        run_cmd(&self.state.current_connection, |conn| {
-                                            HashPresenter::hstrlen(conn, &mut self.state.hash_st)
-                                        });
+                                        self.run_read_hash(HashPresenter::hstrlen);
                                 }
                             });
                         });
@@ -219,13 +218,7 @@ impl RedisView {
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "HDEL") {
                                     self.state.last_result =
-                                        run_cmd(&self.state.current_connection, |conn| {
-                                            HashPresenter::hdel(
-                                                conn,
-                                                &mut self.state.hashes,
-                                                &mut self.state.hash_st,
-                                            )
-                                        });
+                                        self.run_write_hash(HashPresenter::hdel);
                                 }
                             });
                         });
@@ -265,13 +258,7 @@ impl RedisView {
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "HSET") {
                                     self.state.last_result =
-                                        run_cmd(&self.state.current_connection, |conn| {
-                                            HashPresenter::hset(
-                                                conn,
-                                                &mut self.state.hashes,
-                                                &mut self.state.hash_st,
-                                            )
-                                        });
+                                        self.run_write_hash(HashPresenter::hset);
                                 }
                             });
                         });
@@ -311,13 +298,7 @@ impl RedisView {
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "HSETNX") {
                                     self.state.last_result =
-                                        run_cmd(&self.state.current_connection, |conn| {
-                                            HashPresenter::hsetnx(
-                                                conn,
-                                                &mut self.state.hashes,
-                                                &mut self.state.hash_st,
-                                            )
-                                        });
+                                        self.run_write_hash(HashPresenter::hsetnx);
                                 }
                             });
                         });
@@ -357,13 +338,7 @@ impl RedisView {
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "HINCRBY") {
                                     self.state.last_result =
-                                        run_cmd(&self.state.current_connection, |conn| {
-                                            HashPresenter::hincrby(
-                                                conn,
-                                                &mut self.state.hashes,
-                                                &mut self.state.hash_st,
-                                            )
-                                        });
+                                        self.run_write_hash(HashPresenter::hincrby);
                                 }
                             });
                         });
@@ -403,13 +378,7 @@ impl RedisView {
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "HINCRBYFLOAT") {
                                     self.state.last_result =
-                                        run_cmd(&self.state.current_connection, |conn| {
-                                            HashPresenter::hincrbyfloat(
-                                                conn,
-                                                &mut self.state.hashes,
-                                                &mut self.state.hash_st,
-                                            )
-                                        });
+                                        self.run_write_hash(HashPresenter::hincrbyfloat);
                                 }
                             });
                         });
@@ -450,9 +419,7 @@ impl RedisView {
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "HGET") {
                                     self.state.last_result =
-                                        run_cmd(&self.state.current_connection, |conn| {
-                                            HashPresenter::hget(conn, &mut self.state.hash_st)
-                                        });
+                                        self.run_read_hash(HashPresenter::hget);
                                 }
                             });
                         });
@@ -507,9 +474,7 @@ impl RedisView {
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "HGETALL") {
                                     self.state.last_result =
-                                        run_cmd(&self.state.current_connection, |conn| {
-                                            HashPresenter::hgetall(conn, &mut self.state.hash_st)
-                                        });
+                                        self.run_read_hash(HashPresenter::hgetall);
                                 }
                             });
                         });
@@ -531,9 +496,7 @@ impl RedisView {
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "HKEYS") {
                                     self.state.last_result =
-                                        run_cmd(&self.state.current_connection, |conn| {
-                                            HashPresenter::hkeys(conn, &mut self.state.hash_st)
-                                        });
+                                        self.run_read_hash(HashPresenter::hkeys);
                                 }
                             });
                         });
@@ -555,9 +518,7 @@ impl RedisView {
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "HVALS") {
                                     self.state.last_result =
-                                        run_cmd(&self.state.current_connection, |conn| {
-                                            HashPresenter::hvals(conn, &mut self.state.hash_st)
-                                        });
+                                        self.run_read_hash(HashPresenter::hvals);
                                 }
                             });
                         });
@@ -601,5 +562,30 @@ impl RedisView {
                     });
             });
         }
+    }
+
+    #[inline(always)]
+    fn run_read_hash(
+        &mut self,
+        cb: impl Fn(&mut Connection, &RedisHashState) -> RedisResponse,
+    ) -> Option<RedisResponse> {
+        run_read_generic(&self.state.current_connection, &self.state.hash_st, cb)
+    }
+
+    #[inline(always)]
+    fn run_write_hash(
+        &mut self,
+        cb: impl Fn(
+            &mut Connection,
+            &mut HashMap<String, Vec<(String, String)>>,
+            &RedisHashState,
+        ) -> RedisResponse,
+    ) -> Option<RedisResponse> {
+        run_write_generic(
+            &self.state.current_connection,
+            &self.state.hash_st,
+            &mut self.state.hashes,
+            cb,
+        )
     }
 }

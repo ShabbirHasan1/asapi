@@ -20,7 +20,7 @@ impl SetsPresenter {
     pub fn sadd(
         conn: &mut redis::Connection,
         hm: &mut HashMap<String, Vec<String>>,
-        st: &mut RedisSetsState,
+        st: &RedisSetsState,
     ) -> RedisResponse {
         SetsPresenter::write_set_operation(conn, "SADD", &st.sadd_k, hm, |conn| {
             conn.sadd(&st.sadd_k, st.sadd_vs.split(' ').collect::<Vec<&str>>())
@@ -30,7 +30,7 @@ impl SetsPresenter {
     pub fn srem(
         conn: &mut redis::Connection,
         hm: &mut HashMap<String, Vec<String>>,
-        st: &mut RedisSetsState,
+        st: &RedisSetsState,
     ) -> RedisResponse {
         SetsPresenter::write_set_operation(conn, "SREM", &st.srem_k, hm, |conn| {
             conn.spop(&st.srem_k)
@@ -40,14 +40,14 @@ impl SetsPresenter {
     pub fn spop(
         conn: &mut redis::Connection,
         hm: &mut HashMap<String, Vec<String>>,
-        st: &mut RedisSetsState,
+        st: &RedisSetsState,
     ) -> RedisResponse {
         SetsPresenter::write_set_operation(conn, "SPOP", &st.spop_k, hm, |conn| {
             conn.spop(&st.spop_k)
         })
     }
 
-    pub fn srandmember(conn: &mut redis::Connection, st: &mut RedisSetsState) -> RedisResponse {
+    pub fn srandmember(conn: &mut redis::Connection, st: &RedisSetsState) -> RedisResponse {
         let k = st.srandmember_k.clone();
         let count = st.srandmember_count.parse::<usize>().unwrap_or(1);
         let response = if count <= 1 {
@@ -59,36 +59,36 @@ impl SetsPresenter {
         read_operation("SRANDMEMBER", response)
     }
 
-    pub fn sismember(conn: &mut redis::Connection, st: &mut RedisSetsState) -> RedisResponse {
+    pub fn sismember(conn: &mut redis::Connection, st: &RedisSetsState) -> RedisResponse {
         read_operation(
             "SISMEMBER",
             conn.sismember(&st.sismember_k, &st.sismember_m),
         )
     }
 
-    pub fn smismember(conn: &mut redis::Connection, st: &mut RedisSetsState) -> RedisResponse {
+    pub fn smismember(conn: &mut redis::Connection, st: &RedisSetsState) -> RedisResponse {
         let vs = st.smismember_ms.split(' ').collect::<Vec<&str>>();
         read_operation("SMISMEMBER", conn.smismember(&st.smismember_k, &vs))
     }
 
-    pub fn scard(conn: &mut redis::Connection, st: &mut RedisSetsState) -> RedisResponse {
+    pub fn scard(conn: &mut redis::Connection, st: &RedisSetsState) -> RedisResponse {
         read_operation("SCARD", conn.scard(&st.scard_k))
     }
 
     pub fn smembers(
         conn: &mut redis::Connection,
         hm: &mut HashMap<String, Vec<String>>,
-        st: &mut RedisSetsState,
+        st: &RedisSetsState,
     ) -> RedisResponse {
         SetsPresenter::_smembers(conn, &st.smembers_k, hm)
     }
 
-    pub fn sinter(conn: &mut redis::Connection, st: &mut RedisSetsState) -> RedisResponse {
+    pub fn sinter(conn: &mut redis::Connection, st: &RedisSetsState) -> RedisResponse {
         let ks = st.sinter_ks.split(' ').collect::<Vec<&str>>();
         read_operation("SINTER", conn.sinter(ks))
     }
 
-    pub fn sintercard(conn: &mut redis::Connection, st: &mut RedisSetsState) -> RedisResponse {
+    pub fn sintercard(conn: &mut redis::Connection, st: &RedisSetsState) -> RedisResponse {
         let ks = st.sintercard_ks.split(' ').collect::<Vec<&str>>();
         let result = redis::cmd("SINTERCARD")
             .arg(&st.sintercard_numkeys)
@@ -101,7 +101,7 @@ impl SetsPresenter {
     pub fn sinterstore(
         conn: &mut redis::Connection,
         hm: &mut HashMap<String, Vec<String>>,
-        st: &mut RedisSetsState,
+        st: &RedisSetsState,
     ) -> RedisResponse {
         let ks = st
             .sinterstore_ks
@@ -120,7 +120,7 @@ impl SetsPresenter {
         }
     }
 
-    pub fn sdiff(conn: &mut redis::Connection, st: &mut RedisSetsState) -> RedisResponse {
+    pub fn sdiff(conn: &mut redis::Connection, st: &RedisSetsState) -> RedisResponse {
         let ks = st.sdiff_ks.split(' ').collect::<Vec<&str>>();
 
         read_operation("SDIFF", conn.sdiff(ks))
@@ -129,7 +129,7 @@ impl SetsPresenter {
     pub fn sdiffstore(
         conn: &mut redis::Connection,
         hm: &mut HashMap<String, Vec<String>>,
-        st: &mut RedisSetsState,
+        st: &RedisSetsState,
     ) -> RedisResponse {
         let ks = st
             .sdiffstore_ks
@@ -147,7 +147,7 @@ impl SetsPresenter {
         }
     }
 
-    pub fn sunion(conn: &mut redis::Connection, st: &mut RedisSetsState) -> RedisResponse {
+    pub fn sunion(conn: &mut redis::Connection, st: &RedisSetsState) -> RedisResponse {
         let ks = st.sunion_ks.split(' ').collect::<Vec<&str>>();
 
         read_operation("SUNION", conn.sunion(ks))
@@ -156,7 +156,7 @@ impl SetsPresenter {
     pub fn sunionstore(
         conn: &mut redis::Connection,
         hm: &mut HashMap<String, Vec<String>>,
-        st: &mut RedisSetsState,
+        st: &RedisSetsState,
     ) -> RedisResponse {
         let ks = st
             .sunionstore_ks

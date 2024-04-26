@@ -436,7 +436,7 @@ fn show_sorted_sets_info(ui: &mut egui::Ui, st: &RedisLocalState) {
             ui.code("#Elements");
             ui.end_row();
 
-            for (k, v) in &st.sorted_sets {
+            for (k, v) in &st.zsets {
                 ui.label(k);
                 ui.monospace(v.len().to_string());
                 ui.end_row();
@@ -485,7 +485,7 @@ fn show_ds_info(ui: &mut egui::Ui, st: &RedisLocalState) {
             ui.end_row();
 
             ui.label("SortedSets");
-            ui.monospace(st.sorted_sets.len().to_string());
+            ui.monospace(st.zsets.len().to_string());
             ui.end_row();
 
             ui.label("Streams");

@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 // -------------------------------------------------------------------------
 // Copyright (C) 2024 Fernando López Laso - All Rights Reserved
 //
@@ -7,6 +9,7 @@
 // -------------------------------------------------------------------------
 use eframe::egui;
 use egui_extras::{Size, StripBuilder};
+use redis::Connection;
 
 use crate::{
     common::internationalization::I18n,
@@ -17,8 +20,9 @@ use crate::{
         presenters::{
             delete_key,
             list::{ListPresenter, RedisPosition},
-            run_cmd,
+            run_cmd, run_read_generic, run_write_generic, RedisResponse,
         },
+        state::RedisListState,
         view::RedisView,
     },
     ui_button_w, ui_button_w50,
@@ -90,13 +94,7 @@ impl RedisView {
                             strip.cell(|ui| {
                                 if ui_button_w!(ui, "LTRIM", 128.0) {
                                     self.state.last_result =
-                                        run_cmd(&self.state.current_connection, |conn| {
-                                            ListPresenter::ltrim(
-                                                conn,
-                                                &mut self.state.lists,
-                                                &mut self.state.list_st,
-                                            )
-                                        });
+                                        self.run_write_list(ListPresenter::ltrim);
                                 }
                             });
                         });
@@ -198,13 +196,7 @@ impl RedisView {
                             strip.cell(|ui| {
                                 if ui_button_w!(ui, "LREM", 128.0) {
                                     self.state.last_result =
-                                        run_cmd(&self.state.current_connection, |conn| {
-                                            ListPresenter::lrem(
-                                                conn,
-                                                &mut self.state.lists,
-                                                &mut self.state.list_st,
-                                            )
-                                        });
+                                        self.run_write_list(ListPresenter::lrem);
                                 }
                             });
                         });
@@ -244,13 +236,7 @@ impl RedisView {
                             strip.cell(|ui| {
                                 if ui_button_w!(ui, "LSET", 128.0) {
                                     self.state.last_result =
-                                        run_cmd(&self.state.current_connection, |conn| {
-                                            ListPresenter::lset(
-                                                conn,
-                                                &mut self.state.lists,
-                                                &mut self.state.list_st,
-                                            )
-                                        });
+                                        self.run_write_list(ListPresenter::lset);
                                 }
                             });
                         });
@@ -280,9 +266,7 @@ impl RedisView {
                             strip.cell(|ui| {
                                 if ui_button_w!(ui, "LLEN", 128.0) {
                                     self.state.last_result =
-                                        run_cmd(&self.state.current_connection, |conn| {
-                                            ListPresenter::llen(conn, &mut self.state.list_st)
-                                        });
+                                        self.run_read_list(ListPresenter::llen);
                                 }
                             });
                         });
@@ -313,9 +297,7 @@ impl RedisView {
                             strip.cell(|ui| {
                                 if ui_button_w!(ui, "LINDEX", 128.0) {
                                     self.state.last_result =
-                                        run_cmd(&self.state.current_connection, |conn| {
-                                            ListPresenter::lindex(conn, &mut self.state.list_st)
-                                        });
+                                        self.run_read_list(ListPresenter::lindex);
                                 }
                             });
                         });
@@ -355,9 +337,7 @@ impl RedisView {
                             strip.cell(|ui| {
                                 if ui_button_w!(ui, "LRANGE", 128.0) {
                                     self.state.last_result =
-                                        run_cmd(&self.state.current_connection, |conn| {
-                                            ListPresenter::lrange(conn, &mut self.state.list_st)
-                                        });
+                                        self.run_read_list(ListPresenter::lrange);
                                 }
                             });
                         });
@@ -406,13 +386,7 @@ impl RedisView {
                             strip.cell(|ui| {
                                 if ui_button_w!(ui, "RPUSHX", 70.0) {
                                     self.state.last_result =
-                                        run_cmd(&self.state.current_connection, |conn| {
-                                            ListPresenter::rpushx(
-                                                conn,
-                                                &mut self.state.lists,
-                                                &mut self.state.list_st,
-                                            )
-                                        });
+                                        self.run_write_list(ListPresenter::rpushx);
                                 }
                             });
                         });
@@ -441,13 +415,7 @@ impl RedisView {
                             strip.cell(|ui| {
                                 if ui_button_w!(ui, "RPOP", 120.0) {
                                     self.state.last_result =
-                                        run_cmd(&self.state.current_connection, |conn| {
-                                            ListPresenter::rpop(
-                                                conn,
-                                                &mut self.state.lists,
-                                                &mut self.state.list_st,
-                                            )
-                                        });
+                                        self.run_write_list(ListPresenter::rpop);
                                 }
                             });
                         });
@@ -484,25 +452,13 @@ impl RedisView {
                             strip.cell(|ui| {
                                 if ui_button_w50!(ui, "LPUSH") {
                                     self.state.last_result =
-                                        run_cmd(&self.state.current_connection, |conn| {
-                                            ListPresenter::lpush(
-                                                conn,
-                                                &mut self.state.lists,
-                                                &mut self.state.list_st,
-                                            )
-                                        });
+                                        self.run_write_list(ListPresenter::lpush);
                                 }
                             });
                             strip.cell(|ui| {
                                 if ui_button_w!(ui, "LPUSHX", 70.0) {
                                     self.state.last_result =
-                                        run_cmd(&self.state.current_connection, |conn| {
-                                            ListPresenter::lpushx(
-                                                conn,
-                                                &mut self.state.lists,
-                                                &mut self.state.list_st,
-                                            )
-                                        });
+                                        self.run_write_list(ListPresenter::lpushx);
                                 }
                             });
                         });
@@ -531,13 +487,7 @@ impl RedisView {
                             strip.cell(|ui| {
                                 if ui_button_w!(ui, "LPOP", 120.0) {
                                     self.state.last_result =
-                                        run_cmd(&self.state.current_connection, |conn| {
-                                            ListPresenter::lpop(
-                                                conn,
-                                                &mut self.state.lists,
-                                                &mut self.state.list_st,
-                                            )
-                                        });
+                                        self.run_write_list(ListPresenter::lpop);
                                 }
                             });
                         });
@@ -570,5 +520,30 @@ impl RedisView {
                     ui.end_row();
                 }
             });
+    }
+
+    #[inline(always)]
+    fn run_read_list(
+        &mut self,
+        cb: impl Fn(&mut Connection, &RedisListState) -> RedisResponse,
+    ) -> Option<RedisResponse> {
+        run_read_generic(&self.state.current_connection, &self.state.list_st, cb)
+    }
+
+    #[inline(always)]
+    fn run_write_list(
+        &mut self,
+        cb: impl Fn(
+            &mut Connection,
+            &mut HashMap<String, Vec<String>>,
+            &RedisListState,
+        ) -> RedisResponse,
+    ) -> Option<RedisResponse> {
+        run_write_generic(
+            &self.state.current_connection,
+            &self.state.list_st,
+            &mut self.state.lists,
+            cb,
+        )
     }
 }

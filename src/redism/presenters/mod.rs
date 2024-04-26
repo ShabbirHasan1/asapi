@@ -15,7 +15,7 @@ pub mod stream;
 pub mod string;
 pub mod zset;
 
-use redis::{Commands as _, RedisResult, Value};
+use redis::{Commands as _, Connection, RedisResult, Value};
 
 use crate::redism::parser::redis_value_to_string;
 
@@ -54,4 +54,23 @@ pub fn delete_key(host: &str, port: &str, key: &str) -> RedisResult<i8> {
 #[inline(always)]
 pub fn delete_hashkey(host: &str, port: &str, hash_name: &str, field_key: &str) -> RedisResult<i8> {
     create_conn_with_default(host, port).and_then(|mut con| con.hdel(hash_name, field_key))
+}
+
+#[inline(always)]
+pub fn run_read_generic<S>(
+    conn_def: &RedisConnectionDefinition,
+    state: &S,
+    mut cb: impl FnMut(&mut Connection, &S) -> RedisResponse,
+) -> Option<RedisResponse> {
+    run_cmd(conn_def, |conn| cb(conn, state))
+}
+
+#[inline(always)]
+pub fn run_write_generic<S, C>(
+    conn_def: &RedisConnectionDefinition,
+    state: &S,
+    col: &mut C,
+    mut cb: impl FnMut(&mut Connection, &mut C, &S) -> RedisResponse,
+) -> Option<RedisResponse> {
+    run_cmd(conn_def, |conn| cb(conn, col, state))
 }

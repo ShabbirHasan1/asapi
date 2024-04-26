@@ -1,3 +1,5 @@
+use std::collections::BTreeMap;
+
 // -------------------------------------------------------------------------
 // Copyright (C) 2024 Fernando López Laso - All Rights Reserved
 //
@@ -7,6 +9,7 @@
 // -------------------------------------------------------------------------
 use eframe::egui;
 use egui_extras::{Size, StripBuilder};
+use redis::Connection;
 
 use crate::{
     common::internationalization::I18n,
@@ -14,7 +17,10 @@ use crate::{
     error, info,
     redism::{
         connection::RedisMenu,
-        presenters::{delete_key, json::JsonPresenter, run_cmd},
+        presenters::{
+            delete_key, json::JsonPresenter, run_read_generic, run_write_generic, RedisResponse,
+        },
+        state::RedisJsonState,
         view::RedisView,
     },
     ui_button_w100,
@@ -82,9 +88,7 @@ impl RedisView {
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "JSON.TYPE") {
                                     self.state.last_result =
-                                        run_cmd(&self.state.current_connection, |conn| {
-                                            JsonPresenter::json_type(conn, &mut self.state.json_st)
-                                        });
+                                        self.run_read_json(JsonPresenter::json_type);
                                 }
                             });
                         });
@@ -124,13 +128,7 @@ impl RedisView {
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "J.NUMINCRBY") {
                                     self.state.last_result =
-                                        run_cmd(&self.state.current_connection, |conn| {
-                                            JsonPresenter::json_numincrby(
-                                                conn,
-                                                &mut self.state.jsons,
-                                                &mut self.state.json_st,
-                                            )
-                                        });
+                                        self.run_write_json(JsonPresenter::json_numincrby);
                                 }
                             });
                         });
@@ -170,13 +168,7 @@ impl RedisView {
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "J.NUMMULTBY") {
                                     self.state.last_result =
-                                        run_cmd(&self.state.current_connection, |conn| {
-                                            JsonPresenter::json_nummultby(
-                                                conn,
-                                                &mut self.state.jsons,
-                                                &mut self.state.json_st,
-                                            )
-                                        });
+                                        self.run_write_json(JsonPresenter::json_nummultby);
                                 }
                             });
                         });
@@ -216,13 +208,7 @@ impl RedisView {
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "JSON.MERGE") {
                                     self.state.last_result =
-                                        run_cmd(&self.state.current_connection, |conn| {
-                                            JsonPresenter::json_merge(
-                                                conn,
-                                                &mut self.state.jsons,
-                                                &mut self.state.json_st,
-                                            )
-                                        });
+                                        self.run_write_json(JsonPresenter::json_merge);
                                 }
                             });
                         });
@@ -253,13 +239,7 @@ impl RedisView {
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "JSON.TOGGLE") {
                                     self.state.last_result =
-                                        run_cmd(&self.state.current_connection, |conn| {
-                                            JsonPresenter::json_toggle(
-                                                conn,
-                                                &mut self.state.jsons,
-                                                &mut self.state.json_st,
-                                            )
-                                        });
+                                        self.run_write_json(JsonPresenter::json_toggle);
                                 }
                             });
                         });
@@ -328,12 +308,7 @@ impl RedisView {
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "JSON.ARRINDEX") {
                                     self.state.last_result =
-                                        run_cmd(&self.state.current_connection, |conn| {
-                                            JsonPresenter::json_arrindex(
-                                                conn,
-                                                &mut self.state.json_st,
-                                            )
-                                        });
+                                        self.run_read_json(JsonPresenter::json_arrindex);
                                 }
                             });
                         });
@@ -364,12 +339,7 @@ impl RedisView {
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "JSON.ARRLEN") {
                                     self.state.last_result =
-                                        run_cmd(&self.state.current_connection, |conn| {
-                                            JsonPresenter::json_arrlen(
-                                                conn,
-                                                &mut self.state.json_st,
-                                            )
-                                        });
+                                        self.run_read_json(JsonPresenter::json_arrlen);
                                 }
                             });
                         });
@@ -418,13 +388,7 @@ impl RedisView {
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "J.ARRINSERT") {
                                     self.state.last_result =
-                                        run_cmd(&self.state.current_connection, |conn| {
-                                            JsonPresenter::json_arrinsert(
-                                                conn,
-                                                &mut self.state.jsons,
-                                                &mut self.state.json_st,
-                                            )
-                                        });
+                                        self.run_write_json(JsonPresenter::json_arrinsert);
                                 }
                             });
                         });
@@ -464,13 +428,7 @@ impl RedisView {
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "J.ARRAPPEND") {
                                     self.state.last_result =
-                                        run_cmd(&self.state.current_connection, |conn| {
-                                            JsonPresenter::json_arrappend(
-                                                conn,
-                                                &mut self.state.jsons,
-                                                &mut self.state.json_st,
-                                            )
-                                        });
+                                        self.run_write_json(JsonPresenter::json_arrappend);
                                 }
                             });
                         });
@@ -510,13 +468,7 @@ impl RedisView {
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "JSON.ARRPOP") {
                                     self.state.last_result =
-                                        run_cmd(&self.state.current_connection, |conn| {
-                                            JsonPresenter::json_arrpop(
-                                                conn,
-                                                &mut self.state.jsons,
-                                                &mut self.state.json_st,
-                                            )
-                                        });
+                                        self.run_write_json(JsonPresenter::json_arrpop);
                                 }
                             });
                         });
@@ -565,13 +517,7 @@ impl RedisView {
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "JSON.ARRTRIM") {
                                     self.state.last_result =
-                                        run_cmd(&self.state.current_connection, |conn| {
-                                            JsonPresenter::json_arrtrim(
-                                                conn,
-                                                &mut self.state.jsons,
-                                                &mut self.state.json_st,
-                                            )
-                                        });
+                                        self.run_write_json(JsonPresenter::json_arrtrim);
                                 }
                             });
                         });
@@ -645,13 +591,7 @@ impl RedisView {
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "JSON.SET") {
                                     self.state.last_result =
-                                        run_cmd(&self.state.current_connection, |conn| {
-                                            JsonPresenter::json_set(
-                                                conn,
-                                                &mut self.state.jsons,
-                                                &mut self.state.json_st,
-                                            )
-                                        });
+                                        self.run_write_json(JsonPresenter::json_set);
                                 }
                             });
                         });
@@ -682,13 +622,7 @@ impl RedisView {
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "JSON.DEL") {
                                     self.state.last_result =
-                                        run_cmd(&self.state.current_connection, |conn| {
-                                            JsonPresenter::json_del(
-                                                conn,
-                                                &mut self.state.jsons,
-                                                &mut self.state.json_st,
-                                            )
-                                        });
+                                        self.run_write_json(JsonPresenter::json_del);
                                 }
                             });
                         });
@@ -719,13 +653,7 @@ impl RedisView {
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "JSON.FORGET") {
                                     self.state.last_result =
-                                        run_cmd(&self.state.current_connection, |conn| {
-                                            JsonPresenter::json_forget(
-                                                conn,
-                                                &mut self.state.jsons,
-                                                &mut self.state.json_st,
-                                            )
-                                        });
+                                        self.run_write_json(JsonPresenter::json_forget);
                                 }
                             });
                         });
@@ -756,13 +684,7 @@ impl RedisView {
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "JSON.CLEAR") {
                                     self.state.last_result =
-                                        run_cmd(&self.state.current_connection, |conn| {
-                                            JsonPresenter::json_clear(
-                                                conn,
-                                                &mut self.state.jsons,
-                                                &mut self.state.json_st,
-                                            )
-                                        });
+                                        self.run_write_json(JsonPresenter::json_clear);
                                 }
                             });
                         });
@@ -802,13 +724,7 @@ impl RedisView {
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "J.STRAPPEND") {
                                     self.state.last_result =
-                                        run_cmd(&self.state.current_connection, |conn| {
-                                            JsonPresenter::json_strappend(
-                                                conn,
-                                                &mut self.state.jsons,
-                                                &mut self.state.json_st,
-                                            )
-                                        });
+                                        self.run_write_json(JsonPresenter::json_strappend);
                                 }
                             });
                         });
@@ -849,9 +765,7 @@ impl RedisView {
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "JSON.GET") {
                                     self.state.last_result =
-                                        run_cmd(&self.state.current_connection, |conn| {
-                                            JsonPresenter::json_get(conn, &mut self.state.json_st)
-                                        });
+                                        self.run_read_json(JsonPresenter::json_get);
                                 }
                             });
                         });
@@ -882,9 +796,7 @@ impl RedisView {
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "JSON.MGET") {
                                     self.state.last_result =
-                                        run_cmd(&self.state.current_connection, |conn| {
-                                            JsonPresenter::json_mget(conn, &mut self.state.json_st)
-                                        });
+                                        self.run_read_json(JsonPresenter::json_mget);
                                 }
                             });
                         });
@@ -915,12 +827,7 @@ impl RedisView {
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "JSON.OBJKEYS") {
                                     self.state.last_result =
-                                        run_cmd(&self.state.current_connection, |conn| {
-                                            JsonPresenter::json_objkeys(
-                                                conn,
-                                                &mut self.state.json_st,
-                                            )
-                                        });
+                                        self.run_read_json(JsonPresenter::json_objkeys);
                                 }
                             });
                         });
@@ -951,12 +858,7 @@ impl RedisView {
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "JSON.OBJLEN") {
                                     self.state.last_result =
-                                        run_cmd(&self.state.current_connection, |conn| {
-                                            JsonPresenter::json_objlen(
-                                                conn,
-                                                &mut self.state.json_st,
-                                            )
-                                        });
+                                        self.run_read_json(JsonPresenter::json_objlen);
                                 }
                             });
                         });
@@ -987,12 +889,7 @@ impl RedisView {
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "JSON.STRLEN") {
                                     self.state.last_result =
-                                        run_cmd(&self.state.current_connection, |conn| {
-                                            JsonPresenter::json_strlen(
-                                                conn,
-                                                &mut self.state.json_st,
-                                            )
-                                        });
+                                        self.run_read_json(JsonPresenter::json_strlen);
                                 }
                             });
                         });
@@ -1025,5 +922,26 @@ impl RedisView {
                     ui.end_row();
                 }
             });
+    }
+
+    #[inline(always)]
+    fn run_read_json(
+        &mut self,
+        cb: impl Fn(&mut Connection, &RedisJsonState) -> RedisResponse,
+    ) -> Option<RedisResponse> {
+        run_read_generic(&self.state.current_connection, &self.state.json_st, cb)
+    }
+
+    #[inline(always)]
+    fn run_write_json(
+        &mut self,
+        cb: impl Fn(&mut Connection, &mut BTreeMap<String, String>, &RedisJsonState) -> RedisResponse,
+    ) -> Option<RedisResponse> {
+        run_write_generic(
+            &self.state.current_connection,
+            &self.state.json_st,
+            &mut self.state.jsons,
+            cb,
+        )
     }
 }

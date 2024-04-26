@@ -293,7 +293,7 @@ pub struct RedisLocalState {
     pub lists: HashMap<String, Vec<String>>,
     pub sets: HashMap<String, Vec<String>>,
     pub hashes: HashMap<String, Vec<(String, String)>>, // nombre_hash: Lista de pares
-    pub sorted_sets: HashMap<String, Vec<String>>,
+    pub zsets: HashMap<String, Vec<String>>,
     // El valor es el json como string.
     pub jsons: BTreeMap<String, String>,
     pub streams: HashMap<String, Vec<String>>,
@@ -317,7 +317,7 @@ pub struct RedisLocalState {
     pub list_st: RedisListState,
     pub sets_st: RedisSetsState,
     pub hash_st: RedisHashState,
-    pub ssets_st: RedisZSetsState,
+    pub zsets_st: RedisZSetsState,
     pub json_st: RedisJsonState,
 }
 
@@ -345,12 +345,12 @@ impl Default for RedisLocalState {
             jsons: Default::default(),
             lists: Default::default(),
             sets: Default::default(),
-            sorted_sets: Default::default(),
+            zsets: Default::default(),
             string_st: Default::default(),
             list_st: Default::default(),
             sets_st: Default::default(),
             hash_st: Default::default(),
-            ssets_st: Default::default(),
+            zsets_st: Default::default(),
             json_st: Default::default(),
         }
     }
@@ -365,7 +365,7 @@ impl RedisLocalState {
             RedisMenu::List => self.lists.clear(),
             RedisMenu::Set => self.sets.clear(),
             RedisMenu::Hash => self.hashes.clear(),
-            RedisMenu::SortedSet => self.sorted_sets.clear(),
+            RedisMenu::SortedSet => self.zsets.clear(),
             RedisMenu::Stream => self.streams.clear(),
             _ => (),
         };
@@ -378,7 +378,7 @@ impl RedisLocalState {
         self.jsons.clear();
         self.lists.clear();
         self.sets.clear();
-        self.sorted_sets.clear();
+        self.zsets.clear();
     }
 
     pub fn reset_command(&mut self) {
