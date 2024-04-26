@@ -11,7 +11,7 @@ use eframe::egui;
 use crate::{
     common::internationalization::I18n,
     redism::{
-        presenter::{self, RedisMenu},
+        connection::{scan, RedisMenu},
         state::RedisLocalState,
     },
 };
@@ -35,7 +35,7 @@ pub fn selectable_and_info(
     )
     .context_menu(|ui| {
         if ui.button(&i18n.redis_load).clicked() {
-            if let Err(err) = presenter::scan(st, menu_option) {
+            if let Err(err) = scan(st, menu_option) {
                 st.last_result = Some(Err(err.to_string()));
             }
             ui.close_menu();

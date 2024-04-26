@@ -16,8 +16,8 @@ use crate::{
     components::{result_panel::ui_response_panel, widgets::ui_text_edit_singleline_hint},
     error,
     redism::{
-        presenter::{self, RedisMenu},
-        presenters::{run_cmd, string::StringPresenter, RedisResponse},
+        connection::RedisMenu,
+        presenters::{delete_key, run_cmd, string::StringPresenter, RedisResponse},
         state::RedisStringState,
         view::RedisView,
     },
@@ -460,7 +460,7 @@ impl RedisView {
                 for header in &self.state.strings {
                     ui.code(header.0.clone()).context_menu(|ui| {
                         if ui.button(&i18n.redis_delete_ds).clicked() {
-                            match presenter::delete_key(
+                            match delete_key(
                                 &self.state.current_connection.host,
                                 &self.state.current_connection.port,
                                 header.0,

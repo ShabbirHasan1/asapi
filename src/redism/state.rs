@@ -12,7 +12,7 @@ use std::collections::BTreeMap;
 use std::collections::HashMap;
 use std::fmt::Display;
 
-use crate::{common::traits::ToUrl, redism::presenter::RedisMenu};
+use crate::{common::traits::ToUrl, redism::connection::RedisMenu};
 
 /// No tengo muy claro cómo hacerlo mejor.
 /// Path y OsStr son más apropiadas pero problemáticas.

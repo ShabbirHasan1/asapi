@@ -9,11 +9,10 @@
 use crate::{error, info};
 use redis::streams::{StreamReadOptions, StreamReadReply};
 use redis::JsonCommands;
-use redis::{self, Client, Commands, Connection, Msg as PubSubMsg, RedisError, RedisResult, Value};
-use std::collections::HashMap;
+use redis::{self, Client, Commands, Connection, RedisError, RedisResult, Value};
 
 use super::presenters::RedisResponse;
-use super::state::RedisLocalState;
+use super::state::{RedisConnectionDefinition, RedisLocalState};
 
 #[derive(Clone, Debug, PartialEq, Copy, Default)]
 pub enum RedisMenu {
@@ -45,6 +44,13 @@ pub fn create_conn(host: &str, port: i16) -> Result<redis::Connection, RedisErro
 pub fn create_conn_with_default(host: &str, port: &str) -> Result<redis::Connection, RedisError> {
     let port = port.parse::<i16>().unwrap_or(6379); // Using 6379 as default value;
     create_conn(host, port)
+}
+
+#[inline(always)]
+pub fn create_redis_connection(
+    conn: &RedisConnectionDefinition,
+) -> Result<redis::Connection, RedisError> {
+    create_conn_with_default(&conn.host, &conn.port)
 }
 
 /// Escaneo de toda la instancia de redis.
@@ -142,54 +148,6 @@ pub fn scan(state: &mut RedisLocalState, option: RedisMenu) -> RedisResult<()> {
     Ok(())
 }
 
-// pub fn run_redis_command<F: FnMut(&mut redis::Connection) -> String>(
-//     conn_def: &RedisConnectionDefinition,
-//     mut cb: F,
-// ) -> String {
-//     let connection = create_redis_connection(conn_def);
-
-//     if let Ok(mut conn) = connection {
-//         cb(&mut conn)
-//     } else {
-//         "ERROR :: Not able to connect to {conn}.".to_string()
-//     }
-// }
-
-// Leemos los datos de un stream concreto
-// TODO: ... no tengo muy claro aún para qué lo gasto.
-pub fn read_stream_id(
-    stream_key: &str,
-    id: &str,
-    state: &mut HashMap<String, HashMap<String, Value>>,
-) -> RedisResult<()> {
-    // pub fn read_stream_id(stream_key: &str, id: &str) -> RedisResult<()> {
-    // TODO: Connection in state??
-    let client = Client::open("redis://127.0.0.1/")?;
-    let mut con: Connection = client.get_connection()?;
-
-    // This gives the next one to the one inside the array, so filtering with rust until other option.
-    let opts = StreamReadOptions::default().count(1);
-    let result: RedisResult<StreamReadReply> = con.xread_options(&[stream_key], &[id], &opts);
-    // let result: RedisResult<StreamReadReply> = con.xread(&[stream_key], &["0"]);
-
-    match result {
-        Ok(stream_keys) => {
-            for entry in stream_keys.keys {
-                info!("Stream keys: {}, asked for {}", entry.key, id);
-                info!("  {}", entry.ids.len());
-                for stream_id in entry.ids {
-                    info!(" - entry id: {}", stream_id.id);
-                    state.insert(stream_id.id, stream_id.map.clone());
-                    info!("{:?}", stream_id.map);
-                }
-            }
-        }
-        Err(e) => info!("Ocurrió un error {}", e),
-    }
-
-    Ok(())
-}
-
 pub fn run_user_string_command(host: &str, port: &str, cmd: &str) -> RedisResponse {
     if let Some((command, args)) = parse_command(cmd) {
         info!("\nCommando\n{:?}\n{:?}", command, args);
@@ -219,69 +177,4 @@ fn parse_command<'a>(input: &'a str) -> Option<(&'a str, Vec<&'a str>)> {
     let initial = words.remove(0);
 
     Some((initial, words))
-}
-
-pub fn delete_stream_message(
-    host: &str,
-    port: i16,
-    stream_name: &str,
-    msg_id: &str,
-) -> RedisResult<i8> {
-    create_conn(host, port).and_then(|mut con| con.xdel::<&str, &str, i8>(stream_name, &[msg_id]))
-}
-
-pub fn delete_key(host: &str, port: &str, key: &str) -> RedisResult<i8> {
-    create_conn_with_default(host, port).and_then(|mut con| con.del(key))
-}
-
-// Borrado por entrada, un hash entero no se puede borrar. Se borra cuando no le quedan entradas.
-pub fn delete_hashkey(host: &str, port: &str, hash_name: &str, field_key: &str) -> RedisResult<i8> {
-    create_conn_with_default(host, port).and_then(|mut con| con.hdel(hash_name, field_key))
-}
-
-pub fn publish_to_channel(
-    host: &str,
-    port: &str,
-    channel: &str,
-    message: &str,
-) -> RedisResult<bool> {
-    create_conn_with_default(host, port).and_then(|mut conn| conn.publish(channel, message))
-}
-
-pub fn subscribe_to_channel_std_thread(
-    host: &str,
-    port: &str,
-    channel: &str,
-    tx: &std::sync::mpsc::Sender<PubSubMsg>,
-) -> Result<(), RedisError> {
-    let mut conn = create_conn_with_default(host, port)?;
-    let owned_channel = channel.to_owned();
-    let tx_owned = tx.to_owned();
-
-    std::thread::spawn(move || -> Result<(), RedisError> {
-        let mut pubsub = conn.as_pubsub();
-        pubsub.subscribe(&owned_channel).unwrap();
-
-        loop {
-            let msg = pubsub.get_message()?;
-            let payload: String = msg.get_payload()?;
-
-            match payload.as_ref() {
-                "#break#" => {
-                    info!(
-                        ">>> Finishing subscription to channel {} <<<",
-                        msg.get_channel_name()
-                    );
-                    break;
-                } //ControlFlow::Break(()),
-                _ => (), // ControlFlow::Continue
-            }
-
-            let _ = tx_owned.send(msg);
-        }
-        pubsub.unsubscribe(&owned_channel)?;
-
-        Ok(())
-    });
-    Ok(())
 }

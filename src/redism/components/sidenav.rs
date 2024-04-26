@@ -15,7 +15,7 @@ use crate::{
     components::separators::ui_color_separator,
     info,
     redism::{
-        presenter::{self, RedisMenu},
+        connection::{self, create_conn, scan, RedisMenu},
         state::{PubSubState, RedisAppState, RedisConnectionDefinition, RedisLocalState},
         view::RedisView,
     },
@@ -29,7 +29,7 @@ impl RedisView {
             // --> Decidimos qué mostrar <--
             ui.horizontal(|ui| {
                 if ui.button("\u{27f3} Load").clicked() {
-                    let _ = presenter::scan(&mut self.state, RedisMenu::All);
+                    let _ = connection::scan(&mut self.state, RedisMenu::All);
                 }
 
                 let s1 = if self.state.hide_connections {
@@ -173,14 +173,13 @@ impl RedisView {
                         // Realmente no necesito `conn` en el estado, pero lo hago porque para
                         // saber si puedo conectar, y por hacer algo con esta conexión.
                         if let Ok(port) = self.state.current_connection.port.parse::<i16>() {
-                            match presenter::create_conn(&self.state.current_connection.host, port)
-                            {
+                            match create_conn(&self.state.current_connection.host, port) {
                                 Ok(conn) => {
                                     self.state.current_connection_idx = idx;
                                     self.state.conn = Some(conn);
                                     self.state.last_result = None;
                                     let option = self.state.selected_menu;
-                                    if let Err(err) = presenter::scan(&mut self.state, option) {
+                                    if let Err(err) = scan(&mut self.state, option) {
                                         self.state.last_result = Some(Err(err.to_string()));
                                     }
                                 }
@@ -192,7 +191,7 @@ impl RedisView {
                         }
                         self.state.last_result = None;
                         let option = self.state.selected_menu;
-                        if let Err(err) = presenter::scan(&mut self.state, option) {
+                        if let Err(err) = scan(&mut self.state, option) {
                             self.state.last_result = Some(Err(err.to_string()));
                         }
                     }

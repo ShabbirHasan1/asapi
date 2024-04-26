@@ -7,8 +7,8 @@
 // -------------------------------------------------------------------------
 
 mod components;
+mod connection;
 mod parser;
-mod presenter;
 mod presenters;
 pub mod state;
 mod utils;

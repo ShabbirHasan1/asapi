@@ -13,8 +13,8 @@ use crate::{
     components::{result_panel::ui_response_panel, widgets::ui_text_edit_singleline_hint},
     error, info,
     redism::{
-        presenter::{self, RedisMenu},
-        presenters::{hash::HashPresenter, run_cmd},
+        connection::RedisMenu,
+        presenters::{delete_hashkey, hash::HashPresenter, run_cmd},
         view::RedisView,
     },
     ui_button_w100,
@@ -581,7 +581,7 @@ impl RedisView {
                             // --> Cada campo se puede borrar con menú contextual <--
                             field_label.context_menu(|ui| {
                                 if ui.button("Delete").clicked() {
-                                    match presenter::delete_hashkey(
+                                    match delete_hashkey(
                                         &self.state.current_connection.host,
                                         &self.state.current_connection.port,
                                         h_name,
