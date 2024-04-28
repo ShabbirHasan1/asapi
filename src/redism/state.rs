@@ -313,6 +313,8 @@ pub struct RedisStreamState {
     pub xadd_nomkstream: bool,
     pub xadd_id: String,
     pub xadd_items: String,
+    pub xdel_k: String,
+    pub xdel_ids: String,
 }
 
 impl Default for RedisStreamState {
@@ -343,6 +345,8 @@ impl Default for RedisStreamState {
             xadd_nomkstream: false,
             xadd_id: "*".to_string(),
             xadd_items: Default::default(),
+            xdel_k: Default::default(),
+            xdel_ids: Default::default(),
         }
     }
 }

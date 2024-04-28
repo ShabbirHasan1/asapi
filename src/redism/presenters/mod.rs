@@ -40,7 +40,11 @@ pub fn run_cmd<F: FnMut(&mut redis::Connection) -> RedisResponse>(
     mut cb: F,
 ) -> Option<RedisResponse> {
     Some(create_redis_connection(conn_def).map_or_else(
-        |err| Err(format!(":: Not able to connect to {conn_def} ({err:?}).")),
+        |err| {
+            Err(format!(
+                "CONNECTION :: Not able to connect to {conn_def} ({err:?})."
+            ))
+        },
         |mut conn| cb(&mut conn),
     ))
 }

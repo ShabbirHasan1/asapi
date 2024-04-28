@@ -8,12 +8,13 @@
 
 use std::collections::HashMap;
 
-use redis::streams::{StreamId, StreamReadOptions, StreamReadReply};
+use redis::streams::{StreamReadOptions, StreamReadReply};
 use redis::{self, Client, Commands, Connection, RedisResult, Value};
 
+use crate::info;
 use crate::redism::connection::create_conn;
+use crate::redism::parser::redis_value_to_string;
 use crate::redism::state::RedisStreamState;
-use crate::{error, info};
 
 use super::{read_operation, RedisResponse};
 
@@ -148,70 +149,84 @@ pub fn xadd(
     streams: &mut HashMap<String, Vec<String>>,
     st: &RedisStreamState,
 ) -> RedisResponse {
-    // pub fn xadd<'a, K: ToRedisArgs, ID: ToRedisArgs, F: ToRedisArgs, V: ToRedisArgs>(
-    //     key: K,
-    //     id: ID,
-    //     items: &'a [(F, V)]
-    // ) -> Self
-    let result = if st.xadd_nomkstream {
-        redis::cmd("XADD")
-            .arg(&st.xadd_k)
-            .arg("NOMKSTREAM")
-            .arg(&st.xadd_id)
-            .arg(&st.xadd_items)
-            .query::<Value>(conn)
-    } else {
-        redis::cmd("XADD")
-            .arg(&st.xadd_k)
-            .arg(&st.xadd_id)
-            .arg(&st.xadd_items)
-            .query::<Value>(conn)
+    let callback = |conn: &mut Connection| {
+        if st.xadd_nomkstream {
+            redis::cmd("XADD")
+                .arg(&st.xadd_k)
+                .arg("NOMKSTREAM")
+                .arg(&st.xadd_id)
+                .arg(&st.xadd_items)
+                .query::<Value>(conn)
+        } else {
+            redis::cmd("XADD")
+                .arg(&st.xadd_k)
+                .arg(&st.xadd_id)
+                .arg(&st.xadd_items)
+                .query::<Value>(conn)
+        }
     };
 
-    // TODO: Esto intentar con thread.
+    write_stream_operation(conn, "XADD", &st.xadd_k, streams, callback)
+}
+
+pub fn xdel(
+    conn: &mut redis::Connection,
+    streams: &mut HashMap<String, Vec<String>>,
+    st: &RedisStreamState,
+) -> RedisResponse {
+    let callback = |conn: &mut Connection| {
+        conn.xdel(&st.xdel_k, &st.xdel_ids.split(' ').collect::<Vec<&str>>())
+    };
+    write_stream_operation(conn, "XDEL", &st.xdel_k, streams, callback)
+}
+
+pub fn xread(conn: &mut Connection, st: &RedisStreamState) -> RedisResponse {
+    read_operation(
+        "XREAD",
+        conn.xinfo_consumers(&st.info_consumers_k, &st.info_consumers_g),
+    )
+}
+
+pub fn xread_group(conn: &mut Connection, st: &RedisStreamState) -> RedisResponse {
+    read_operation(
+        "XREAD",
+        conn.xinfo_consumers(&st.info_consumers_k, &st.info_consumers_g),
+    )
+}
+
+fn write_stream_operation(
+    conn: &mut Connection,
+    m: &str,
+    k: &str,
+    hm: &mut HashMap<String, Vec<String>>,
+    cb: impl Fn(&mut Connection) -> RedisResult<Value>,
+) -> RedisResponse {
+    let result = cb(conn);
     match result {
         Ok(rresp) => {
             let opts = StreamReadOptions::default();
-            let result: RedisResult<StreamReadReply> =
-                conn.xread_options(&[&st.xadd_k], &["0"], &opts);
+            let result: RedisResult<StreamReadReply> = conn.xread_options(&[k], &["0"], &opts);
 
             match result {
                 Ok(stream_keys) => {
-                    streams.insert(st.xadd_k.clone(), Vec::new());
-                    let ids = streams.get_mut(&st.xadd_k).unwrap();
+                    hm.insert(k.to_owned(), Vec::new());
+                    let ids = hm.get_mut(k).unwrap();
                     let stream_ids: Vec<String> = stream_keys
                         .keys
                         .iter()
-                        .flat_map(|k| k.ids.iter().map(|v| v.id).collect())
+                        .flat_map(|k| {
+                            k.ids
+                                .iter()
+                                .map(|v| v.id.to_string())
+                                .collect::<Vec<String>>()
+                        })
                         .collect();
                     ids.extend_from_slice(&stream_ids);
+                    Ok(format!("{m} :: {rr}", rr = redis_value_to_string(&rresp)))
                 }
-                Err(e) => error!("Ocurrió un error {}", e),
+                Err(e) => Ok(format!("{m} :: {e:?}")),
             }
         }
-        Err(_) => todo!(),
+        Err(e) => Ok(format!("XADD :: {e:?}")),
     }
-}
-
-// Redis
-// XREAD [COUNT count] [BLOCK milliseconds] STREAMS key [key ...] id   [id ...]
-// Redis/Rust
-// pub fn xread<'a, K: ToRedisArgs, ID: ToRedisArgs>(
-//   keys: &'a [K],
-//   ids: &'a [ID]
-// ) -> Self {
-//   cmd("XREAD").arg("STREAMS").arg(keys).arg(ids)
-//}
-pub fn xread(conn: &mut redis::Connection, st: &RedisStreamState) -> RedisResponse {
-    read_operation(
-        "XREAD",
-        conn.xinfo_consumers(&st.info_consumers_k, &st.info_consumers_g),
-    )
-}
-
-pub fn xread_group(conn: &mut redis::Connection, st: &RedisStreamState) -> RedisResponse {
-    read_operation(
-        "XREAD",
-        conn.xinfo_consumers(&st.info_consumers_k, &st.info_consumers_g),
-    )
 }
