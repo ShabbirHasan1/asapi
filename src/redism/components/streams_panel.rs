@@ -9,6 +9,7 @@
 use eframe::egui::{self, Label, Sense};
 use egui_extras::{Size, StripBuilder};
 use egui_json_tree::JsonTree;
+use redis::Connection;
 
 use crate::{
     common::internationalization::I18n,
@@ -16,7 +17,12 @@ use crate::{
     error, info,
     redism::{
         connection::RedisMenu,
-        presenters::{delete_key, stream::read_stream_id},
+        presenters::{
+            delete_key, run_read_generic, run_write_generic,
+            stream::{self, read_stream_id},
+            RedisResponse,
+        },
+        state::RedisStreamState,
         utils::value_map_to_string_btree_map,
         view::RedisView,
     },
@@ -33,13 +39,17 @@ impl RedisView {
                 .show(ui, |ui| {
                     ui.columns(2, |uis| {
                         self.stream_info_commands(&mut uis[0]);
+                        self.stream_extra_info_commands(&mut uis[1]);
                     });
                     ui.separator();
 
-                    ui.columns(2, |uis| {});
-                    ui.separator();
-
-                    ui.columns(2, |uis| {});
+                    ui.columns(2, |uis| {
+                        self.stream_basic_modification_commands(&mut uis[1]);
+                        // self.stream_group_modification_commands(&mut uis[1]);
+                        // TODO: Esta es la API para bloquear, así que necesitará
+                        // tratamiento especial
+                        // self.stream_read_commands(&mut uis[0]);
+                    });
                     ui.separator();
                 });
 
@@ -47,6 +57,434 @@ impl RedisView {
         }
 
         self.display_streams(ui, i18n);
+    }
+
+    fn stream_basic_modification_commands(&mut self, ui: &mut egui::Ui) {
+        StripBuilder::new(ui)
+            .size(Size::exact(20.0))
+            .size(Size::exact(20.0))
+            .size(Size::exact(20.0))
+            .size(Size::exact(20.0))
+            .vertical(|mut strip| {
+                strip.strip(|builder| {
+                    builder
+                        .size(Size::remainder())
+                        .size(Size::remainder())
+                        .size(Size::remainder())
+                        .size(Size::remainder())
+                        .size(Size::exact(108.0))
+                        .horizontal(|mut strip| {
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Key",
+                                    &mut self.state.stream_st.xadd_k,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                ui.checkbox(
+                                    &mut self.state.stream_st.xadd_nomkstream,
+                                    "NOMKSTREAM",
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Id",
+                                    &mut self.state.stream_st.xadd_id,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Items",
+                                    &mut self.state.stream_st.xadd_items,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                if ui_button_w100!(ui, "XADD") {
+                                    self.state.last_result = self.run_read_stream(stream::xadd);
+                                }
+                            });
+                        });
+                });
+
+                strip.strip(|builder| {
+                    builder
+                        .size(Size::remainder())
+                        .size(Size::remainder())
+                        .size(Size::remainder())
+                        .size(Size::remainder())
+                        .size(Size::exact(108.0))
+                        .horizontal(|mut strip| {
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Key",
+                                    &mut self.state.stream_st.xrange_k,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Start",
+                                    &mut self.state.stream_st.xrange_start,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "End",
+                                    &mut self.state.stream_st.xrange_end,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "(Count)",
+                                    &mut self.state.stream_st.xrange_count,
+                                );
+                            });
+
+                            // key start end [COUNT count]
+                            strip.cell(|ui| {
+                                if ui_button_w100!(ui, "XRANGE") {
+                                    self.state.last_result = self.run_read_stream(stream::xrange);
+                                }
+                            });
+                        });
+                });
+
+                strip.strip(|builder| {
+                    builder
+                        .size(Size::remainder())
+                        .size(Size::remainder())
+                        .size(Size::remainder())
+                        .size(Size::remainder())
+                        .size(Size::exact(108.0))
+                        .horizontal(|mut strip| {
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Key",
+                                    &mut self.state.stream_st.xrevrange_k,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "(Start)",
+                                    &mut self.state.stream_st.xrevrange_start,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "(End)",
+                                    &mut self.state.stream_st.xrevrange_end,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "(Count)",
+                                    &mut self.state.stream_st.xrevrange_count,
+                                );
+                            });
+
+                            // key start end [COUNT count]
+                            strip.cell(|ui| {
+                                if ui_button_w100!(ui, "XREVRANGE") {
+                                    self.state.last_result =
+                                        self.run_read_stream(stream::xrevrange);
+                                }
+                            });
+                        });
+                });
+
+                strip.strip(|builder| {
+                    builder
+                        .size(Size::remainder())
+                        .size(Size::remainder())
+                        .size(Size::remainder())
+                        .size(Size::exact(108.0))
+                        .horizontal(|mut strip| {
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Key",
+                                    &mut self.state.stream_st.xack_k,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Group",
+                                    &mut self.state.stream_st.xack_group,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Id (& Ids)",
+                                    &mut self.state.stream_st.xack_ids,
+                                );
+                            });
+
+                            // key start end [COUNT count]
+                            strip.cell(|ui| {
+                                if ui_button_w100!(ui, "XACK") {
+                                    self.state.last_result = self.run_read_stream(stream::xack);
+                                }
+                            });
+                        });
+                })
+            });
+    }
+
+    fn stream_extra_info_commands(&mut self, ui: &mut egui::Ui) {
+        StripBuilder::new(ui)
+            .size(Size::exact(20.0))
+            .size(Size::exact(20.0))
+            .size(Size::exact(20.0))
+            .size(Size::exact(20.0))
+            .vertical(|mut strip| {
+                strip.strip(|builder| {
+                    builder
+                        .size(Size::remainder())
+                        .size(Size::exact(108.0))
+                        .horizontal(|mut strip| {
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Key",
+                                    &mut self.state.stream_st.xlen_k,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                if ui_button_w100!(ui, "XLEN") {
+                                    self.state.last_result = self.run_read_stream(stream::xlen);
+                                }
+                            });
+                        });
+                });
+
+                strip.strip(|builder| {
+                    builder
+                        .size(Size::remainder())
+                        .size(Size::remainder())
+                        .size(Size::remainder())
+                        .size(Size::remainder())
+                        .size(Size::exact(108.0))
+                        .horizontal(|mut strip| {
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Key",
+                                    &mut self.state.stream_st.xrange_k,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Start",
+                                    &mut self.state.stream_st.xrange_start,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "End",
+                                    &mut self.state.stream_st.xrange_end,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "(Count)",
+                                    &mut self.state.stream_st.xrange_count,
+                                );
+                            });
+
+                            // key start end [COUNT count]
+                            strip.cell(|ui| {
+                                if ui_button_w100!(ui, "XRANGE") {
+                                    self.state.last_result = self.run_read_stream(stream::xrange);
+                                }
+                            });
+                        });
+                });
+
+                strip.strip(|builder| {
+                    builder
+                        .size(Size::remainder())
+                        .size(Size::remainder())
+                        .size(Size::remainder())
+                        .size(Size::remainder())
+                        .size(Size::exact(108.0))
+                        .horizontal(|mut strip| {
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Key",
+                                    &mut self.state.stream_st.xrevrange_k,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "(Start)",
+                                    &mut self.state.stream_st.xrevrange_start,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "(End)",
+                                    &mut self.state.stream_st.xrevrange_end,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "(Count)",
+                                    &mut self.state.stream_st.xrevrange_count,
+                                );
+                            });
+
+                            // key start end [COUNT count]
+                            strip.cell(|ui| {
+                                if ui_button_w100!(ui, "XREVRANGE") {
+                                    self.state.last_result =
+                                        self.run_read_stream(stream::xrevrange);
+                                }
+                            });
+                        });
+                });
+
+                strip.strip(|builder| {
+                    builder
+                        .size(Size::remainder())
+                        .size(Size::remainder())
+                        .size(Size::remainder())
+                        .size(Size::exact(108.0))
+                        .horizontal(|mut strip| {
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Key",
+                                    &mut self.state.stream_st.xack_k,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Group",
+                                    &mut self.state.stream_st.xack_group,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Id (& Ids)",
+                                    &mut self.state.stream_st.xack_ids,
+                                );
+                            });
+
+                            // key start end [COUNT count]
+                            strip.cell(|ui| {
+                                if ui_button_w100!(ui, "XACK") {
+                                    self.state.last_result = self.run_read_stream(stream::xack);
+                                }
+                            });
+                        });
+                })
+            });
+    }
+
+    fn stream_read_commands(&mut self, ui: &mut egui::Ui) {
+        StripBuilder::new(ui)
+            .size(Size::exact(20.0))
+            .size(Size::exact(20.0))
+            .vertical(|mut strip| {
+                strip.strip(|builder| {
+                    builder
+                        .size(Size::remainder())
+                        .size(Size::remainder())
+                        .size(Size::remainder())
+                        .size(Size::exact(108.0))
+                        .horizontal(|mut strip| {
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Key",
+                                    &mut self.state.stream_st.info_stream_k,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                ui.checkbox(&mut self.state.stream_st.info_stream_full, "Full");
+                            });
+
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "(Count)",
+                                    &mut self.state.stream_st.info_stream_count,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                if ui_button_w100!(ui, "XREAD") {
+                                    self.state.last_result = self.run_read_stream(stream::xread);
+                                }
+                            });
+                        });
+                });
+
+                strip.strip(|builder| {
+                    builder
+                        .size(Size::remainder())
+                        .size(Size::exact(108.0))
+                        .horizontal(|mut strip| {
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Key",
+                                    &mut self.state.stream_st.info_groups_k,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                if ui_button_w100!(ui, "XREAD GROUP") {
+                                    self.state.last_result =
+                                        self.run_read_stream(stream::xread_group);
+                                }
+                            });
+                        });
+                });
+            });
     }
 
     fn stream_info_commands(&mut self, ui: &mut egui::Ui) {
@@ -66,26 +504,48 @@ impl RedisView {
                                 ui_text_edit_singleline_hint(
                                     ui,
                                     "Key",
-                                    &mut self.state.string_st.strlen_k,
+                                    &mut self.state.stream_st.info_stream_k,
                                 );
                             });
 
                             strip.cell(|ui| {
-                                ui.checkbox(&mut state.data_gen.nullable_column_flags[idx], "Full");
+                                ui.checkbox(&mut self.state.stream_st.info_stream_full, "Full");
                             });
 
                             strip.cell(|ui| {
                                 ui_text_edit_singleline_hint(
                                     ui,
                                     "(Count)",
-                                    &mut self.state.string_st.strlen_k,
+                                    &mut self.state.stream_st.info_stream_count,
                                 );
                             });
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "INFO STREAM") {
                                     self.state.last_result =
-                                        self.run_read_stream(StreamPresenter::info_stream);
+                                        self.run_read_stream(stream::info_stream);
+                                }
+                            });
+                        });
+                });
+
+                strip.strip(|builder| {
+                    builder
+                        .size(Size::remainder())
+                        .size(Size::exact(108.0))
+                        .horizontal(|mut strip| {
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Key",
+                                    &mut self.state.stream_st.info_groups_k,
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                if ui_button_w100!(ui, "INFO GROUPS") {
+                                    self.state.last_result =
+                                        self.run_read_stream(stream::info_groups);
                                 }
                             });
                         });
@@ -95,42 +555,28 @@ impl RedisView {
                     builder
                         .size(Size::remainder())
                         .size(Size::remainder())
-                        .size(Size::remainder())
-                        .size(Size::remainder())
                         .size(Size::exact(108.0))
                         .horizontal(|mut strip| {
                             strip.cell(|ui| {
                                 ui_text_edit_singleline_hint(
                                     ui,
-                                    "Key1",
-                                    &mut self.state.string_st.lcs_k1,
+                                    "Key",
+                                    &mut self.state.stream_st.info_consumers_k,
                                 );
                             });
+
                             strip.cell(|ui| {
                                 ui_text_edit_singleline_hint(
                                     ui,
-                                    "Key2",
-                                    &mut self.state.string_st.lcs_k2,
+                                    "Key",
+                                    &mut self.state.stream_st.info_consumers_g,
                                 );
                             });
+
                             strip.cell(|ui| {
-                                ui_text_edit_singleline_hint(
-                                    ui,
-                                    "[Optional] Len",
-                                    &mut self.state.string_st.lcs_len,
-                                );
-                            });
-                            strip.cell(|ui| {
-                                ui_text_edit_singleline_hint(
-                                    ui,
-                                    "[Optional] Idx",
-                                    &mut self.state.string_st.lcs_idx,
-                                );
-                            });
-                            strip.cell(|ui| {
-                                if ui_button_w100!(ui, "LCS") {
+                                if ui_button_w100!(ui, "INFO CONSUMERS") {
                                     self.state.last_result =
-                                        self.run_read_string(StringPresenter::lcs);
+                                        self.run_read_stream(stream::info_consumers);
                                 }
                             });
                         });
@@ -211,5 +657,13 @@ impl RedisView {
                 }
             });
         }
+    }
+
+    #[inline(always)]
+    fn run_read_stream(
+        &mut self,
+        cb: impl Fn(&mut Connection, &RedisStreamState) -> RedisResponse,
+    ) -> Option<RedisResponse> {
+        run_read_generic(&self.state.current_connection, &self.state.stream_st, cb)
     }
 }

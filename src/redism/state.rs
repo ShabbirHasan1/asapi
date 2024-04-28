@@ -287,6 +287,66 @@ pub struct RedisJsonState {
     pub json_toggle_p: String,
 }
 
+pub struct RedisStreamState {
+    pub info_stream_k: String,
+    pub info_stream_full: bool,
+    pub info_stream_count: String,
+    pub info_groups_k: String,
+    pub info_consumers_k: String,
+    pub info_consumers_g: String,
+    pub xread_count: String,
+    pub xread_block: String,
+    pub xread_ks: String,
+    pub xlen_k: String,
+    pub xrange_k: String,
+    pub xrange_start: String,
+    pub xrange_end: String,
+    pub xrange_count: String,
+    pub xrevrange_k: String,
+    pub xrevrange_start: String,
+    pub xrevrange_end: String,
+    pub xrevrange_count: String,
+    pub xack_k: String,
+    pub xack_group: String,
+    pub xack_ids: String,
+    pub xadd_k: String,
+    pub xadd_nomkstream: bool,
+    pub xadd_id: String,
+    pub xadd_items: String,
+}
+
+impl Default for RedisStreamState {
+    fn default() -> Self {
+        Self {
+            info_stream_k: Default::default(),
+            info_stream_full: Default::default(),
+            info_stream_count: Default::default(),
+            info_groups_k: Default::default(),
+            info_consumers_k: Default::default(),
+            info_consumers_g: Default::default(),
+            xread_count: Default::default(),
+            xread_block: Default::default(),
+            xread_ks: Default::default(),
+            xlen_k: Default::default(),
+            xrange_k: Default::default(),
+            xrange_start: Default::default(),
+            xrange_end: Default::default(),
+            xrange_count: Default::default(),
+            xrevrange_k: Default::default(),
+            xrevrange_start: Default::default(),
+            xrevrange_end: Default::default(),
+            xrevrange_count: Default::default(),
+            xack_k: Default::default(),
+            xack_group: Default::default(),
+            xack_ids: Default::default(),
+            xadd_k: Default::default(),
+            xadd_nomkstream: false,
+            xadd_id: "*".to_string(),
+            xadd_items: Default::default(),
+        }
+    }
+}
+
 pub struct RedisLocalState {
     pub cmd_history: Vec<String>,
     pub strings: BTreeMap<String, String>,
@@ -319,6 +379,7 @@ pub struct RedisLocalState {
     pub hash_st: RedisHashState,
     pub zsets_st: RedisZSetsState,
     pub json_st: RedisJsonState,
+    pub stream_st: RedisStreamState,
 }
 
 impl Default for RedisLocalState {
@@ -352,6 +413,7 @@ impl Default for RedisLocalState {
             hash_st: Default::default(),
             zsets_st: Default::default(),
             json_st: Default::default(),
+            stream_st: Default::default(),
         }
     }
 }
