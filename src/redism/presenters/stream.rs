@@ -77,8 +77,6 @@ pub fn info_stream(conn: &mut redis::Connection, st: &RedisStreamState) -> Redis
         redis::cmd("XINFO")
             .arg("STREAM")
             .arg(&st.info_stream_k)
-            .arg("COUNT")
-            .arg(c)
             .query::<Value>(conn)
     };
 
@@ -155,13 +153,25 @@ pub fn xadd(
                 .arg(&st.xadd_k)
                 .arg("NOMKSTREAM")
                 .arg(&st.xadd_id)
-                .arg(&st.xadd_items)
+                .arg(
+                    &st.xadd_items
+                        .split_whitespace()
+                        .collect::<Vec<&str>>()
+                        .chunks(2)
+                        .collect::<Vec<&[&str]>>(),
+                )
                 .query::<Value>(conn)
         } else {
             redis::cmd("XADD")
                 .arg(&st.xadd_k)
                 .arg(&st.xadd_id)
-                .arg(&st.xadd_items)
+                .arg(
+                    &st.xadd_items
+                        .split_whitespace()
+                        .collect::<Vec<&str>>()
+                        .chunks(2)
+                        .collect::<Vec<&[&str]>>(),
+                )
                 .query::<Value>(conn)
         }
     };

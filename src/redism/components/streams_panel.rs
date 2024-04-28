@@ -67,6 +67,7 @@ impl RedisView {
             .size(Size::exact(20.0))
             .size(Size::exact(20.0))
             .size(Size::exact(20.0))
+            .size(Size::exact(20.0))
             .vertical(|mut strip| {
                 strip.strip(|builder| {
                     builder
@@ -191,6 +192,7 @@ impl RedisView {
                     builder
                         .size(Size::remainder())
                         .size(Size::remainder())
+                        .size(Size::remainder())
                         .size(Size::exact(128.0))
                         .horizontal(|mut strip| {
                             strip_text_edit!(strip, "Key", self.state.stream_st.xgroup_setid_k);
@@ -251,7 +253,6 @@ impl RedisView {
                             strip_text_edit!(strip, "Key", self.state.stream_st.xdel_k);
                             strip_text_edit!(strip, "Id (& Ids)", self.state.stream_st.xdel_ids);
 
-                            // key start end [COUNT count]
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "XDEL") {
                                     self.state.last_result = self.run_write_stream(stream::xdel);
