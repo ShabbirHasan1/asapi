@@ -294,8 +294,6 @@ pub struct RedisStreamState {
     pub info_groups_k: String,
     pub info_consumers_k: String,
     pub info_consumers_g: String,
-    pub xread_count: String,
-    pub xread_block: String,
     pub xread_ks: String,
     pub xlen_k: String,
     pub xrange_k: String,
@@ -335,6 +333,10 @@ pub struct RedisStreamState {
     pub xgroup_setid_k: String,
     pub xgroup_setid_g: String,
     pub xgroup_setid_id: String,
+    pub xread_count: String,
+    pub xread_block_ms: String,
+    pub xread_keys: String,
+    pub xread_ids: String,
 }
 
 impl Default for RedisStreamState {
@@ -346,8 +348,6 @@ impl Default for RedisStreamState {
             info_groups_k: Default::default(),
             info_consumers_k: Default::default(),
             info_consumers_g: Default::default(),
-            xread_count: Default::default(),
-            xread_block: Default::default(),
             xread_ks: Default::default(),
             xlen_k: Default::default(),
             xrange_k: Default::default(),
@@ -387,6 +387,10 @@ impl Default for RedisStreamState {
             xgroup_setid_k: Default::default(),
             xgroup_setid_g: Default::default(),
             xgroup_setid_id: "$".to_string(),
+            xread_count: Default::default(),
+            xread_block_ms: Default::default(),
+            xread_keys: Default::default(),
+            xread_ids: Default::default(),
         }
     }
 }

@@ -30,7 +30,7 @@ use crate::{
 impl RedisView {
     pub fn show_sets(&mut self, ui: &mut egui::Ui, i18n: &I18n) {
         if self.state.selected_menu == RedisMenu::Set {
-            egui::CollapsingHeader::new("Comandos Disponibles")
+            egui::CollapsingHeader::new(&i18n.redis_commands_header)
                 .default_open(true)
                 .show(ui, |ui| {
                     ui.columns(2, |uis| {
@@ -49,7 +49,7 @@ impl RedisView {
             ui_response_panel(ui, &self.state.last_result);
         }
 
-        self.show(ui, i18n, RedisMenu::Set);
+        self.display_sets(ui, i18n, RedisMenu::Set);
     }
 
     pub fn show_sorted_sets(&mut self, ui: &mut egui::Ui, i18n: &I18n) {
@@ -78,38 +78,40 @@ impl RedisView {
             ui_response_panel(ui, &self.state.last_result);
         }
 
-        self.show(ui, i18n, RedisMenu::SortedSet);
+        self.display_sets(ui, i18n, RedisMenu::SortedSet);
     }
 
-    fn show(&mut self, ui: &mut egui::Ui, i18n: &I18n, menu: RedisMenu) {
-        ui.set_width(ui.available_width());
-        let tmp = if menu == RedisMenu::Set {
-            &self.state.sets
-        } else {
-            &self.state.zsets
-        };
+    fn display_sets(&mut self, ui: &mut egui::Ui, i18n: &I18n, menu: RedisMenu) {
+        egui::ScrollArea::vertical().show(ui, |ui| {
+            ui.set_width(ui.available_width());
+            let tmp = if menu == RedisMenu::Set {
+                &self.state.sets
+            } else {
+                &self.state.zsets
+            };
 
-        for (set_key, set_values) in tmp {
-            ui.code(set_key).context_menu(|ui| {
-                if ui.button(&i18n.redis_delete_ds).clicked() {
-                    match delete_key(
-                        &self.state.current_connection.host,
-                        &self.state.current_connection.port,
-                        set_key,
-                    ) {
-                        Ok(s) => {
-                            self.state.must_scan = true;
-                            info!("{:?}", s);
+            for (set_key, set_values) in tmp {
+                ui.code(set_key).context_menu(|ui| {
+                    if ui.button(&i18n.redis_delete_ds).clicked() {
+                        match delete_key(
+                            &self.state.current_connection.host,
+                            &self.state.current_connection.port,
+                            set_key,
+                        ) {
+                            Ok(s) => {
+                                self.state.must_scan = true;
+                                info!("{:?}", s);
+                            }
+                            Err(e) => error!("{:?}", e),
                         }
-                        Err(e) => error!("{:?}", e),
+                        ui.close_menu();
                     }
-                    ui.close_menu();
-                }
-            });
-            ui.indent(set_key, |ui| ui.label(set_values.join(", ")));
+                });
+                ui.indent(set_key, |ui| ui.label(set_values.join(", ")));
 
-            ui.end_row();
-        }
+                ui.end_row();
+            }
+        });
     }
 
     fn basic_cmds(&mut self, ui: &mut egui::Ui) {

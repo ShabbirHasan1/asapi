@@ -221,7 +221,11 @@ pub fn xtrim(
 /// --------------------------------------------------
 /// Funciones para lectura de mensajes
 /// --------------------------------------------------
-pub fn xread(conn: &mut Connection, st: &RedisStreamState) -> RedisResponse {
+pub fn xread(
+    conn: &mut Connection,
+    streams: &mut HashMap<String, Vec<String>>,
+    st: &RedisStreamState,
+) -> RedisResponse {
     read_operation(
         "XREAD",
         conn.xinfo_consumers(&st.info_consumers_k, &st.info_consumers_g),

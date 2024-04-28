@@ -30,7 +30,7 @@ use crate::{
 impl RedisView {
     pub fn show_hashes(&mut self, ui: &mut egui::Ui, i18n: &I18n) {
         if self.state.selected_menu == RedisMenu::Hash {
-            egui::CollapsingHeader::new("Comandos Disponibles")
+            egui::CollapsingHeader::new(&i18n.redis_commands_header)
                 .default_open(true)
                 .show(ui, |ui| {
                     ui.columns(2, |uis| {
@@ -53,7 +53,7 @@ impl RedisView {
             ui_response_panel(ui, &self.state.last_result);
         }
 
-        self.hashes_display(ui, i18n);
+        self.display_hashes(ui, i18n);
     }
 
     fn hash_other_cmds(&mut self, ui: &mut egui::Ui) {
@@ -352,42 +352,44 @@ impl RedisView {
             });
     }
 
-    fn hashes_display(&mut self, ui: &mut egui::Ui, _i18n: &I18n) {
+    fn display_hashes(&mut self, ui: &mut egui::Ui, _i18n: &I18n) {
         ui.set_width(ui.available_width());
-        for (h_name, v) in &self.state.hashes {
-            // --> Manejamos acciones sobre elemento que muestra nombre del hash
-            ui.collapsing(h_name, |ui| {
-                // TODO: Borrar todos en cascada con el menú contextual del hash.
-                egui::Grid::new(h_name)
-                    .spacing(egui::vec2(ui.spacing().item_spacing.x * 2.0, 0.0))
-                    .show(ui, |ui| {
-                        for (field_key, field_value) in v {
-                            let field_label =
-                                ui.label(format!("    {} : {}", field_key, field_value));
+        egui::ScrollArea::vertical().show(ui, |ui| {
+            for (h_name, v) in &self.state.hashes {
+                // --> Manejamos acciones sobre elemento que muestra nombre del hash
+                ui.collapsing(h_name, |ui| {
+                    // TODO: Borrar todos en cascada con el menú contextual del hash.
+                    egui::Grid::new(h_name)
+                        .spacing(egui::vec2(ui.spacing().item_spacing.x * 2.0, 0.0))
+                        .show(ui, |ui| {
+                            for (field_key, field_value) in v {
+                                let field_label =
+                                    ui.label(format!("    {} : {}", field_key, field_value));
 
-                            // --> Cada campo se puede borrar con menú contextual <--
-                            field_label.context_menu(|ui| {
-                                if ui.button("Delete").clicked() {
-                                    match delete_hashkey(
-                                        &self.state.current_connection.host,
-                                        &self.state.current_connection.port,
-                                        h_name,
-                                        field_key,
-                                    ) {
-                                        Ok(s) => {
-                                            self.state.must_scan = true;
-                                            info!("{:?}", s);
+                                // --> Cada campo se puede borrar con menú contextual <--
+                                field_label.context_menu(|ui| {
+                                    if ui.button("Delete").clicked() {
+                                        match delete_hashkey(
+                                            &self.state.current_connection.host,
+                                            &self.state.current_connection.port,
+                                            h_name,
+                                            field_key,
+                                        ) {
+                                            Ok(s) => {
+                                                self.state.must_scan = true;
+                                                info!("{:?}", s);
+                                            }
+                                            Err(e) => error!("{:?}", e),
                                         }
-                                        Err(e) => error!("{:?}", e),
+                                        ui.close_menu();
                                     }
-                                    ui.close_menu();
-                                }
-                            });
-                            ui.end_row();
-                        }
-                    });
-            });
-        }
+                                });
+                                ui.end_row();
+                            }
+                        });
+                });
+            }
+        });
     }
 
     #[inline(always)]

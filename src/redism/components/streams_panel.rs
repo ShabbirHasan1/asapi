@@ -36,29 +36,98 @@ use super::contextual_menus;
 impl RedisView {
     pub fn show_streams(&mut self, ui: &mut egui::Ui, i18n: &I18n) {
         if self.state.selected_menu == RedisMenu::Stream {
-            egui::CollapsingHeader::new("Comandos Disponibles")
-                .default_open(true)
-                .show(ui, |ui| {
-                    ui.columns(2, |uis| {
-                        self.stream_info_commands(&mut uis[0]);
-                        self.stream_extra_info_commands(&mut uis[1]);
-                    });
-                    ui.separator();
+            self.show_regular_streams_commands(ui, i18n);
+            self.show_read_streams(ui, i18n);
+        }
+        self.display_streams(ui, i18n);
+    }
 
-                    ui.columns(2, |uis| {
-                        self.stream_basic_modification_commands(&mut uis[0]);
-                        self.stream_group_modification_commands(&mut uis[1]);
-                        // TODO: Esta es la API para bloquear, así que necesitará
-                        // tratamiento especial
-                        // self.stream_read_commands(&mut uis[0]);
-                    });
-                    ui.separator();
+    fn show_read_streams(&mut self, ui: &mut egui::Ui, i18n: &I18n) {
+        egui::CollapsingHeader::new(&i18n.redis_stream_reader_commands_header)
+            .default_open(true)
+            .show(ui, |ui| {
+                ui.columns(2, |uis| {
+                    self.stream_read_commands(&mut uis[0]);
+                });
+                ui.separator();
+            });
+    }
+
+    fn stream_read_commands(&mut self, ui: &mut egui::Ui) {
+        StripBuilder::new(ui)
+            .size(Size::exact(20.0))
+            .size(Size::exact(20.0))
+            .vertical(|mut strip| {
+                strip.strip(|builder| {
+                    builder
+                        .size(Size::remainder())
+                        .size(Size::remainder())
+                        .size(Size::remainder())
+                        .size(Size::remainder())
+                        .size(Size::exact(128.0))
+                        .horizontal(|mut strip| {
+                            strip_text_edit!(strip, "(Count)", self.state.stream_st.xread_count);
+                            strip_text_edit!(
+                                strip,
+                                "(Block ms)",
+                                self.state.stream_st.xread_block_ms
+                            );
+                            strip_text_edit!(strip, "Keys", self.state.stream_st.xread_keys);
+                            strip_text_edit!(strip, "Ids", self.state.stream_st.xread_ids);
+
+                            strip.cell(|ui| {
+                                if ui_button_w100!(ui, "XREAD") {
+                                    self.state.last_result = self.run_write_stream(stream::xread);
+                                }
+                            });
+                        });
                 });
 
-            ui_response_panel(ui, &self.state.last_result);
-        }
+                strip.strip(|builder| {
+                    builder
+                        .size(Size::remainder())
+                        .size(Size::exact(128.0))
+                        .horizontal(|mut strip| {
+                            strip.cell(|ui| {
+                                ui_text_edit_singleline_hint(
+                                    ui,
+                                    "Key",
+                                    &mut self.state.stream_st.info_groups_k,
+                                );
+                            });
 
-        self.display_streams(ui, i18n);
+                            strip.cell(|ui| {
+                                if ui_button_w100!(ui, "XREAD GROUP") {
+                                    self.state.last_result =
+                                        self.run_read_stream(stream::xread_group);
+                                }
+                            });
+                        });
+                });
+            });
+    }
+
+    fn show_regular_streams_commands(&mut self, ui: &mut egui::Ui, i18n: &I18n) {
+        egui::CollapsingHeader::new(&i18n.redis_commands_header)
+            .default_open(true)
+            .show(ui, |ui| {
+                ui.columns(2, |uis| {
+                    self.stream_info_commands(&mut uis[0]);
+                    self.stream_extra_info_commands(&mut uis[1]);
+                });
+                ui.separator();
+
+                ui.columns(2, |uis| {
+                    self.stream_basic_modification_commands(&mut uis[0]);
+                    self.stream_group_modification_commands(&mut uis[1]);
+                    // TODO: Esta es la API para bloquear, así que necesitará
+                    // tratamiento especial
+                    // self.stream_read_commands(&mut uis[0]);
+                });
+                ui.separator();
+            });
+
+        ui_response_panel(ui, &self.state.last_result);
     }
 
     fn stream_group_modification_commands(&mut self, ui: &mut egui::Ui) {
@@ -395,70 +464,6 @@ impl RedisView {
             });
     }
 
-    fn stream_read_commands(&mut self, ui: &mut egui::Ui) {
-        StripBuilder::new(ui)
-            .size(Size::exact(20.0))
-            .size(Size::exact(20.0))
-            .vertical(|mut strip| {
-                strip.strip(|builder| {
-                    builder
-                        .size(Size::remainder())
-                        .size(Size::remainder())
-                        .size(Size::remainder())
-                        .size(Size::exact(128.0))
-                        .horizontal(|mut strip| {
-                            strip.cell(|ui| {
-                                ui_text_edit_singleline_hint(
-                                    ui,
-                                    "Key",
-                                    &mut self.state.stream_st.info_stream_k,
-                                );
-                            });
-
-                            strip.cell(|ui| {
-                                ui.checkbox(&mut self.state.stream_st.info_stream_full, "Full");
-                            });
-
-                            strip.cell(|ui| {
-                                ui_text_edit_singleline_hint(
-                                    ui,
-                                    "(Count)",
-                                    &mut self.state.stream_st.info_stream_count,
-                                );
-                            });
-
-                            strip.cell(|ui| {
-                                if ui_button_w100!(ui, "XREAD") {
-                                    self.state.last_result = self.run_read_stream(stream::xread);
-                                }
-                            });
-                        });
-                });
-
-                strip.strip(|builder| {
-                    builder
-                        .size(Size::remainder())
-                        .size(Size::exact(128.0))
-                        .horizontal(|mut strip| {
-                            strip.cell(|ui| {
-                                ui_text_edit_singleline_hint(
-                                    ui,
-                                    "Key",
-                                    &mut self.state.stream_st.info_groups_k,
-                                );
-                            });
-
-                            strip.cell(|ui| {
-                                if ui_button_w100!(ui, "XREAD GROUP") {
-                                    self.state.last_result =
-                                        self.run_read_stream(stream::xread_group);
-                                }
-                            });
-                        });
-                });
-            });
-    }
-
     fn stream_info_commands(&mut self, ui: &mut egui::Ui) {
         StripBuilder::new(ui)
             .size(Size::exact(20.0))
@@ -558,77 +563,79 @@ impl RedisView {
 
     fn display_streams(&mut self, ui: &mut egui::Ui, i18n: &I18n) {
         ui.set_width(ui.available_width());
-        for (stream_name, v) in &self.state.streams {
-            // ==> Gestión de Stream y todos los mensajes en él
-            ui.collapsing(stream_name, |ui| {
-                for (idx, id) in v.iter().enumerate() {
-                    // --> Gestión de cada mensaje <--
-                    let label = match self.state.stream_id_values.get(id) {
-                        Some(_) => ui.add(Label::new(id).sense(Sense::click())),
-                        _ => ui
-                            .add(Label::new(id).sense(Sense::click()))
-                            .on_hover_text(&i18n.redis_stream_hover_info),
-                    };
+        egui::ScrollArea::vertical().show(ui, |ui| {
+            for (stream_name, v) in &self.state.streams {
+                // ==> Gestión de Stream y todos los mensajes en él
+                ui.collapsing(stream_name, |ui| {
+                    for (idx, id) in v.iter().enumerate() {
+                        // --> Gestión de cada mensaje <--
+                        let label = match self.state.stream_id_values.get(id) {
+                            Some(_) => ui.add(Label::new(id).sense(Sense::click())),
+                            _ => ui
+                                .add(Label::new(id).sense(Sense::click()))
+                                .on_hover_text(&i18n.redis_stream_hover_info),
+                        };
 
-                    label.context_menu(|ui| {
-                        // TODO: Aquí estoy cogiendo valores leídos
-                        let option = self.state.stream_id_values.get(id);
-                        self.state.must_scan = contextual_menus::stream_msg(
-                            ui,
+                        label.context_menu(|ui| {
+                            // TODO: Aquí estoy cogiendo valores leídos
+                            let option = self.state.stream_id_values.get(id);
+                            self.state.must_scan = contextual_menus::stream_msg(
+                                ui,
+                                stream_name,
+                                id.to_string().to_string(),
+                                option,
+                                &mut self.state.current_command,
+                            );
+                        });
+                        if label.clicked() {
+                            match self.state.stream_id_values.get(id) {
+                                Some(_) => {
+                                    self.state.stream_id_values.remove(id);
+                                }
+                                None => {
+                                    // Hace falta esto porque cuando busco, si no es desde 0, el
+                                    // que me devuelve es el siguiente al que selecciono, por
+                                    // eso me hace falta el `idx-1`.
+                                    let from_when = if idx == 0 { "0" } else { &v[idx - 1] };
+                                    let _ = read_stream_id(
+                                        stream_name,
+                                        from_when,
+                                        &mut self.state.stream_id_values,
+                                    );
+                                }
+                            }
+                        }
+                        ui.end_row();
+                        // TODO: Cambiar y almacenar los serde_json::Value para no estar
+                        // haciendo el parseo continumamente. Eso nos permite volver a usar
+                        // HashMap en vez de BTreeMap, aunque lo mejor sería comprobar el
+                        // rendimiento al crear cada uno.
+                        if let Some(value) = self.state.stream_id_values.get(id) {
+                            // let value = serde_json::json!(value_map_to_string_map(value));
+                            let value = serde_json::json!(value_map_to_string_btree_map(value));
+                            JsonTree::new(id, &value).show(ui);
+                        }
+                    }
+                })
+                .header_response
+                .context_menu(|ui| {
+                    if ui.button(&i18n.redis_delete_ds).clicked() {
+                        match delete_key(
+                            &self.state.current_connection.host,
+                            &self.state.current_connection.port,
                             stream_name,
-                            id.to_string().to_string(),
-                            option,
-                            &mut self.state.current_command,
-                        );
-                    });
-                    if label.clicked() {
-                        match self.state.stream_id_values.get(id) {
-                            Some(_) => {
-                                self.state.stream_id_values.remove(id);
+                        ) {
+                            Ok(s) => {
+                                self.state.must_scan = true;
+                                info!("{:?}", s);
                             }
-                            None => {
-                                // Hace falta esto porque cuando busco, si no es desde 0, el
-                                // que me devuelve es el siguiente al que selecciono, por
-                                // eso me hace falta el `idx-1`.
-                                let from_when = if idx == 0 { "0" } else { &v[idx - 1] };
-                                let _ = read_stream_id(
-                                    stream_name,
-                                    from_when,
-                                    &mut self.state.stream_id_values,
-                                );
-                            }
+                            Err(e) => error!("{:?}", e),
                         }
+                        ui.close_menu();
                     }
-                    ui.end_row();
-                    // TODO: Cambiar y almacenar los serde_json::Value para no estar
-                    // haciendo el parseo continumamente. Eso nos permite volver a usar
-                    // HashMap en vez de BTreeMap, aunque lo mejor sería comprobar el
-                    // rendimiento al crear cada uno.
-                    if let Some(value) = self.state.stream_id_values.get(id) {
-                        // let value = serde_json::json!(value_map_to_string_map(value));
-                        let value = serde_json::json!(value_map_to_string_btree_map(value));
-                        JsonTree::new(id, &value).show(ui);
-                    }
-                }
-            })
-            .header_response
-            .context_menu(|ui| {
-                if ui.button(&i18n.redis_delete_ds).clicked() {
-                    match delete_key(
-                        &self.state.current_connection.host,
-                        &self.state.current_connection.port,
-                        stream_name,
-                    ) {
-                        Ok(s) => {
-                            self.state.must_scan = true;
-                            info!("{:?}", s);
-                        }
-                        Err(e) => error!("{:?}", e),
-                    }
-                    ui.close_menu();
-                }
-            });
-        }
+                });
+            }
+        });
     }
 
     #[inline(always)]

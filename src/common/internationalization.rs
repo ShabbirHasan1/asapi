@@ -104,6 +104,8 @@ pub struct I18n {
     pub redis_delete_ds: String,
     pub redis_load: String,
     pub redis_stream_hover_info: String,
+    pub redis_commands_header: String,
+    pub redis_stream_reader_commands_header: String,
 
     // Postgres
     pub pg_connection_host: String,
@@ -229,7 +231,9 @@ pub fn language_selector(i: I18nOptions) -> I18n {
             redis_delete_ds: String::from("Borrar"),
             redis_load: String::from("Cargar"),
             redis_stream_hover_info: String::from("Clicka para abrir el Stream y reenviarlo"),
-            
+            redis_commands_header: String::from("Existent Commands"),
+            redis_stream_reader_commands_header: String::from("Comandos de Lectura"),
+
             // Postgres
             pg_connection_host: "Host".to_owned(),
             pg_connection_port: "Puerto".to_owned(),
@@ -351,7 +355,9 @@ pub fn language_selector(i: I18nOptions) -> I18n {
             redis_send_command: String::from("Send Command"),
             redis_delete_ds: String::from("Delete"),
             redis_load: String::from("Load"),
-redis_stream_hover_info: String::from("Click to Open Stream and enabling resend"),
+            redis_stream_hover_info: String::from("Click to Open Stream and enabling resend"),
+            redis_commands_header: String::from("Comandos Disponibles"),
+            redis_stream_reader_commands_header: String::from("XRead Commands"),
 
             // Postgres
             pg_info_performance_table: "Deletion is forbidden for performance table.\nSelect this for massive quantity of cells (rows x columns), order of 1e5, or when massive amount of data inside the cells, like long varchar, big json/binaries/arrays or geographical data.".to_owned(),
