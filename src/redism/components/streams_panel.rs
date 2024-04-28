@@ -28,7 +28,7 @@ use crate::{
         utils::value_map_to_string_btree_map,
         view::RedisView,
     },
-    strip_text_edit, ui_button_w100,
+    strip_combo_box, strip_text_edit, ui_button_w100,
 };
 
 use super::contextual_menus;
@@ -46,8 +46,8 @@ impl RedisView {
                     ui.separator();
 
                     ui.columns(2, |uis| {
-                        self.stream_basic_modification_commands(&mut uis[1]);
-                        // self.stream_group_modification_commands(&mut uis[1]);
+                        self.stream_basic_modification_commands(&mut uis[0]);
+                        self.stream_group_modification_commands(&mut uis[1]);
                         // TODO: Esta es la API para bloquear, así que necesitará
                         // tratamiento especial
                         // self.stream_read_commands(&mut uis[0]);
@@ -59,6 +59,153 @@ impl RedisView {
         }
 
         self.display_streams(ui, i18n);
+    }
+
+    fn stream_group_modification_commands(&mut self, ui: &mut egui::Ui) {
+        StripBuilder::new(ui)
+            .size(Size::exact(20.0))
+            .size(Size::exact(20.0))
+            .size(Size::exact(20.0))
+            .size(Size::exact(20.0))
+            .vertical(|mut strip| {
+                strip.strip(|builder| {
+                    builder
+                        .size(Size::remainder())
+                        .size(Size::remainder())
+                        .size(Size::remainder())
+                        .size(Size::remainder())
+                        .size(Size::exact(128.0))
+                        .horizontal(|mut strip| {
+                            // XGROUP CREATE key group <id | $> [MKSTREAM] [ENTRIESREAD entries-read]
+                            strip_text_edit!(strip, "Key", self.state.stream_st.xgroup_create_k);
+                            strip_text_edit!(
+                                strip,
+                                "Group",
+                                self.state.stream_st.xgroup_create_group
+                            );
+                            strip_text_edit!(strip, "Id", self.state.stream_st.xgroup_create_id);
+
+                            strip.cell(|ui| {
+                                ui.checkbox(
+                                    &mut self.state.stream_st.xgroup_create_mkstream,
+                                    "MKSTREAM",
+                                );
+                            });
+
+                            strip.cell(|ui| {
+                                if ui_button_w100!(ui, "XGROUP CREATE") {
+                                    self.state.last_result =
+                                        self.run_write_stream(stream::xgroup_create);
+                                }
+                            });
+                        });
+                });
+
+                strip.strip(|builder| {
+                    builder
+                        .size(Size::remainder())
+                        .size(Size::remainder())
+                        .size(Size::remainder())
+                        .size(Size::exact(178.0))
+                        .horizontal(|mut strip| {
+                            strip_text_edit!(
+                                strip,
+                                "Key",
+                                self.state.stream_st.xgroup_create_consumer_k
+                            );
+                            strip_text_edit!(
+                                strip,
+                                "Group",
+                                self.state.stream_st.xgroup_create_consumer_group
+                            );
+                            strip_text_edit!(
+                                strip,
+                                "Consumer",
+                                self.state.stream_st.xgroup_create_consumer
+                            );
+
+                            strip.cell(|ui| {
+                                if ui_button_w100!(ui, "XGROUP CREATE CONSUMER") {
+                                    self.state.last_result =
+                                        self.run_write_stream(stream::xgroup_create_consumer);
+                                }
+                            });
+                        });
+                });
+
+                strip.strip(|builder| {
+                    builder
+                        .size(Size::remainder())
+                        .size(Size::remainder())
+                        .size(Size::remainder())
+                        .size(Size::exact(178.0))
+                        .horizontal(|mut strip| {
+                            strip_text_edit!(
+                                strip,
+                                "Key",
+                                self.state.stream_st.xgroup_del_consumer_k
+                            );
+                            strip_text_edit!(
+                                strip,
+                                "Group",
+                                self.state.stream_st.xgroup_del_consumer_group
+                            );
+                            strip_text_edit!(
+                                strip,
+                                "Consumer",
+                                self.state.stream_st.xgroup_del_consumer
+                            );
+
+                            strip.cell(|ui| {
+                                if ui_button_w100!(ui, "XGROUP DEL CONSUMER") {
+                                    self.state.last_result =
+                                        self.run_write_stream(stream::xgroup_del_consumer);
+                                }
+                            });
+                        });
+                });
+
+                strip.strip(|builder| {
+                    builder
+                        .size(Size::remainder())
+                        .size(Size::remainder())
+                        .size(Size::exact(178.0))
+                        .horizontal(|mut strip| {
+                            strip_text_edit!(strip, "Key", self.state.stream_st.xgroup_destroy_k);
+                            strip_text_edit!(
+                                strip,
+                                "Group",
+                                self.state.stream_st.xgroup_destroy_group
+                            );
+
+                            strip.cell(|ui| {
+                                if ui_button_w100!(ui, "XGROUP DESTROY") {
+                                    self.state.last_result =
+                                        self.run_write_stream(stream::xgroup_destroy);
+                                }
+                            });
+                        });
+                });
+
+                strip.strip(|builder| {
+                    builder
+                        .size(Size::remainder())
+                        .size(Size::remainder())
+                        .size(Size::exact(128.0))
+                        .horizontal(|mut strip| {
+                            strip_text_edit!(strip, "Key", self.state.stream_st.xgroup_setid_k);
+                            strip_text_edit!(strip, "Group", self.state.stream_st.xgroup_setid_g);
+                            strip_text_edit!(strip, "Id", self.state.stream_st.xgroup_setid_id);
+
+                            strip.cell(|ui| {
+                                if ui_button_w100!(ui, "XGROUP SETID") {
+                                    self.state.last_result =
+                                        self.run_write_stream(stream::xgroup_setid);
+                                }
+                            });
+                        });
+                });
+            });
     }
 
     fn stream_basic_modification_commands(&mut self, ui: &mut egui::Ui) {
@@ -73,16 +220,9 @@ impl RedisView {
                         .size(Size::remainder())
                         .size(Size::remainder())
                         .size(Size::remainder())
-                        .size(Size::exact(108.0))
+                        .size(Size::exact(128.0))
                         .horizontal(|mut strip| {
                             strip_text_edit!(strip, "Key", self.state.stream_st.xadd_k);
-                            // strip.cell(|ui| {
-                            //     ui_text_edit_singleline_hint(
-                            //         ui,
-                            //         "Key",
-                            //         &mut self.state.stream_st.xadd_k,
-                            //     );
-                            // });
 
                             strip.cell(|ui| {
                                 ui.checkbox(
@@ -92,22 +232,7 @@ impl RedisView {
                             });
 
                             strip_text_edit!(strip, "Id", self.state.stream_st.xadd_id);
-                            // strip.cell(|ui| {
-                            //     ui_text_edit_singleline_hint(
-                            //         ui,
-                            //         "Id",
-                            //         &mut self.state.stream_st.xadd_id,
-                            //     );
-                            // });
-
                             strip_text_edit!(strip, "Items", self.state.stream_st.xadd_items);
-                            // strip.cell(|ui| {
-                            //     ui_text_edit_singleline_hint(
-                            //         ui,
-                            //         "Items",
-                            //         &mut self.state.stream_st.xadd_items,
-                            //     );
-                            // });
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "XADD") {
@@ -121,25 +246,10 @@ impl RedisView {
                     builder
                         .size(Size::remainder())
                         .size(Size::remainder())
-                        .size(Size::exact(108.0))
+                        .size(Size::exact(128.0))
                         .horizontal(|mut strip| {
                             strip_text_edit!(strip, "Key", self.state.stream_st.xdel_k);
-                            // strip.cell(|ui| {
-                            //     ui_text_edit_singleline_hint(
-                            //         ui,
-                            //         "Key",
-                            //         &mut self.state.stream_st.xdel_k,
-                            //     );
-                            // });
-
                             strip_text_edit!(strip, "Id (& Ids)", self.state.stream_st.xdel_ids);
-                            // strip.cell(|ui| {
-                            //     ui_text_edit_singleline_hint(
-                            //         ui,
-                            //         "Id (& Ids)",
-                            //         &mut self.state.stream_st.xdel_ids,
-                            //     );
-                            // });
 
                             // key start end [COUNT count]
                             strip.cell(|ui| {
@@ -156,57 +266,34 @@ impl RedisView {
                         .size(Size::remainder())
                         .size(Size::remainder())
                         .size(Size::remainder())
-                        .size(Size::exact(108.0))
+                        .size(Size::remainder())
+                        .size(Size::exact(128.0))
                         .horizontal(|mut strip| {
-                            strip_text_edit!(strip, "Key", self.state.stream_st.xrevrange_k);
-                            // strip.cell(|ui| {
-                            //     ui_text_edit_singleline_hint(
-                            //         ui,
-                            //         "Key",
-                            //         &mut self.state.stream_st.xrevrange_k,
-                            //     );
-                            // });
-
+                            strip_text_edit!(strip, "Key", self.state.stream_st.xtrim_k);
+                            strip_combo_box!(
+                                strip,
+                                "xtrim_maxlen_minid",
+                                self.state.stream_st.xtrim_maxlen_minid,
+                                "MAXLEN",
+                                "MINID"
+                            );
+                            strip_combo_box!(
+                                strip,
+                                "xtrim_aprox_equal",
+                                self.state.stream_st.xtrim_aprox_equal,
+                                "=",
+                                "~"
+                            );
                             strip_text_edit!(
                                 strip,
-                                "(Start)",
-                                self.state.stream_st.xrevrange_start
+                                "Threshold",
+                                self.state.stream_st.xtrim_threshold
                             );
-                            // strip.cell(|ui| {
-                            //     ui_text_edit_singleline_hint(
-                            //         ui,
-                            //         "(Start)",
-                            //         &mut self.state.stream_st.xrevrange_start,
-                            //     );
-                            // });
+                            strip_text_edit!(strip, "(Limit)", self.state.stream_st.xtrim_limit);
 
-                            strip_text_edit!(strip, "(End)", self.state.stream_st.xrevrange_end);
-                            // strip.cell(|ui| {
-                            //     ui_text_edit_singleline_hint(
-                            //         ui,
-                            //         "(End)",
-                            //         &mut self.state.stream_st.xrevrange_end,
-                            //     );
-                            // });
-
-                            strip_text_edit!(
-                                strip,
-                                "(Count)",
-                                self.state.stream_st.xrevrange_count
-                            );
-                            // strip.cell(|ui| {
-                            //     ui_text_edit_singleline_hint(
-                            //         ui,
-                            //         "(Count)",
-                            //         &mut self.state.stream_st.xrevrange_count,
-                            //     );
-                            // });
-
-                            // key start end [COUNT count]
                             strip.cell(|ui| {
-                                if ui_button_w100!(ui, "XREVRANGE") {
-                                    self.state.last_result =
-                                        self.run_read_stream(stream::xrevrange);
+                                if ui_button_w100!(ui, "XTRIM") {
+                                    self.state.last_result = self.run_write_stream(stream::xtrim);
                                 }
                             });
                         });
@@ -224,15 +311,9 @@ impl RedisView {
                 strip.strip(|builder| {
                     builder
                         .size(Size::remainder())
-                        .size(Size::exact(108.0))
+                        .size(Size::exact(128.0))
                         .horizontal(|mut strip| {
-                            strip.cell(|ui| {
-                                ui_text_edit_singleline_hint(
-                                    ui,
-                                    "Key",
-                                    &mut self.state.stream_st.xlen_k,
-                                );
-                            });
+                            strip_text_edit!(strip, "Key", self.state.stream_st.xlen_k);
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "XLEN") {
@@ -248,39 +329,12 @@ impl RedisView {
                         .size(Size::remainder())
                         .size(Size::remainder())
                         .size(Size::remainder())
-                        .size(Size::exact(108.0))
+                        .size(Size::exact(128.0))
                         .horizontal(|mut strip| {
-                            strip.cell(|ui| {
-                                ui_text_edit_singleline_hint(
-                                    ui,
-                                    "Key",
-                                    &mut self.state.stream_st.xrange_k,
-                                );
-                            });
-
-                            strip.cell(|ui| {
-                                ui_text_edit_singleline_hint(
-                                    ui,
-                                    "Start",
-                                    &mut self.state.stream_st.xrange_start,
-                                );
-                            });
-
-                            strip.cell(|ui| {
-                                ui_text_edit_singleline_hint(
-                                    ui,
-                                    "End",
-                                    &mut self.state.stream_st.xrange_end,
-                                );
-                            });
-
-                            strip.cell(|ui| {
-                                ui_text_edit_singleline_hint(
-                                    ui,
-                                    "(Count)",
-                                    &mut self.state.stream_st.xrange_count,
-                                );
-                            });
+                            strip_text_edit!(strip, "Key", self.state.stream_st.xrange_k);
+                            strip_text_edit!(strip, "Start", self.state.stream_st.xrange_start);
+                            strip_text_edit!(strip, "End", self.state.stream_st.xrange_end);
+                            strip_text_edit!(strip, "(Count)", self.state.stream_st.xrange_count);
 
                             // key start end [COUNT count]
                             strip.cell(|ui| {
@@ -297,39 +351,16 @@ impl RedisView {
                         .size(Size::remainder())
                         .size(Size::remainder())
                         .size(Size::remainder())
-                        .size(Size::exact(108.0))
+                        .size(Size::exact(128.0))
                         .horizontal(|mut strip| {
-                            strip.cell(|ui| {
-                                ui_text_edit_singleline_hint(
-                                    ui,
-                                    "Key",
-                                    &mut self.state.stream_st.xrevrange_k,
-                                );
-                            });
-
-                            strip.cell(|ui| {
-                                ui_text_edit_singleline_hint(
-                                    ui,
-                                    "(Start)",
-                                    &mut self.state.stream_st.xrevrange_start,
-                                );
-                            });
-
-                            strip.cell(|ui| {
-                                ui_text_edit_singleline_hint(
-                                    ui,
-                                    "(End)",
-                                    &mut self.state.stream_st.xrevrange_end,
-                                );
-                            });
-
-                            strip.cell(|ui| {
-                                ui_text_edit_singleline_hint(
-                                    ui,
-                                    "(Count)",
-                                    &mut self.state.stream_st.xrevrange_count,
-                                );
-                            });
+                            strip_text_edit!(strip, "Key", self.state.stream_st.xrevrange_k);
+                            strip_text_edit!(strip, "Start", self.state.stream_st.xrevrange_start);
+                            strip_text_edit!(strip, "End", self.state.stream_st.xrevrange_end);
+                            strip_text_edit!(
+                                strip,
+                                "(Count)",
+                                self.state.stream_st.xrevrange_count
+                            );
 
                             // key start end [COUNT count]
                             strip.cell(|ui| {
@@ -346,31 +377,11 @@ impl RedisView {
                         .size(Size::remainder())
                         .size(Size::remainder())
                         .size(Size::remainder())
-                        .size(Size::exact(108.0))
+                        .size(Size::exact(128.0))
                         .horizontal(|mut strip| {
-                            strip.cell(|ui| {
-                                ui_text_edit_singleline_hint(
-                                    ui,
-                                    "Key",
-                                    &mut self.state.stream_st.xack_k,
-                                );
-                            });
-
-                            strip.cell(|ui| {
-                                ui_text_edit_singleline_hint(
-                                    ui,
-                                    "Group",
-                                    &mut self.state.stream_st.xack_group,
-                                );
-                            });
-
-                            strip.cell(|ui| {
-                                ui_text_edit_singleline_hint(
-                                    ui,
-                                    "Id (& Ids)",
-                                    &mut self.state.stream_st.xack_ids,
-                                );
-                            });
+                            strip_text_edit!(strip, "Key", self.state.stream_st.xack_k);
+                            strip_text_edit!(strip, "Group", self.state.stream_st.xack_group);
+                            strip_text_edit!(strip, "Id (& Ids)", self.state.stream_st.xack_ids);
 
                             // key start end [COUNT count]
                             strip.cell(|ui| {
@@ -393,7 +404,7 @@ impl RedisView {
                         .size(Size::remainder())
                         .size(Size::remainder())
                         .size(Size::remainder())
-                        .size(Size::exact(108.0))
+                        .size(Size::exact(128.0))
                         .horizontal(|mut strip| {
                             strip.cell(|ui| {
                                 ui_text_edit_singleline_hint(
@@ -426,7 +437,7 @@ impl RedisView {
                 strip.strip(|builder| {
                     builder
                         .size(Size::remainder())
-                        .size(Size::exact(108.0))
+                        .size(Size::exact(128.0))
                         .horizontal(|mut strip| {
                             strip.cell(|ui| {
                                 ui_text_edit_singleline_hint(
@@ -458,7 +469,7 @@ impl RedisView {
                         .size(Size::remainder())
                         .size(Size::remainder())
                         .size(Size::remainder())
-                        .size(Size::exact(108.0))
+                        .size(Size::exact(128.0))
                         .horizontal(|mut strip| {
                             strip.cell(|ui| {
                                 ui_text_edit_singleline_hint(
@@ -481,7 +492,7 @@ impl RedisView {
                             });
 
                             strip.cell(|ui| {
-                                if ui_button_w100!(ui, "INFO STREAM") {
+                                if ui_button_w100!(ui, "XINFO STREAM") {
                                     self.state.last_result =
                                         self.run_read_stream(stream::info_stream);
                                 }
@@ -492,7 +503,7 @@ impl RedisView {
                 strip.strip(|builder| {
                     builder
                         .size(Size::remainder())
-                        .size(Size::exact(108.0))
+                        .size(Size::exact(128.0))
                         .horizontal(|mut strip| {
                             strip.cell(|ui| {
                                 ui_text_edit_singleline_hint(
@@ -503,7 +514,7 @@ impl RedisView {
                             });
 
                             strip.cell(|ui| {
-                                if ui_button_w100!(ui, "INFO GROUPS") {
+                                if ui_button_w100!(ui, "XINFO GROUPS") {
                                     self.state.last_result =
                                         self.run_read_stream(stream::info_groups);
                                 }
@@ -515,7 +526,7 @@ impl RedisView {
                     builder
                         .size(Size::remainder())
                         .size(Size::remainder())
-                        .size(Size::exact(108.0))
+                        .size(Size::exact(128.0))
                         .horizontal(|mut strip| {
                             strip.cell(|ui| {
                                 ui_text_edit_singleline_hint(
@@ -528,13 +539,13 @@ impl RedisView {
                             strip.cell(|ui| {
                                 ui_text_edit_singleline_hint(
                                     ui,
-                                    "Key",
+                                    "Group",
                                     &mut self.state.stream_st.info_consumers_g,
                                 );
                             });
 
                             strip.cell(|ui| {
-                                if ui_button_w100!(ui, "INFO CONSUMERS") {
+                                if ui_button_w100!(ui, "XINFO CONSUMERS") {
                                     self.state.last_result =
                                         self.run_read_stream(stream::info_consumers);
                                 }

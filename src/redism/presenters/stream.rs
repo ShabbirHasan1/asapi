@@ -180,6 +180,37 @@ pub fn xdel(
     write_stream_operation(conn, "XDEL", &st.xdel_k, streams, callback)
 }
 
+pub fn xtrim(
+    conn: &mut redis::Connection,
+    streams: &mut HashMap<String, Vec<String>>,
+    st: &RedisStreamState,
+) -> RedisResponse {
+    let callback = |conn: &mut Connection| {
+        if st.xtrim_limit.is_empty() {
+            redis::cmd("XTRIM")
+                .arg(&st.xtrim_k)
+                .arg(&st.xtrim_maxlen_minid)
+                .arg(&st.xtrim_aprox_equal)
+                .arg(&st.xtrim_threshold)
+                .query::<Value>(conn)
+        } else {
+            redis::cmd("XTRIM")
+                .arg(&st.xtrim_k)
+                .arg(&st.xtrim_maxlen_minid)
+                .arg(&st.xtrim_aprox_equal)
+                .arg(&st.xtrim_threshold)
+                .arg("LIMIT")
+                .arg(&st.xtrim_limit)
+                .query::<Value>(conn)
+        }
+    };
+
+    write_stream_operation(conn, "XTRIM", &st.xtrim_k, streams, callback)
+}
+
+/// --------------------------------------------------
+/// Funciones para lectura de mensajes
+/// --------------------------------------------------
 pub fn xread(conn: &mut Connection, st: &RedisStreamState) -> RedisResponse {
     read_operation(
         "XREAD",
@@ -194,6 +225,83 @@ pub fn xread_group(conn: &mut Connection, st: &RedisStreamState) -> RedisRespons
     )
 }
 
+/// --------------------------------------------------
+/// Funciones para manipulación de grupos.
+/// --------------------------------------------------
+pub fn xgroup_create(
+    conn: &mut redis::Connection,
+    streams: &mut HashMap<String, Vec<String>>,
+    st: &RedisStreamState,
+) -> RedisResponse {
+    let k = &st.xgroup_create_k;
+    let callback = |conn: &mut Connection| {
+        if st.xgroup_create_mkstream {
+            conn.xgroup_create_mkstream(k, &st.xgroup_create_group, &st.xgroup_create_id)
+        } else {
+            conn.xgroup_create(k, &st.xgroup_create_group, &st.xgroup_create_id)
+        }
+    };
+
+    write_stream_operation(conn, "XGROUP CREATE", k, streams, callback)
+}
+
+pub fn xgroup_create_consumer(
+    conn: &mut redis::Connection,
+    streams: &mut HashMap<String, Vec<String>>,
+    st: &RedisStreamState,
+) -> RedisResponse {
+    let k = &st.xgroup_create_consumer_k;
+    let callback = |conn: &mut Connection| {
+        redis::cmd("XGROUP")
+            .arg("CREATECONSUMER")
+            .arg(k)
+            .arg(&st.xgroup_create_consumer_group)
+            .arg(&st.xgroup_create_consumer)
+            .query::<Value>(conn)
+    };
+
+    write_stream_operation(conn, "XGROUP CREATECONSUMER", k, streams, callback)
+}
+
+pub fn xgroup_del_consumer(
+    conn: &mut redis::Connection,
+    streams: &mut HashMap<String, Vec<String>>,
+    st: &RedisStreamState,
+) -> RedisResponse {
+    let k = &st.xgroup_del_consumer_k;
+    let callback = |conn: &mut Connection| {
+        conn.xgroup_delconsumer(k, &st.xgroup_del_consumer_group, &st.xgroup_del_consumer)
+    };
+
+    write_stream_operation(conn, "XGROUP DELCONSUMER", k, streams, callback)
+}
+
+pub fn xgroup_destroy(
+    conn: &mut redis::Connection,
+    streams: &mut HashMap<String, Vec<String>>,
+    st: &RedisStreamState,
+) -> RedisResponse {
+    let k = &st.xgroup_destroy_k;
+    let callback = |conn: &mut Connection| conn.xgroup_destroy(k, &st.xgroup_destroy_group);
+
+    write_stream_operation(conn, "XGROUP DESTROY", k, streams, callback)
+}
+
+pub fn xgroup_setid(
+    conn: &mut redis::Connection,
+    streams: &mut HashMap<String, Vec<String>>,
+    st: &RedisStreamState,
+) -> RedisResponse {
+    let k = &st.xgroup_setid_k;
+    let callback =
+        |conn: &mut Connection| conn.xgroup_setid(k, &st.xgroup_setid_g, &st.xgroup_setid_id);
+
+    write_stream_operation(conn, "XGROUP SETID", k, streams, callback)
+}
+
+/// --------------------------------------------------
+/// Funciones Auxiliares
+/// --------------------------------------------------
 fn write_stream_operation(
     conn: &mut Connection,
     m: &str,

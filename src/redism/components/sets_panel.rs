@@ -18,7 +18,7 @@ use crate::{
     redism::{
         connection::RedisMenu,
         presenters::{
-            delete_key, run_cmd, run_read_generic, run_write_generic, set::SetsPresenter,
+            delete_key, run_read_generic, run_write_generic, set::SetsPresenter,
             zset::SortedSetsPresenter, RedisResponse,
         },
         state::{RedisSetsState, RedisZSetsState},
