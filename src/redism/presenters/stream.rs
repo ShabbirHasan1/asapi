@@ -244,26 +244,23 @@ pub fn blocking_xread(
         .collect::<Vec<String>>();
     let tx_cloned = tx.clone();
     let ms = st.xread_block_ms.parse::<usize>().ok();
+    let opts = if count > 0 && block > 0 {
+        StreamReadOptions::default().count(count).block(block)
+    } else if count > 0 {
+        StreamReadOptions::default().count(count)
+    } else if block > 0 {
+        println!("Bloqueo {block} seconds");
+        StreamReadOptions::default().block(block)
+    } else {
+        StreamReadOptions::default()
+    };
 
     std::thread::spawn(move || {
-        let mut streams: HashMap<String, HashMap<String, BTreeMap<String, String>>> =
-            HashMap::new();
         let conn_result = create_redis_connection(&conn_def);
         if conn_result.is_err() {
             return;
         }
         let mut conn = conn_result.unwrap();
-
-        let opts = if count > 0 && block > 0 {
-            StreamReadOptions::default().count(count).block(block)
-        } else if count > 0 {
-            StreamReadOptions::default().count(count)
-        } else if block > 0 {
-            println!("Bloqueo {block} seconds");
-            StreamReadOptions::default().block(block)
-        } else {
-            StreamReadOptions::default()
-        };
 
         let now = SystemTime::now();
         for k in &keys {
@@ -286,13 +283,10 @@ pub fn blocking_xread(
                     for stream_id in entry.ids {
                         tmp.insert(stream_id.id, value_map_to_string_btree_map(&stream_id.map));
                     }
-                    streams.insert(entry.key, tmp);
-                }
-                for (k, v) in &streams {
                     let msg = RedisStreamReaderStorage {
-                        stream: k.to_owned(),
+                        stream: entry.key.to_owned(),
                         group: None,
-                        messages: v.to_owned(),
+                        messages: tmp,
                         system_time: now,
                         block_ms: ms,
                     };
