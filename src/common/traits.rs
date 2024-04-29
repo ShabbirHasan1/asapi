@@ -6,12 +6,18 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
+use std::collections::HashMap;
+
 pub trait ShowVec {
     fn to_string_vec(&self) -> Vec<String>;
 }
 
 pub trait Show {
     fn to_string(&self) -> String;
+}
+
+pub trait Tree<K, V> {
+    fn to_tree(&self) -> HashMap<K, V>;
 }
 
 pub trait Runner<T> {

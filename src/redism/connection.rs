@@ -6,6 +6,8 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
+use std::collections::HashSet;
+
 use crate::{error, info};
 use redis::streams::{StreamReadOptions, StreamReadReply};
 use redis::JsonCommands;
@@ -116,7 +118,7 @@ pub fn scan(state: &mut RedisLocalState, option: RedisMenu) -> RedisResult<()> {
                             let opts = StreamReadOptions::default(); //.count(10);
                             let result: RedisResult<StreamReadReply> =
                                 con.xread_options(&[&key], &["0"], &opts);
-                            state.streams.insert(key.clone(), Vec::new());
+                            state.streams.insert(key.clone(), vec![]);
 
                             match result {
                                 Ok(stream_keys) => {

@@ -6,12 +6,11 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
-use std::collections::HashMap;
-
 use eframe::egui::{self, Label, Sense};
 use egui_extras::{Size, StripBuilder};
-use egui_json_tree::JsonTree;
+use egui_json_tree::{DefaultExpand, JsonTree};
 use redis::Connection;
+use std::collections::HashMap;
 
 use crate::{
     common::internationalization::I18n,
@@ -91,6 +90,20 @@ impl RedisView {
             });
             ui.separator();
         });
+
+        match self.state.last_stream_read_result {
+            Some(ref res) => match res {
+                Ok(hm) => {
+                    JsonTree::new("stream_xread_response", &serde_json::json!(&hm))
+                        .default_expand(DefaultExpand::ToLevel(1))
+                        .show(ui);
+                }
+                Err(err) => {
+                    ui_response_panel(ui, &Some(Err(err.to_owned())));
+                }
+            },
+            _ => (),
+        }
     }
 
     fn stream_read_commands_1(&mut self, ui: &mut egui::Ui) {
@@ -116,12 +129,17 @@ impl RedisView {
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "XREAD") {
-                                    self.state.last_result = self.run_write_stream(stream::xread);
+                                    self.state.last_stream_read_result = Some(stream::xread(
+                                        &self.state.current_connection,
+                                        // &mut self.state.last_stream_read_result,
+                                        &self.state.stream_st,
+                                    ));
+
                                     self.state.stream_st.streams.push(RedisStreamReaderStorage {
                                         stream: self.state.stream_st.xread_keys.clone(),
                                         group: None,
-                                        messages: HashMap::default(),
-                                        timeout: self
+                                        messages: Default::default(),
+                                        starting_ts_ms: self
                                             .state
                                             .stream_st
                                             .xread_count
@@ -175,12 +193,13 @@ impl RedisView {
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "XREAD GROUP") {
-                                    self.state.last_result = self.run_write_stream(stream::xread);
+                                    self.state.last_result =
+                                        self.run_write_stream(stream::xread_group);
                                     self.state.stream_st.streams.push(RedisStreamReaderStorage {
                                         stream: self.state.stream_st.xreadgroup_keys.clone(),
                                         group: Some(self.state.stream_st.xreadgroup_group.clone()),
-                                        messages: HashMap::default(),
-                                        timeout: self
+                                        messages: Default::default(),
+                                        starting_ts_ms: self
                                             .state
                                             .stream_st
                                             .xread_count
@@ -650,6 +669,7 @@ impl RedisView {
                                     // eso me hace falta el `idx-1`.
                                     let from_when = if idx == 0 { "0" } else { &v[idx - 1] };
                                     let _ = read_stream_id(
+                                        &self.state.current_connection,
                                         stream_name,
                                         from_when,
                                         &mut self.state.stream_id_values,

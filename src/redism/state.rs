@@ -6,11 +6,12 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
+use egui_json_tree::JsonTree;
+use redis::streams::StreamReadReply;
 use redis::Msg as PubSubMsg;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::collections::HashMap;
-use std::collections::HashSet;
 use std::fmt::Display;
 
 use crate::{common::traits::ToUrl, redism::connection::RedisMenu};
@@ -288,12 +289,24 @@ pub struct RedisJsonState {
     pub json_toggle_p: String,
 }
 
+#[derive(Default, Debug, Clone)]
+pub struct CustomStreamKey {
+    pub key: String,
+    pub ids: Vec<CustomStreamId>,
+}
+
+#[derive(Default, Debug, Clone)]
+pub struct CustomStreamId {
+    pub id: String,
+    pub map: HashMap<String, String>,
+}
+
 #[derive(Default)]
 pub struct RedisStreamReaderStorage {
     pub stream: String,
     pub group: Option<String>,
-    pub messages: HashMap<String, Vec<String>>,
-    pub timeout: usize, // tiempo que queda hasta que se desbloquee.
+    pub messages: Vec<HashMap<String, Vec<String>>>,
+    pub starting_ts_ms: usize, // tiempo que queda hasta que se desbloquee.
 }
 
 pub struct RedisStreamState {
@@ -303,7 +316,6 @@ pub struct RedisStreamState {
     pub info_groups_k: String,
     pub info_consumers_k: String,
     pub info_consumers_g: String,
-    pub xread_ks: String,
     pub xlen_k: String,
     pub xrange_k: String,
     pub xrange_start: String,
@@ -365,7 +377,6 @@ impl Default for RedisStreamState {
             info_groups_k: Default::default(),
             info_consumers_k: Default::default(),
             info_consumers_g: Default::default(),
-            xread_ks: Default::default(),
             xlen_k: Default::default(),
             xrange_k: Default::default(),
             xrange_start: Default::default(),
@@ -440,6 +451,8 @@ pub struct RedisLocalState {
     pub must_scan: bool,
     // pub last_result: String,
     pub last_result: Option<Result<String, String>>,
+    pub last_stream_read_result:
+        Option<Result<HashMap<String, HashMap<String, BTreeMap<String, String>>>, String>>,
     pub conn: Option<redis::Connection>, // La estoy gastando?
     pub selected_menu: RedisMenu,
     pub hide_connections: bool,
@@ -472,6 +485,7 @@ impl Default for RedisLocalState {
             must_scan: Default::default(),
             // last_result: Default::default(),
             last_result: Default::default(),
+            last_stream_read_result: Default::default(),
             conn: Default::default(),
             selected_menu: Default::default(),
             hide_connections: Default::default(),

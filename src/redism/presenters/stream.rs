@@ -6,14 +6,18 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
-use redis::streams::{StreamReadOptions, StreamReadReply};
+use egui_json_tree::JsonTree;
+use redis::streams::{StreamId, StreamKey, StreamReadOptions, StreamReadReply};
 use redis::{self, Client, Commands, Connection, RedisResult, Value};
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
+use std::fmt::Display;
 
-use crate::info;
-use crate::redism::connection::create_conn;
+use crate::common::traits::{Show, Tree};
+use crate::redism::connection::{create_conn, create_redis_connection};
 use crate::redism::parser::redis_value_to_string;
-use crate::redism::state::RedisStreamState;
+use crate::redism::state::{RedisConnectionDefinition, RedisStreamState};
+use crate::redism::utils::value_map_to_string_btree_map;
+use crate::{error, info};
 
 use super::{read_operation, RedisResponse};
 
@@ -30,19 +34,16 @@ pub fn delete_stream_message(
 // Leemos los datos de un stream concreto
 // TODO: ... no tengo muy claro ya para qué lo gasto.
 pub fn read_stream_id(
+    conn_def: &RedisConnectionDefinition,
     stream_key: &str,
     id: &str,
     state: &mut HashMap<String, HashMap<String, Value>>,
 ) -> RedisResult<()> {
-    // pub fn read_stream_id(stream_key: &str, id: &str) -> RedisResult<()> {
-    // TODO: Connection in state??
-    let client = Client::open("redis://127.0.0.1/")?;
-    let mut con: Connection = client.get_connection()?;
+    let mut conn = create_redis_connection(conn_def)?;
 
     // This gives the next one to the one inside the array, so filtering with rust until other option.
     let opts = StreamReadOptions::default().count(1);
-    let result: RedisResult<StreamReadReply> = con.xread_options(&[stream_key], &[id], &opts);
-    // let result: RedisResult<StreamReadReply> = con.xread(&[stream_key], &["0"]);
+    let result: RedisResult<StreamReadReply> = conn.xread_options(&[stream_key], &[id], &opts);
 
     match result {
         Ok(stream_keys) => {
@@ -221,19 +222,52 @@ pub fn xtrim(
 /// Funciones para lectura de mensajes
 /// --------------------------------------------------
 pub fn xread(
-    conn: &mut Connection,
-    streams: &mut HashMap<String, Vec<String>>,
+    conn_def: &RedisConnectionDefinition,
+    // streams: &mut HashMap<String, HashMap<String, BTreeMap<String, String>>>,
     st: &RedisStreamState,
-) -> RedisResponse {
-    read(
-        conn,
-        "XREAD",
-        &st.xread_keys.split_whitespace().collect::<Vec<&str>>(),
-        &st.xread_ids.split_whitespace().collect::<Vec<&str>>(),
-        streams,
-        StreamReadOptions::default(),
-    );
-    Ok("Foo".to_string())
+) -> Result<HashMap<String, HashMap<String, BTreeMap<String, String>>>, String> {
+    let mut streams: HashMap<String, HashMap<String, BTreeMap<String, String>>> = HashMap::new();
+    create_redis_connection(conn_def).map_or_else(
+        |err| {
+            Err(format!(
+                "CONNECTION :: Not able to connect to {conn_def} ({err:?})."
+            ))
+        },
+        |mut conn| {
+            info!(
+                "{f:?}",
+                f = st.xread_keys.split_whitespace().collect::<Vec<&str>>()
+            );
+            info!(
+                "{f:?}",
+                f = st.xread_ids.split_whitespace().collect::<Vec<&str>>()
+            );
+            let opts = StreamReadOptions::default();
+            let result: RedisResult<StreamReadReply> = conn.xread_options(
+                &[st.xread_keys.split_whitespace().collect::<Vec<&str>>()],
+                &[st.xread_ids.split_whitespace().collect::<Vec<&str>>()],
+                &opts,
+            );
+
+            match result {
+                Ok(stream_keys) => {
+                    for entry in stream_keys.keys {
+                        let mut tmp: HashMap<String, BTreeMap<String, String>> =
+                            HashMap::with_capacity(entry.ids.len());
+                        for stream_id in entry.ids {
+                            tmp.insert(stream_id.id, value_map_to_string_btree_map(&stream_id.map));
+                        }
+                        streams.insert(entry.key, tmp);
+                    }
+                    Ok(streams)
+                }
+                Err(e) => {
+                    error!("Ocurrió un error {}", e);
+                    Err(format!("{e:?}"))
+                }
+            }
+        },
+    )
 }
 
 fn read(
@@ -243,27 +277,62 @@ fn read(
     ids: &[&str],
     hm: &mut HashMap<String, Vec<String>>,
     options: StreamReadOptions,
-) -> RedisResponse {
+) -> Result<StreamReadReply, String> {
     let result: RedisResult<StreamReadReply> = conn.xread_options(ks, ids, &options);
 
     match result {
-        Ok(stream_read_reply) => {
-            let stream_keys = stream_read_reply.keys;
-            for stream_key in stream_keys {
-                let key = stream_key.key;
-                info!("{key}");
-                let stream_ids = stream_key.ids;
+        Ok(stream_read_reply) => Ok(stream_read_reply),
+        Err(e) => Err(format!("{e:?}")),
+    }
+}
 
-                for stream_id in stream_ids {
-                    let id = stream_id.id;
-                    let data = stream_id.map;
-                    info!("{id}");
-                    info!("{data:?}");
-                }
-                println!("\n\n");
-            }
-        }
-        Err(_) => info!("{m}"),
+impl Tree<String, HashMap<String, String>> for StreamId {
+    fn to_tree(&self) -> HashMap<String, HashMap<String, String>> {
+        let mut response: HashMap<String, HashMap<String, String>> = HashMap::default();
+        response.insert(
+            self.id.clone(),
+            self.map.iter().fold(HashMap::default(), |mut acc, (k, v)| {
+                acc.insert(k.to_owned(), redis_value_to_string(v));
+                acc
+            }),
+        );
+        response
+    }
+}
+
+impl Show for StreamId {
+    fn to_string(&self) -> String {
+        serde_json::to_string(&self.to_tree()).unwrap_or_else(|err| {
+            error!("{err:?}");
+            format!("{self:?}")
+        })
+    }
+}
+
+impl Tree<String, Vec<HashMap<String, HashMap<String, String>>>> for StreamReadReply {
+    fn to_tree(&self) -> HashMap<String, Vec<HashMap<String, HashMap<String, String>>>> {
+        self.keys
+            .iter()
+            .fold(HashMap::new(), |mut acc, stream_key| {
+                acc.insert(
+                    stream_key.key.to_owned(),
+                    stream_key
+                        .ids
+                        .iter()
+                        .map(|e| e.to_tree())
+                        .collect::<Vec<HashMap<String, HashMap<String, String>>>>(),
+                );
+
+                acc
+            })
+    }
+}
+impl Show for StreamReadReply {
+    fn to_string(&self) -> String {
+        serde_json::to_string(&self.to_tree()).unwrap_or_else(|err| {
+            error!("{err:?}");
+            format!("{self:?}")
+        })
     }
 }
 
