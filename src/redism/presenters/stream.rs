@@ -218,15 +218,12 @@ pub enum RedisStreamMessage {
     Ready(RedisStreamReaderStorage),
     Error(String),
 }
-// pub type RedisStreamMessage = Result<RedisStreamReaderStorage, String>;
-// pub type RedisStreamMessage = Result<HashMap<String, HashMap<String, BTreeMap<String, String>>>, String>;
 
 /// --------------------------------------------------
 /// Funciones para lectura de mensajes
 /// --------------------------------------------------
 pub fn blocking_xread(
     conn_def: RedisConnectionDefinition,
-    // streams: &mut HashMap<String, HashMap<String, BTreeMap<String, String>>>,
     st: &RedisStreamState,
     tx: &std::sync::mpsc::Sender<RedisStreamMessage>,
 ) {
@@ -242,28 +239,104 @@ pub fn blocking_xread(
         .split(' ')
         .map(|s| s.to_owned())
         .collect::<Vec<String>>();
-    let tx_cloned = tx.clone();
     let ms = st.xread_block_ms.parse::<usize>().ok();
+    let opts = if count > 0 && block > 0 {
+        StreamReadOptions::default().count(count).block(block)
+    } else if count > 0 {
+        StreamReadOptions::default().count(count)
+    } else if block > 0 {
+        println!("Bloqueo {block} seconds");
+        StreamReadOptions::default().block(block)
+    } else {
+        StreamReadOptions::default()
+    };
 
+    xread_options(conn_def, keys, ids, ms, tx, opts);
+}
+
+pub fn blocking_xread_group(
+    conn_def: RedisConnectionDefinition,
+    st: &RedisStreamState,
+    tx: &std::sync::mpsc::Sender<RedisStreamMessage>,
+) {
+    let count = st.xreadgroup_count.parse::<usize>().unwrap_or_default();
+    let block = st.xreadgroup_block_ms.parse::<usize>().unwrap_or_default();
+    let keys = st
+        .xreadgroup_keys
+        .split(' ')
+        .map(|s| s.to_owned())
+        .collect::<Vec<String>>();
+    let ids = st
+        .xreadgroup_ids
+        .split(' ')
+        .map(|s| s.to_owned())
+        .collect::<Vec<String>>();
+    let noack = st.xreadgroup_noack;
+
+    let ms = st.xread_block_ms.parse::<usize>().ok();
+    let opts = if count > 0 && block > 0 {
+        if noack {
+            StreamReadOptions::default()
+                .count(count)
+                .block(block)
+                .group(&st.xreadgroup_group, &st.xreadgroup_consumer)
+                .noack()
+        } else {
+            StreamReadOptions::default()
+                .count(count)
+                .block(block)
+                .group(&st.xreadgroup_group, &st.xreadgroup_consumer)
+        }
+    } else if count > 0 {
+        if noack {
+            StreamReadOptions::default()
+                .count(count)
+                .group(&st.xreadgroup_group, &st.xreadgroup_consumer)
+                .noack()
+        } else {
+            StreamReadOptions::default()
+                .count(count)
+                .group(&st.xreadgroup_group, &st.xreadgroup_consumer)
+        }
+    } else if block > 0 {
+        if noack {
+            StreamReadOptions::default()
+                .block(block)
+                .group(&st.xreadgroup_group, &st.xreadgroup_consumer)
+                .noack()
+        } else {
+            StreamReadOptions::default()
+                .block(block)
+                .group(&st.xreadgroup_group, &st.xreadgroup_consumer)
+        }
+    } else {
+        if noack {
+            StreamReadOptions::default()
+                .group(&st.xreadgroup_group, &st.xreadgroup_consumer)
+                .noack()
+        } else {
+            StreamReadOptions::default().group(&st.xreadgroup_group, &st.xreadgroup_consumer)
+        }
+    };
+
+    xread_options(conn_def, keys, ids, ms, tx, opts);
+}
+
+fn xread_options(
+    conn_def: RedisConnectionDefinition,
+    keys: Vec<String>,
+    ids: Vec<String>,
+    ms: Option<usize>,
+    tx: &std::sync::mpsc::Sender<RedisStreamMessage>,
+    opts: StreamReadOptions,
+) {
+    let tx_cloned = tx.clone();
     std::thread::spawn(move || {
-        let mut streams: HashMap<String, HashMap<String, BTreeMap<String, String>>> =
-            HashMap::new();
         let conn_result = create_redis_connection(&conn_def);
         if conn_result.is_err() {
             return;
         }
         let mut conn = conn_result.unwrap();
-
-        let opts = if count > 0 && block > 0 {
-            StreamReadOptions::default().count(count).block(block)
-        } else if count > 0 {
-            StreamReadOptions::default().count(count)
-        } else if block > 0 {
-            println!("Bloqueo {block} seconds");
-            StreamReadOptions::default().block(block)
-        } else {
-            StreamReadOptions::default()
-        };
 
         let now = SystemTime::now();
         for k in &keys {
@@ -286,13 +359,10 @@ pub fn blocking_xread(
                     for stream_id in entry.ids {
                         tmp.insert(stream_id.id, value_map_to_string_btree_map(&stream_id.map));
                     }
-                    streams.insert(entry.key, tmp);
-                }
-                for (k, v) in &streams {
                     let msg = RedisStreamReaderStorage {
-                        stream: k.to_owned(),
+                        stream: entry.key.to_owned(),
                         group: None,
-                        messages: v.to_owned(),
+                        messages: tmp,
                         system_time: now,
                         block_ms: ms,
                     };

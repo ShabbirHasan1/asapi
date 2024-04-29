@@ -21,7 +21,7 @@ use crate::{
         connection::RedisMenu,
         presenters::{
             delete_key, run_read_generic, run_write_generic,
-            stream::{self, blocking_xread, read_stream_id},
+            stream::{self, blocking_xread, blocking_xread_group, read_stream_id},
             RedisResponse,
         },
         state::{RedisStreamReaderStorage, RedisStreamState},
@@ -194,10 +194,6 @@ impl RedisView {
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "XREAD") {
-                                    // let result = stream::xread(
-                                    //     &self.state.current_connection,
-                                    //     &self.state.stream_st,
-                                    // );
                                     blocking_xread(
                                         self.state.current_connection.clone(),
                                         &self.state.stream_st,
@@ -253,38 +249,14 @@ impl RedisView {
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "XREAD GROUP") {
-                                    let result = stream::xread(
-                                        &self.state.current_connection,
+                                    blocking_xread_group(
+                                        self.state.current_connection.clone(),
                                         &self.state.stream_st,
+                                        &self.state.stream_st.tx,
                                     );
 
                                     self.state.stream_st.streams.clear();
                                     self.state.last_stream_read_error = None;
-                                    let now = SystemTime::now();
-
-                                    match result {
-                                        Ok(hm) => {
-                                            for (k, v) in &hm {
-                                                self.state.stream_st.streams.push(
-                                                    RedisStreamReaderStorage {
-                                                        stream: k.to_owned(),
-                                                        group: None,
-                                                        messages: v.to_owned(),
-                                                        system_time: now,
-                                                        block_ms: self
-                                                            .state
-                                                            .stream_st
-                                                            .xread_block_ms
-                                                            .parse::<usize>()
-                                                            .ok(),
-                                                    },
-                                                );
-                                            }
-                                        }
-                                        Err(err) => {
-                                            self.state.last_stream_read_error = Some(err);
-                                        }
-                                    }
                                 }
                             });
                         });
