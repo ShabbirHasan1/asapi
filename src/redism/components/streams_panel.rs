@@ -24,7 +24,7 @@ use crate::{
             stream::{self, read_stream_id},
             RedisResponse,
         },
-        state::RedisStreamState,
+        state::{RedisStreamReaderStorage, RedisStreamState},
         utils::value_map_to_string_btree_map,
         view::RedisView,
     },
@@ -83,9 +83,11 @@ impl RedisView {
         .show_background(true)
         .default_open(true)
         .show(ui, |ui| {
-            ui.columns(2, |uis| {
+            ui.columns(1, |uis| {
                 self.stream_read_commands_1(&mut uis[0]);
-                self.stream_read_commands_2(&mut uis[1]);
+            });
+            ui.columns(1, |uis| {
+                self.stream_read_commands_2(&mut uis[0]);
             });
             ui.separator();
         });
@@ -93,7 +95,6 @@ impl RedisView {
 
     fn stream_read_commands_1(&mut self, ui: &mut egui::Ui) {
         StripBuilder::new(ui)
-            .size(Size::exact(20.0))
             .size(Size::exact(20.0))
             .vertical(|mut strip| {
                 strip.strip(|builder| {
@@ -116,6 +117,17 @@ impl RedisView {
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "XREAD") {
                                     self.state.last_result = self.run_write_stream(stream::xread);
+                                    self.state.stream_st.streams.push(RedisStreamReaderStorage {
+                                        stream: self.state.stream_st.xread_keys.clone(),
+                                        group: None,
+                                        messages: HashMap::default(),
+                                        timeout: self
+                                            .state
+                                            .stream_st
+                                            .xread_count
+                                            .parse::<usize>()
+                                            .unwrap_or_default(),
+                                    });
                                 }
                             });
                         });
@@ -126,19 +138,55 @@ impl RedisView {
     fn stream_read_commands_2(&mut self, ui: &mut egui::Ui) {
         StripBuilder::new(ui)
             .size(Size::exact(20.0))
-            .size(Size::exact(20.0))
             .vertical(|mut strip| {
                 strip.strip(|builder| {
                     builder
                         .size(Size::remainder())
+                        .size(Size::remainder())
+                        .size(Size::remainder())
+                        .size(Size::remainder())
+                        .size(Size::remainder())
+                        .size(Size::remainder())
+                        .size(Size::remainder())
                         .size(Size::exact(128.0))
                         .horizontal(|mut strip| {
-                            strip_text_edit!(strip, "Key", self.state.stream_st.info_groups_k);
+                            strip_text_edit!(strip, "Group", self.state.stream_st.xreadgroup_group);
+                            strip_text_edit!(
+                                strip,
+                                "Consumer",
+                                self.state.stream_st.xreadgroup_consumer
+                            );
+                            strip_text_edit!(
+                                strip,
+                                "(Count)",
+                                self.state.stream_st.xreadgroup_count
+                            );
+                            strip_text_edit!(
+                                strip,
+                                "(Block ms)",
+                                self.state.stream_st.xreadgroup_block_ms
+                            );
+                            strip.cell(|ui| {
+                                ui.checkbox(&mut self.state.stream_st.xreadgroup_noack, "NOACK");
+                            });
+
+                            strip_text_edit!(strip, "Keys", self.state.stream_st.xreadgroup_keys);
+                            strip_text_edit!(strip, "Ids", self.state.stream_st.xreadgroup_ids);
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "XREAD GROUP") {
-                                    self.state.last_result =
-                                        self.run_read_stream(stream::xread_group);
+                                    self.state.last_result = self.run_write_stream(stream::xread);
+                                    self.state.stream_st.streams.push(RedisStreamReaderStorage {
+                                        stream: self.state.stream_st.xreadgroup_keys.clone(),
+                                        group: Some(self.state.stream_st.xreadgroup_group.clone()),
+                                        messages: HashMap::default(),
+                                        timeout: self
+                                            .state
+                                            .stream_st
+                                            .xread_count
+                                            .parse::<usize>()
+                                            .unwrap_or_default(),
+                                    });
                                 }
                             });
                         });

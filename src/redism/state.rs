@@ -289,10 +289,10 @@ pub struct RedisJsonState {
 
 #[derive(Default)]
 pub struct RedisStreamReaderStorage {
-    stream: String,
-    group: String,
-    messages: HashMap<String, Vec<String>>,
-    timeout: usize, // tiempo que queda hasta que se desbloquee.
+    pub stream: String,
+    pub group: Option<String>,
+    pub messages: HashMap<String, Vec<String>>,
+    pub timeout: usize, // tiempo que queda hasta que se desbloquee.
 }
 
 pub struct RedisStreamState {
@@ -345,6 +345,13 @@ pub struct RedisStreamState {
     pub xread_block_ms: String,
     pub xread_keys: String,
     pub xread_ids: String,
+    pub xreadgroup_group: String,
+    pub xreadgroup_consumer: String,
+    pub xreadgroup_count: String,
+    pub xreadgroup_block_ms: String,
+    pub xreadgroup_noack: bool,
+    pub xreadgroup_keys: String,
+    pub xreadgroup_ids: String,
     pub streams: Vec<RedisStreamReaderStorage>,
 }
 
@@ -401,6 +408,13 @@ impl Default for RedisStreamState {
             xread_keys: Default::default(),
             xread_ids: Default::default(),
             streams: Default::default(),
+            xreadgroup_group: Default::default(),
+            xreadgroup_consumer: Default::default(),
+            xreadgroup_count: Default::default(),
+            xreadgroup_block_ms: Default::default(),
+            xreadgroup_noack: Default::default(),
+            xreadgroup_keys: Default::default(),
+            xreadgroup_ids: Default::default(),
         }
     }
 }
