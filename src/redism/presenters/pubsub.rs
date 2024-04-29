@@ -29,7 +29,7 @@ pub fn subscribe_to_channel_std_thread(
 ) -> Result<(), RedisError> {
     let mut conn = create_conn_with_default(host, port)?;
     let owned_channel = channel.to_owned();
-    let tx_owned = tx.to_owned();
+    let tx_cloned = tx.clone();
 
     std::thread::spawn(move || -> Result<(), RedisError> {
         let mut pubsub = conn.as_pubsub();
@@ -50,7 +50,7 @@ pub fn subscribe_to_channel_std_thread(
                 _ => (), // ControlFlow::Continue
             }
 
-            let _ = tx_owned.send(msg);
+            let _ = tx_cloned.send(msg);
         }
         pubsub.unsubscribe(&owned_channel)?;
 

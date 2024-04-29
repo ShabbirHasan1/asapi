@@ -13,7 +13,7 @@ use redis::Connection;
 
 use crate::{
     common::internationalization::I18n,
-    components::{result_panel::ui_response_panel, widgets::ui_text_edit_singleline_hint},
+    components::result_panel::ui_response_panel,
     error, info,
     redism::{
         connection::RedisMenu,
@@ -24,13 +24,14 @@ use crate::{
         state::RedisHashState,
         view::RedisView,
     },
-    ui_button_w100,
+    strip_text_edit, ui_button_w100,
 };
 
 impl RedisView {
     pub fn show_hashes(&mut self, ui: &mut egui::Ui, i18n: &I18n) {
         if self.state.selected_menu == RedisMenu::Hash {
-            egui::CollapsingHeader::new("Comandos Disponibles")
+            egui::CollapsingHeader::new(&i18n.redis_commands_header.to_ascii_uppercase())
+                .show_background(true)
                 .default_open(true)
                 .show(ui, |ui| {
                     ui.columns(2, |uis| {
@@ -53,7 +54,7 @@ impl RedisView {
             ui_response_panel(ui, &self.state.last_result);
         }
 
-        self.hashes_display(ui, i18n);
+        self.display_hashes(ui, i18n);
     }
 
     fn hash_other_cmds(&mut self, ui: &mut egui::Ui) {
@@ -67,21 +68,8 @@ impl RedisView {
                         .size(Size::remainder())
                         .size(Size::exact(108.0))
                         .horizontal(|mut strip| {
-                            strip.cell(|ui| {
-                                ui_text_edit_singleline_hint(
-                                    ui,
-                                    "Key",
-                                    &mut self.state.hash_st.hexists_k,
-                                );
-                            });
-
-                            strip.cell(|ui| {
-                                ui_text_edit_singleline_hint(
-                                    ui,
-                                    "Field",
-                                    &mut self.state.hash_st.hexists_f,
-                                );
-                            });
+                            strip_text_edit!(strip, "Key", self.state.hash_st.hexists_k);
+                            strip_text_edit!(strip, "Field", self.state.hash_st.hexists_f);
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "HEXISTS") {
@@ -98,21 +86,8 @@ impl RedisView {
                         .size(Size::remainder())
                         .size(Size::exact(108.0))
                         .horizontal(|mut strip| {
-                            strip.cell(|ui| {
-                                ui_text_edit_singleline_hint(
-                                    ui,
-                                    "Key",
-                                    &mut self.state.hash_st.hrandfield_k,
-                                );
-                            });
-
-                            strip.cell(|ui| {
-                                ui_text_edit_singleline_hint(
-                                    ui,
-                                    "Count",
-                                    &mut self.state.hash_st.hrandfield_count,
-                                );
-                            });
+                            strip_text_edit!(strip, "Key", self.state.hash_st.hrandfield_k);
+                            strip_text_edit!(strip, "Count", self.state.hash_st.hrandfield_count);
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "HRANDFIELD") {
@@ -135,13 +110,7 @@ impl RedisView {
                         .size(Size::remainder())
                         .size(Size::exact(108.0))
                         .horizontal(|mut strip| {
-                            strip.cell(|ui| {
-                                ui_text_edit_singleline_hint(
-                                    ui,
-                                    "Key",
-                                    &mut self.state.hash_st.hget_k,
-                                );
-                            });
+                            strip_text_edit!(strip, "Key", self.state.hash_st.hget_k);
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "HLEN") {
@@ -158,21 +127,8 @@ impl RedisView {
                         .size(Size::remainder())
                         .size(Size::exact(108.0))
                         .horizontal(|mut strip| {
-                            strip.cell(|ui| {
-                                ui_text_edit_singleline_hint(
-                                    ui,
-                                    "Key",
-                                    &mut self.state.hash_st.hstrlen_k,
-                                );
-                            });
-
-                            strip.cell(|ui| {
-                                ui_text_edit_singleline_hint(
-                                    ui,
-                                    "Field",
-                                    &mut self.state.hash_st.hstrlen_f,
-                                );
-                            });
+                            strip_text_edit!(strip, "Key", self.state.hash_st.hstrlen_k);
+                            strip_text_edit!(strip, "Field", self.state.hash_st.hstrlen_f);
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "HSTRLEN") {
@@ -199,21 +155,8 @@ impl RedisView {
                         .size(Size::remainder())
                         .size(Size::exact(108.0))
                         .horizontal(|mut strip| {
-                            strip.cell(|ui| {
-                                ui_text_edit_singleline_hint(
-                                    ui,
-                                    "Key",
-                                    &mut self.state.hash_st.hdel_k,
-                                );
-                            });
-
-                            strip.cell(|ui| {
-                                ui_text_edit_singleline_hint(
-                                    ui,
-                                    "Field (& Fields)",
-                                    &mut self.state.hash_st.hdel_fs,
-                                );
-                            });
+                            strip_text_edit!(strip, "Key", self.state.hash_st.hdel_k);
+                            strip_text_edit!(strip, "Field (& Fields)", self.state.hash_st.hdel_fs);
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "HDEL") {
@@ -231,29 +174,9 @@ impl RedisView {
                         .size(Size::remainder())
                         .size(Size::exact(108.0))
                         .horizontal(|mut strip| {
-                            strip.cell(|ui| {
-                                ui_text_edit_singleline_hint(
-                                    ui,
-                                    "Key",
-                                    &mut self.state.hash_st.hset_k,
-                                );
-                            });
-
-                            strip.cell(|ui| {
-                                ui_text_edit_singleline_hint(
-                                    ui,
-                                    "Field",
-                                    &mut self.state.hash_st.hset_f,
-                                );
-                            });
-
-                            strip.cell(|ui| {
-                                ui_text_edit_singleline_hint(
-                                    ui,
-                                    "Value",
-                                    &mut self.state.hash_st.hset_v,
-                                );
-                            });
+                            strip_text_edit!(strip, "Key", self.state.hash_st.hset_k);
+                            strip_text_edit!(strip, "Field", self.state.hash_st.hset_f);
+                            strip_text_edit!(strip, "Value", self.state.hash_st.hset_v);
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "HSET") {
@@ -271,29 +194,9 @@ impl RedisView {
                         .size(Size::remainder())
                         .size(Size::exact(108.0))
                         .horizontal(|mut strip| {
-                            strip.cell(|ui| {
-                                ui_text_edit_singleline_hint(
-                                    ui,
-                                    "Key",
-                                    &mut self.state.hash_st.hsetnx_k,
-                                );
-                            });
-
-                            strip.cell(|ui| {
-                                ui_text_edit_singleline_hint(
-                                    ui,
-                                    "Field",
-                                    &mut self.state.hash_st.hsetnx_f,
-                                );
-                            });
-
-                            strip.cell(|ui| {
-                                ui_text_edit_singleline_hint(
-                                    ui,
-                                    "Value",
-                                    &mut self.state.hash_st.hsetnx_v,
-                                );
-                            });
+                            strip_text_edit!(strip, "Key", self.state.hash_st.hsetnx_k);
+                            strip_text_edit!(strip, "Field", self.state.hash_st.hsetnx_f);
+                            strip_text_edit!(strip, "Value", self.state.hash_st.hsetnx_v);
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "HSETNX") {
@@ -311,29 +214,13 @@ impl RedisView {
                         .size(Size::remainder())
                         .size(Size::exact(108.0))
                         .horizontal(|mut strip| {
-                            strip.cell(|ui| {
-                                ui_text_edit_singleline_hint(
-                                    ui,
-                                    "Key",
-                                    &mut self.state.hash_st.hincrby_k,
-                                );
-                            });
-
-                            strip.cell(|ui| {
-                                ui_text_edit_singleline_hint(
-                                    ui,
-                                    "Field",
-                                    &mut self.state.hash_st.hincrby_f,
-                                );
-                            });
-
-                            strip.cell(|ui| {
-                                ui_text_edit_singleline_hint(
-                                    ui,
-                                    "Increment Value",
-                                    &mut self.state.hash_st.hincrby_increment,
-                                );
-                            });
+                            strip_text_edit!(strip, "Key", self.state.hash_st.hincrby_k);
+                            strip_text_edit!(strip, "Field", self.state.hash_st.hincrby_f);
+                            strip_text_edit!(
+                                strip,
+                                "Increment Value",
+                                self.state.hash_st.hincrby_increment
+                            );
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "HINCRBY") {
@@ -351,29 +238,13 @@ impl RedisView {
                         .size(Size::remainder())
                         .size(Size::exact(108.0))
                         .horizontal(|mut strip| {
-                            strip.cell(|ui| {
-                                ui_text_edit_singleline_hint(
-                                    ui,
-                                    "Key",
-                                    &mut self.state.hash_st.hincrbyfloat_k,
-                                );
-                            });
-
-                            strip.cell(|ui| {
-                                ui_text_edit_singleline_hint(
-                                    ui,
-                                    "Field",
-                                    &mut self.state.hash_st.hincrbyfloat_f,
-                                );
-                            });
-
-                            strip.cell(|ui| {
-                                ui_text_edit_singleline_hint(
-                                    ui,
-                                    "Increment Value",
-                                    &mut self.state.hash_st.hincrbyfloat_increment,
-                                );
-                            });
+                            strip_text_edit!(strip, "Key", self.state.hash_st.hincrbyfloat_k);
+                            strip_text_edit!(strip, "Field", self.state.hash_st.hincrbyfloat_f);
+                            strip_text_edit!(
+                                strip,
+                                "Increment Value",
+                                self.state.hash_st.hincrbyfloat_increment
+                            );
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "HINCRBYFLOAT") {
@@ -400,21 +271,8 @@ impl RedisView {
                         .size(Size::remainder())
                         .size(Size::exact(108.0))
                         .horizontal(|mut strip| {
-                            strip.cell(|ui| {
-                                ui_text_edit_singleline_hint(
-                                    ui,
-                                    "Key",
-                                    &mut self.state.hash_st.hget_k,
-                                );
-                            });
-
-                            strip.cell(|ui| {
-                                ui_text_edit_singleline_hint(
-                                    ui,
-                                    "Field",
-                                    &mut self.state.hash_st.hget_f,
-                                );
-                            });
+                            strip_text_edit!(strip, "Key", self.state.hash_st.hget_k);
+                            strip_text_edit!(strip, "Field", self.state.hash_st.hget_f);
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "HGET") {
@@ -431,21 +289,8 @@ impl RedisView {
                         .size(Size::remainder())
                         .size(Size::exact(108.0))
                         .horizontal(|mut strip| {
-                            strip.cell(|ui| {
-                                ui_text_edit_singleline_hint(
-                                    ui,
-                                    "Key",
-                                    &mut self.state.hash_st.hmget_k,
-                                );
-                            });
-
-                            strip.cell(|ui| {
-                                ui_text_edit_singleline_hint(
-                                    ui,
-                                    "Field (& Fields)",
-                                    &mut self.state.hash_st.hmget_fs,
-                                );
-                            });
+                            strip_text_edit!(strip, "Key", self.state.hash_st.hmget_k);
+                            strip_text_edit!(strip, "Field", self.state.hash_st.hmget_fs);
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "HMGET") {
@@ -463,13 +308,7 @@ impl RedisView {
                         .size(Size::remainder())
                         .size(Size::exact(108.0))
                         .horizontal(|mut strip| {
-                            strip.cell(|ui| {
-                                ui_text_edit_singleline_hint(
-                                    ui,
-                                    "Key",
-                                    &mut self.state.hash_st.hgetall_k,
-                                );
-                            });
+                            strip_text_edit!(strip, "Key", self.state.hash_st.hgetall_k);
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "HGETALL") {
@@ -485,13 +324,7 @@ impl RedisView {
                         .size(Size::remainder())
                         .size(Size::exact(108.0))
                         .horizontal(|mut strip| {
-                            strip.cell(|ui| {
-                                ui_text_edit_singleline_hint(
-                                    ui,
-                                    "Key",
-                                    &mut self.state.hash_st.hkeys_k,
-                                );
-                            });
+                            strip_text_edit!(strip, "Key", self.state.hash_st.hkeys_k);
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "HKEYS") {
@@ -507,13 +340,7 @@ impl RedisView {
                         .size(Size::remainder())
                         .size(Size::exact(108.0))
                         .horizontal(|mut strip| {
-                            strip.cell(|ui| {
-                                ui_text_edit_singleline_hint(
-                                    ui,
-                                    "Key",
-                                    &mut self.state.hash_st.hvals_k,
-                                );
-                            });
+                            strip_text_edit!(strip, "Key", self.state.hash_st.hvals_k);
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "HVALS") {
@@ -526,42 +353,44 @@ impl RedisView {
             });
     }
 
-    fn hashes_display(&mut self, ui: &mut egui::Ui, _i18n: &I18n) {
+    fn display_hashes(&mut self, ui: &mut egui::Ui, _i18n: &I18n) {
         ui.set_width(ui.available_width());
-        for (h_name, v) in &self.state.hashes {
-            // --> Manejamos acciones sobre elemento que muestra nombre del hash
-            ui.collapsing(h_name, |ui| {
-                // TODO: Borrar todos en cascada con el menú contextual del hash.
-                egui::Grid::new(h_name)
-                    .spacing(egui::vec2(ui.spacing().item_spacing.x * 2.0, 0.0))
-                    .show(ui, |ui| {
-                        for (field_key, field_value) in v {
-                            let field_label =
-                                ui.label(format!("    {} : {}", field_key, field_value));
+        egui::ScrollArea::vertical().show(ui, |ui| {
+            for (h_name, v) in &self.state.hashes {
+                // --> Manejamos acciones sobre elemento que muestra nombre del hash
+                ui.collapsing(h_name, |ui| {
+                    // TODO: Borrar todos en cascada con el menú contextual del hash.
+                    egui::Grid::new(h_name)
+                        .spacing(egui::vec2(ui.spacing().item_spacing.x * 2.0, 0.0))
+                        .show(ui, |ui| {
+                            for (field_key, field_value) in v {
+                                let field_label =
+                                    ui.label(format!("    {} : {}", field_key, field_value));
 
-                            // --> Cada campo se puede borrar con menú contextual <--
-                            field_label.context_menu(|ui| {
-                                if ui.button("Delete").clicked() {
-                                    match delete_hashkey(
-                                        &self.state.current_connection.host,
-                                        &self.state.current_connection.port,
-                                        h_name,
-                                        field_key,
-                                    ) {
-                                        Ok(s) => {
-                                            self.state.must_scan = true;
-                                            info!("{:?}", s);
+                                // --> Cada campo se puede borrar con menú contextual <--
+                                field_label.context_menu(|ui| {
+                                    if ui.button("Delete").clicked() {
+                                        match delete_hashkey(
+                                            &self.state.current_connection.host,
+                                            &self.state.current_connection.port,
+                                            h_name,
+                                            field_key,
+                                        ) {
+                                            Ok(s) => {
+                                                self.state.must_scan = true;
+                                                info!("{:?}", s);
+                                            }
+                                            Err(e) => error!("{:?}", e),
                                         }
-                                        Err(e) => error!("{:?}", e),
+                                        ui.close_menu();
                                     }
-                                    ui.close_menu();
-                                }
-                            });
-                            ui.end_row();
-                        }
-                    });
-            });
-        }
+                                });
+                                ui.end_row();
+                            }
+                        });
+                });
+            }
+        });
     }
 
     #[inline(always)]

@@ -11,8 +11,11 @@ use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::collections::HashMap;
 use std::fmt::Display;
+use std::time::SystemTime;
 
 use crate::{common::traits::ToUrl, redism::connection::RedisMenu};
+
+use super::presenters::stream::RedisStreamMessage;
 
 /// No tengo muy claro cómo hacerlo mejor.
 /// Path y OsStr son más apropiadas pero problemáticas.
@@ -287,6 +290,142 @@ pub struct RedisJsonState {
     pub json_toggle_p: String,
 }
 
+pub struct RedisStreamReaderStorage {
+    pub stream: String,
+    pub group: Option<String>,
+    pub messages: HashMap<String, BTreeMap<String, String>>,
+    pub system_time: SystemTime, // para saber tiempo que queda hasta que se desbloquee.
+    pub block_ms: Option<usize>,
+}
+
+pub struct RedisStreamState {
+    pub info_stream_k: String,
+    pub info_stream_full: bool,
+    pub info_stream_count: String,
+    pub info_groups_k: String,
+    pub info_consumers_k: String,
+    pub info_consumers_g: String,
+    pub xlen_k: String,
+    pub xrange_k: String,
+    pub xrange_start: String,
+    pub xrange_end: String,
+    pub xrange_count: String,
+    pub xrevrange_k: String,
+    pub xrevrange_start: String,
+    pub xrevrange_end: String,
+    pub xrevrange_count: String,
+    pub xack_k: String,
+    pub xack_group: String,
+    pub xack_ids: String,
+    pub xadd_k: String,
+    pub xadd_nomkstream: bool,
+    pub xadd_id: String,
+    pub xadd_items: String,
+    pub xdel_k: String,
+    pub xdel_ids: String,
+    pub xtrim_k: String,
+    pub xtrim_maxlen_minid: String,
+    pub xtrim_aprox_equal: String,
+    pub xtrim_threshold: String,
+    pub xtrim_limit: String,
+    pub xgroup_create_k: String,
+    pub xgroup_create_group: String,
+    pub xgroup_create_id: String,
+    pub xgroup_create_mkstream: bool,
+    pub xgroup_create_consumer_k: String,
+    pub xgroup_create_consumer_group: String,
+    pub xgroup_create_consumer: String,
+    pub xgroup_del_consumer_k: String,
+    pub xgroup_del_consumer_group: String,
+    pub xgroup_del_consumer: String,
+    pub xgroup_destroy_k: String,
+    pub xgroup_destroy_group: String,
+    pub xgroup_setid_k: String,
+    pub xgroup_setid_g: String,
+    pub xgroup_setid_id: String,
+    pub xread_count: String,
+    pub xread_block_ms: String,
+    pub xread_keys: String,
+    pub xread_ids: String,
+    pub xreadgroup_group: String,
+    pub xreadgroup_consumer: String,
+    pub xreadgroup_count: String,
+    pub xreadgroup_block_ms: String,
+    pub xreadgroup_noack: bool,
+    pub xreadgroup_keys: String,
+    pub xreadgroup_ids: String,
+    pub streams: Vec<RedisStreamReaderStorage>,
+    pub tx: std::sync::mpsc::Sender<RedisStreamMessage>,
+    pub rx: std::sync::mpsc::Receiver<RedisStreamMessage>,
+}
+
+impl Default for RedisStreamState {
+    fn default() -> Self {
+        let (tx, rx) = std::sync::mpsc::channel();
+
+        Self {
+            info_stream_k: Default::default(),
+            info_stream_full: Default::default(),
+            info_stream_count: Default::default(),
+            info_groups_k: Default::default(),
+            info_consumers_k: Default::default(),
+            info_consumers_g: Default::default(),
+            xlen_k: Default::default(),
+            xrange_k: Default::default(),
+            xrange_start: Default::default(),
+            xrange_end: Default::default(),
+            xrange_count: Default::default(),
+            xrevrange_k: Default::default(),
+            xrevrange_start: Default::default(),
+            xrevrange_end: Default::default(),
+            xrevrange_count: Default::default(),
+            xack_k: Default::default(),
+            xack_group: Default::default(),
+            xack_ids: Default::default(),
+            xadd_k: Default::default(),
+            xadd_nomkstream: false,
+            xadd_id: "*".to_string(),
+            xadd_items: Default::default(),
+            xdel_k: Default::default(),
+            xdel_ids: Default::default(),
+            xtrim_k: Default::default(),
+            xtrim_maxlen_minid: "MAX".to_string(),
+            xtrim_aprox_equal: "=".to_string(),
+            xtrim_threshold: Default::default(),
+            xtrim_limit: Default::default(),
+            xgroup_create_k: Default::default(),
+            xgroup_create_group: Default::default(),
+            xgroup_create_id: "$".to_string(),
+            xgroup_create_mkstream: Default::default(),
+            xgroup_create_consumer_k: Default::default(),
+            xgroup_create_consumer_group: Default::default(),
+            xgroup_create_consumer: Default::default(),
+            xgroup_del_consumer_k: Default::default(),
+            xgroup_del_consumer_group: Default::default(),
+            xgroup_del_consumer: Default::default(),
+            xgroup_destroy_k: Default::default(),
+            xgroup_destroy_group: Default::default(),
+            xgroup_setid_k: Default::default(),
+            xgroup_setid_g: Default::default(),
+            xgroup_setid_id: "$".to_string(),
+            xread_count: Default::default(),
+            xread_block_ms: Default::default(),
+            xread_keys: Default::default(),
+            xread_ids: Default::default(),
+            streams: Default::default(),
+            xreadgroup_group: Default::default(),
+            xreadgroup_consumer: Default::default(),
+            xreadgroup_count: Default::default(),
+            xreadgroup_block_ms: Default::default(),
+            xreadgroup_noack: true,
+            xreadgroup_keys: Default::default(),
+            xreadgroup_ids: Default::default(),
+            tx,
+            rx,
+        }
+    }
+}
+
 pub struct RedisLocalState {
     pub cmd_history: Vec<String>,
     pub strings: BTreeMap<String, String>,
@@ -296,6 +435,7 @@ pub struct RedisLocalState {
     pub zsets: HashMap<String, Vec<String>>,
     // El valor es el json como string.
     pub jsons: BTreeMap<String, String>,
+    // El `Vec<String>` es simplemente el listado de los ids de los mensajes.
     pub streams: HashMap<String, Vec<String>>,
     // Para poder mostrar y quitar a voluntad, donde guardo los valores de los streams. No guardo todo el listado de
     // mensajes porque puede ser eterno. Cuando hago click busco y pongo, y cuando click otra vez borro.
@@ -306,10 +446,14 @@ pub struct RedisLocalState {
     pub must_scan: bool,
     // pub last_result: String,
     pub last_result: Option<Result<String, String>>,
+    // TODO: Esta variable he de acabar borrándola. Lo guardo en el vector de resultados de lecturas.
+    pub last_stream_read_error: Option<String>,
     pub conn: Option<redis::Connection>, // La estoy gastando?
     pub selected_menu: RedisMenu,
     pub hide_connections: bool,
     pub hide_data_structures: bool,
+    pub show_regular_commands: bool,
+    pub show_read_commands: bool,
     pub tmp_connection: RedisConnectionDefinition,
     pub current_connection: RedisConnectionDefinition,
     pub current_connection_idx: usize,
@@ -319,6 +463,7 @@ pub struct RedisLocalState {
     pub hash_st: RedisHashState,
     pub zsets_st: RedisZSetsState,
     pub json_st: RedisJsonState,
+    pub stream_st: RedisStreamState,
 }
 
 impl Default for RedisLocalState {
@@ -335,10 +480,13 @@ impl Default for RedisLocalState {
             must_scan: Default::default(),
             // last_result: Default::default(),
             last_result: Default::default(),
+            last_stream_read_error: Default::default(),
             conn: Default::default(),
             selected_menu: Default::default(),
             hide_connections: Default::default(),
             hide_data_structures: Default::default(),
+            show_regular_commands: true,
+            show_read_commands: true,
             tmp_connection: Default::default(),
             current_connection: Default::default(),
             current_connection_idx: usize::MAX,
@@ -352,6 +500,7 @@ impl Default for RedisLocalState {
             hash_st: Default::default(),
             zsets_st: Default::default(),
             json_st: Default::default(),
+            stream_st: Default::default(),
         }
     }
 }

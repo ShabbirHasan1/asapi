@@ -6,6 +6,8 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
+use std::collections::HashSet;
+
 use crate::{error, info};
 use redis::streams::{StreamReadOptions, StreamReadReply};
 use redis::JsonCommands;
@@ -116,7 +118,7 @@ pub fn scan(state: &mut RedisLocalState, option: RedisMenu) -> RedisResult<()> {
                             let opts = StreamReadOptions::default(); //.count(10);
                             let result: RedisResult<StreamReadReply> =
                                 con.xread_options(&[&key], &["0"], &opts);
-                            state.streams.insert(key.clone(), Vec::new());
+                            state.streams.insert(key.clone(), vec![]);
 
                             match result {
                                 Ok(stream_keys) => {
@@ -149,22 +151,19 @@ pub fn scan(state: &mut RedisLocalState, option: RedisMenu) -> RedisResult<()> {
 }
 
 pub fn run_user_string_command(host: &str, port: &str, cmd: &str) -> RedisResponse {
-    if let Some((command, args)) = parse_command(cmd) {
-        info!("\nCommando\n{:?}\n{:?}", command, args);
-
-        match create_conn_with_default(host, port) {
+    match parse_command(cmd) {
+        Some((command, args)) => match create_conn_with_default(host, port) {
             Ok(mut c) => {
                 let response = redis::cmd(command).arg(&args).query::<Value>(&mut c);
                 match response {
-                    Ok(value) => return Ok(format!("{:?}", value)),
-                    Err(e) => return Err(format!("Error parsing response: {:?}", e)),
+                    Ok(value) => Ok(format!("{:?}", value)),
+                    Err(e) => Err(format!("Error parsing response: {:?}", e)),
                 }
             }
-            Err(e) => return Err(format!("{}", e)),
-        }
+            Err(e) => Err(format!("{}", e)),
+        },
+        None => Err(format!("Error parsing command {cmd}.")),
     }
-
-    Err("error parsing command".to_string())
 }
 
 fn parse_command<'a>(input: &'a str) -> Option<(&'a str, Vec<&'a str>)> {

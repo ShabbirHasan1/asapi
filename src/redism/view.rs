@@ -145,43 +145,41 @@ impl RedisView {
             // ===========================================
             // Bloques para mostrar unos u otros elementos
             // ===========================================
-            egui::ScrollArea::vertical().show(ui, |ui| {
-                match self.state.selected_menu {
-                    RedisMenu::All => self.show_all(ui, i18n),
-                    RedisMenu::String => {
-                        ui.heading(egui::RichText::new("Strings").strong());
-                        let _ = self.show_strings(ui, i18n);
-                    }
-                    RedisMenu::List => {
-                        ui.heading(egui::RichText::new("Lists").strong());
-                        self.show_lists(ui, i18n);
-                    }
-                    RedisMenu::Set => {
-                        ui.heading(egui::RichText::new("Set").strong());
-                        self.show_sets(ui, i18n);
-                    }
-                    RedisMenu::Hash => {
-                        ui.heading(egui::RichText::new("Hashes").strong());
-                        self.show_hashes(ui, i18n);
-                    }
-                    RedisMenu::SortedSet => {
-                        ui.heading(egui::RichText::new("SortedSet").strong());
-                        self.show_sorted_sets(ui, i18n);
-                    }
-                    RedisMenu::Stream => {
-                        ui.heading(egui::RichText::new("Streams").strong());
-                        self.show_streams(ui, i18n);
-                    }
-                    RedisMenu::Json => {
-                        ui.heading(egui::RichText::new("Json").strong());
-                        self.show_json(ui, i18n);
-                    }
-                    RedisMenu::PubSub => {
-                        ui.heading(egui::RichText::new("PubSub").strong());
-                        self.show_pubsub(ui, i18n);
-                    }
-                };
-            });
+            match self.state.selected_menu {
+                RedisMenu::All => self.show_all(ui, i18n),
+                RedisMenu::String => {
+                    ui.heading(egui::RichText::new("Strings").strong());
+                    self.show_strings(ui, i18n);
+                }
+                RedisMenu::List => {
+                    ui.heading(egui::RichText::new("Lists").strong());
+                    self.show_lists(ui, i18n);
+                }
+                RedisMenu::Set => {
+                    ui.heading(egui::RichText::new("Set").strong());
+                    self.show_sets(ui, i18n);
+                }
+                RedisMenu::Hash => {
+                    ui.heading(egui::RichText::new("Hashes").strong());
+                    self.show_hashes(ui, i18n);
+                }
+                RedisMenu::SortedSet => {
+                    ui.heading(egui::RichText::new("SortedSet").strong());
+                    self.show_sorted_sets(ui, i18n);
+                }
+                RedisMenu::Json => {
+                    ui.heading(egui::RichText::new("Json").strong());
+                    self.show_json(ui, i18n);
+                }
+                RedisMenu::Stream => {
+                    ui.heading(egui::RichText::new("Streams").strong());
+                    self.show_streams(ui, i18n);
+                }
+                RedisMenu::PubSub => {
+                    ui.heading(egui::RichText::new("PubSub").strong());
+                    self.show_pubsub(ui, i18n);
+                }
+            };
         });
     }
 

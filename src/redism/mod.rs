@@ -10,6 +10,7 @@ mod components;
 mod connection;
 mod parser;
 mod presenters;
+pub mod redis_macros;
 pub mod state;
 mod utils;
 pub mod view;

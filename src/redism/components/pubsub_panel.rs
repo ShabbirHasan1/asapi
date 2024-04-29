@@ -23,6 +23,7 @@ use crate::{
 impl RedisView {
     pub fn show_pubsub(&mut self, ui: &mut egui::Ui, i18n: &I18n) {
         egui::CollapsingHeader::new(format!("PubSub {}", &i18n.redis_channel_publish))
+            .show_background(true)
             .default_open(true)
             .show(ui, |ui| {
                 ui.horizontal(|ui| {

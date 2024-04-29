@@ -17,7 +17,7 @@ use crate::{
     redism::{
         connection::RedisMenu,
         presenters::{delete_key, run_cmd, string::StringPresenter, RedisResponse},
-        state::{RedisConnectionDefinition, RedisStringState},
+        state::RedisStringState,
         view::RedisView,
     },
     ui_button_w, ui_button_w100, ui_button_w50,
@@ -41,9 +41,10 @@ use crate::{
 // done - LCS
 // done - STRLEN
 impl RedisView {
-    pub fn show_strings(&mut self, ui: &mut egui::Ui, i18n: &I18n) -> RedisResult<()> {
+    pub fn show_strings(&mut self, ui: &mut egui::Ui, i18n: &I18n) {
         if self.state.selected_menu == RedisMenu::String {
-            egui::CollapsingHeader::new("Comandos Disponibles")
+            egui::CollapsingHeader::new(&i18n.redis_commands_header.to_ascii_uppercase())
+                .show_background(true)
                 .default_open(true)
                 .show(ui, |ui| {
                     ui.columns(2, |uis| {
@@ -68,8 +69,6 @@ impl RedisView {
         }
 
         self.strings_display(ui, i18n);
-
-        Ok(())
     }
 
     fn info_commands(&mut self, ui: &mut egui::Ui) {
@@ -459,29 +458,31 @@ impl RedisView {
     }
 
     fn strings_display(&mut self, ui: &mut egui::Ui, i18n: &I18n) {
-        egui::Grid::new("key/value")
-            .spacing(egui::vec2(ui.spacing().item_spacing.x * 2.0, 0.0))
-            .show(ui, |ui| {
-                for header in &self.state.strings {
-                    ui.code(header.0.clone()).context_menu(|ui| {
-                        if ui.button(&i18n.redis_delete_ds).clicked() {
-                            match delete_key(
-                                &self.state.current_connection.host,
-                                &self.state.current_connection.port,
-                                header.0,
-                            ) {
-                                Ok(_) => {
-                                    self.state.must_scan = true;
+        egui::ScrollArea::vertical().show(ui, |ui| {
+            egui::Grid::new("key/value")
+                .spacing(egui::vec2(ui.spacing().item_spacing.x * 2.0, 0.0))
+                .show(ui, |ui| {
+                    for header in &self.state.strings {
+                        ui.code(header.0.clone()).context_menu(|ui| {
+                            if ui.button(&i18n.redis_delete_ds).clicked() {
+                                match delete_key(
+                                    &self.state.current_connection.host,
+                                    &self.state.current_connection.port,
+                                    header.0,
+                                ) {
+                                    Ok(_) => {
+                                        self.state.must_scan = true;
+                                    }
+                                    Err(e) => error!("{:?}", e),
                                 }
-                                Err(e) => error!("{:?}", e),
+                                ui.close_menu();
                             }
-                            ui.close_menu();
-                        }
-                    });
-                    ui.label(header.1.clone());
-                    ui.end_row();
-                }
-            });
+                        });
+                        ui.label(header.1.clone());
+                        ui.end_row();
+                    }
+                });
+        });
     }
 
     #[inline(always)]
