@@ -6,10 +6,9 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
-use std::collections::HashMap;
-
 use redis::streams::{StreamReadOptions, StreamReadReply};
 use redis::{self, Client, Commands, Connection, RedisResult, Value};
+use std::collections::HashMap;
 
 use crate::info;
 use crate::redism::connection::create_conn;
@@ -226,13 +225,53 @@ pub fn xread(
     streams: &mut HashMap<String, Vec<String>>,
     st: &RedisStreamState,
 ) -> RedisResponse {
-    read_operation(
+    read(
+        conn,
         "XREAD",
-        conn.xinfo_consumers(&st.info_consumers_k, &st.info_consumers_g),
-    )
+        &st.xread_keys.split_whitespace().collect::<Vec<&str>>(),
+        &st.xread_ids.split_whitespace().collect::<Vec<&str>>(),
+        streams,
+        StreamReadOptions::default(),
+    );
+    Ok("Foo".to_string())
 }
 
-pub fn xread_group(conn: &mut Connection, st: &RedisStreamState) -> RedisResponse {
+fn read(
+    conn: &mut Connection,
+    m: &str,
+    ks: &[&str],
+    ids: &[&str],
+    hm: &mut HashMap<String, Vec<String>>,
+    options: StreamReadOptions,
+) -> RedisResponse {
+    let result: RedisResult<StreamReadReply> = conn.xread_options(ks, ids, &options);
+
+    match result {
+        Ok(stream_read_reply) => {
+            let stream_keys = stream_read_reply.keys;
+            for stream_key in stream_keys {
+                let key = stream_key.key;
+                info!("{key}");
+                let stream_ids = stream_key.ids;
+
+                for stream_id in stream_ids {
+                    let id = stream_id.id;
+                    let data = stream_id.map;
+                    info!("{id}");
+                    info!("{data:?}");
+                }
+                println!("\n\n");
+            }
+        }
+        Err(_) => info!("{m}"),
+    }
+}
+
+pub fn xread_group(
+    conn: &mut Connection,
+    streams: &mut HashMap<String, Vec<String>>,
+    st: &RedisStreamState,
+) -> RedisResponse {
     read_operation(
         "XREAD",
         conn.xinfo_consumers(&st.info_consumers_k, &st.info_consumers_g),
@@ -316,6 +355,7 @@ pub fn xgroup_setid(
 /// --------------------------------------------------
 /// Funciones Auxiliares
 /// --------------------------------------------------
+
 fn write_stream_operation(
     conn: &mut Connection,
     m: &str,
@@ -331,7 +371,7 @@ fn write_stream_operation(
 
             match result {
                 Ok(stream_keys) => {
-                    hm.insert(k.to_owned(), Vec::new());
+                    hm.insert(k.to_owned(), Vec::default());
                     let ids = hm.get_mut(k).unwrap();
                     let stream_ids: Vec<String> = stream_keys
                         .keys
@@ -343,7 +383,8 @@ fn write_stream_operation(
                                 .collect::<Vec<String>>()
                         })
                         .collect();
-                    ids.extend_from_slice(&stream_ids);
+                    ids.extend(stream_ids);
+                    // ids.extend_from_slice(&stream_ids);
                     Ok(format!("{m} :: {rr}", rr = redis_value_to_string(&rresp)))
                 }
                 Err(e) => Ok(format!("{m} :: {e:?}")),
