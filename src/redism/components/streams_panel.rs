@@ -15,7 +15,7 @@ use redis::Connection;
 
 use crate::{
     common::internationalization::I18n,
-    components::{result_panel::ui_response_panel, widgets::ui_text_edit_singleline_hint},
+    components::result_panel::ui_response_panel,
     error, info,
     redism::{
         connection::RedisMenu,
@@ -36,24 +36,57 @@ use super::contextual_menus;
 impl RedisView {
     pub fn show_streams(&mut self, ui: &mut egui::Ui, i18n: &I18n) {
         if self.state.selected_menu == RedisMenu::Stream {
-            self.show_regular_streams_commands(ui, i18n);
-            self.show_read_streams(ui, i18n);
+            ui.horizontal(|ui| {
+                if ui
+                    .selectable_label(
+                        self.state.show_regular_commands,
+                        &i18n.redis_regular_commands,
+                    )
+                    .clicked()
+                {
+                    self.state.show_regular_commands = !self.state.show_regular_commands;
+                }
+                if ui
+                    .selectable_label(self.state.show_read_commands, &i18n.redis_read_commands)
+                    .clicked()
+                {
+                    self.state.show_read_commands = !self.state.show_read_commands;
+                }
+                if ui.button(&i18n.redis_clean_result).clicked() {
+                    self.state.last_result = None;
+                }
+            });
+            ui.separator();
+            if self.state.show_regular_commands {
+                self.show_regular_streams_commands(ui, i18n);
+            }
+            if self.state.show_read_commands {
+                self.show_read_streams(ui, i18n);
+            }
+
+            ui.separator();
         }
         self.display_streams(ui, i18n);
     }
 
     fn show_read_streams(&mut self, ui: &mut egui::Ui, i18n: &I18n) {
-        egui::CollapsingHeader::new(&i18n.redis_stream_reader_commands_header)
-            .default_open(true)
-            .show(ui, |ui| {
-                ui.columns(2, |uis| {
-                    self.stream_read_commands(&mut uis[0]);
-                });
-                ui.separator();
+        egui::CollapsingHeader::new(
+            &i18n
+                .redis_stream_reader_commands_header
+                .to_ascii_uppercase(),
+        )
+        .show_background(true)
+        .default_open(true)
+        .show(ui, |ui| {
+            ui.columns(2, |uis| {
+                self.stream_read_commands_1(&mut uis[0]);
+                self.stream_read_commands_2(&mut uis[1]);
             });
+            ui.separator();
+        });
     }
 
-    fn stream_read_commands(&mut self, ui: &mut egui::Ui) {
+    fn stream_read_commands_1(&mut self, ui: &mut egui::Ui) {
         StripBuilder::new(ui)
             .size(Size::exact(20.0))
             .size(Size::exact(20.0))
@@ -82,19 +115,20 @@ impl RedisView {
                             });
                         });
                 });
+            });
+    }
 
+    fn stream_read_commands_2(&mut self, ui: &mut egui::Ui) {
+        StripBuilder::new(ui)
+            .size(Size::exact(20.0))
+            .size(Size::exact(20.0))
+            .vertical(|mut strip| {
                 strip.strip(|builder| {
                     builder
                         .size(Size::remainder())
                         .size(Size::exact(128.0))
                         .horizontal(|mut strip| {
-                            strip.cell(|ui| {
-                                ui_text_edit_singleline_hint(
-                                    ui,
-                                    "Key",
-                                    &mut self.state.stream_st.info_groups_k,
-                                );
-                            });
+                            strip_text_edit!(strip, "Key", self.state.stream_st.info_groups_k);
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "XREAD GROUP") {
@@ -103,12 +137,13 @@ impl RedisView {
                                 }
                             });
                         });
-                });
+                })
             });
     }
 
     fn show_regular_streams_commands(&mut self, ui: &mut egui::Ui, i18n: &I18n) {
-        egui::CollapsingHeader::new(&i18n.redis_commands_header)
+        egui::CollapsingHeader::new(&i18n.redis_commands_header.to_ascii_uppercase())
+            .show_background(true)
             .default_open(true)
             .show(ui, |ui| {
                 ui.columns(2, |uis| {
@@ -120,9 +155,6 @@ impl RedisView {
                 ui.columns(2, |uis| {
                     self.stream_basic_modification_commands(&mut uis[0]);
                     self.stream_group_modification_commands(&mut uis[1]);
-                    // TODO: Esta es la API para bloquear, así que necesitará
-                    // tratamiento especial
-                    // self.stream_read_commands(&mut uis[0]);
                 });
                 ui.separator();
             });
@@ -146,7 +178,6 @@ impl RedisView {
                         .size(Size::remainder())
                         .size(Size::exact(128.0))
                         .horizontal(|mut strip| {
-                            // XGROUP CREATE key group <id | $> [MKSTREAM] [ENTRIESREAD entries-read]
                             strip_text_edit!(strip, "Key", self.state.stream_st.xgroup_create_k);
                             strip_text_edit!(
                                 strip,
@@ -406,7 +437,6 @@ impl RedisView {
                             strip_text_edit!(strip, "End", self.state.stream_st.xrange_end);
                             strip_text_edit!(strip, "(Count)", self.state.stream_st.xrange_count);
 
-                            // key start end [COUNT count]
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "XRANGE") {
                                     self.state.last_result = self.run_read_stream(stream::xrange);
@@ -432,7 +462,6 @@ impl RedisView {
                                 self.state.stream_st.xrevrange_count
                             );
 
-                            // key start end [COUNT count]
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "XREVRANGE") {
                                     self.state.last_result =
@@ -453,7 +482,6 @@ impl RedisView {
                             strip_text_edit!(strip, "Group", self.state.stream_st.xack_group);
                             strip_text_edit!(strip, "Id (& Ids)", self.state.stream_st.xack_ids);
 
-                            // key start end [COUNT count]
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "XACK") {
                                     self.state.last_result = self.run_read_stream(stream::xack);
@@ -477,24 +505,14 @@ impl RedisView {
                         .size(Size::remainder())
                         .size(Size::exact(128.0))
                         .horizontal(|mut strip| {
-                            strip.cell(|ui| {
-                                ui_text_edit_singleline_hint(
-                                    ui,
-                                    "Key",
-                                    &mut self.state.stream_st.info_stream_k,
-                                );
-                            });
-
+                            strip_text_edit!(strip, "Key", self.state.stream_st.info_stream_k);
+                            strip_text_edit!(
+                                strip,
+                                "(Count)",
+                                self.state.stream_st.info_stream_count
+                            );
                             strip.cell(|ui| {
                                 ui.checkbox(&mut self.state.stream_st.info_stream_full, "Full");
-                            });
-
-                            strip.cell(|ui| {
-                                ui_text_edit_singleline_hint(
-                                    ui,
-                                    "(Count)",
-                                    &mut self.state.stream_st.info_stream_count,
-                                );
                             });
 
                             strip.cell(|ui| {
@@ -511,13 +529,7 @@ impl RedisView {
                         .size(Size::remainder())
                         .size(Size::exact(128.0))
                         .horizontal(|mut strip| {
-                            strip.cell(|ui| {
-                                ui_text_edit_singleline_hint(
-                                    ui,
-                                    "Key",
-                                    &mut self.state.stream_st.info_groups_k,
-                                );
-                            });
+                            strip_text_edit!(strip, "Key", self.state.stream_st.info_groups_k);
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "XINFO GROUPS") {
@@ -534,21 +546,8 @@ impl RedisView {
                         .size(Size::remainder())
                         .size(Size::exact(128.0))
                         .horizontal(|mut strip| {
-                            strip.cell(|ui| {
-                                ui_text_edit_singleline_hint(
-                                    ui,
-                                    "Key",
-                                    &mut self.state.stream_st.info_consumers_k,
-                                );
-                            });
-
-                            strip.cell(|ui| {
-                                ui_text_edit_singleline_hint(
-                                    ui,
-                                    "Group",
-                                    &mut self.state.stream_st.info_consumers_g,
-                                );
-                            });
+                            strip_text_edit!(strip, "Key", self.state.stream_st.info_consumers_k);
+                            strip_text_edit!(strip, "Group", self.state.stream_st.info_consumers_g);
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "XINFO CONSUMERS") {
@@ -562,8 +561,8 @@ impl RedisView {
     }
 
     fn display_streams(&mut self, ui: &mut egui::Ui, i18n: &I18n) {
-        ui.set_width(ui.available_width());
         egui::ScrollArea::vertical().show(ui, |ui| {
+            ui.set_width(ui.available_width());
             for (stream_name, v) in &self.state.streams {
                 // ==> Gestión de Stream y todos los mensajes en él
                 ui.collapsing(stream_name, |ui| {

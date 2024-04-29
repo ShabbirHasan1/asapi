@@ -287,6 +287,14 @@ pub struct RedisJsonState {
     pub json_toggle_p: String,
 }
 
+#[derive(Default)]
+pub struct RedisStreamReaderStorage {
+    stream: String,
+    group: String,
+    messages: HashMap<String, Vec<String>>,
+    timeout: usize, // tiempo que queda hasta que se desbloquee.
+}
+
 pub struct RedisStreamState {
     pub info_stream_k: String,
     pub info_stream_full: bool,
@@ -337,6 +345,7 @@ pub struct RedisStreamState {
     pub xread_block_ms: String,
     pub xread_keys: String,
     pub xread_ids: String,
+    pub streams: Vec<RedisStreamReaderStorage>,
 }
 
 impl Default for RedisStreamState {
@@ -391,6 +400,7 @@ impl Default for RedisStreamState {
             xread_block_ms: Default::default(),
             xread_keys: Default::default(),
             xread_ids: Default::default(),
+            streams: Default::default(),
         }
     }
 }
@@ -418,6 +428,8 @@ pub struct RedisLocalState {
     pub selected_menu: RedisMenu,
     pub hide_connections: bool,
     pub hide_data_structures: bool,
+    pub show_regular_commands: bool,
+    pub show_read_commands: bool,
     pub tmp_connection: RedisConnectionDefinition,
     pub current_connection: RedisConnectionDefinition,
     pub current_connection_idx: usize,
@@ -448,6 +460,8 @@ impl Default for RedisLocalState {
             selected_menu: Default::default(),
             hide_connections: Default::default(),
             hide_data_structures: Default::default(),
+            show_regular_commands: true,
+            show_read_commands: true,
             tmp_connection: Default::default(),
             current_connection: Default::default(),
             current_connection_idx: usize::MAX,

@@ -31,7 +31,8 @@ use crate::{
 impl RedisView {
     pub fn show_lists(&mut self, ui: &mut egui::Ui, i18n: &I18n) {
         if self.state.selected_menu == RedisMenu::List {
-            egui::CollapsingHeader::new(&i18n.redis_commands_header)
+            egui::CollapsingHeader::new(&i18n.redis_commands_header.to_ascii_uppercase())
+                .show_background(true)
                 .default_open(true)
                 .show(ui, |ui| {
                     ui.columns(2, |uis| {

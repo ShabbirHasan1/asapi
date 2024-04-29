@@ -167,13 +167,13 @@ impl RedisView {
                     ui.heading(egui::RichText::new("SortedSet").strong());
                     self.show_sorted_sets(ui, i18n);
                 }
-                RedisMenu::Stream => {
-                    ui.heading(egui::RichText::new("Streams").strong());
-                    self.show_streams(ui, i18n);
-                }
                 RedisMenu::Json => {
                     ui.heading(egui::RichText::new("Json").strong());
                     self.show_json(ui, i18n);
+                }
+                RedisMenu::Stream => {
+                    ui.heading(egui::RichText::new("Streams").strong());
+                    self.show_streams(ui, i18n);
                 }
                 RedisMenu::PubSub => {
                     ui.heading(egui::RichText::new("PubSub").strong());

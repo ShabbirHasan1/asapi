@@ -14,7 +14,7 @@
 macro_rules! strip_text_edit {
     ($strip:expr, $name:expr, $variable:expr) => {{
         $strip.cell(|ui| {
-            ui_text_edit_singleline_hint(ui, $name, &mut $variable);
+            ui.add(egui::TextEdit::singleline(&mut $variable).hint_text($name));
         })
     }};
 }
