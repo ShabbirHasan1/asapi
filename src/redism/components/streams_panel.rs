@@ -57,14 +57,19 @@ impl RedisView {
                 }
             });
             ui.separator();
+
             if self.state.show_regular_commands {
                 self.show_regular_streams_commands(ui, i18n);
+                if self.state.show_read_commands && self.state.last_result.is_some() {
+                    ui.separator();
+                }
             }
             if self.state.show_read_commands {
                 self.show_read_streams(ui, i18n);
             }
-
-            ui.separator();
+            if self.state.show_read_commands || self.state.show_regular_commands {
+                ui.separator();
+            }
         }
         self.display_streams(ui, i18n);
     }
