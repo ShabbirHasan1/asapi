@@ -9,12 +9,13 @@
 use redis::streams::{StreamId, StreamReadOptions, StreamReadReply};
 use redis::{self, Commands, Connection, RedisResult, Value};
 use std::collections::{BTreeMap, HashMap};
+use std::time::SystemTime;
 
 use crate::common::traits::{Show, Tree};
 use crate::error;
 use crate::redism::connection::{create_conn, create_redis_connection};
 use crate::redism::parser::redis_value_to_string;
-use crate::redism::state::{RedisConnectionDefinition, RedisStreamState};
+use crate::redism::state::{RedisConnectionDefinition, RedisStreamReaderStorage, RedisStreamState};
 use crate::redism::utils::value_map_to_string_btree_map;
 
 use super::{read_operation, RedisResponse};
@@ -212,9 +213,85 @@ pub fn xtrim(
     write_stream_operation(conn, "XTRIM", &st.xtrim_k, streams, callback)
 }
 
+pub type RedisStreamMessage = Result<RedisStreamReaderStorage, String>;
+// pub type RedisStreamMessage = Result<HashMap<String, HashMap<String, BTreeMap<String, String>>>, String>;
+
 /// --------------------------------------------------
 /// Funciones para lectura de mensajes
 /// --------------------------------------------------
+pub fn blocking_xread(
+    conn_def: RedisConnectionDefinition,
+    // streams: &mut HashMap<String, HashMap<String, BTreeMap<String, String>>>,
+    st: &RedisStreamState,
+    tx: &std::sync::mpsc::Sender<RedisStreamMessage>,
+) {
+    let count = st.xread_count.parse::<usize>().unwrap_or_default();
+    let block = st.xread_block_ms.parse::<usize>().unwrap_or_default();
+    let keys = st
+        .xread_keys
+        .split(' ')
+        .map(|s| s.to_owned())
+        .collect::<Vec<String>>();
+    let ids = st
+        .xread_ids
+        .split(' ')
+        .map(|s| s.to_owned())
+        .collect::<Vec<String>>();
+    let tx_cloned = tx.clone();
+    let ms = st.xread_block_ms.parse::<usize>().ok();
+
+    std::thread::spawn(move || {
+        let mut streams: HashMap<String, HashMap<String, BTreeMap<String, String>>> =
+            HashMap::new();
+        let conn_result = create_redis_connection(&conn_def);
+        if conn_result.is_err() {
+            return;
+        }
+        let mut conn = conn_result.unwrap();
+
+        let opts = if count > 0 && block > 0 {
+            StreamReadOptions::default().count(count).block(block)
+        } else if count > 0 {
+            StreamReadOptions::default().count(count)
+        } else if block > 0 {
+            println!("Bloqueo {block} seconds");
+            StreamReadOptions::default().block(block)
+        } else {
+            StreamReadOptions::default()
+        };
+
+        let result: RedisResult<StreamReadReply> = conn.xread_options(&[keys], &[ids], &opts);
+
+        match result {
+            Ok(stream_keys) => {
+                for entry in stream_keys.keys {
+                    let mut tmp: HashMap<String, BTreeMap<String, String>> =
+                        HashMap::with_capacity(entry.ids.len());
+                    for stream_id in entry.ids {
+                        tmp.insert(stream_id.id, value_map_to_string_btree_map(&stream_id.map));
+                    }
+                    streams.insert(entry.key, tmp);
+                }
+                let now = SystemTime::now();
+                for (k, v) in &streams {
+                    let msg = RedisStreamReaderStorage {
+                        stream: k.to_owned(),
+                        group: None,
+                        messages: v.to_owned(),
+                        system_time: now,
+                        block_ms: ms,
+                    };
+                    let _ = tx_cloned.send(Ok(msg));
+                }
+            }
+            Err(e) => {
+                error!("Ocurrió un error {}", e);
+                // Err(format!("{e:?}"))
+            }
+        }
+    });
+}
+
 pub fn xread(
     conn_def: &RedisConnectionDefinition,
     // streams: &mut HashMap<String, HashMap<String, BTreeMap<String, String>>>,

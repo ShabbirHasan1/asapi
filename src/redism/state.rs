@@ -15,6 +15,8 @@ use std::time::SystemTime;
 
 use crate::{common::traits::ToUrl, redism::connection::RedisMenu};
 
+use super::presenters::stream::RedisStreamMessage;
+
 /// No tengo muy claro cómo hacerlo mejor.
 /// Path y OsStr son más apropiadas pero problemáticas.
 /// Voy con String y ya se verá si necesito cambiar.
@@ -353,10 +355,14 @@ pub struct RedisStreamState {
     pub xreadgroup_keys: String,
     pub xreadgroup_ids: String,
     pub streams: Vec<RedisStreamReaderStorage>,
+    pub tx: std::sync::mpsc::Sender<RedisStreamMessage>,
+    pub rx: std::sync::mpsc::Receiver<RedisStreamMessage>,
 }
 
 impl Default for RedisStreamState {
     fn default() -> Self {
+        let (tx, rx) = std::sync::mpsc::channel();
+
         Self {
             info_stream_k: Default::default(),
             info_stream_full: Default::default(),
@@ -414,6 +420,8 @@ impl Default for RedisStreamState {
             xreadgroup_noack: true,
             xreadgroup_keys: Default::default(),
             xreadgroup_ids: Default::default(),
+            tx,
+            rx,
         }
     }
 }
