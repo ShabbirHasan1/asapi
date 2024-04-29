@@ -349,6 +349,6 @@ fn write_stream_operation(
                 Err(e) => Ok(format!("{m} :: {e:?}")),
             }
         }
-        Err(e) => Ok(format!("XADD :: {e:?}")),
+        Err(e) => Err(format!("{m} :: {e:?}")),
     }
 }
