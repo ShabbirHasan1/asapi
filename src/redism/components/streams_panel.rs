@@ -78,8 +78,24 @@ impl RedisView {
 
     fn show_read_streams(&mut self, ui: &mut egui::Ui, i18n: &I18n) {
         while let Ok(msg) = self.state.stream_st.rx.try_recv() {
-            if let Ok(msg) = msg {
-                self.state.stream_st.streams.push(msg);
+            match msg {
+                stream::RedisStreamMessage::Pending(msg) => {
+                    self.state.stream_st.streams.push(msg);
+                }
+                stream::RedisStreamMessage::Ready(msg) => {
+                    let position = self
+                        .state
+                        .stream_st
+                        .streams
+                        .iter()
+                        .position(|stream| stream.stream == msg.stream);
+                    if let Some(position) = position {
+                        self.state.stream_st.streams[position] = msg;
+                    }
+                }
+                stream::RedisStreamMessage::Error(err) => {
+                    self.state.last_stream_read_error = Some(err);
+                }
             }
         }
         egui::CollapsingHeader::new(

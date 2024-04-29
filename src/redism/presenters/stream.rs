@@ -213,7 +213,12 @@ pub fn xtrim(
     write_stream_operation(conn, "XTRIM", &st.xtrim_k, streams, callback)
 }
 
-pub type RedisStreamMessage = Result<RedisStreamReaderStorage, String>;
+pub enum RedisStreamMessage {
+    Pending(RedisStreamReaderStorage),
+    Ready(RedisStreamReaderStorage),
+    Error(String),
+}
+// pub type RedisStreamMessage = Result<RedisStreamReaderStorage, String>;
 // pub type RedisStreamMessage = Result<HashMap<String, HashMap<String, BTreeMap<String, String>>>, String>;
 
 /// --------------------------------------------------
@@ -260,6 +265,17 @@ pub fn blocking_xread(
             StreamReadOptions::default()
         };
 
+        let now = SystemTime::now();
+        for k in &keys {
+            let msg = RedisStreamReaderStorage {
+                stream: k.to_owned(),
+                group: None,
+                messages: HashMap::default(),
+                system_time: now,
+                block_ms: ms,
+            };
+            let _ = tx_cloned.send(RedisStreamMessage::Pending(msg));
+        }
         let result: RedisResult<StreamReadReply> = conn.xread_options(&[keys], &[ids], &opts);
 
         match result {
@@ -272,7 +288,6 @@ pub fn blocking_xread(
                     }
                     streams.insert(entry.key, tmp);
                 }
-                let now = SystemTime::now();
                 for (k, v) in &streams {
                     let msg = RedisStreamReaderStorage {
                         stream: k.to_owned(),
@@ -281,12 +296,12 @@ pub fn blocking_xread(
                         system_time: now,
                         block_ms: ms,
                     };
-                    let _ = tx_cloned.send(Ok(msg));
+                    let _ = tx_cloned.send(RedisStreamMessage::Ready(msg));
                 }
             }
             Err(e) => {
                 error!("Ocurrió un error {}", e);
-                // Err(format!("{e:?}"))
+                let _ = tx_cloned.send(RedisStreamMessage::Error(format!("{e:?}")));
             }
         }
     });
@@ -294,7 +309,6 @@ pub fn blocking_xread(
 
 pub fn xread(
     conn_def: &RedisConnectionDefinition,
-    // streams: &mut HashMap<String, HashMap<String, BTreeMap<String, String>>>,
     st: &RedisStreamState,
 ) -> Result<HashMap<String, HashMap<String, BTreeMap<String, String>>>, String> {
     let mut streams: HashMap<String, HashMap<String, BTreeMap<String, String>>> = HashMap::new();
