@@ -6,13 +6,12 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
-use egui_json_tree::JsonTree;
-use redis::streams::StreamReadReply;
 use redis::Msg as PubSubMsg;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::collections::HashMap;
 use std::fmt::Display;
+use std::time::SystemTime;
 
 use crate::{common::traits::ToUrl, redism::connection::RedisMenu};
 
@@ -289,24 +288,12 @@ pub struct RedisJsonState {
     pub json_toggle_p: String,
 }
 
-#[derive(Default, Debug, Clone)]
-pub struct CustomStreamKey {
-    pub key: String,
-    pub ids: Vec<CustomStreamId>,
-}
-
-#[derive(Default, Debug, Clone)]
-pub struct CustomStreamId {
-    pub id: String,
-    pub map: HashMap<String, String>,
-}
-
-#[derive(Default)]
 pub struct RedisStreamReaderStorage {
     pub stream: String,
     pub group: Option<String>,
-    pub messages: Vec<HashMap<String, Vec<String>>>,
-    pub starting_ts_ms: usize, // tiempo que queda hasta que se desbloquee.
+    pub messages: HashMap<String, BTreeMap<String, String>>,
+    pub system_time: SystemTime, // para saber tiempo que queda hasta que se desbloquee.
+    pub block_ms: Option<usize>,
 }
 
 pub struct RedisStreamState {
@@ -424,7 +411,7 @@ impl Default for RedisStreamState {
             xreadgroup_consumer: Default::default(),
             xreadgroup_count: Default::default(),
             xreadgroup_block_ms: Default::default(),
-            xreadgroup_noack: Default::default(),
+            xreadgroup_noack: true,
             xreadgroup_keys: Default::default(),
             xreadgroup_ids: Default::default(),
         }
@@ -451,8 +438,8 @@ pub struct RedisLocalState {
     pub must_scan: bool,
     // pub last_result: String,
     pub last_result: Option<Result<String, String>>,
-    pub last_stream_read_result:
-        Option<Result<HashMap<String, HashMap<String, BTreeMap<String, String>>>, String>>,
+    // TODO: Esta variable he de acabar borrándola. Lo guardo en el vector de resultados de lecturas.
+    pub last_stream_read_error: Option<String>,
     pub conn: Option<redis::Connection>, // La estoy gastando?
     pub selected_menu: RedisMenu,
     pub hide_connections: bool,
@@ -485,7 +472,7 @@ impl Default for RedisLocalState {
             must_scan: Default::default(),
             // last_result: Default::default(),
             last_result: Default::default(),
-            last_stream_read_result: Default::default(),
+            last_stream_read_error: Default::default(),
             conn: Default::default(),
             selected_menu: Default::default(),
             hide_connections: Default::default(),

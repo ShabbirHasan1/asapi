@@ -6,18 +6,16 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
-use egui_json_tree::JsonTree;
-use redis::streams::{StreamId, StreamKey, StreamReadOptions, StreamReadReply};
-use redis::{self, Client, Commands, Connection, RedisResult, Value};
+use redis::streams::{StreamId, StreamReadOptions, StreamReadReply};
+use redis::{self, Commands, Connection, RedisResult, Value};
 use std::collections::{BTreeMap, HashMap};
-use std::fmt::Display;
 
 use crate::common::traits::{Show, Tree};
+use crate::error;
 use crate::redism::connection::{create_conn, create_redis_connection};
 use crate::redism::parser::redis_value_to_string;
 use crate::redism::state::{RedisConnectionDefinition, RedisStreamState};
 use crate::redism::utils::value_map_to_string_btree_map;
-use crate::{error, info};
 
 use super::{read_operation, RedisResponse};
 
@@ -48,16 +46,12 @@ pub fn read_stream_id(
     match result {
         Ok(stream_keys) => {
             for entry in stream_keys.keys {
-                info!("Stream keys: {}, asked for {}", entry.key, id);
-                info!("  {}", entry.ids.len());
                 for stream_id in entry.ids {
-                    info!(" - entry id: {}", stream_id.id);
                     state.insert(stream_id.id, stream_id.map.clone());
-                    info!("{:?}", stream_id.map);
                 }
             }
         }
-        Err(e) => info!("Ocurrió un error {}", e),
+        Err(e) => error!("Ocurrió un error {}", e),
     }
 
     Ok(())
@@ -155,7 +149,7 @@ pub fn xadd(
                 .arg(&st.xadd_id)
                 .arg(
                     &st.xadd_items
-                        .split_whitespace()
+                        .split(' ')
                         .collect::<Vec<&str>>()
                         .chunks(2)
                         .collect::<Vec<&[&str]>>(),
@@ -167,7 +161,7 @@ pub fn xadd(
                 .arg(&st.xadd_id)
                 .arg(
                     &st.xadd_items
-                        .split_whitespace()
+                        .split(' ')
                         .collect::<Vec<&str>>()
                         .chunks(2)
                         .collect::<Vec<&[&str]>>(),
@@ -234,20 +228,27 @@ pub fn xread(
             ))
         },
         |mut conn| {
-            info!(
-                "{f:?}",
-                f = st.xread_keys.split_whitespace().collect::<Vec<&str>>()
-            );
-            info!(
-                "{f:?}",
-                f = st.xread_ids.split_whitespace().collect::<Vec<&str>>()
-            );
-            let opts = StreamReadOptions::default();
+            let count = st.xread_count.parse::<usize>().unwrap_or_default();
+            let block = st.xread_block_ms.parse::<usize>().unwrap_or_default();
+
+            let opts = if count > 0 && block > 0 {
+                StreamReadOptions::default().count(count).block(block)
+            } else if count > 0 {
+                StreamReadOptions::default().count(count)
+            } else if block > 0 {
+                println!("Bloqueo {block} seconds");
+                StreamReadOptions::default().block(block)
+            } else {
+                StreamReadOptions::default()
+            };
+
             let result: RedisResult<StreamReadReply> = conn.xread_options(
-                &[st.xread_keys.split_whitespace().collect::<Vec<&str>>()],
-                &[st.xread_ids.split_whitespace().collect::<Vec<&str>>()],
+                &[st.xread_keys.split(' ').collect::<Vec<&str>>()],
+                &[st.xread_ids.split(' ').collect::<Vec<&str>>()],
                 &opts,
             );
+
+            println!("===== Después del block");
 
             match result {
                 Ok(stream_keys) => {
@@ -268,22 +269,6 @@ pub fn xread(
             }
         },
     )
-}
-
-fn read(
-    conn: &mut Connection,
-    m: &str,
-    ks: &[&str],
-    ids: &[&str],
-    hm: &mut HashMap<String, Vec<String>>,
-    options: StreamReadOptions,
-) -> Result<StreamReadReply, String> {
-    let result: RedisResult<StreamReadReply> = conn.xread_options(ks, ids, &options);
-
-    match result {
-        Ok(stream_read_reply) => Ok(stream_read_reply),
-        Err(e) => Err(format!("{e:?}")),
-    }
 }
 
 impl Tree<String, HashMap<String, String>> for StreamId {

@@ -11,11 +11,12 @@ use egui_extras::{Size, StripBuilder};
 use egui_json_tree::{DefaultExpand, JsonTree};
 use redis::Connection;
 use std::collections::HashMap;
+use std::time::SystemTime;
 
 use crate::{
     common::internationalization::I18n,
     components::result_panel::ui_response_panel,
-    error, info,
+    error,
     redism::{
         connection::RedisMenu,
         presenters::{
@@ -53,6 +54,8 @@ impl RedisView {
                 }
                 if ui.button(&i18n.redis_clean_result).clicked() {
                     self.state.last_result = None;
+                    self.state.last_stream_read_error = None;
+                    self.state.stream_st.streams.clear();
                 }
             });
             ui.separator();
@@ -91,19 +94,60 @@ impl RedisView {
             ui.separator();
         });
 
-        match self.state.last_stream_read_result {
-            Some(ref res) => match res {
-                Ok(hm) => {
-                    JsonTree::new("stream_xread_response", &serde_json::json!(&hm))
-                        .default_expand(DefaultExpand::ToLevel(1))
-                        .show(ui);
+        let mut n_col = 0;
+
+        ui.columns(2, |uis| {
+            for ui in uis {
+                for (idx, reader_storage) in self.state.stream_st.streams.iter().enumerate() {
+                    let column_idx = idx % 2;
+                    if n_col == column_idx {
+                        egui::Frame::default()
+                            .stroke(ui.visuals().widgets.noninteractive.bg_stroke)
+                            .show(ui, |ui| {
+                                ui.horizontal(|ui| {
+                                    ui.monospace(&i18n.redis_stream_stream_prefix);
+                                    ui.label(&reader_storage.stream);
+                                });
+                                if reader_storage.group.is_some() {
+                                    ui.monospace(&i18n.redis_stream_group_prefix);
+                                    ui.label(reader_storage.group.as_ref().unwrap());
+                                }
+                                JsonTree::new(
+                                    &reader_storage.stream,
+                                    &serde_json::json!(&reader_storage.messages),
+                                )
+                                .default_expand(DefaultExpand::ToLevel(0))
+                                .show(ui);
+                                let now = SystemTime::now();
+                                let duration =
+                                    now.duration_since(reader_storage.system_time).map_or_else(
+                                        |_| "error".to_string(),
+                                        |elapsed| {
+                                            if reader_storage.block_ms.is_some_and(|ms| {
+                                                (ms as u128) > elapsed.as_millis()
+                                            }) {
+                                                ui.ctx().request_repaint();
+                                                format!(
+                                                    "{v}",
+                                                    v = (reader_storage.block_ms.unwrap() as u128
+                                                        - elapsed.as_millis())
+                                                        / 1000
+                                                )
+                                            } else {
+                                                "0".to_string()
+                                            }
+                                        },
+                                    );
+                                ui.label(format!(
+                                    "{} {duration} s",
+                                    &i18n.redis_stream_block_prefix
+                                ));
+                            });
+                    }
                 }
-                Err(err) => {
-                    ui_response_panel(ui, &Some(Err(err.to_owned())));
-                }
-            },
-            _ => (),
-        }
+                n_col += 1;
+            }
+        });
     }
 
     fn stream_read_commands_1(&mut self, ui: &mut egui::Ui) {
@@ -129,23 +173,38 @@ impl RedisView {
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "XREAD") {
-                                    self.state.last_stream_read_result = Some(stream::xread(
+                                    let result = stream::xread(
                                         &self.state.current_connection,
-                                        // &mut self.state.last_stream_read_result,
                                         &self.state.stream_st,
-                                    ));
+                                    );
 
-                                    self.state.stream_st.streams.push(RedisStreamReaderStorage {
-                                        stream: self.state.stream_st.xread_keys.clone(),
-                                        group: None,
-                                        messages: Default::default(),
-                                        starting_ts_ms: self
-                                            .state
-                                            .stream_st
-                                            .xread_count
-                                            .parse::<usize>()
-                                            .unwrap_or_default(),
-                                    });
+                                    self.state.stream_st.streams.clear();
+                                    self.state.last_stream_read_error = None;
+                                    let now = SystemTime::now();
+
+                                    match result {
+                                        Ok(hm) => {
+                                            for (k, v) in &hm {
+                                                self.state.stream_st.streams.push(
+                                                    RedisStreamReaderStorage {
+                                                        stream: k.to_owned(),
+                                                        group: None,
+                                                        messages: v.to_owned(),
+                                                        system_time: now,
+                                                        block_ms: self
+                                                            .state
+                                                            .stream_st
+                                                            .xread_block_ms
+                                                            .parse::<usize>()
+                                                            .ok(),
+                                                    },
+                                                );
+                                            }
+                                        }
+                                        Err(err) => {
+                                            self.state.last_stream_read_error = Some(err);
+                                        }
+                                    }
                                 }
                             });
                         });
@@ -193,19 +252,38 @@ impl RedisView {
 
                             strip.cell(|ui| {
                                 if ui_button_w100!(ui, "XREAD GROUP") {
-                                    self.state.last_result =
-                                        self.run_write_stream(stream::xread_group);
-                                    self.state.stream_st.streams.push(RedisStreamReaderStorage {
-                                        stream: self.state.stream_st.xreadgroup_keys.clone(),
-                                        group: Some(self.state.stream_st.xreadgroup_group.clone()),
-                                        messages: Default::default(),
-                                        starting_ts_ms: self
-                                            .state
-                                            .stream_st
-                                            .xread_count
-                                            .parse::<usize>()
-                                            .unwrap_or_default(),
-                                    });
+                                    let result = stream::xread(
+                                        &self.state.current_connection,
+                                        &self.state.stream_st,
+                                    );
+
+                                    self.state.stream_st.streams.clear();
+                                    self.state.last_stream_read_error = None;
+                                    let now = SystemTime::now();
+
+                                    match result {
+                                        Ok(hm) => {
+                                            for (k, v) in &hm {
+                                                self.state.stream_st.streams.push(
+                                                    RedisStreamReaderStorage {
+                                                        stream: k.to_owned(),
+                                                        group: None,
+                                                        messages: v.to_owned(),
+                                                        system_time: now,
+                                                        block_ms: self
+                                                            .state
+                                                            .stream_st
+                                                            .xread_block_ms
+                                                            .parse::<usize>()
+                                                            .ok(),
+                                                    },
+                                                );
+                                            }
+                                        }
+                                        Err(err) => {
+                                            self.state.last_stream_read_error = Some(err);
+                                        }
+                                    }
                                 }
                             });
                         });
@@ -699,7 +777,6 @@ impl RedisView {
                         ) {
                             Ok(s) => {
                                 self.state.must_scan = true;
-                                info!("{:?}", s);
                             }
                             Err(e) => error!("{:?}", e),
                         }
