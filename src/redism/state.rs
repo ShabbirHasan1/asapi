@@ -10,6 +10,7 @@ use redis::Msg as PubSubMsg;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::collections::HashMap;
+use std::collections::HashSet;
 use std::fmt::Display;
 
 use crate::{common::traits::ToUrl, redism::connection::RedisMenu};
@@ -428,6 +429,7 @@ pub struct RedisLocalState {
     pub zsets: HashMap<String, Vec<String>>,
     // El valor es el json como string.
     pub jsons: BTreeMap<String, String>,
+    // El `Vec<String>` es simplemente el listado de los ids de los mensajes.
     pub streams: HashMap<String, Vec<String>>,
     // Para poder mostrar y quitar a voluntad, donde guardo los valores de los streams. No guardo todo el listado de
     // mensajes porque puede ser eterno. Cuando hago click busco y pongo, y cuando click otra vez borro.
