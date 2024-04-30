@@ -15,3 +15,107 @@ CLOSED: [2024-02-28 mié 16:22] No está hecho en todo, pero sí en las tablas d
 * Otros
 *** Crates a revisar por si fuesen interesante
 **** [[https://github.com/tokio-rs/tracing][tracing]]
+
+
+* Kafka
+*** [#A] Usar tabla para mostrar los mensajes que va recibiendo el consumidor.
+*** [#A] Poder /unsusbscribe/ de una conexión
+*** [#A] Producir de forma puntual
+*** [#B] Producir de forma periódica
+Se tiene que poder cancelar la producción.
+Usar generadores.
+*** [#C] Estadística bajo demanda.
+Creo /FutureProducer/, dejo que funcione un par de segundos y cierro. No tiene sentido tenerlo todo el rato conectado si no aporta al usuario. Que se haga la petición solamente en caso de que el usuario lo quiera.
+*** DONE Mostrar datos en función de botón lateral.
+CLOSED: [2024-02-01 jue 18:27]
+Uso Kafka-ui de referencia de los datos que puede ser interesante mostrar
+**** DONE [#A] /Brokers/
+CLOSED: [2024-01-31 mié 22:33]
+**** CANCELED [#A] /Consumers/
+CLOSED: [2024-02-01 jue 18:27] No se puede hacer fácilmente, ya investigaré más adelante si acaso
+**** DONE [#A] /Topics/
+CLOSED: [2024-02-01 jue 18:27]
+*** DONE Cargar metadatos al darle a conectar, y luego simplemente ir mostrándolos.
+CLOSED: [2024-01-31 mié 22:33]
+*** DONE [#C] Subscribir en tiempo real
+CLOSED: [2024-02-01 jue 18:27]
+Se tiene que poder de-subscribir.
+*** DONE Extraer metadatos de consumidor (lanzar en Tokyo)
+CLOSED: [2024-01-31 mié 12:15]
+*** DONE Menú lateral para elegir entre clúster
+CLOSED: [2024-01-31 mié 12:15]
+*** DONE [#C] Conectar
+CLOSED: [2024-01-19 sáb 11:19]
+
+
+* Mongo
+ En studio3t se muestra como tabla en vez de listado de Json extensibles como hago yo. Si no existe un atributo en un documento, no se muestra nada en esa celda. Si el atributo es a su vez un json, se puede clicar y ver lo que hay dentro en una nueva tabla. No creo que merezca la pena, pero puede ser una idea a explorar en un futurio lejano.
+*** DONE Conectar
+CLOSED: [2024-02-28 mié 16:22]
+*** DONE Mostrar bases de datos
+CLOSED: [2024-02-28 mié 16:22]
+*** DONE Mostrar colecciones de la base de datos seleccionada
+CLOSED: [2024-02-28 mié 16:22]
+*** DONE Mostrar documentos de la colección seleccionada
+CLOSED: [2024-04-01 lun 22:39]
+*** DONE [#B] Botón de recarga para volver a mostrar todos los documentos de la colección
+CLOSED: [2024-04-05 vie 14:38]
+*** DONE Filtro con texto
+CLOSED: [2024-04-05 vie 14:39]
+*** DONE [#A] Poder limpiar filtro compuesto
+CLOSED: [2024-04-05 vie 16:14]
+*** DONE [#A] Filtro compuesto
+CLOSED: [2024-04-05 vie 16:14]
+*** DONE [#A] find
+CLOSED: [2024-04-05 vie 16:14]
+*** TODO [#A] insert
+*** TODO [#A] delete
+*** TODO [#B] Label sobre la que, si hacemos hover, se nos muestra la consulta parseada que se va a enviar a Mongo.
+*** TODO [#C] Mostrar info de la base de datos con hover sobre /Info/
+*** TODO [#C] Mostrar info de la colección con hover sobre /Info/
+*** TODO [#C] El /not/ aún no funciona
+*** TODO [#C] Mostra documentos de la colección con paginación
+
+* SQLx
+El módulo común de /sqlx/ lo llamo /sqlx_common/, el resto con el nombre más la /m/ final de /module/.
+** General
+Hago al generar/insertar un doble cambio de string a tipo y tipo a string, y no uso el enum que me va a dar en ppio mejor rendimiento. Esto tengo que cambiarlo, en todos a la vez al usar la mismas clases para las ventanas generadoras
+*** DONE Refactorizar para usar sqlx en pg
+CLOSED: [2024-03-26 mar 17:34]
+
+** Postgres
+*** CANCELED Generador de código a partir de /Gen/
+CLOSED: [2024-02-28 mié 16:22]
+*** TODO Tamaño de campo de claves en /body/ y /headers/
+Cuando hacemos pequeña la ventana no reduce y se acaba tapando el valor sin que se hayan reducido las /keys/.
+*** DONE [#A] Mostrar cómo se queda el estado de una tabla tras:
+CLOSED: [2024-01-29 lun 12:35]
++ /update/
++ /insert/
++ /delete/
+*** DONE [#A] Mostrar tipos de una tabla con /hover/ sobre ella
+CLOSED: [2024-01-29 lun 07:33]
+*** DONE [#A] Mostrar de alguna forma el tipo de la columna
+CLOSED: [2024-01-29 lun 06:41]
+*** DONE [#C] Formatear mejor la tabla con los resultados, ahora es un problema cómo se muestran
+CLOSED: [2024-01-27 sáb 08:00] Lo que he conseguido es todo lo que se puede conseguir.
+*** DONE [#B] Poder manejar varias sesiones cada una con una conexión distinta, similar a los distintos espacios de trabajo del módulo HTTP.
+CLOSED: [2024-01-27 sáb 08:00] Guardo un listado con los datos de las conexiones, pero no la conexión en sí. Muy complicado poder guardar `pg::Client`, no es clonable obviamente, y hay que retocar mucho. Y tampoco me importa cerrar y abrir en cada nuevo click, es ligero para el número de veces que se hará en una sesión típica.
+*** DONE [#A] Poder conectar y reconectar con otros datos de sesión, cerrando la conexión existente.
+CLOSED: [2024-01-20 sáb 11:14]
+*** DONE [#B] /Multiline/ para introducir comandos.
+Cancelado porque no queda muy bien a nivel estético.
+CLOSED: [2023-12-27 mié 10:44]
+*** DONE Conectar
+CLOSED: [2023-12-06 mié 15:29]
+*** DONE Usar Table y no grid par mostrar los datos de las tablas
+CLOSED: [2023-12-13 mié 12:54]
+
+** MySQL
+*** DONE Conectar
+CLOSED: [2024-03-26 mar 17:34]
+** SQLite
+*** DONE Conectar
+CLOSED: [2024-02-28 mié 16:21]
+*** DONE Problema con conectar directamente tras abrir archivo
+CLOSED: [2024-03-26 mar 17:34]
