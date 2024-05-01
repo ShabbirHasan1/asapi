@@ -10,7 +10,11 @@ use super::{
     presenter::{Kafka, KafkaConsumer, KafkaConsumerMessage, KafkaMessage, KafkaProducer},
     state::{Cluster, KafkaAppState, KafkaLocalState},
 };
-use crate::{app_state::AppState, common::internationalization::I18n, kafkam::state::KafkaPanel};
+use crate::{
+    app_state::AppState,
+    common::{internationalization::I18n, traits::Sidenav as _},
+    kafkam::state::KafkaPanel,
+};
 use eframe::egui;
 use egui_extras::{Column, TableBuilder};
 use rdkafka::metadata::Metadata;
@@ -19,8 +23,8 @@ use std::sync::{Arc, Mutex};
 use tokio::runtime::Runtime;
 
 pub struct KafkaView {
-    state: KafkaLocalState,
-    messages: Arc<Mutex<Vec<KafkaConsumerMessage>>>,
+    pub state: KafkaLocalState,
+    pub messages: Arc<Mutex<Vec<KafkaConsumerMessage>>>,
 }
 
 impl Default for KafkaView {
@@ -73,120 +77,8 @@ impl KafkaView {
         // =======================================
         // Panel Lateral
         // =======================================
-        // --> Listado de conexiones (aunque solo se mantiene la última clicada activa) <--
         if app_state.kafka.show_sidebar {
-            egui::SidePanel::left("kafka_cluster_panel").show(ctx, |ui| {
-                ui.menu_button(i18n.kafka_btn_add_connection.clone(), |ui| {
-                    self.edit_cluster_menu(ui, &mut app_state.kafka, i18n);
-                });
-
-                for (idx, cluster) in app_state.kafka.clusters.iter().enumerate() {
-                    ui.collapsing(cluster.name.clone(), |ui| {
-                        ui.with_layout(egui::Layout::top_down(egui::Align::LEFT), |ui| {
-                            ui.label(format!("{}:{}", cluster.host, cluster.port));
-
-                            let current_cluster_metadata =
-                                self.state.clusters_metadata.get(idx).unwrap();
-
-                            let btn_text = match current_cluster_metadata {
-                                None => &i18n.kafka_btn_connect,
-                                _ => &i18n.kafka_btn_disconnect,
-                            };
-
-                            let connect_btn =
-                                egui::Button::new(btn_text).min_size(egui::vec2(200.0, 16.0));
-
-                            if ui.add(connect_btn).clicked() {
-                                self.state.current_cluster_idx = idx;
-                                let broker = format!("{}:{}", cluster.host, cluster.port);
-
-                                match current_cluster_metadata {
-                                    Some(_) => (),
-                                    None => {
-                                        let tx_cloned = self.state.tx.clone();
-
-                                        // --> Conectamos con el clúster y recogemos metadatos y estadísticas <--
-                                        rt.spawn(async move {
-                                            let producer = KafkaProducer::stats_listener(&broker);
-                                            let metadata =
-                                                Kafka::extract_cluster_metadata_from_client(
-                                                    producer.client(),
-                                                );
-                                            if let Some(data) = metadata {
-                                                let _ = tx_cloned
-                                                    .send(KafkaMessage::ClusterMetadata((
-                                                        idx, data,
-                                                    )))
-                                                    .await;
-                                            }
-                                        });
-
-                                        // TODO: Mover a algún sitio donde se pida de forma explícita por parte
-                                        // del usuario las estadísticas.
-                                        // std::thread::spawn(move || {
-                                        // let stats_producer = create_stats_producer(&broker);
-                                        // let running = Arc::new(AtomicBool::new(true));
-                                        // // flag::register_usize(SIGINT, Arc::clone(&running), 0).unwrap();
-                                        // run_producer_loop(stats_producer, running);
-                                        // println!("Closing stats_producer");
-                                        // });
-                                    }
-                                }
-                            }
-
-                            // --> Selección entre una u otra vista y acciones <--
-                            let show_brokers_btn = ui.add(egui::SelectableLabel::new(
-                                self.state.current_cluster_idx == idx
-                                    && self.state.current_view == KafkaPanel::Brokers,
-                                &i18n.kafka_btn_show_brokers,
-                            ));
-                            let show_topics_btn = ui.add(egui::SelectableLabel::new(
-                                self.state.current_cluster_idx == idx
-                                    && self.state.current_view == KafkaPanel::Topics,
-                                &i18n.kafka_btn_show_topics,
-                            ));
-                            let show_subscription_btn = ui.add(egui::SelectableLabel::new(
-                                self.state.current_cluster_idx == idx
-                                    && self.state.current_view == KafkaPanel::Subscribe,
-                                &i18n.kafka_btn_show_subscription,
-                            ));
-
-                            // TODO: Hay que parar subscripción existente cuando hacemos click
-                            if show_brokers_btn.clicked() {
-                                self.state.current_cluster_idx = idx;
-                                self.state.current_view = KafkaPanel::Brokers;
-                            } else if show_topics_btn.clicked() {
-                                self.state.current_cluster_idx = idx;
-                                self.state.current_view = KafkaPanel::Topics;
-                            } else if show_subscription_btn.clicked() {
-                                self.state.current_cluster_idx = idx;
-                                self.state.current_view = KafkaPanel::Subscribe;
-                                let broker = format!("{}:{}", cluster.host, cluster.port);
-                                let data = Arc::clone(&self.messages);
-
-                                ctx.request_repaint();
-                                rt.spawn(async move {
-                                    // TODO: Esto hay que llevarlo a la propia vista porque
-                                    // hay que poder elegir group_id y topic(s). Incluso podemos
-                                    // hacerlo como este listado, con un sub-tree en el menú
-                                    // lateral donde introducir esos valores.
-                                    let consumer =
-                                        KafkaConsumer::create_consumer(&broker, "random", false)
-                                            .await;
-
-                                    KafkaConsumer::subscribe(
-                                        &consumer,
-                                        &["prueba1"],
-                                        Arc::clone(&data),
-                                    )
-                                    .await;
-                                    println!("After <-- should never arrive here");
-                                });
-                            }
-                        });
-                    });
-                }
-            });
+            self.show_sidenav(rt, ctx, app_state, i18n);
         }
 
         // =======================================
@@ -286,45 +178,6 @@ impl KafkaView {
                         });
                     });
                 });
-        });
-    }
-
-    fn edit_cluster_menu(
-        &mut self,
-        ui: &mut egui::Ui,
-        kafka_state: &mut KafkaAppState,
-        i18n: &I18n,
-    ) {
-        ui.set_min_width(200.0);
-        // let mut tmp_cluster = Cluster::default();
-
-        ui.horizontal(|ui| {
-            ui.label(&i18n.kafka_edit_cluster_name_label);
-            ui.text_edit_singleline(&mut self.state.tmp_cluster_config.name);
-        });
-
-        ui.horizontal(|ui| {
-            ui.label(&i18n.kafka_edit_cluster_host_label);
-            ui.text_edit_singleline(&mut self.state.tmp_cluster_config.host);
-        });
-
-        ui.horizontal(|ui| {
-            ui.label(&i18n.kafka_edit_cluster_port_label);
-            ui.text_edit_singleline(&mut self.state.tmp_cluster_config.port);
-        });
-
-        ui.horizontal(|ui| {
-            if ui.button(&i18n.kafka_edit_cluster_cancel).clicked() {
-                ui.close_menu();
-            }
-            if ui.button(&i18n.kafka_edit_cluster_save).clicked() {
-                kafka_state
-                    .clusters
-                    .push(self.state.tmp_cluster_config.clone());
-                self.state.clusters_metadata.push(None);
-                self.state.tmp_cluster_config = Cluster::default();
-                ui.close_menu();
-            }
         });
     }
 }

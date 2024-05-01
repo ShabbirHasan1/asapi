@@ -41,6 +41,7 @@ pub struct KafkaLocalState {
     pub is_first_update: bool,
     pub tx: tokio::sync::mpsc::Sender<KafkaMessage>,
     pub rx: tokio::sync::mpsc::Receiver<KafkaMessage>,
+    pub selected_cluster_to_edit_idx: Option<usize>,
 }
 
 impl Default for KafkaLocalState {
@@ -48,11 +49,12 @@ impl Default for KafkaLocalState {
         let (tx, rx) = tokio::sync::mpsc::channel(8);
 
         Self {
-            tmp_cluster_config: Cluster::default(),
+            tmp_cluster_config: Default::default(),
             current_view: KafkaPanel::default(),
             current_cluster_idx: usize::default(),
             clusters_metadata: Vec::new(),
             is_first_update: true,
+            selected_cluster_to_edit_idx: Default::default(),
             tx,
             rx,
         }

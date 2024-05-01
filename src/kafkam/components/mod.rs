@@ -6,8 +6,4 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
-pub mod admin;
-pub mod components;
-mod presenter;
-pub mod state;
-pub mod view;
+pub mod sidenav;

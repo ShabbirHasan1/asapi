@@ -14,6 +14,7 @@
 /// vienen aquí.
 pub mod fs;
 pub mod generator;
+pub mod icon_moon;
 pub mod internationalization;
 pub mod macros;
 pub mod syntax_highlighting;
