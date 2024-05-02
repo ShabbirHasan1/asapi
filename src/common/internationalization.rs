@@ -54,6 +54,8 @@ pub struct I18n {
     pub kafka_btn_show_brokers: String,
     pub kafka_btn_show_subscription: String,
     pub kafka_btn_show_topics: String,
+    pub kafka_cluster_info: String,
+    pub kafka_name: String,
 
     // Mongo
     pub mongo_connection_host: String,
@@ -188,6 +190,8 @@ pub fn language_selector(i: I18nOptions) -> I18n {
             kafka_btn_show_brokers: "Brokers".to_owned(),
             kafka_btn_show_subscription: "Subscripción".to_owned(),
             kafka_btn_show_topics: "Topics".to_owned(),
+            kafka_cluster_info: String::from("Información del Clúster"),
+            kafka_name: String::from("Nombre"),
 
             // Mongo
             mongo_connection_host: "Host".to_owned(),
@@ -320,6 +324,8 @@ pub fn language_selector(i: I18nOptions) -> I18n {
             kafka_btn_show_brokers: "Brokers".to_owned(),
             kafka_btn_show_subscription: "Subscription".to_owned(),
             kafka_btn_show_topics: "Topics".to_owned(),
+            kafka_cluster_info: String::from("Cluster Info"),
+            kafka_name: String::from("Name"),
 
             // Mongo
             mongo_connection_host: "Host".to_owned(),

@@ -9,20 +9,25 @@
 use eframe::egui;
 use rdkafka::metadata::Metadata;
 
-use crate::kafkam::view::KafkaView;
+use crate::{common::internationalization::I18n, kafkam::view::KafkaView};
 
 impl KafkaView {}
 
-pub fn show_clusters_metadata_info(ui: &mut egui::Ui, metadata: &Metadata) {
-    ui.label("Cluster information:".to_string());
-    ui.label(format!("  Broker count: {}", metadata.brokers().len()));
-    ui.label(format!("  Topics count: {}", metadata.topics().len()));
+pub fn show_clusters_metadata_info(ui: &mut egui::Ui, metadata: &Metadata, i18n: &I18n) {
+    ui.label(
+        egui::RichText::new(&i18n.kafka_cluster_info)
+            .heading()
+            .strong(),
+    );
+    ui.label(format!("  #Broker: {}", metadata.brokers().len()));
+    ui.label(format!("  #Topics: {}", metadata.topics().len()));
     ui.label(format!(
-        "  Metadata broker name: {}",
+        "  Metadata Broker {}: {}",
+        &i18n.kafka_name,
         metadata.orig_broker_name()
     ));
     ui.label(format!(
-        "  Metadata broker id: {}\n",
+        "  Metadata Broker Id: {}\n",
         metadata.orig_broker_id()
     ));
 

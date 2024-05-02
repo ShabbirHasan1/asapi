@@ -97,7 +97,7 @@ impl KafkaView {
                 // Control de si hay ya algún elemento en el vector.
                 if let Some(Some(metadata)) = d1 {
                     // Control de si ya hemos insertado valores en vez del None.
-                    show_clusters_metadata_info(ui, metadata);
+                    show_clusters_metadata_info(ui, metadata, i18n);
                 }
             } else if self.state.current_view == KafkaPanel::Topics {
                 // Control de si hay ya algún elemento en el vector.

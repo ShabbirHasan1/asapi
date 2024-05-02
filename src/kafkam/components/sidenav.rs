@@ -6,13 +6,16 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
-use eframe::egui;
+use std::collections::HashSet;
+
+use eframe::egui::{self, Context, Response};
 use rdkafka::producer::Producer;
 use tokio::runtime::Runtime;
 
 use crate::{
     app_state::AppState,
     common::{icon_moon::IconMoon, internationalization::I18n, traits::Sidenav},
+    info,
     kafkam::{
         presenter::{Kafka, KafkaMessage, KafkaProducer},
         state::{Cluster, KafkaPanel},
@@ -34,49 +37,24 @@ impl Sidenav for KafkaView {
             });
 
             let popup_id = ui.make_persistent_id("cluster-edit-window");
-            let mut buttons = Vec::with_capacity(app_state.kafka.clusters.len());
+            let mut buttons: Vec<Response> = Vec::with_capacity(app_state.kafka.clusters.len());
 
+            let mut idx_to_delete = usize::MAX;
             for (idx, cluster) in app_state.kafka.clusters.iter_mut().enumerate() {
                 egui::CollapsingHeader::new(cluster.name.clone())
                     .show_background(true)
+                    .default_open(true)
                     .show(ui, |ui| {
                         ui.with_layout(egui::Layout::top_down(egui::Align::LEFT), |ui| {
-                            ui.horizontal(|ui| {
-                                ui.monospace(format!("{}:{}", cluster.host, cluster.port));
-                                let current_cluster_metadata =
-                                    self.state.clusters_metadata.get(idx).unwrap();
-
-                                match current_cluster_metadata {
-                                    Some(_) if idx == self.state.current_cluster_idx => {
-                                        ui.add_enabled(
-                                            false,
-                                            egui::Button::new(&i18n.kafka_btn_connected),
-                                        );
-                                    }
-                                    _ => {
-                                        if ui.button(&i18n.kafka_btn_connect).clicked() {
-                                            self.state.current_cluster_idx = idx;
-                                            let broker_url =
-                                                format!("{}:{}", cluster.host, cluster.port);
-
-                                            match current_cluster_metadata {
-                                                Some(_) => (),
-                                                None => {
-                                                    self.get_cluster_metadata(rt, broker_url, idx)
-                                                }
-                                            };
-                                        }
-                                    }
-                                };
-
-                                let edit_btn = ui.button(IconMoon::Pencil.as_str());
-                                if edit_btn.clicked() {
-                                    ui.memory_mut(|mem| mem.toggle_popup(popup_id));
-                                    self.state.selected_cluster_to_edit_idx = Some(idx);
-                                    self.state.tmp_cluster_config = cluster.clone();
-                                }
-                                buttons.push(edit_btn);
-                            });
+                            idx_to_delete = self.cluster_connection_row(
+                                ui,
+                                idx,
+                                i18n,
+                                rt,
+                                popup_id,
+                                cluster,
+                                &mut buttons,
+                            );
 
                             // --> Selección entre una u otra vista y acciones <--
                             let show_brokers_btn = ui.add(egui::SelectableLabel::new(
@@ -107,6 +85,10 @@ impl Sidenav for KafkaView {
                             }
                         });
                     });
+            }
+
+            if idx_to_delete < app_state.kafka.clusters.len() {
+                app_state.kafka.clusters.remove(idx_to_delete);
             }
 
             if self.state.selected_cluster_to_edit_idx.is_some() {
@@ -167,8 +149,9 @@ impl KafkaView {
         });
     }
 
-    fn get_cluster_metadata(&self, rt: &Runtime, broker_url: String, idx: usize) {
+    fn get_cluster_metadata(&self, rt: &Runtime, ctx: &Context, broker_url: String, idx: usize) {
         let tx_cloned = self.state.tx.clone();
+        let ctx_cloned = ctx.clone();
 
         // --> Conectamos con el clúster y recogemos metadatos y estadísticas <--
         rt.spawn(async move {
@@ -179,6 +162,7 @@ impl KafkaView {
                     .send(KafkaMessage::ClusterMetadata((idx, data)))
                     .await;
             }
+            ctx_cloned.request_repaint();
         });
 
         // TODO: Mover a algún sitio donde se pida de forma explícita por parte
@@ -190,5 +174,58 @@ impl KafkaView {
         // run_producer_loop(stats_producer, running);
         // println!("Closing stats_producer");
         // });
+    }
+
+    fn cluster_connection_row(
+        &mut self,
+        ui: &mut egui::Ui,
+        idx: usize,
+        i18n: &I18n,
+        rt: &Runtime,
+        popup_id: egui::Id,
+        cluster: &mut Cluster,
+        buttons: &mut Vec<Response>,
+    ) -> usize {
+        let mut tmp = usize::MAX;
+
+        ui.horizontal(|ui| {
+            ui.monospace(format!("{}:{}", cluster.host, cluster.port));
+            let current_cluster_metadata = self.state.clusters_metadata.get(idx).unwrap();
+
+            match current_cluster_metadata {
+                Some(_) if idx == self.state.current_cluster_idx => {
+                    ui.add_enabled(false, egui::Button::new(&i18n.kafka_btn_connected));
+                }
+                _ => {
+                    if ui.button(&i18n.kafka_btn_connect).clicked() {
+                        self.state.current_cluster_idx = idx;
+                        let broker_url = format!("{}:{}", cluster.host, cluster.port);
+
+                        match current_cluster_metadata {
+                            Some(_) => (),
+                            None => self.get_cluster_metadata(rt, ui.ctx(), broker_url, idx),
+                        };
+                    }
+                }
+            };
+
+            let edit_btn = ui.button(IconMoon::Pencil.as_str());
+            if edit_btn.clicked() {
+                ui.memory_mut(|mem| mem.toggle_popup(popup_id));
+                self.state.selected_cluster_to_edit_idx = Some(idx);
+                self.state.tmp_cluster_config = cluster.clone();
+            }
+            buttons.push(edit_btn);
+
+            if ui.button(IconMoon::GarbageCan.as_str()).clicked() {
+                if self.state.current_cluster_idx == idx {
+                    self.state.current_cluster_idx = usize::MAX;
+                }
+                info!("clicked");
+                tmp = idx;
+            }
+        });
+
+        tmp
     }
 }
