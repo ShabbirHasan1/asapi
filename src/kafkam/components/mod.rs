@@ -6,4 +6,8 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
+pub mod clusters_panel;
 pub mod sidenav;
+pub mod subscribe_panel;
+
+pub use clusters_panel::show_clusters_metadata_info;

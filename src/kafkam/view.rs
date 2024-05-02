@@ -7,6 +7,8 @@
 // -------------------------------------------------------------------------
 
 use super::{
+    // components::clusters_panel::{self, show_clusters_metadata_info},
+    components::show_clusters_metadata_info,
     presenter::{Kafka, KafkaConsumer, KafkaConsumerMessage, KafkaMessage, KafkaProducer},
     state::{Cluster, KafkaAppState, KafkaLocalState},
 };
@@ -184,7 +186,6 @@ impl KafkaView {
 
 fn show_topics_metadata_info(ui: &mut egui::Ui, metadata: &Metadata) {
     for topic in metadata.topics() {
-        // println!("  Topic: {}  Err: {:?}", topic.name(), topic.error());
         ui.heading(topic.name());
         for partition in topic.partitions() {
             ui.label(format!(
@@ -197,29 +198,5 @@ fn show_topics_metadata_info(ui: &mut egui::Ui, metadata: &Metadata) {
             ));
         }
         ui.separator();
-    }
-}
-
-fn show_clusters_metadata_info(ui: &mut egui::Ui, metadata: &Metadata) {
-    ui.label("Cluster information:".to_string());
-    ui.label(format!("  Broker count: {}", metadata.brokers().len()));
-    ui.label(format!("  Topics count: {}", metadata.topics().len()));
-    ui.label(format!(
-        "  Metadata broker name: {}",
-        metadata.orig_broker_name()
-    ));
-    ui.label(format!(
-        "  Metadata broker id: {}\n",
-        metadata.orig_broker_id()
-    ));
-
-    ui.label("Brokers:");
-    for broker in metadata.brokers() {
-        ui.label(format!(
-            "  Id: {}  Host: {}:{}  ",
-            broker.id(),
-            broker.host(),
-            broker.port(),
-        ));
     }
 }

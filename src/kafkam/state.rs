@@ -51,7 +51,7 @@ impl Default for KafkaLocalState {
         Self {
             tmp_cluster_config: Default::default(),
             current_view: KafkaPanel::default(),
-            current_cluster_idx: usize::default(),
+            current_cluster_idx: usize::MAX,
             clusters_metadata: Vec::new(),
             is_first_update: true,
             selected_cluster_to_edit_idx: Default::default(),
