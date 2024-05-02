@@ -58,26 +58,27 @@ impl Sidenav for KafkaView {
                             // --> Selección entre una u otra vista y acciones <--
                             let show_brokers_btn = ui.add(egui::SelectableLabel::new(
                                 self.state.current_cluster_idx == idx
+                                    && self.state.current_cluster_idx != usize::MAX
                                     && self.state.current_view == KafkaPanel::Brokers,
                                 &i18n.kafka_btn_show_brokers,
                             ));
                             let show_topics_btn = ui.add(egui::SelectableLabel::new(
                                 self.state.current_cluster_idx == idx
+                                    && self.state.current_cluster_idx != usize::MAX
                                     && self.state.current_view == KafkaPanel::Topics,
                                 &i18n.kafka_btn_show_topics,
                             ));
                             let show_subscription_btn = ui.add(egui::SelectableLabel::new(
                                 self.state.current_cluster_idx == idx
+                                    && self.state.current_cluster_idx != usize::MAX
                                     && self.state.current_view == KafkaPanel::Subscribe,
                                 &i18n.kafka_btn_show_subscription,
                             ));
 
                             // TODO: Hay que parar subscripción existente cuando hacemos click
                             if show_brokers_btn.clicked() {
-                                self.state.current_cluster_idx = idx;
                                 self.state.current_view = KafkaPanel::Brokers;
                             } else if show_topics_btn.clicked() {
-                                self.state.current_cluster_idx = idx;
                                 self.state.current_view = KafkaPanel::Topics;
                             } else if show_subscription_btn.clicked() {
                                 self.subscribe(idx, cluster, ctx, rt);

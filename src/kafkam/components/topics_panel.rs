@@ -27,12 +27,12 @@ impl KafkaView {
             for topic in metadata.topics() {
                 heading_strong!(ui, topic.name());
 
-                egui::CollapsingHeader::new("Topcis-resumen")
+                egui::CollapsingHeader::new(&i18n.kafka_topics_info)
                     .default_open(true)
-                    .id_source(format!("Topcis-resumen-{}", topic.name()))
+                    .id_source(format!("Topics-resumen-{}", topic.name()))
                     .show_background(true)
                     .show(ui, |ui| {
-                        egui::Grid::new(format!("Topcis-resumen-Count-{}", topic.name()))
+                        egui::Grid::new(format!("Topics-resumen-Count-{}", topic.name()))
                             .num_columns(4)
                             .show(ui, |ui| {
                                 ui.monospace(&i18n.kafka_n_messages_in_topic);
@@ -59,7 +59,7 @@ impl KafkaView {
                             });
                     });
 
-                egui::CollapsingHeader::new("Particiones")
+                egui::CollapsingHeader::new(&i18n.kafka_partitions_info)
                     .default_open(false)
                     .id_source(format!("Particiones-{}", topic.name()))
                     .show_background(true)

@@ -60,6 +60,8 @@ pub struct I18n {
     pub kafka_n_partitions_in_topic: String,
     pub kafka_replication_factor: String,
     pub kafka_create_topic: String,
+    pub kafka_partitions_info: String,
+    pub kafka_topics_info: String,
 
     // Mongo
     pub mongo_connection_host: String,
@@ -200,6 +202,8 @@ pub fn language_selector(i: I18nOptions) -> I18n {
             kafka_n_partitions_in_topic: String::from("Número de Particiones"),
             kafka_replication_factor: String::from("Factor de Replicación"),
             kafka_create_topic: String::from("Crear Topic"),
+            kafka_partitions_info: String::from("Informción de Particiones"),
+            kafka_topics_info: String::from("Información de Topics"),
 
             // Mongo
             mongo_connection_host: "Host".to_owned(),
@@ -338,6 +342,8 @@ pub fn language_selector(i: I18nOptions) -> I18n {
             kafka_n_partitions_in_topic: String::from("Number of Partitions"),
             kafka_replication_factor: String::from("Replication Factor"),
             kafka_create_topic: String::from("Create Topic"),
+            kafka_partitions_info: String::from("Partitions Information"),
+            kafka_topics_info: String::from("Topics Information"),
 
             // Mongo
             mongo_connection_host: "Host".to_owned(),
