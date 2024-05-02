@@ -52,7 +52,16 @@ pub struct KafkaAppState {
     pub clusters: Vec<Cluster>,
 }
 
-// #[derive(Default)]
+#[derive(Default)]
+pub struct KafkaNewTopic<'a> {
+    pub show: bool,
+    pub name: String,
+    pub n_partitions: i32,
+    pub fixed_topic_replication: i32,
+    pub raw_config: &'a str,
+    pub parsed_config: Vec<(&'a str, &'a str)>,
+}
+
 pub struct KafkaLocalState {
     pub tmp_cluster_config: Cluster,
     pub current_view: KafkaPanel,
@@ -63,6 +72,7 @@ pub struct KafkaLocalState {
     pub tx: tokio::sync::mpsc::Sender<KafkaMessage>,
     pub rx: tokio::sync::mpsc::Receiver<KafkaMessage>,
     pub selected_cluster_to_edit_idx: Option<usize>,
+    pub new_topic: KafkaNewTopic<'static>,
 }
 
 impl Default for KafkaLocalState {
@@ -77,6 +87,7 @@ impl Default for KafkaLocalState {
             clusters_metadata_count: Default::default(),
             is_first_update: true,
             selected_cluster_to_edit_idx: Default::default(),
+            new_topic: Default::default(),
             tx,
             rx,
         }

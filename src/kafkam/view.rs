@@ -83,18 +83,26 @@ impl KafkaView {
         // Panel Central
         // =======================================
         egui::CentralPanel::default().show(ctx, |ui| {
-            let d1 = self
-                .state
-                .clusters_metadata
-                .get(self.state.current_cluster_idx);
-
             if self.state.current_view == KafkaPanel::Brokers {
-                if let Some(Some(metadata)) = d1 {
+                let current_cluster_metadata = self
+                    .state
+                    .clusters_metadata
+                    .get(self.state.current_cluster_idx);
+
+                if let Some(Some(metadata)) = current_cluster_metadata {
                     show_clusters_metadata_info(ui, metadata, i18n);
                 }
             } else if self.state.current_view == KafkaPanel::Topics {
-                if let Some(Some(metadata)) = d1 {
-                    self.show_topics(ui, metadata, i18n);
+                self.topics_admin(ui, i18n);
+                ui.separator();
+
+                let current_cluster_metadata = self
+                    .state
+                    .clusters_metadata
+                    .get(self.state.current_cluster_idx);
+
+                if let Some(Some(metadata)) = current_cluster_metadata {
+                    self.show_topics_info(ui, metadata, i18n);
                 }
             } else if self.state.current_view == KafkaPanel::Subscribe {
                 let messages = self.messages.lock().unwrap();

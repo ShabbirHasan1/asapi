@@ -42,6 +42,8 @@ pub struct I18n {
     pub http_send_to_http_performance: String,
 
     // Kafka
+    pub kafka_accept: String,
+    pub kafka_cancel: String,
     pub kafka_btn_add_connection: String,
     pub kafka_edit_cluster: String,
     pub kafka_edit_cluster_name_label: String,
@@ -59,9 +61,15 @@ pub struct I18n {
     pub kafka_n_messages_in_topic: String,
     pub kafka_n_partitions_in_topic: String,
     pub kafka_replication_factor: String,
-    pub kafka_create_topic: String,
+    pub kafka_create_topics: String,
+    pub kafka_delete_topics: String,
+    pub kafka_create_partitions: String,
+    pub kafka_new_topic_name_hint: String,
+    pub kafka_new_topic_config: String,
+    pub kafka_new_topic_n_partitions_hint: String,
     pub kafka_partitions_info: String,
     pub kafka_topics_info: String,
+    pub kafka_topic_replication: String,
 
     // Mongo
     pub mongo_connection_host: String,
@@ -184,6 +192,8 @@ pub fn language_selector(i: I18nOptions) -> I18n {
             http_send_to_http_performance: "Rendimiento de la Petición".to_owned(),
 
             // Kafka
+            kafka_accept: String::from("Aceptar"),
+            kafka_cancel: String::from("Cancelar"),
             kafka_btn_add_connection: "Añadir Clúster".to_owned(),
             kafka_edit_cluster: String::from("Editar Clúster"),
             kafka_edit_cluster_name_label: "Nombre del Clúster".to_owned(),
@@ -201,9 +211,15 @@ pub fn language_selector(i: I18nOptions) -> I18n {
             kafka_n_messages_in_topic: String::from("Número de Mensajes"),
             kafka_n_partitions_in_topic: String::from("Número de Particiones"),
             kafka_replication_factor: String::from("Factor de Replicación"),
-            kafka_create_topic: String::from("Crear Topic"),
+            kafka_create_topics: String::from("Crear Topics"),
             kafka_partitions_info: String::from("Informción de Particiones"),
             kafka_topics_info: String::from("Información de Topics"),
+            kafka_delete_topics: String::from("Borrar Topics"),
+            kafka_create_partitions: String::from("Crear Particiones"),
+            kafka_new_topic_name_hint: String::from("Nombre"),
+            kafka_new_topic_config: String::from("Configuración"),
+            kafka_new_topic_n_partitions_hint: String::from("Particiones"),
+            kafka_topic_replication: String::from("Configuración de Replicación para un nuevo Topic"),
 
             // Mongo
             mongo_connection_host: "Host".to_owned(),
@@ -324,6 +340,8 @@ pub fn language_selector(i: I18nOptions) -> I18n {
             http_send_to_http_performance: "Request Performance".to_owned(),
 
             // Kafka
+            kafka_accept: String::from("Accept"),
+            kafka_cancel: String::from("Cancel"),
             kafka_btn_add_connection: "Add Cluster".to_owned(),
             kafka_edit_cluster: String::from("Edit Cluster"),
             kafka_edit_cluster_name_label: "Cluster Name".to_owned(),
@@ -341,9 +359,15 @@ pub fn language_selector(i: I18nOptions) -> I18n {
             kafka_n_messages_in_topic: String::from("Number of Messages"),
             kafka_n_partitions_in_topic: String::from("Number of Partitions"),
             kafka_replication_factor: String::from("Replication Factor"),
-            kafka_create_topic: String::from("Create Topic"),
+            kafka_create_topics: String::from("Create Topics"),
             kafka_partitions_info: String::from("Partitions Information"),
             kafka_topics_info: String::from("Topics Information"),
+            kafka_delete_topics: String::from("Delete Topics"),
+            kafka_create_partitions: String::from("Create Partitions"),
+            kafka_new_topic_name_hint: String::from("Name"),
+            kafka_new_topic_config: String::from("Configuration"),
+            kafka_new_topic_n_partitions_hint: String::from("Partitions"),
+            kafka_topic_replication: String::from("Replication configuration for a new topic"),
 
             // Mongo
             mongo_connection_host: "Host".to_owned(),

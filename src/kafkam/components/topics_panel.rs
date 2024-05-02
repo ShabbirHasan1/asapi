@@ -8,21 +8,76 @@
 
 use eframe::egui;
 use rdkafka::metadata::Metadata;
+use std::ops::RangeInclusive;
 
-use crate::{common::internationalization::I18n, heading_strong, kafkam::view::KafkaView};
+use crate::{
+    common::internationalization::I18n, heading_strong, kafkam::view::KafkaView,
+    ui_text_edit_singleline_hint,
+};
 
 impl KafkaView {
-    pub fn show_topics(&self, ui: &mut egui::Ui, metadata: &Metadata, i18n: &I18n) {
-        self.topics_admin(ui, i18n);
-        ui.separator();
-        self.show_topics_info(ui, metadata, i18n);
+    // pub fn show_topics(&mut self, ui: &mut egui::Ui, metadata: &Metadata, i18n: &I18n) {
+    // self.topics_admin(ui, i18n);
+    // ui.separator();
+    // self.show_topics_info(ui, metadata, i18n);
+    // }
+
+    pub fn topics_admin(&mut self, ui: &mut egui::Ui, i18n: &I18n) {
+        ui.horizontal(|ui| {
+            if ui.button(&i18n.kafka_create_topics).clicked() {
+                self.state.new_topic.show = true;
+            }
+            if self.state.new_topic.show {
+                self.show_create_topic_window(ui, i18n);
+            }
+
+            if ui.button(&i18n.kafka_delete_topics).clicked() {}
+
+            if ui.button(&i18n.kafka_create_partitions).clicked() {}
+        });
     }
 
-    fn topics_admin(&self, ui: &mut egui::Ui, i18n: &I18n) {
-        ui.horizontal(|ui| if ui.button(&i18n.kafka_create_topic).clicked() {});
+    fn show_create_topic_window(&mut self, ui: &mut egui::Ui, i18n: &I18n) {
+        egui::Window::new(&i18n.kafka_create_topics)
+            .collapsible(false)
+            .show(ui.ctx(), |ui| {
+                ui_text_edit_singleline_hint!(
+                    ui,
+                    &i18n.kafka_new_topic_name_hint,
+                    self.state.new_topic.name
+                );
+                ui.label(&i18n.kafka_n_partitions_in_topic);
+
+                // Estos dos valores de `10` son completamente arbitrarios, no tengo
+                // los conocimientos ahora mismo (240502) para saber qué valores
+                // son los más probables.
+                ui.add(
+                    egui::DragValue::new(&mut self.state.new_topic.n_partitions)
+                        .clamp_range(RangeInclusive::new(0, 10)),
+                );
+                ui.label(&i18n.kafka_topic_replication);
+                ui.add(
+                    egui::DragValue::new(&mut self.state.new_topic.fixed_topic_replication)
+                        .clamp_range(RangeInclusive::new(0, 10)),
+                );
+                ui_text_edit_singleline_hint!(
+                    ui,
+                    &i18n.kafka_new_topic_config,
+                    self.state.new_topic.raw_config
+                );
+
+                ui.horizontal(|ui| {
+                    if ui.button(&i18n.kafka_cancel).clicked() {
+                        self.state.new_topic.show = false;
+                    }
+                    if ui.button(&i18n.kafka_accept).clicked() {
+                        self.state.new_topic.show = false;
+                    }
+                });
+            });
     }
 
-    fn show_topics_info(&self, ui: &mut egui::Ui, metadata: &Metadata, i18n: &I18n) {
+    pub fn show_topics_info(&self, ui: &mut egui::Ui, metadata: &Metadata, i18n: &I18n) {
         egui::ScrollArea::both().show(ui, |ui| {
             for topic in metadata.topics() {
                 heading_strong!(ui, topic.name());

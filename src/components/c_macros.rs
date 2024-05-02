@@ -36,6 +36,12 @@ macro_rules! heading_strong {
         $ui.label(egui::RichText::new($text).heading().strong())
     }};
 }
+#[macro_export]
+macro_rules! ui_text_edit_singleline_hint {
+    ($ui:expr, $hint:expr, $var:expr) => {{
+        $ui.add(egui::TextEdit::singleline(&mut $var).hint_text($hint))
+    }};
+}
 
 // -->> Estas dos no funcionan
 #[macro_export]
