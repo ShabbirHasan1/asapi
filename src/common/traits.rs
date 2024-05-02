@@ -34,3 +34,7 @@ pub trait Sidenav {
         i18n: &I18n,
     );
 }
+
+pub trait Create {
+    fn create(config: &str) -> Self;
+}

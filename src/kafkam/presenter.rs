@@ -9,137 +9,46 @@
 // Para poder conectarme a señales del sistema.
 // use signal_hook::consts::signal::*;
 // use signal_hook::flag;
-use rdkafka::admin::AdminClient;
-use rdkafka::client::{Client, DefaultClientContext};
+use rdkafka::admin::{AdminClient, AdminOptions};
+use rdkafka::client::DefaultClientContext;
 use rdkafka::config::{ClientConfig, RDKafkaLogLevel};
 use rdkafka::consumer::stream_consumer::StreamConsumer;
-use rdkafka::consumer::{BaseConsumer, Consumer, ConsumerContext, Rebalance};
-use rdkafka::error::KafkaResult;
+use rdkafka::consumer::{BaseConsumer, Consumer, ConsumerContext, DefaultConsumerContext, Rebalance};
+use rdkafka::error::{KafkaError, KafkaResult};
 use rdkafka::message::{Headers, Message};
-use rdkafka::metadata::Metadata;
 use rdkafka::producer::FutureProducer;
 use rdkafka::statistics::Statistics;
 use rdkafka::topic_partition_list::TopicPartitionList;
+use rdkafka::util::Timeout;
 use rdkafka::ClientContext;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
 
-// =================================
-// Dominio
-// =================================
-pub struct KafkaConsumerMessage {
-    pub key: String,
-    pub topic: String,
-    pub offset: String,
-    pub timestamp: String,
-    pub partition: String,
-    pub payload: String,
-}
-
-pub enum KafkaMessage {
-    Str(String),
-    // ConsumerMessage(KafkaMessageBody),
-    ClusterMetadata((usize, Metadata)),
-}
-
-// =================================
-// Genéricas, referidas a structs/trait comunes
-// =================================
-pub struct Kafka {}
-
-impl Kafka {
-    pub fn extract_cluster_metadata_from_client<T: ClientContext>(
-        client: &Client<T>,
-    ) -> Option<Metadata> {
-        match client.fetch_metadata(None, Duration::from_secs(20)) {
-            Ok(metadata) => Some(metadata), // topics_info(&metadata);
-            Err(err) => {
-                println!("{:?}", err);
-                None
-            }
-        }
-    }
-}
+use crate::common::traits::Create;
+use crate::kafkam::state::KafkaConsumerMessage;
 
 // =================================
 // Admin
 // =================================
 // Ahora mismo nada en uso, dejo porque a futuro seguro que necesitamos cuando
 // queramos implementar funcionalidades extra.
-pub struct KafkaAdmin {}
+pub struct KafkaAdminPresenter {
+    client: AdminClient<DefaultClientContext>,
+}
 
-impl KafkaAdmin {
-    pub fn create(broker: &str) {
-        // let broker = "localhost:9095";
+impl Create for KafkaAdminPresenter {
+    // type Item = AdminClient<DefaultClientContext>;
+
+    fn create(broker: &str) -> Self {
         let client: AdminClient<DefaultClientContext> = ClientConfig::new()
             // let client = ClientConfig::new()
             .set("bootstrap.servers", broker)
             .create()
             .expect("Error al crear AdminClient");
-        let mut message_count = 0;
 
-        match client.inner().fetch_metadata(None, Duration::from_secs(20)) {
-            Ok(metadata) => {
-                println!("Cluster information:");
-                println!("  Broker count: {}", metadata.brokers().len());
-                println!("  Topics count: {}", metadata.topics().len());
-                println!("  Metadata broker name: {}", metadata.orig_broker_name());
-                println!("  Metadata broker id: {}\n", metadata.orig_broker_id());
-
-                println!("Brokers:");
-                for broker in metadata.brokers() {
-                    println!(
-                        "  Id: {}  Host: {}:{}  ",
-                        broker.id(),
-                        broker.host(),
-                        broker.port()
-                    );
-                }
-
-                println!("\nTopics:");
-                for topic in metadata.topics() {
-                    println!("  Topic: {}  Err: {:?}", topic.name(), topic.error());
-                    for partition in topic.partitions() {
-                        println!(
-                            "     Partition: {}  Leader: {}  Replicas: {:?}  ISR: {:?}  Err: {:?}",
-                            partition.id(),
-                            partition.leader(),
-                            partition.replicas(),
-                            partition.isr(),
-                            partition.error()
-                        );
-                        if true {
-                            // if fetch_offsets {
-                            let consumer: BaseConsumer = ClientConfig::new()
-                                .set("bootstrap.servers", "localhost:9095")
-                                .create()
-                                .expect("Consumer creation failed");
-                            let (low, high) = consumer
-                                .fetch_watermarks(
-                                    topic.name(),
-                                    partition.id(),
-                                    Duration::from_secs(1),
-                                )
-                                .unwrap_or((-1, -1));
-                            println!(
-                                "       Low watermark: {}  High watermark: {} (difference: {})",
-                                low,
-                                high,
-                                high - low
-                            );
-                            message_count += high - low;
-                        }
-                    }
-                    // if fetch_offsets {
-                    if true {
-                        println!("     Total message count: {}", message_count);
-                    }
-                }
-            }
-            Err(err) => println!("{:?}", err),
-        }
+        KafkaAdminPresenter { client }
     }
 }
 
@@ -234,17 +143,16 @@ impl ClientContext for StatsContext {
     }
 }
 
+type LoggingConsumer = StreamConsumer<CustomContext>;
 
-pub trait Create<T> {
-    fn create(config: &str) -> T;
+pub struct KafkaConsumer {
+    pub consumer: StreamConsumer<CustomContext>,
 }
 
-pub struct KafkaConsumer;
-
-impl Create<StreamConsumer<CustomContext>> for KafkaConsumer {
-    fn create(brokers: &str) -> StreamConsumer<CustomContext> {
-        let context = CustomContext;
-        ClientConfig::new()
+impl KafkaConsumer {
+    fn create(brokers: &str, context: CustomContext) -> Self {
+        // let context = CustomContext;
+        let consumer = ClientConfig::new()
             // .set("group.id", group_id)
             .set("bootstrap.servers", brokers)
             .set("enable.partition.eof", "false")
@@ -254,41 +162,104 @@ impl Create<StreamConsumer<CustomContext>> for KafkaConsumer {
             //.set("auto.offset.reset", "smallest")
             .set_log_level(RDKafkaLogLevel::Debug)
             .create_with_context(context)
-            .expect("Consumer creation failed")
+            .expect("Consumer creation failed");
+
+        KafkaConsumer { consumer }
     }
 }
 
 impl KafkaConsumer {
+    pub fn groups(&self, groups: Option<&str>) -> KafkaResult<()> {
+        let group_list = self
+            .consumer
+            .fetch_group_list(groups, Timeout::After(Duration::from_secs(10)))?;
+
+        for group in group_list.groups() {
+            println!("Group Name: {}", group.name());
+            println!("State: {}", group.state());
+            println!("Protocol: {}", group.protocol());
+            println!("Protocol Type: {}", group.protocol_type());
+            println!("Members: {}", group.members().len());
+            for member in group.members() {
+                println!("  Member ID: {}", member.id());
+                println!("  Client ID: {}", member.client_id());
+                println!("  Client Host: {}", member.client_host());
+                println!("  Assignment: {:?}", member.assignment());
+                println!("  Metadata: {:?}", member.metadata());
+            }
+        }
+
+        Ok(())
+    }
+
+    // pub fn create(brokers: &str) -> Self {
+    //     let consumer: BaseConsumer = ClientConfig::new()
+    //         .set("bootstrap.servers", brokers)
+    //         .create()
+    //         .expect("Failed to create consumer");
+
+    //     Self { consumer }
+    // }
+
     // https://github.com/fede1024/rust-rdkafka/blob/master/examples/simple_consumer.rs
     //   y (aunque viejo y API bastante cambiada)
     // https://github.com/fede1024/kafka-view/blob/master/examples/consumer_offsets_reader.rs
-    pub async fn create_consumer(
-        brokers: &str,
-        group_id: &str,
-        auto_commit: bool,
-    ) -> StreamConsumer {
-        if auto_commit {
+    pub fn create_async_consumer(brokers: &str, group_id: Option<&str>, auto_commit: bool) -> Self {
+        let consumer = if auto_commit && group_id.is_some() {
             ClientConfig::new()
-                .set("group.id", group_id)
+                .set("group.id", group_id.unwrap())
                 .set("bootstrap.servers", brokers)
                 .set("enable.partition.eof", "false")
                 .set("session.timeout.ms", "30000")
-                .create()
+                .create_with_context(CustomContext)
                 .expect("Consumer creation failed")
-        } else {
+        } else if auto_commit {
             ClientConfig::new()
-                .set("group.id", group_id)
                 .set("bootstrap.servers", brokers)
                 .set("enable.auto.commit", "false")
                 .set("auto.offset.reset", "smallest")
                 .set_log_level(RDKafkaLogLevel::Debug)
-                .create()
+                .create_with_context(CustomContext)
                 .expect("Consumer creation failed")
-        }
+        } else {
+            ClientConfig::new()
+                .set("bootstrap.servers", brokers)
+                .set("enable.partition.eof", "false")
+                .set("session.timeout.ms", "30000")
+                .create_with_context(CustomContext)
+                .expect("Consumer creation failed")
+        };
+
+        Self { consumer }
     }
 
+    // pub async fn create_consumer(
+    //     brokers: &str,
+    //     group_id: &str,
+    //     auto_commit: bool,
+    // ) -> StreamConsumer {
+    //     if auto_commit {
+    //         ClientConfig::new()
+    //             .set("group.id", group_id)
+    //             .set("bootstrap.servers", brokers)
+    //             .set("enable.partition.eof", "false")
+    //             .set("session.timeout.ms", "30000")
+    //             .create()
+    //             .expect("Consumer creation failed")
+    //     } else {
+    //         ClientConfig::new()
+    //             .set("group.id", group_id)
+    //             .set("bootstrap.servers", brokers)
+    //             .set("enable.auto.commit", "false")
+    //             .set("auto.offset.reset", "smallest")
+    //             .set_log_level(RDKafkaLogLevel::Debug)
+    //             .create()
+    //             .expect("Consumer creation failed")
+    //     }
+    // }
+
     pub async fn subscribe(
-        consumer: &StreamConsumer,
+        consumer: &StreamConsumer<CustomContext>,
         topics: &[&str],
         messages: Arc<Mutex<Vec<KafkaConsumerMessage>>>,
     ) {
@@ -307,10 +278,6 @@ impl KafkaConsumer {
                             ""
                         }
                         Some(Ok(s)) => {
-                            // Envío a través de canales.
-                            // let _ = tx.send(msg).await;
-
-                            // ENVÍO A TRAVÉS DE ACTUALIZACIÓN DE VARIABLE COMPARTIDA. Dejo así para tener un modelo distinto.
                             let mut messages = messages.lock().unwrap();
                             let key = if m.key().is_none() {
                                 String::from("")

@@ -56,6 +56,10 @@ pub struct I18n {
     pub kafka_btn_show_topics: String,
     pub kafka_cluster_info: String,
     pub kafka_name: String,
+    pub kafka_n_messages_in_topic: String,
+    pub kafka_n_partitions_in_topic: String,
+    pub kafka_replication_factor: String,
+    pub kafka_create_topic: String,
 
     // Mongo
     pub mongo_connection_host: String,
@@ -192,6 +196,10 @@ pub fn language_selector(i: I18nOptions) -> I18n {
             kafka_btn_show_topics: "Topics".to_owned(),
             kafka_cluster_info: String::from("Información del Clúster"),
             kafka_name: String::from("Nombre"),
+            kafka_n_messages_in_topic: String::from("Número de Mensajes"),
+            kafka_n_partitions_in_topic: String::from("Número de Particiones"),
+            kafka_replication_factor: String::from("Factor de Replicación"),
+            kafka_create_topic: String::from("Crear Topic"),
 
             // Mongo
             mongo_connection_host: "Host".to_owned(),
@@ -326,6 +334,10 @@ pub fn language_selector(i: I18nOptions) -> I18n {
             kafka_btn_show_topics: "Topics".to_owned(),
             kafka_cluster_info: String::from("Cluster Info"),
             kafka_name: String::from("Name"),
+            kafka_n_messages_in_topic: String::from("Number of Messages"),
+            kafka_n_partitions_in_topic: String::from("Number of Partitions"),
+            kafka_replication_factor: String::from("Replication Factor"),
+            kafka_create_topic: String::from("Create Topic"),
 
             // Mongo
             mongo_connection_host: "Host".to_owned(),

@@ -6,8 +6,7 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
-use std::collections::HashSet;
-
+use std::{collections::HashMap, time::Duration};
 use eframe::egui::{self, Context, Response};
 use rdkafka::producer::Producer;
 use tokio::runtime::Runtime;
@@ -17,8 +16,8 @@ use crate::{
     common::{icon_moon::IconMoon, internationalization::I18n, traits::Sidenav},
     info,
     kafkam::{
-        presenter::{Kafka, KafkaMessage, KafkaProducer},
-        state::{Cluster, KafkaPanel},
+        presenter::{KafkaConsumer, KafkaProducer},
+        state::{Cluster, KafkaMessage, KafkaPanel},
         view::KafkaView,
     },
 };
@@ -156,12 +155,31 @@ impl KafkaView {
         // --> Conectamos con el clúster y recogemos metadatos y estadísticas <--
         rt.spawn(async move {
             let producer = KafkaProducer::stats_listener(&broker_url);
-            let metadata = Kafka::extract_cluster_metadata_from_client(producer.client());
+            let client = producer.client();
+            // let client = KafkaConsumer::create_consumer(&broker_url, "fake", false).await;
+            let metadata = client.fetch_metadata(None, Duration::from_secs(20)).ok();
+
             if let Some(data) = metadata {
+                let mut count: HashMap<String, i64> = HashMap::default();
+                for topic in data.topics() {
+                    let mut message_count: i64 = 0;
+                    for partition in topic.partitions() {
+                        let (low, high) = client
+                            .fetch_watermarks(topic.name(), partition.id(), Duration::from_secs(1))
+                            .unwrap_or((-1, -1));
+
+                        message_count += high - low;
+                    }
+                    count.insert(topic.name().to_owned(), message_count);
+                }
+
                 let _ = tx_cloned
-                    .send(KafkaMessage::ClusterMetadata((idx, data)))
+                    .send(KafkaMessage::ClusterMetadata((idx, data, count)))
                     .await;
+
+                let _groups = KafkaConsumer::create_async_consumer(&broker_url, None, false).groups(None);
             }
+
             ctx_cloned.request_repaint();
         });
 

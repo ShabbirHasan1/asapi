@@ -9,7 +9,7 @@
 use eframe::egui;
 use rdkafka::metadata::Metadata;
 
-use crate::{common::internationalization::I18n, kafkam::view::KafkaView};
+use crate::{common::internationalization::I18n, heading_strong, kafkam::view::KafkaView};
 
 impl KafkaView {}
 
@@ -19,25 +19,36 @@ pub fn show_clusters_metadata_info(ui: &mut egui::Ui, metadata: &Metadata, i18n:
             .heading()
             .strong(),
     );
-    ui.label(format!("  #Broker: {}", metadata.brokers().len()));
-    ui.label(format!("  #Topics: {}", metadata.topics().len()));
-    ui.label(format!(
-        "  Metadata Broker {}: {}",
-        &i18n.kafka_name,
-        metadata.orig_broker_name()
-    ));
-    ui.label(format!(
-        "  Metadata Broker Id: {}\n",
-        metadata.orig_broker_id()
-    ));
 
-    ui.label("Brokers:");
-    for broker in metadata.brokers() {
-        ui.label(format!(
-            "  Id: {}  Host: {}:{}  ",
-            broker.id(),
-            broker.host(),
-            broker.port(),
-        ));
-    }
+    egui::Grid::new("kafka-clusters-info")
+        .num_columns(2)
+        .show(ui, |ui| {
+            ui.monospace("#Broker");
+            ui.label(metadata.brokers().len().to_string());
+            ui.end_row();
+            ui.monospace("#Topics");
+            ui.label(metadata.topics().len().to_string());
+            ui.end_row();
+            ui.monospace("Metadata Broker");
+            ui.end_row();
+            ui.monospace(format!("\t{}", &i18n.kafka_name));
+            ui.label(metadata.orig_broker_name());
+            ui.end_row();
+            ui.monospace("\tId");
+            ui.label(metadata.orig_broker_id().to_string());
+            ui.end_row();
+        });
+
+    heading_strong!(ui, "Broker");
+    egui::Grid::new("kafka-clusters-broker-info")
+        .num_columns(4)
+        .show(ui, |ui| {
+            for broker in metadata.brokers() {
+                ui.monospace("\tId");
+                ui.label(broker.id().to_string());
+                ui.monospace("\tHost");
+                ui.label(format!("\t{}:{}  ", broker.host(), broker.port(),));
+                ui.end_row();
+            }
+        });
 }

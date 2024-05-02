@@ -7,9 +7,29 @@
 // -------------------------------------------------------------------------
 
 use rdkafka::metadata::Metadata as ClusterMetadata;
+use rdkafka::metadata::Metadata;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
-use super::presenter::KafkaMessage;
+type KafkaTopicsCount = HashMap<String, i64>;
+
+// =================================
+// Dominio
+// =================================
+pub struct KafkaConsumerMessage {
+    pub key: String,
+    pub topic: String,
+    pub offset: String,
+    pub timestamp: String,
+    pub partition: String,
+    pub payload: String,
+}
+
+pub enum KafkaMessage {
+    Str(String),
+    // ConsumerMessage(KafkaMessageBody),
+    ClusterMetadata((usize, Metadata, KafkaTopicsCount)),
+}
 
 #[derive(Eq, PartialEq, Debug, Default)]
 pub enum KafkaPanel {
@@ -38,6 +58,7 @@ pub struct KafkaLocalState {
     pub current_view: KafkaPanel,
     pub current_cluster_idx: usize,
     pub clusters_metadata: Vec<Option<ClusterMetadata>>,
+    pub clusters_metadata_count: KafkaTopicsCount,
     pub is_first_update: bool,
     pub tx: tokio::sync::mpsc::Sender<KafkaMessage>,
     pub rx: tokio::sync::mpsc::Receiver<KafkaMessage>,
@@ -52,7 +73,8 @@ impl Default for KafkaLocalState {
             tmp_cluster_config: Default::default(),
             current_view: KafkaPanel::default(),
             current_cluster_idx: usize::MAX,
-            clusters_metadata: Vec::new(),
+            clusters_metadata: Default::default(),
+            clusters_metadata_count: Default::default(),
             is_first_update: true,
             selected_cluster_to_edit_idx: Default::default(),
             tx,

@@ -7,7 +7,9 @@
 // -------------------------------------------------------------------------
 
 pub mod clusters_panel;
+pub mod consumer_panel;
 pub mod sidenav;
-pub mod subscribe_panel;
+pub mod topics_panel;
 
 pub use clusters_panel::show_clusters_metadata_info;
+pub use consumer_panel::show_messages_table;
