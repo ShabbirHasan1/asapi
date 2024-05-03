@@ -75,13 +75,30 @@ impl Sidenav for KafkaView {
                                 &i18n.kafka_btn_show_subscription,
                             ));
 
+                            let show_stats_btn = if self.stats_presenter.is_some() {
+                                ui.add(egui::SelectableLabel::new(
+                                    self.state.current_cluster_idx == idx
+                                        && self.state.current_cluster_idx != usize::MAX
+                                        && self.state.current_view == KafkaPanel::Stats,
+                                    &i18n.kafka_btn_show_stats,
+                                ))
+                            } else {
+                                ui.add_enabled(
+                                    false,
+                                    egui::SelectableLabel::new(false, &i18n.kafka_btn_show_stats),
+                                )
+                            };
+
                             // TODO: Hay que parar subscripción existente cuando hacemos click
                             if show_brokers_btn.clicked() {
                                 self.state.current_view = KafkaPanel::Brokers;
                             } else if show_topics_btn.clicked() {
                                 self.state.current_view = KafkaPanel::Topics;
                             } else if show_subscription_btn.clicked() {
+                                self.state.current_view = KafkaPanel::Subscribe;
                                 self.subscribe(idx, cluster, ctx, rt);
+                            } else if show_stats_btn.clicked() {
+                                self.state.current_view = KafkaPanel::Stats;
                             }
                         });
                     });
@@ -148,58 +165,6 @@ impl KafkaView {
         });
     }
 
-    fn get_cluster_metadata(&self, rt: &Runtime, ctx: &Context, broker_url: String, idx: usize) {
-        let tx_cloned = self.state.tx.clone();
-        let ctx_cloned = ctx.clone();
-        if self.stats_presenter.is_none() {
-            return;
-        }
-        let client = self.stats_presenter.as_ref().unwrap().client.client();
-        let client_cloned = client.clone();
-
-        // --> Conectamos con el clúster y recogemos metadatos y estadísticas <--
-        rt.spawn(async move {
-            // let producer = KafkaProducerPresenter::stats_listener(&broker_url);
-            // let client = producer.client();
-            // let client = KafkaConsumer::create_consumer(&broker_url, "fake", false).await;
-            let metadata = client_cloned.fetch_metadata(None, Duration::from_secs(20)).ok();
-
-            if let Some(data) = metadata {
-                let mut count: HashMap<String, i64> = HashMap::default();
-                for topic in data.topics() {
-                    let mut message_count: i64 = 0;
-                    for partition in topic.partitions() {
-                        let (low, high) = client
-                            .fetch_watermarks(topic.name(), partition.id(), Duration::from_secs(1))
-                            .unwrap_or((-1, -1));
-
-                        message_count += high - low;
-                    }
-                    count.insert(topic.name().to_owned(), message_count);
-                }
-
-                let _ = tx_cloned
-                    .send(KafkaMessage::ClusterMetadata((idx, data, count)))
-                    .await;
-
-                let _groups =
-                    KafkaConsumer::create_async_consumer(&broker_url, None, false).groups(None);
-            }
-
-            ctx_cloned.request_repaint();
-        });
-
-        // TODO: Mover a algún sitio donde se pida de forma explícita por parte
-        // del usuario las estadísticas.
-        // std::thread::spawn(move || {
-        // let stats_producer = create_stats_producer(&broker);
-        // let running = Arc::new(AtomicBool::new(true));
-        // // flag::register_usize(SIGINT, Arc::clone(&running), 0).unwrap();
-        // run_producer_loop(stats_producer, running);
-        // println!("Closing stats_producer");
-        // });
-    }
-
     fn cluster_connection_row(
         &mut self,
         ui: &mut egui::Ui,
@@ -238,35 +203,6 @@ impl KafkaView {
                                 self.stats_presenter = Some(producer);
                             }
                         }
-                        // match self.state.current_cluster_metadata {
-                        //     Some(ref metadata) => {
-                        //         // TODO: Liberar recursos
-                        //         // info!("Índice seleccionado: {idx}");
-                        //         // info!("{:?}", self.stats_presenter.as_ref().unwrap().stats);
-                        //         // info!("Clúster seleccionado: {b}", b = metadata.orig_broker_name());
-                        //         // info!("Borro KafkaStatsPresenter");
-                        //         // Si estoy aquí significa que tengo que tener `stats_presenter`.
-                        //         // self.stats_presenter.as_ref().unwrap().close();
-                        //         // self.stats_presenter = None;
-                        //         // info!("ReCreo KafkaStatsPresenter");
-                        //         // self.stats_presenter = Some(KafkaStatsPresenter::new(&broker_url));
-                        //     }
-                        //     None => match self.stats_presenter {
-                        //         None => {
-                        //             // info!("Creo KafkaStatsPresenter");
-                        //             // self.stats_presenter =
-                        //                 // Some(KafkaStatsPresenter::new(&broker_url));
-                        //         }
-                        //         Some(ref stats_presenter) => {
-                        //             // info!("Borro KafkaStatsPresenter");
-                        //             // stats_presenter.close();
-                        //             // self.stats_presenter = None;
-                        //             // info!("ReCreo KafkaStatsPresenter");
-                        //             // self.stats_presenter =
-                        //                 // Some(KafkaStatsPresenter::new(&broker_url));
-                        //         }
-                        //     },
-                        // };
                         self.get_cluster_metadata(rt, ui.ctx(), broker_url, idx);
                     }
                 }
@@ -290,5 +226,57 @@ impl KafkaView {
         });
 
         tmp
+    }
+
+    /// Recuperamos datos de cluster
+    ///
+    /// Creo cliente y no reuso el que tengo en KafkaProducerPresenter porque es complicado pasarlo
+    /// a la closure donde recupero datos sin usar un `Arc`. A futuro debería usar aquél. Aquél me
+    /// hace falta porque este no se mantiene pidiendo datos porque al salir del ámbito se destruye
+    /// y el callback de ClientContext::stats deja de ser llamado: obvio, la instancia del struct
+    /// que implementa ese trait deja de exister.
+    fn get_cluster_metadata(&self, rt: &Runtime, ctx: &Context, broker_url: String, idx: usize) {
+        let tx_cloned = self.state.tx.clone();
+        let ctx_cloned = ctx.clone();
+
+        // --> Conectamos con el clúster y recogemos metadatos y estadísticas <--
+        rt.spawn(async move {
+            let producer = KafkaProducerPresenter::new(&broker_url);
+            // let producer = KafkaProducerPresenter::stats_listener(&broker_url);
+            let client = producer.client.client();
+            // let client = KafkaConsumer::create_consumer(&broker_url, "fake", false).await;
+            let metadata = client.fetch_metadata(None, Duration::from_secs(20)).ok();
+
+            if let Some(data) = metadata {
+                let mut count: HashMap<String, i64> = HashMap::default();
+                for topic in data.topics() {
+                    let mut message_count: i64 = 0;
+                    for partition in topic.partitions() {
+                        let (low, high) = client
+                            .fetch_watermarks(topic.name(), partition.id(), Duration::from_secs(1))
+                            .unwrap_or((-1, -1));
+
+                        message_count += high - low;
+                    }
+                    count.insert(topic.name().to_owned(), message_count);
+                }
+
+                let _ = tx_cloned
+                    .send(KafkaMessage::ClusterMetadata((idx, data, count)))
+                    .await;
+            }
+
+            ctx_cloned.request_repaint();
+        });
+
+        // TODO: Mover a algún sitio donde se pida de forma explícita por parte
+        // del usuario las estadísticas.
+        // std::thread::spawn(move || {
+        // let stats_producer = create_stats_producer(&broker);
+        // let running = Arc::new(AtomicBool::new(true));
+        // // flag::register_usize(SIGINT, Arc::clone(&running), 0).unwrap();
+        // run_producer_loop(stats_producer, running);
+        // println!("Closing stats_producer");
+        // });
     }
 }

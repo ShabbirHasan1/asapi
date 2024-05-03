@@ -33,10 +33,11 @@ pub enum KafkaMessage {
 
 #[derive(Eq, PartialEq, Debug, Default)]
 pub enum KafkaPanel {
-    #[default]
     Brokers,
     Topics,
     Subscribe,
+    #[default]
+    Stats,
 }
 
 #[derive(Default, Serialize, Clone, Debug, Deserialize)]

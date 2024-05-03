@@ -7,7 +7,9 @@
 // -------------------------------------------------------------------------
 
 use super::{
-    components::{show_cluster_configuration, show_clusters_metadata_info, show_messages_table},
+    components::{
+        show_cluster_configuration, show_clusters_metadata_info, show_messages_table, show_stats,
+    },
     presenter::KafkaProducerPresenter,
     state::{KafkaConsumerMessage, KafkaLocalState, KafkaMessage},
 };
@@ -113,6 +115,12 @@ impl KafkaView {
             } else if self.state.current_view == KafkaPanel::Subscribe {
                 let messages = self.messages.lock().unwrap();
                 show_messages_table(ui, &messages);
+            } else if self.state.current_view == KafkaPanel::Stats && self.stats_presenter.is_some()
+            {
+                show_stats(
+                    ui,
+                    &self.stats_presenter.as_ref().unwrap().stats.lock().unwrap(),
+                );
             }
         });
     }

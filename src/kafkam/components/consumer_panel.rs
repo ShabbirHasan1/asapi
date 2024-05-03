@@ -12,12 +12,12 @@ use std::sync::Arc;
 use tokio::runtime::Runtime;
 
 use crate::{
-    qk_error,
     kafkam::{
         presenter::KafkaConsumer,
         state::{Cluster, KafkaConsumerMessage, KafkaPanel},
         view::KafkaView,
     },
+    qk_error,
 };
 
 pub fn show_messages_table(ui: &mut egui::Ui, messages: &[KafkaConsumerMessage]) {
@@ -98,7 +98,6 @@ impl KafkaView {
         rt: &Runtime,
     ) {
         self.state.current_cluster_idx = idx;
-        self.state.current_view = KafkaPanel::Subscribe;
         let broker = format!("{}:{}", cluster.host, cluster.port);
         let data = Arc::clone(&self.messages);
 
