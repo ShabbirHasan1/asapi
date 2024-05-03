@@ -39,7 +39,7 @@ macro_rules! heading_strong {
 #[macro_export]
 macro_rules! ui_text_edit_singleline_hint {
     ($ui:expr, $hint:expr, $var:expr) => {{
-        $ui.add(egui::TextEdit::singleline(&mut $var).hint_text($hint))
+        $ui.add(egui::TextEdit::singleline(&mut $var).hint_text(&hint));
     }};
 }
 
@@ -49,7 +49,7 @@ macro_rules! ted_singleline_w100 {
     ($ui:expr, $var:expr, $arg:expr) => {{
         $ui.add_sized(
             egui::vec2(100.0, 20.0),
-            egui::TextEdit::singleline(&mut $var).hint_text($arg),
+            egui::TextEdit::singleline(&mut $var).hint_text(&$arg),
         )
     }};
 }

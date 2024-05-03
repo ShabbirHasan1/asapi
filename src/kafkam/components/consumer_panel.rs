@@ -12,7 +12,7 @@ use std::sync::Arc;
 use tokio::runtime::Runtime;
 
 use crate::{
-    error,
+    qk_error,
     kafkam::{
         presenter::KafkaConsumer,
         state::{Cluster, KafkaConsumerMessage, KafkaPanel},
@@ -111,7 +111,7 @@ impl KafkaView {
             let consumer = KafkaConsumer::create_async_consumer(&broker, None, false);
 
             KafkaConsumer::subscribe(&consumer.consumer, &["prueba1"], Arc::clone(&data)).await;
-            error!("After <-- should never arrive here");
+            qk_error!("After <-- should never arrive here");
         });
     }
 }

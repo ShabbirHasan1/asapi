@@ -7,7 +7,8 @@
 // -------------------------------------------------------------------------
 
 use super::{
-    components::{show_clusters_metadata_info, show_messages_table},
+    components::{show_cluster_configuration, show_clusters_metadata_info, show_messages_table},
+    presenter::KafkaProducerPresenter,
     state::{KafkaConsumerMessage, KafkaLocalState, KafkaMessage},
 };
 use crate::{
@@ -21,6 +22,7 @@ use tokio::runtime::Runtime;
 
 pub struct KafkaView {
     pub state: KafkaLocalState,
+    pub stats_presenter: Option<KafkaProducerPresenter>,
     pub messages: Arc<Mutex<Vec<KafkaConsumerMessage>>>,
 }
 
@@ -29,6 +31,7 @@ impl Default for KafkaView {
         Self {
             state: KafkaLocalState::default(),
             messages: Arc::new(Mutex::new(Vec::default())),
+            stats_presenter: Default::default(),
         }
     }
 }
@@ -52,9 +55,9 @@ impl KafkaView {
 
         if self.state.is_first_update {
             self.state.is_first_update = false;
-            for _ in app_state.kafka.clusters.iter() {
-                self.state.clusters_metadata.push(None);
-            }
+            // for _ in app_state.kafka.clusters.iter() {
+            // self.state.clusters_metadata.push(None);
+            // }
         }
 
         // --> Recibimos mensaje <--
@@ -64,7 +67,8 @@ impl KafkaView {
                     println!("Receiving data: {data:?}");
                 }
                 KafkaMessage::ClusterMetadata((idx, metadata, count)) => {
-                    self.state.clusters_metadata.insert(idx, Some(metadata));
+                    self.state.current_cluster_metadata = Some(metadata);
+                    self.state.current_cluster_idx = idx;
                     self.state.clusters_metadata_count = count;
                 } // No en uso porque actualizo variable compartido entre hilos,
                   // dejo por si cambio de idea.
@@ -84,24 +88,26 @@ impl KafkaView {
         // =======================================
         egui::CentralPanel::default().show(ctx, |ui| {
             if self.state.current_view == KafkaPanel::Brokers {
-                let current_cluster_metadata = self
-                    .state
-                    .clusters_metadata
-                    .get(self.state.current_cluster_idx);
+                // let current_cluster_metadata = self
+                //     .state
+                //     .clusters_metadata
+                //     .get(self.state.current_cluster_idx);
 
-                if let Some(Some(metadata)) = current_cluster_metadata {
+                if let Some(ref metadata) = self.state.current_cluster_metadata {
                     show_clusters_metadata_info(ui, metadata, i18n);
+                    show_cluster_configuration(ui, i18n);
                 }
             } else if self.state.current_view == KafkaPanel::Topics {
                 self.topics_admin(ui, i18n);
                 ui.separator();
+                // let current_cluster_metadata = self
+                // .state
+                // .clusters_metadata
+                // .get(self.state.current_cluster_idx);
 
-                let current_cluster_metadata = self
-                    .state
-                    .clusters_metadata
-                    .get(self.state.current_cluster_idx);
-
-                if let Some(Some(metadata)) = current_cluster_metadata {
+                if let Some(ref metadata) = self.state.current_cluster_metadata {
+                    self.topics_stats(ui, metadata, i18n);
+                    ui.separator();
                     self.show_topics_info(ui, metadata, i18n);
                 }
             } else if self.state.current_view == KafkaPanel::Subscribe {

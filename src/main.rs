@@ -21,11 +21,11 @@ use eframe::egui;
 use kafkam::view::KafkaView;
 use std::fs::{self, OpenOptions};
 
-use common::internationalization::language_selector;
-use components::top_bar::AppTopBar;
-
 use crate::app_state::{AppState, ViewType};
 use crate::common::fs::load_state;
+use common::internationalization::language_selector;
+use components::top_bar::AppTopBar;
+use log::info;
 
 /// Struct con los atributos que podemos pasar a cualquier parte de la apliación.
 ///
@@ -112,7 +112,11 @@ fn configure_text_styles(ctx: &egui::Context) {
 }
 
 fn main() {
+    use env_logger::Env;
     let native_options = eframe::NativeOptions::default();
+    // TODO: Según producción o build, `debug` o `info`.
+    env_logger::Builder::from_env(Env::default().default_filter_or("debug")).init();
+    info!("Inicio ASAPI");
 
     let _result = eframe::run_native(
         "asapi",

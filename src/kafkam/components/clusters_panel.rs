@@ -52,3 +52,5 @@ pub fn show_clusters_metadata_info(ui: &mut egui::Ui, metadata: &Metadata, i18n:
             }
         });
 }
+
+pub fn show_cluster_configuration(ui: &mut egui::Ui, i18n: &I18n) {}

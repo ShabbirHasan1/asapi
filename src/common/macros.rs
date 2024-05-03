@@ -9,7 +9,7 @@
 // Distintas macros para uso de funciones muy repetitivas o para incluir
 // información extra.
 #[macro_export]
-macro_rules! info {
+macro_rules! qk_info {
     ($($arg:tt)*) => ({
         let now = chrono::Local::now();
         println!("[INFO]   {}: {}", now.to_rfc3339(), format_args!($($arg)*));
@@ -17,7 +17,7 @@ macro_rules! info {
 }
 
 #[macro_export]
-macro_rules! error {
+macro_rules! qk_error {
     ($($arg:tt)*) => ({
         let now = chrono::Local::now();
         eprintln!("[ERROR] {}: {}", now.to_rfc3339(), format_args!($($arg)*));

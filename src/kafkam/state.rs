@@ -58,7 +58,7 @@ pub struct KafkaNewTopic<'a> {
     pub name: String,
     pub n_partitions: i32,
     pub fixed_topic_replication: i32,
-    pub raw_config: &'a str,
+    pub raw_config: String,
     pub parsed_config: Vec<(&'a str, &'a str)>,
 }
 
@@ -66,7 +66,7 @@ pub struct KafkaLocalState {
     pub tmp_cluster_config: Cluster,
     pub current_view: KafkaPanel,
     pub current_cluster_idx: usize,
-    pub clusters_metadata: Vec<Option<ClusterMetadata>>,
+    pub current_cluster_metadata: Option<ClusterMetadata>,
     pub clusters_metadata_count: KafkaTopicsCount,
     pub is_first_update: bool,
     pub tx: tokio::sync::mpsc::Sender<KafkaMessage>,
@@ -83,7 +83,7 @@ impl Default for KafkaLocalState {
             tmp_cluster_config: Default::default(),
             current_view: KafkaPanel::default(),
             current_cluster_idx: usize::MAX,
-            clusters_metadata: Default::default(),
+            current_cluster_metadata: Default::default(),
             clusters_metadata_count: Default::default(),
             is_first_update: true,
             selected_cluster_to_edit_idx: Default::default(),

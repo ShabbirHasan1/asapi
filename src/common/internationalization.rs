@@ -212,7 +212,7 @@ pub fn language_selector(i: I18nOptions) -> I18n {
             kafka_n_partitions_in_topic: String::from("Número de Particiones"),
             kafka_replication_factor: String::from("Factor de Replicación"),
             kafka_create_topics: String::from("Crear Topics"),
-            kafka_partitions_info: String::from("Informción de Particiones"),
+            kafka_partitions_info: String::from("Información de Particiones"),
             kafka_topics_info: String::from("Información de Topics"),
             kafka_delete_topics: String::from("Borrar Topics"),
             kafka_create_partitions: String::from("Crear Particiones"),

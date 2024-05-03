@@ -9,21 +9,20 @@
 // Para poder conectarme a señales del sistema.
 // use signal_hook::consts::signal::*;
 // use signal_hook::flag;
-use rdkafka::admin::{AdminClient, AdminOptions};
+use log::info;
+use rdkafka::admin::AdminClient;
+use rdkafka::client::ClientContext;
 use rdkafka::client::DefaultClientContext;
 use rdkafka::config::{ClientConfig, RDKafkaLogLevel};
 use rdkafka::consumer::stream_consumer::StreamConsumer;
-use rdkafka::consumer::{BaseConsumer, Consumer, ConsumerContext, DefaultConsumerContext, Rebalance};
-use rdkafka::error::{KafkaError, KafkaResult};
+use rdkafka::consumer::{BaseConsumer, Consumer, ConsumerContext, Rebalance};
+use rdkafka::error::KafkaResult;
 use rdkafka::message::{Headers, Message};
 use rdkafka::producer::FutureProducer;
 use rdkafka::statistics::Statistics;
 use rdkafka::topic_partition_list::TopicPartitionList;
 use rdkafka::util::Timeout;
-use rdkafka::ClientContext;
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
-use std::thread;
 use std::time::Duration;
 
 use crate::common::traits::Create;
@@ -34,6 +33,72 @@ use crate::kafkam::state::KafkaConsumerMessage;
 // =================================
 // Ahora mismo nada en uso, dejo porque a futuro seguro que necesitamos cuando
 // queramos implementar funcionalidades extra.
+
+// pub struct KafkaStatsPresenter {
+//     client: BaseConsumer<StatisticsContext>,
+//     pub stats: Arc<Mutex<Vec<Statistics>>>,
+// }
+
+// struct StatisticsContext {
+//     stats: Arc<Mutex<Vec<Statistics>>>,
+// }
+
+// impl ClientContext for StatisticsContext {
+//     fn stats(&self, statistics: Statistics) {
+//         info!(
+//             "Nuevas Estadísticas. Mensajes Totales: {}",
+//             statistics.msg_max
+//         );
+//         println!("foo");
+//         let mut stats = self.stats.lock().unwrap();
+//         stats.push(statistics);
+//     }
+
+//     fn log(&self, level: RDKafkaLogLevel, fac: &str, log_message: &str) {
+//         println!("log");
+//         info!("log");
+//     }
+
+//     fn error(&self, error: rdkafka::error::KafkaError, reason: &str) {
+//         println!("error");
+//     }
+
+//     fn stats_raw(&self, statistics: &[u8]) {
+//         println!("stats raw");
+//     }
+// }
+
+// impl ConsumerContext for StatisticsContext {}
+
+// impl KafkaStatsPresenter {
+//     pub fn new(broker: &str) -> Self {
+//         let stats = Arc::new(Mutex::new(Vec::new()));
+//         let context = StatisticsContext {
+//             stats: stats.clone(),
+//         };
+
+//         info!("Broker al que nos conectamos: {broker}");
+//         let client: BaseConsumer<StatisticsContext> = ClientConfig::new()
+//             .set("bootstrap.servers", broker)
+//             .set("enable.auto.commit", "true")
+//             .set("statistics.interval.ms", "1000")
+//             .set("auto.offset.reset", "earliest")
+//             .set_log_level(RDKafkaLogLevel::Debug)
+//             .create_with_context(context)
+//             .expect("Creación cliente en KafkaStatsPresenter falló.");
+
+//         let _ = client.subscribe(&["prueba1"]);
+
+//         Self { client, stats }
+//     }
+
+//     pub fn close(&self) {
+//         // Desecho suscripciones activas (que en ppio no tengo en este `presenter`),
+//         // pero por si acado, y así me sirve de ejemplo.
+//         self.client.unsubscribe();
+//     }
+// }
+
 pub struct KafkaAdminPresenter {
     client: AdminClient<DefaultClientContext>,
 }
@@ -46,7 +111,7 @@ impl Create for KafkaAdminPresenter {
             // let client = ClientConfig::new()
             .set("bootstrap.servers", broker)
             .create()
-            .expect("Error al crear AdminClient");
+            .expect("Error al crear AdminClient en KafkaAdminPresenter");
 
         KafkaAdminPresenter { client }
     }
@@ -66,31 +131,48 @@ impl ClientContext for CustomProducerContext {
     }
 }
 
-pub struct KafkaProducer {}
+pub struct KafkaProducerPresenter {
+    pub client: FutureProducer<CustomProducerContext>,
+    pub stats: Arc<Mutex<Vec<Statistics>>>
+}
 
-impl KafkaProducer {
+impl KafkaProducerPresenter {
+    pub fn new(brokers: &str) -> Self {
+        let stats = Arc::new(Mutex::new(Vec::new()));
+        let client = ClientConfig::new()
+            .set("bootstrap.servers", brokers)
+            .set("statistics.interval.ms", "1000")
+            // .create_with_context(CustomContext)
+            .create_with_context(CustomProducerContext)
+            .expect("Producer creation failed");
+
+        Self { client, stats }
+    }
     pub fn stats_listener(brokers: &str) -> FutureProducer<CustomProducerContext> {
+    // pub fn stats_listener(brokers: &str) -> FutureProducer<StatisticsContext> {
+        // let stats = Arc::new(Mutex::new(Vec::new()));
+        // let context = StatisticsContext {
+        //     stats: stats.clone(),
+        // };
+
         ClientConfig::new()
             .set("bootstrap.servers", brokers)
             .set("statistics.interval.ms", "1000")
+            // .create_with_context(CustomContext)
             .create_with_context(CustomProducerContext)
             .expect("Producer creation failed")
     }
 
-    pub fn run_producer_loop(
-        producer: FutureProducer<CustomProducerContext>,
-        running: Arc<AtomicBool>,
-    ) {
-        while running.load(Ordering::Relaxed) {
-            // Aquí puedes realizar acciones con el productor, como enviar mensajes
-
-            // Poll para asegurar que las devoluciones de llamada se ejecuten
-            producer.poll(Duration::from_millis(100));
-
-            // Pausa para reducir el uso de CPU
-            thread::sleep(Duration::from_millis(100));
-        }
-    }
+    // pub fn run_producer_loop(
+    //     producer: FutureProducer<CustomProducerContext>,
+    //     running: Arc<AtomicBool>,
+    // ) {
+    //     while running.load(Ordering::Relaxed) {
+    //         producer.poll(Duration::from_millis(100));
+    //         // Pausa para reducir uso de CPU
+    //         thread::sleep(Duration::from_millis(100));
+    //     }
+    // }
 }
 
 // fn main() {
@@ -113,7 +195,11 @@ impl KafkaProducer {
 // This particular context sets up custom callbacks to log rebalancing events.
 pub struct CustomContext;
 
-impl ClientContext for CustomContext {}
+impl ClientContext for CustomContext {
+    fn stats(&self, statistics: Statistics) {
+        info!("New Stats");
+    }
+}
 
 impl ConsumerContext for CustomContext {
     fn pre_rebalance(&self, rebalance: &Rebalance) {
@@ -129,19 +215,19 @@ impl ConsumerContext for CustomContext {
     }
 }
 
-pub struct StatsContext;
+// pub struct StatsContext;
 
-impl ConsumerContext for StatsContext {}
+// impl ConsumerContext for StatsContext {}
 
-impl ClientContext for StatsContext {
-    fn stats(&self, statistics: Statistics) {
-        // Convertir las estadísticas a JSON para un análisis más fácil
-        // let stats_json: Value = serde_json::from_str(&statistics.to_json()).unwrap();
+// impl ClientContext for StatsContext {
+//     fn stats(&self, statistics: Statistics) {
+//         // Convertir las estadísticas a JSON para un análisis más fácil
+//         // let stats_json: Value = serde_json::from_str(&statistics.to_json()).unwrap();
 
-        // Aquí puedes procesar las estadísticas como prefieras
-        println!("Statistics JSON: {statistics:?}");
-    }
-}
+//         // Aquí puedes procesar las estadísticas como prefieras
+//         println!("Statistics JSON: {statistics:?}");
+//     }
+// }
 
 type LoggingConsumer = StreamConsumer<CustomContext>;
 
@@ -211,11 +297,13 @@ impl KafkaConsumer {
                 .set("bootstrap.servers", brokers)
                 .set("enable.partition.eof", "false")
                 .set("session.timeout.ms", "30000")
+                 .set("statistics.interval.ms", "1000")
                 .create_with_context(CustomContext)
                 .expect("Consumer creation failed")
         } else if auto_commit {
             ClientConfig::new()
                 .set("bootstrap.servers", brokers)
+                .set("group.id", "fake")
                 .set("enable.auto.commit", "false")
                 .set("auto.offset.reset", "smallest")
                 .set_log_level(RDKafkaLogLevel::Debug)
@@ -224,8 +312,10 @@ impl KafkaConsumer {
         } else {
             ClientConfig::new()
                 .set("bootstrap.servers", brokers)
+                .set("group.id", "fake")
                 .set("enable.partition.eof", "false")
                 .set("session.timeout.ms", "30000")
+                 .set("statistics.interval.ms", "1000")
                 .create_with_context(CustomContext)
                 .expect("Consumer creation failed")
         };

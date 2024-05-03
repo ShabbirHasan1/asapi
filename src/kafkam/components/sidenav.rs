@@ -6,17 +6,17 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
-use std::{collections::HashMap, time::Duration};
 use eframe::egui::{self, Context, Response};
+use log::info;
 use rdkafka::producer::Producer;
+use std::{collections::HashMap, time::Duration};
 use tokio::runtime::Runtime;
 
 use crate::{
     app_state::AppState,
     common::{icon_moon::IconMoon, internationalization::I18n, traits::Sidenav},
-    info,
     kafkam::{
-        presenter::{KafkaConsumer, KafkaProducer},
+        presenter::{KafkaConsumer, KafkaProducerPresenter},
         state::{Cluster, KafkaMessage, KafkaPanel},
         view::KafkaView,
     },
@@ -37,8 +37,8 @@ impl Sidenav for KafkaView {
 
             let popup_id = ui.make_persistent_id("cluster-edit-window");
             let mut buttons: Vec<Response> = Vec::with_capacity(app_state.kafka.clusters.len());
-
             let mut idx_to_delete = usize::MAX;
+
             for (idx, cluster) in app_state.kafka.clusters.iter_mut().enumerate() {
                 egui::CollapsingHeader::new(cluster.name.clone())
                     .show_background(true)
@@ -141,7 +141,6 @@ impl KafkaView {
                     }
                 }
 
-                self.state.clusters_metadata.push(None);
                 self.state.tmp_cluster_config = Default::default();
                 self.state.selected_cluster_to_edit_idx = None;
                 ui.close_menu();
@@ -152,13 +151,18 @@ impl KafkaView {
     fn get_cluster_metadata(&self, rt: &Runtime, ctx: &Context, broker_url: String, idx: usize) {
         let tx_cloned = self.state.tx.clone();
         let ctx_cloned = ctx.clone();
+        if self.stats_presenter.is_none() {
+            return;
+        }
+        let client = self.stats_presenter.as_ref().unwrap().client.client();
+        let client_cloned = client.clone();
 
         // --> Conectamos con el clúster y recogemos metadatos y estadísticas <--
         rt.spawn(async move {
-            let producer = KafkaProducer::stats_listener(&broker_url);
-            let client = producer.client();
+            // let producer = KafkaProducerPresenter::stats_listener(&broker_url);
+            // let client = producer.client();
             // let client = KafkaConsumer::create_consumer(&broker_url, "fake", false).await;
-            let metadata = client.fetch_metadata(None, Duration::from_secs(20)).ok();
+            let metadata = client_cloned.fetch_metadata(None, Duration::from_secs(20)).ok();
 
             if let Some(data) = metadata {
                 let mut count: HashMap<String, i64> = HashMap::default();
@@ -178,7 +182,8 @@ impl KafkaView {
                     .send(KafkaMessage::ClusterMetadata((idx, data, count)))
                     .await;
 
-                let _groups = KafkaConsumer::create_async_consumer(&broker_url, None, false).groups(None);
+                let _groups =
+                    KafkaConsumer::create_async_consumer(&broker_url, None, false).groups(None);
             }
 
             ctx_cloned.request_repaint();
@@ -209,9 +214,10 @@ impl KafkaView {
 
         ui.horizontal(|ui| {
             ui.monospace(format!("{}:{}", cluster.host, cluster.port));
-            let current_cluster_metadata = self.state.clusters_metadata.get(idx).unwrap();
+            // let current_cluster_metadata = self.state.clusters_metadata.get(idx).unwrap();
 
-            match current_cluster_metadata {
+            match self.state.current_cluster_metadata {
+                // Esto significa que hay un cluster seleccionado y es este.
                 Some(_) if idx == self.state.current_cluster_idx => {
                     ui.add_enabled(false, egui::Button::new(&i18n.kafka_btn_connected));
                 }
@@ -220,10 +226,48 @@ impl KafkaView {
                         self.state.current_cluster_idx = idx;
                         let broker_url = format!("{}:{}", cluster.host, cluster.port);
 
-                        match current_cluster_metadata {
-                            Some(_) => (),
-                            None => self.get_cluster_metadata(rt, ui.ctx(), broker_url, idx),
-                        };
+                        match self.stats_presenter {
+                            // (ref presenter) aquí no lo quiero para nada porque es productor y por lo tanto no necesita `unsubscribe`.
+                            Some(_) => {
+                                self.stats_presenter = None;
+                                let producer = KafkaProducerPresenter::new(&broker_url);
+                                self.stats_presenter = Some(producer);
+                            }
+                            None => {
+                                let producer = KafkaProducerPresenter::new(&broker_url);
+                                self.stats_presenter = Some(producer);
+                            }
+                        }
+                        // match self.state.current_cluster_metadata {
+                        //     Some(ref metadata) => {
+                        //         // TODO: Liberar recursos
+                        //         // info!("Índice seleccionado: {idx}");
+                        //         // info!("{:?}", self.stats_presenter.as_ref().unwrap().stats);
+                        //         // info!("Clúster seleccionado: {b}", b = metadata.orig_broker_name());
+                        //         // info!("Borro KafkaStatsPresenter");
+                        //         // Si estoy aquí significa que tengo que tener `stats_presenter`.
+                        //         // self.stats_presenter.as_ref().unwrap().close();
+                        //         // self.stats_presenter = None;
+                        //         // info!("ReCreo KafkaStatsPresenter");
+                        //         // self.stats_presenter = Some(KafkaStatsPresenter::new(&broker_url));
+                        //     }
+                        //     None => match self.stats_presenter {
+                        //         None => {
+                        //             // info!("Creo KafkaStatsPresenter");
+                        //             // self.stats_presenter =
+                        //                 // Some(KafkaStatsPresenter::new(&broker_url));
+                        //         }
+                        //         Some(ref stats_presenter) => {
+                        //             // info!("Borro KafkaStatsPresenter");
+                        //             // stats_presenter.close();
+                        //             // self.stats_presenter = None;
+                        //             // info!("ReCreo KafkaStatsPresenter");
+                        //             // self.stats_presenter =
+                        //                 // Some(KafkaStatsPresenter::new(&broker_url));
+                        //         }
+                        //     },
+                        // };
+                        self.get_cluster_metadata(rt, ui.ctx(), broker_url, idx);
                     }
                 }
             };
