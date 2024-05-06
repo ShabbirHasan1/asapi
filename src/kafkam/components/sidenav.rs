@@ -9,7 +9,7 @@
 use eframe::egui::{self, Context, Response};
 use log::info;
 use rdkafka::producer::Producer;
-use std::{collections::HashMap, time::Duration};
+use std::{collections::{HashMap, HashSet}, time::Duration};
 use tokio::runtime::Runtime;
 
 use crate::{
@@ -37,7 +37,7 @@ impl Sidenav for KafkaView {
 
             let popup_id = ui.make_persistent_id("cluster-edit-window");
             let mut buttons: Vec<Response> = Vec::with_capacity(app_state.kafka.clusters.len());
-            let mut idx_to_delete = usize::MAX;
+            let mut idxs_to_delete: HashSet<usize> = HashSet::default();
 
             for (idx, cluster) in app_state.kafka.clusters.iter_mut().enumerate() {
                 egui::CollapsingHeader::new(cluster.name.clone())
@@ -45,7 +45,7 @@ impl Sidenav for KafkaView {
                     .default_open(true)
                     .show(ui, |ui| {
                         ui.with_layout(egui::Layout::top_down(egui::Align::LEFT), |ui| {
-                            idx_to_delete = self.cluster_connection_row(
+                            let idx_to_delete = self.cluster_connection_row(
                                 ui,
                                 idx,
                                 i18n,
@@ -54,6 +54,7 @@ impl Sidenav for KafkaView {
                                 cluster,
                                 &mut buttons,
                             );
+                            idxs_to_delete.insert(idx_to_delete);
 
                             // --> Selección entre una u otra vista y acciones <--
                             let show_brokers_btn = ui.add(egui::SelectableLabel::new(
@@ -80,6 +81,9 @@ impl Sidenav for KafkaView {
                                     self.state.current_cluster_idx == idx
                                         && self.state.current_cluster_idx != usize::MAX
                                         && self.state.current_view == KafkaPanel::Stats,
+                                    // Lo quito de aquí para evitar tanto trabajo.
+                                    // && self.stats_presenter.is_some()
+                                    // && self.stats_presenter.unwrap().stats,
                                     &i18n.kafka_btn_show_stats,
                                 ))
                             } else {
@@ -99,13 +103,18 @@ impl Sidenav for KafkaView {
                                 self.subscribe(idx, cluster, ctx, rt);
                             } else if show_stats_btn.clicked() {
                                 self.state.current_view = KafkaPanel::Stats;
+                                ctx.request_repaint();
                             }
                         });
                     });
             }
 
-            if idx_to_delete < app_state.kafka.clusters.len() {
-                app_state.kafka.clusters.remove(idx_to_delete);
+            // info!("{idx_to_delete}, len={}", app_state.kafka.clusters.len());
+            for idx in idxs_to_delete {
+                if idx < app_state.kafka.clusters.len() {
+                    println!("Borrar {idx}");
+                    app_state.kafka.clusters.remove(idx);
+                }
             }
 
             if self.state.selected_cluster_to_edit_idx.is_some() {
@@ -203,6 +212,24 @@ impl KafkaView {
                                 self.stats_presenter = Some(producer);
                             }
                         }
+                        match self.stats_presenter {
+                            Some(ref presenter) => {
+                                // self.get_cluster_metadata(rt, ui.ctx(), broker_url, idx);
+                                let metadata = presenter
+                                    .client
+                                    .client()
+                                    .fetch_metadata(None, Duration::from_secs(5));
+                                match metadata {
+                                    Ok(data) => {
+                                        println!("OK");
+                                    }
+                                    Err(error) => {
+                                        println!("ERROR");
+                                    }
+                                }
+                            }
+                            _ => (),
+                        };
                         self.get_cluster_metadata(rt, ui.ctx(), broker_url, idx);
                     }
                 }
@@ -220,7 +247,6 @@ impl KafkaView {
                 if self.state.current_cluster_idx == idx {
                     self.state.current_cluster_idx = usize::MAX;
                 }
-                info!("clicked");
                 tmp = idx;
             }
         });
@@ -239,31 +265,50 @@ impl KafkaView {
         let tx_cloned = self.state.tx.clone();
         let ctx_cloned = ctx.clone();
 
+        info!("Broker URL: {broker_url}");
+
         // --> Conectamos con el clúster y recogemos metadatos y estadísticas <--
         rt.spawn(async move {
             let producer = KafkaProducerPresenter::new(&broker_url);
             // let producer = KafkaProducerPresenter::stats_listener(&broker_url);
             let client = producer.client.client();
             // let client = KafkaConsumer::create_consumer(&broker_url, "fake", false).await;
-            let metadata = client.fetch_metadata(None, Duration::from_secs(20)).ok();
+            let metadata = client.fetch_metadata(None, Duration::from_secs(20));
 
-            if let Some(data) = metadata {
-                let mut count: HashMap<String, i64> = HashMap::default();
-                for topic in data.topics() {
-                    let mut message_count: i64 = 0;
-                    for partition in topic.partitions() {
-                        let (low, high) = client
-                            .fetch_watermarks(topic.name(), partition.id(), Duration::from_secs(1))
-                            .unwrap_or((-1, -1));
+            // PARA INTENTAR AVERIGURAR ERROR CON FETCH_METADATA
+            let cluster_id = client.fetch_cluster_id(Duration::from_secs(5));
 
-                        message_count += high - low;
+            info!("Cluster ID: {cluster_id:?}");
+
+            // ========================
+
+            match metadata {
+                Ok(data) => {
+                    let mut count: HashMap<String, i64> = HashMap::default();
+                    for topic in data.topics() {
+                        let mut message_count: i64 = 0;
+                        for partition in topic.partitions() {
+                            let (low, high) = client
+                                .fetch_watermarks(
+                                    topic.name(),
+                                    partition.id(),
+                                    Duration::from_secs(1),
+                                )
+                                .unwrap_or((-1, -1));
+
+                            message_count += high - low;
+                        }
+                        count.insert(topic.name().to_owned(), message_count);
                     }
-                    count.insert(topic.name().to_owned(), message_count);
-                }
 
-                let _ = tx_cloned
-                    .send(KafkaMessage::ClusterMetadata((idx, data, count)))
-                    .await;
+                    let _ = tx_cloned
+                        .send(KafkaMessage::ClusterMetadata((idx, data, count)))
+                        .await;
+                }
+                Err(error) => {
+                    log::error!("Error: {error:?}");
+                    let _ = tx_cloned.send(KafkaMessage::Error(error)).await;
+                }
             }
 
             ctx_cloned.request_repaint();
