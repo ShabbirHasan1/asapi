@@ -11,7 +11,7 @@ use std::collections::HashSet;
 use eframe::egui;
 use egui_extras::{Size, StripBuilder};
 use log::info;
-use rdkafka::Statistics;
+use rdkafka::{statistics::Window, Statistics};
 
 use crate::{ui_title_and_value_grid_row, ui_title_and_value_grid_row_with_hint};
 
@@ -129,7 +129,6 @@ pub fn show_stats(ui: &mut egui::Ui, stats: &Statistics) {
                     egui::Grid::new(format!("broker-grid{}", broker.nodeid))
                         .num_columns(2)
                         .show(ui, |ui| {
-
                             ui_title_and_value_grid_row!(ui, "Name", &broker.name);
                             ui_title_and_value_grid_row!(ui, "Broker ID", broker_id);
 
@@ -181,12 +180,14 @@ pub fn show_stats(ui: &mut egui::Ui, stats: &Statistics) {
 
                             ui_title_and_value_grid_row_with_hint!(ui, "Microseconds since last socket receive", &broker.rxidle.to_string(), "-1 if no receives yet for the current connection");
 
-                            // req: HashMap<String, i64>
-                            // Request type counters. The object key is the name of the request type and the value is the number of requests of that type that have been sent.
 
                             ui_title_and_value_grid_row!(ui, "Total number of decompression buffer size increases", &broker.zbuf_grow.to_string());
 
                             ui_title_and_value_grid_row!(ui, "Total number of buffer size increases (deprecated and unused)", &broker.buf_grow.to_string());
+
+                            // TODO: Todos estos faltan por mostrar.
+                            // req: HashMap<String, i64>
+                            // Request type counters. The object key is the name of the request type and the value is the number of requests of that type that have been sent.
 
                             // wakeups: Option<u64>
                             // The number of broker thread poll wakeups.
@@ -219,5 +220,48 @@ pub fn show_stats(ui: &mut egui::Ui, stats: &Statistics) {
                         });
                 });
             }
+
+            for (topic_id, topic) in &stats.topics {
+                ui.collapsing(format!("topic {}", topic_id), |ui| {
+                    egui::Grid::new(format!("topic-grid{}", topic_id))
+                        .num_columns(2)
+                        .show(ui, |ui| {
+                            ui_title_and_value_grid_row!(ui, "Name", &topic.topic);
+                            ui_title_and_value_grid_row!(ui, "Age of the client’s metadata (ms)", &topic.metadata_age.to_string());
+
+                            statistics_window_show(ui, &topic.batchsize, "Rolling window statistics for batch sizes, in bytes");
+
+                            statistics_window_show(ui, &topic.batchcnt, "Rolling window statistics for batch message counts");
+                        });
+                });
+            }
         });
+}
+
+fn statistics_window_show(ui: &mut egui::Ui, w: &Window, title: &str) {
+    ui.collapsing(title, |ui| {
+        ui_title_and_value_grid_row!(ui, "Smallest", &w.min.to_string());
+        ui_title_and_value_grid_row!(ui, "Largest", &w.max.to_string());
+        ui_title_and_value_grid_row!(ui, "Mean", &w.avg.to_string());
+        ui_title_and_value_grid_row!(ui, "Sum", &w.sum.to_string());
+        ui_title_and_value_grid_row!(ui, "Total Number of Values", &w.cnt.to_string());
+        ui_title_and_value_grid_row!(ui, "Standard Deviation", &w.stddev.to_string());
+        ui_title_and_value_grid_row!(
+            ui,
+            "The memory size of the underlying HDR histogram.",
+            &w.hdrsize.to_string()
+        );
+        ui_title_and_value_grid_row!(ui, "50th percentile", &w.p50.to_string());
+        ui_title_and_value_grid_row!(ui, "75th percentile", &w.p75.to_string());
+        ui_title_and_value_grid_row!(ui, "90th percentile", &w.p90.to_string());
+        ui_title_and_value_grid_row!(ui, "95th percentile", &w.p95.to_string());
+        ui_title_and_value_grid_row!(ui, "99th percentile", &w.p99.to_string());
+        ui_title_and_value_grid_row!(ui, "99.99th percentile", &w.p99_99.to_string());
+        ui_title_and_value_grid_row_with_hint!(
+        ui,
+        "Out of Range",
+        &w.outofrange.to_string(),
+        "Number of values not included in te unerlying histogram because the were out of range."
+    );
+    });
 }
