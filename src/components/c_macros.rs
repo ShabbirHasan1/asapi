@@ -64,3 +64,23 @@ macro_rules! ted_singleline_w50 {
     }};
 }
 // <<--
+
+#[macro_export]
+macro_rules! ui_title_and_value_grid_row_with_hint {
+    ($ui:expr, $title:expr, $value:expr, $hint:expr) => {{
+        $ui.monospace($title);
+        $ui.label($value).on_hover_ui(|ui| {
+            ui.label($hint);
+        });
+        $ui.end_row();
+    }};
+}
+
+#[macro_export]
+macro_rules! ui_title_and_value_grid_row {
+    ($ui:expr, $title:expr, $value:expr) => {{
+        $ui.monospace($title);
+        $ui.label($value);
+        $ui.end_row();
+    }};
+}

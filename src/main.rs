@@ -115,7 +115,7 @@ fn main() {
     use env_logger::Env;
     let native_options = eframe::NativeOptions::default();
     // TODO: Según producción o build, `debug` o `info`.
-    env_logger::Builder::from_env(Env::default().default_filter_or("debug")).init();
+    env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
     info!("Inicio ASAPI");
 
     let _result = eframe::run_native(

@@ -11,6 +11,7 @@ pub mod consumer_panel;
 pub mod sidenav;
 pub mod stats_panel;
 pub mod topics_panel;
+pub mod widgets;
 
 pub use clusters_panel::show_cluster_configuration;
 pub use clusters_panel::show_clusters_metadata_info;

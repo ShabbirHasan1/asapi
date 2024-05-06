@@ -62,9 +62,9 @@ impl ClientContext for CustomProducerContext {
             stats[0] = statistics;
         }
         if self.print.load(std::sync::atomic::Ordering::SeqCst) {
-            info!("Estadísticas recibidas (primera vez)");
-            info!("====================================");
-            info!("{:?}", stats[0]);
+            // info!("Estadísticas recibidas (primera vez)");
+            // info!("====================================");
+            // info!("{:?}", stats[0]);
 
             self.print.store(false, std::sync::atomic::Ordering::SeqCst);
         }
@@ -87,6 +87,7 @@ impl KafkaProducerPresenter {
         let client = ClientConfig::new()
             .set("bootstrap.servers", brokers)
             .set("statistics.interval.ms", "1000")
+            .set("api.version.fallback.ms", "0") // por si corregía error con fetch_metadata, no lo ha conseguido
             .create_with_context(context)
             .expect("Producer creation failed");
 

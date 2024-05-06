@@ -6,6 +6,8 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
+use std::error::Error;
+
 use eframe::{
     egui::{self, RichText},
     epaint::{text::LayoutJob, Color32},
@@ -34,7 +36,7 @@ const DEFAULT_FORMAT: egui::TextFormat = egui::TextFormat {
 };
 
 // Comento por ahorrarme todas esas operaciones, realmente no son necesarias
-fn job_fn(text: String) -> LayoutJob {
+pub fn job_fn(text: String) -> LayoutJob {
     // let points_per_pixel = 1.0 / pixels_per_point;
     // let line_height =
     // (LINE_HEIGHT_PIXELS != 0).then_some(points_per_pixel * LINE_HEIGHT_PIXELS as f32);

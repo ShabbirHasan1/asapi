@@ -6,8 +6,8 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
-use rdkafka::metadata::Metadata as ClusterMetadata;
 use rdkafka::metadata::Metadata;
+use rdkafka::{error::KafkaError, metadata::Metadata as ClusterMetadata};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -29,6 +29,7 @@ pub enum KafkaMessage {
     Str(String),
     // ConsumerMessage(KafkaMessageBody),
     ClusterMetadata((usize, Metadata, KafkaTopicsCount)),
+    Error(KafkaError),
 }
 
 #[derive(Eq, PartialEq, Debug, Default)]
@@ -74,6 +75,7 @@ pub struct KafkaLocalState {
     pub rx: tokio::sync::mpsc::Receiver<KafkaMessage>,
     pub selected_cluster_to_edit_idx: Option<usize>,
     pub new_topic: KafkaNewTopic<'static>,
+    pub last_error: Option<KafkaError>,
 }
 
 impl Default for KafkaLocalState {
@@ -89,6 +91,7 @@ impl Default for KafkaLocalState {
             is_first_update: true,
             selected_cluster_to_edit_idx: Default::default(),
             new_topic: Default::default(),
+            last_error: None,
             tx,
             rx,
         }

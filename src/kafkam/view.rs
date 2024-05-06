@@ -9,6 +9,7 @@
 use super::{
     components::{
         show_cluster_configuration, show_clusters_metadata_info, show_messages_table, show_stats,
+        widgets::ui_error_panel,
     },
     presenter::KafkaProducerPresenter,
     state::{KafkaConsumerMessage, KafkaLocalState, KafkaMessage},
@@ -19,6 +20,7 @@ use crate::{
     kafkam::state::KafkaPanel,
 };
 use eframe::egui;
+use log::info;
 use std::sync::{Arc, Mutex};
 use tokio::runtime::Runtime;
 
@@ -72,9 +74,13 @@ impl KafkaView {
                     self.state.current_cluster_metadata = Some(metadata);
                     self.state.current_cluster_idx = idx;
                     self.state.clusters_metadata_count = count;
-                } // No en uso porque actualizo variable compartido entre hilos,
-                  // dejo por si cambio de idea.
-                  // KafkaMessage::ConsumerMessage(_) => {}
+                }
+                // No en uso porque actualizo variable compartido entre hilos,
+                // dejo por si cambio de idea.
+                // KafkaMessage::ConsumerMessage(_) => {}
+                KafkaMessage::Error(kafka_error) => {
+                    self.state.last_error = Some(kafka_error);
+                }
             }
         }
 
@@ -89,12 +95,9 @@ impl KafkaView {
         // Panel Central
         // =======================================
         egui::CentralPanel::default().show(ctx, |ui| {
-            if self.state.current_view == KafkaPanel::Brokers {
-                // let current_cluster_metadata = self
-                //     .state
-                //     .clusters_metadata
-                //     .get(self.state.current_cluster_idx);
+            ui_error_panel(ui, &self.state.last_error);
 
+            if self.state.current_view == KafkaPanel::Brokers {
                 if let Some(ref metadata) = self.state.current_cluster_metadata {
                     show_clusters_metadata_info(ui, metadata, i18n);
                     show_cluster_configuration(ui, i18n);
@@ -102,10 +105,6 @@ impl KafkaView {
             } else if self.state.current_view == KafkaPanel::Topics {
                 self.topics_admin(ui, i18n);
                 ui.separator();
-                // let current_cluster_metadata = self
-                // .state
-                // .clusters_metadata
-                // .get(self.state.current_cluster_idx);
 
                 if let Some(ref metadata) = self.state.current_cluster_metadata {
                     self.topics_stats(ui, metadata, i18n);
@@ -117,10 +116,17 @@ impl KafkaView {
                 show_messages_table(ui, &messages);
             } else if self.state.current_view == KafkaPanel::Stats && self.stats_presenter.is_some()
             {
-                show_stats(
-                    ui,
-                    &self.stats_presenter.as_ref().unwrap().stats.lock().unwrap(),
-                );
+                match self.stats_presenter.as_ref().unwrap().stats.lock() {
+                    Ok(arr) => {
+                        arr.first().map_or_else(
+                            || (),
+                            |fst| {
+                                show_stats(ui, fst);
+                            },
+                        );
+                    }
+                    Err(_) => (),
+                };
             }
         });
     }
