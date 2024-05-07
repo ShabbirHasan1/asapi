@@ -7,23 +7,29 @@
 // -------------------------------------------------------------------------
 
 use eframe::egui;
+use log::info;
 use rdkafka::admin::{NewTopic, TopicReplication};
+use rdkafka::error::KafkaError;
 use rdkafka::metadata::Metadata;
 use std::ops::RangeInclusive;
+use tokio::runtime::Runtime;
+use tokio::sync::mpsc::Sender;
 
+use crate::kafkam::admin as admin_presenter;
+use crate::kafkam::state::KafkaMessage;
 use crate::{
     common::internationalization::I18n, components::widgets::ui_text_edit_singleline_hint,
     heading_strong, kafkam::view::KafkaView,
 };
 
 impl KafkaView {
-    pub fn topics_admin(&mut self, ui: &mut egui::Ui, i18n: &I18n) {
+    pub fn topics_admin(&mut self, rt: &Runtime, ui: &mut egui::Ui, i18n: &I18n) {
         ui.horizontal(|ui| {
             if ui.button(&i18n.kafka_create_topics).clicked() {
                 self.state.new_topic.show = true;
             }
             if self.state.new_topic.show {
-                self.show_create_topic_window(ui, i18n);
+                self.show_create_topic_window(rt, ui, i18n);
             }
 
             if ui.button(&i18n.kafka_delete_topics).clicked() {}
@@ -35,7 +41,7 @@ impl KafkaView {
     }
     pub fn topics_stats(&self, ui: &mut egui::Ui, metadata: &Metadata, i18n: &I18n) {}
 
-    fn show_create_topic_window(&mut self, ui: &mut egui::Ui, i18n: &I18n) {
+    fn show_create_topic_window(&mut self, rt: &Runtime, ui: &mut egui::Ui, i18n: &I18n) {
         egui::Window::new(&i18n.kafka_create_topics)
             .collapsible(false)
             .show(ui.ctx(), |ui| {
@@ -70,7 +76,7 @@ impl KafkaView {
                     }
                     if ui.button(&i18n.kafka_accept).clicked() {
                         self.state.new_topic.show = false;
-                        let topic_config: Vec<(&str, &str)> = self
+                        let topic_config: Vec<(String, String)> = self
                             .state
                             .new_topic
                             .raw_config
@@ -79,20 +85,72 @@ impl KafkaView {
                             .chunks(2)
                             .filter_map(|chunk| {
                                 if chunk.len() == 2 {
-                                    Some((chunk[0], chunk[1]))
+                                    Some((chunk[0].to_owned(), chunk[1].to_owned()))
                                 } else {
                                     None
                                 }
                             })
                             .collect();
-                        let new_topic = NewTopic {
-                            name: self.state.new_topic.name.as_str(),
-                            num_partitions: self.state.new_topic.n_partitions,
-                            replication: TopicReplication::Fixed(
-                                self.state.new_topic.fixed_topic_replication,
-                            ),
-                            config: topic_config,
-                        };
+
+                        // TODO: Aquí estoy usando una dirección del primer broker que salga.
+                        // Lo mejor es acceder a `app_state.brokers` y coger el que sea que
+                        // esté seleccionado actualmente, o mejor aún, guardar también la
+                        // actual configuración seleccionada.
+                        let broker_url = self
+                            .state
+                            .current_cluster_config
+                            .as_ref()
+                            .map(|md| format!("{}:{}", md.host, md.port));
+                        // self.state
+                        // .current_cluster_metadata
+                        // .as_ref()
+                        // .and_then(|cls| {
+                        // cls.brokers()
+                        // .first()
+                        // .map(|md| format!("{}:{}", md.host(), md.port()))
+                        // });
+
+                        match broker_url {
+                            Some(url) => {
+                                let name = self.state.new_topic.name.clone();
+                                let num_partitions = self.state.new_topic.n_partitions;
+                                let replication = self.state.new_topic.fixed_topic_replication;
+                                let tx_cloned = self.state.tx.clone();
+                                let ctx = ui.ctx().clone();
+
+                                info!("{url} / {name} -- {num_partitions} {replication}");
+
+                                rt.spawn(async move {
+                                    // Puedo crear aquí el topic y enviarlo allí formado pero entiendo que
+                                    // el método `create_topic` es el que tiene que saber todo acerca de
+                                    // cómo hacerlo y que el cliente (este punto del código) simplemente
+                                    // le pasa la información que tiene.
+                                    let result = admin_presenter::create_topic(
+                                        &url,
+                                        name.as_str(),
+                                        num_partitions,
+                                        replication,
+                                        topic_config,
+                                    )
+                                    .await;
+                                    match result {
+                                        Ok(_) => {
+                                            // Si está ok, volvemos a pedir estadísticas de forma indirecta
+                                            let _ = tx_cloned.send(KafkaMessage::AskForMetadata(url)).await;
+                                        },
+                                        Err(err) => {
+                                            let _ = tx_cloned.send(KafkaMessage::Error(err)).await;
+                                        }
+                                    }
+                                    ctx.request_repaint();
+                                });
+                            }
+                            None => {
+                                self.state.last_error = Some(KafkaError::AdminOpCreation(
+                                    "No se pudo extraer url del broker.".to_string(),
+                                ));
+                            }
+                        }
                     }
                 });
             });
@@ -126,7 +184,7 @@ impl KafkaView {
                                 ui.monospace(&i18n.kafka_replication_factor);
                                 let replication_factor = topic
                                     .partitions()
-                                    .get(0)
+                                    .first()
                                     .map(|p| p.replicas().len())
                                     .unwrap_or_default();
                                 ui.label(replication_factor.to_string());

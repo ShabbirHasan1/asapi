@@ -100,9 +100,10 @@ impl eframe::App for Asapi {
         });
 
         match self.app_state.selected_view {
-            ViewType::Kafka => self
-                .kafka
-                .update(ctx, _frame, &mut self.app_state, &self.rt, &i18n),
+            ViewType::Kafka => {
+                self.kafka
+                    .update(ctx, _frame, &mut self.app_state.kafka, &self.rt, &i18n)
+            }
         }
     }
 }

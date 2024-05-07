@@ -9,5 +9,6 @@
 pub mod admin;
 pub mod components;
 mod presenter;
+mod producer;
 pub mod state;
 pub mod view;

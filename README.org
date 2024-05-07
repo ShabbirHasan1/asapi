@@ -17,37 +17,6 @@ CLOSED: [2024-02-28 mié 16:22] No está hecho en todo, pero sí en las tablas d
 **** [[https://github.com/tokio-rs/tracing][tracing]]
 
 
-* Kafka
-*** [#A] Usar tabla para mostrar los mensajes que va recibiendo el consumidor.
-*** [#A] Poder /unsusbscribe/ de una conexión
-*** [#A] Producir de forma puntual
-*** [#B] Producir de forma periódica
-Se tiene que poder cancelar la producción.
-Usar generadores.
-*** [#C] Estadística bajo demanda.
-Creo /FutureProducer/, dejo que funcione un par de segundos y cierro. No tiene sentido tenerlo todo el rato conectado si no aporta al usuario. Que se haga la petición solamente en caso de que el usuario lo quiera.
-*** DONE Mostrar datos en función de botón lateral.
-CLOSED: [2024-02-01 jue 18:27]
-Uso Kafka-ui de referencia de los datos que puede ser interesante mostrar
-**** DONE [#A] /Brokers/
-CLOSED: [2024-01-31 mié 22:33]
-**** CANCELED [#A] /Consumers/
-CLOSED: [2024-02-01 jue 18:27] No se puede hacer fácilmente, ya investigaré más adelante si acaso
-**** DONE [#A] /Topics/
-CLOSED: [2024-02-01 jue 18:27]
-*** DONE Cargar metadatos al darle a conectar, y luego simplemente ir mostrándolos.
-CLOSED: [2024-01-31 mié 22:33]
-*** DONE [#C] Subscribir en tiempo real
-CLOSED: [2024-02-01 jue 18:27]
-Se tiene que poder de-subscribir.
-*** DONE Extraer metadatos de consumidor (lanzar en Tokyo)
-CLOSED: [2024-01-31 mié 12:15]
-*** DONE Menú lateral para elegir entre clúster
-CLOSED: [2024-01-31 mié 12:15]
-*** DONE [#C] Conectar
-CLOSED: [2024-01-19 sáb 11:19]
-
-
 * Mongo
  En studio3t se muestra como tabla en vez de listado de Json extensibles como hago yo. Si no existe un atributo en un documento, no se muestra nada en esa celda. Si el atributo es a su vez un json, se puede clicar y ver lo que hay dentro en una nueva tabla. No creo que merezca la pena, pero puede ser una idea a explorar en un futurio lejano.
 *** DONE Conectar

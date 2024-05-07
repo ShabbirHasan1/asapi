@@ -6,40 +6,37 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
-use eframe::egui::{self, Context, Response};
-use log::info;
-use rdkafka::producer::Producer;
-use std::{collections::{HashMap, HashSet}, time::Duration};
+use eframe::egui::{self, Response};
+use std::collections::HashSet;
 use tokio::runtime::Runtime;
 
 use crate::{
-    app_state::AppState,
     common::{icon_moon::IconMoon, internationalization::I18n, traits::Sidenav},
     kafkam::{
-        presenter::{KafkaConsumer, KafkaProducerPresenter},
-        state::{Cluster, KafkaMessage, KafkaPanel},
+        producer::{self as producer_presenter, KafkaStatsProducerPresenter},
+        state::{Cluster, KafkaAppState, KafkaPanel},
         view::KafkaView,
     },
 };
 
-impl Sidenav for KafkaView {
+impl Sidenav<KafkaAppState> for KafkaView {
     fn show_sidenav(
         &mut self,
         rt: &Runtime,
         ctx: &egui::Context,
-        app_state: &mut AppState,
+        app_st: &mut KafkaAppState,
         i18n: &I18n,
     ) {
         egui::SidePanel::left("kafka_cluster_panel").show(ctx, |ui| {
             ui.menu_button(i18n.kafka_btn_add_connection.clone(), |ui| {
-                self.edit_cluster_menu(ui, &mut app_state.kafka.clusters, i18n);
+                self.edit_cluster_menu(ui, &mut app_st.clusters, i18n);
             });
 
             let popup_id = ui.make_persistent_id("cluster-edit-window");
-            let mut buttons: Vec<Response> = Vec::with_capacity(app_state.kafka.clusters.len());
+            let mut buttons: Vec<Response> = Vec::with_capacity(app_st.clusters.len());
             let mut idxs_to_delete: HashSet<usize> = HashSet::default();
 
-            for (idx, cluster) in app_state.kafka.clusters.iter_mut().enumerate() {
+            for (idx, cluster) in app_st.clusters.iter_mut().enumerate() {
                 egui::CollapsingHeader::new(cluster.name.clone())
                     .show_background(true)
                     .default_open(true)
@@ -111,9 +108,9 @@ impl Sidenav for KafkaView {
 
             // info!("{idx_to_delete}, len={}", app_state.kafka.clusters.len());
             for idx in idxs_to_delete {
-                if idx < app_state.kafka.clusters.len() {
+                if idx < app_st.clusters.len() {
                     println!("Borrar {idx}");
-                    app_state.kafka.clusters.remove(idx);
+                    app_st.clusters.remove(idx);
                 }
             }
 
@@ -121,7 +118,7 @@ impl Sidenav for KafkaView {
                 egui::Window::new(&i18n.kafka_edit_cluster)
                     .collapsible(false)
                     .show(ctx, |ui| {
-                        self.edit_cluster_menu(ui, &mut app_state.kafka.clusters, i18n);
+                        self.edit_cluster_menu(ui, &mut app_st.clusters, i18n);
                     });
             }
         });
@@ -204,33 +201,22 @@ impl KafkaView {
                             // (ref presenter) aquí no lo quiero para nada porque es productor y por lo tanto no necesita `unsubscribe`.
                             Some(_) => {
                                 self.stats_presenter = None;
-                                let producer = KafkaProducerPresenter::new(&broker_url);
+                                let producer = KafkaStatsProducerPresenter::new(&broker_url);
                                 self.stats_presenter = Some(producer);
                             }
                             None => {
-                                let producer = KafkaProducerPresenter::new(&broker_url);
+                                let producer = KafkaStatsProducerPresenter::new(&broker_url);
                                 self.stats_presenter = Some(producer);
                             }
                         }
-                        match self.stats_presenter {
-                            Some(ref presenter) => {
-                                // self.get_cluster_metadata(rt, ui.ctx(), broker_url, idx);
-                                let metadata = presenter
-                                    .client
-                                    .client()
-                                    .fetch_metadata(None, Duration::from_secs(5));
-                                match metadata {
-                                    Ok(data) => {
-                                        println!("OK");
-                                    }
-                                    Err(error) => {
-                                        println!("ERROR");
-                                    }
-                                }
-                            }
-                            _ => (),
-                        };
-                        self.get_cluster_metadata(rt, ui.ctx(), broker_url, idx);
+
+                        producer_presenter::get_cluster_metadata_and_stats(
+                            rt,
+                            &self.state.tx,
+                            ui.ctx(),
+                            broker_url,
+                            idx,
+                        );
                     }
                 }
             };
@@ -252,76 +238,5 @@ impl KafkaView {
         });
 
         tmp
-    }
-
-    /// Recuperamos datos de cluster
-    ///
-    /// Creo cliente y no reuso el que tengo en KafkaProducerPresenter porque es complicado pasarlo
-    /// a la closure donde recupero datos sin usar un `Arc`. A futuro debería usar aquél. Aquél me
-    /// hace falta porque este no se mantiene pidiendo datos porque al salir del ámbito se destruye
-    /// y el callback de ClientContext::stats deja de ser llamado: obvio, la instancia del struct
-    /// que implementa ese trait deja de exister.
-    fn get_cluster_metadata(&self, rt: &Runtime, ctx: &Context, broker_url: String, idx: usize) {
-        let tx_cloned = self.state.tx.clone();
-        let ctx_cloned = ctx.clone();
-
-        info!("Broker URL: {broker_url}");
-
-        // --> Conectamos con el clúster y recogemos metadatos y estadísticas <--
-        rt.spawn(async move {
-            let producer = KafkaProducerPresenter::new(&broker_url);
-            // let producer = KafkaProducerPresenter::stats_listener(&broker_url);
-            let client = producer.client.client();
-            // let client = KafkaConsumer::create_consumer(&broker_url, "fake", false).await;
-            let metadata = client.fetch_metadata(None, Duration::from_secs(20));
-
-            // PARA INTENTAR AVERIGURAR ERROR CON FETCH_METADATA
-            let cluster_id = client.fetch_cluster_id(Duration::from_secs(5));
-
-            info!("Cluster ID: {cluster_id:?}");
-
-            // ========================
-
-            match metadata {
-                Ok(data) => {
-                    let mut count: HashMap<String, i64> = HashMap::default();
-                    for topic in data.topics() {
-                        let mut message_count: i64 = 0;
-                        for partition in topic.partitions() {
-                            let (low, high) = client
-                                .fetch_watermarks(
-                                    topic.name(),
-                                    partition.id(),
-                                    Duration::from_secs(1),
-                                )
-                                .unwrap_or((-1, -1));
-
-                            message_count += high - low;
-                        }
-                        count.insert(topic.name().to_owned(), message_count);
-                    }
-
-                    let _ = tx_cloned
-                        .send(KafkaMessage::ClusterMetadata((idx, data, count)))
-                        .await;
-                }
-                Err(error) => {
-                    log::error!("Error: {error:?}");
-                    let _ = tx_cloned.send(KafkaMessage::Error(error)).await;
-                }
-            }
-
-            ctx_cloned.request_repaint();
-        });
-
-        // TODO: Mover a algún sitio donde se pida de forma explícita por parte
-        // del usuario las estadísticas.
-        // std::thread::spawn(move || {
-        // let stats_producer = create_stats_producer(&broker);
-        // let running = Arc::new(AtomicBool::new(true));
-        // // flag::register_usize(SIGINT, Arc::clone(&running), 0).unwrap();
-        // run_producer_loop(stats_producer, running);
-        // println!("Closing stats_producer");
-        // });
     }
 }

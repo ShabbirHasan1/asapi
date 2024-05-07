@@ -25,14 +25,8 @@ pub trait Runner<T> {
     fn run() -> T;
 }
 
-pub trait Sidenav {
-    fn show_sidenav(
-        &mut self,
-        rt: &Runtime,
-        ctx: &egui::Context,
-        app_state: &mut AppState,
-        i18n: &I18n,
-    );
+pub trait Sidenav<T> {
+    fn show_sidenav(&mut self, rt: &Runtime, ctx: &egui::Context, app_st: &mut T, i18n: &I18n);
 }
 
 pub trait Create {

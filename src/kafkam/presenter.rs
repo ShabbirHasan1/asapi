@@ -33,67 +33,6 @@ use std::time::Duration;
 use crate::common::traits::Create;
 use crate::kafkam::state::KafkaConsumerMessage;
 
-// =================================
-// Admin
-// =================================
-// Ahora mismo nada en uso, dejo porque a futuro seguro que necesitamos cuando
-// queramos implementar funcionalidades extra.
-
-// =================================
-// Productor
-// =================================
-// Podría (lo tenía de hecho) tenerlo en archivo propio, pero prefiero tenerlo
-// todo en los menos archivos mejor y con estructura similar: view|presenter|state
-pub struct CustomProducerContext {
-    pub stats: Arc<Mutex<Vec<Statistics>>>,
-    // para debug
-    pub print: AtomicBool
-}
-
-impl ClientContext for CustomProducerContext {
-    fn stats(&self, statistics: Statistics) {
-        // Realmente con Option<> puedo, pero por si acaso en algún momento quiero mantener histórico
-        // de estadísticas (no sé para qué, pero puede ser que venga bien, si no todo, sí al menos)
-        // ciertas cosas, como consumo de memoria, etc.
-        let mut stats = self.stats.lock().unwrap(); // Adquiere el lock una vez aquí
-        if stats.is_empty() {
-            stats.push(statistics);
-        } else {
-            stats[0] = statistics;
-        }
-        if self.print.load(std::sync::atomic::Ordering::SeqCst) {
-            // info!("Estadísticas recibidas (primera vez)");
-            // info!("====================================");
-            // info!("{:?}", stats[0]);
-
-            self.print.store(false, std::sync::atomic::Ordering::SeqCst);
-        }
-        // info!("#Estadísticas: {}", stats.len());
-    }
-}
-
-pub struct KafkaProducerPresenter {
-    pub client: FutureProducer<CustomProducerContext>,
-    pub stats: Arc<Mutex<Vec<Statistics>>>,
-}
-
-impl KafkaProducerPresenter {
-    pub fn new(brokers: &str) -> Self {
-        let stats = Arc::new(Mutex::new(Vec::with_capacity(1)));
-        let context = CustomProducerContext {
-            stats: stats.clone(),
-            print: AtomicBool::new(true)
-        };
-        let client = ClientConfig::new()
-            .set("bootstrap.servers", brokers)
-            .set("statistics.interval.ms", "1000")
-            .set("api.version.fallback.ms", "0") // por si corregía error con fetch_metadata, no lo ha conseguido
-            .create_with_context(context)
-            .expect("Producer creation failed");
-
-        Self { client, stats }
-    }
-}
 
 // =================================
 // Consumidor
@@ -155,7 +94,7 @@ impl KafkaConsumer {
     //   y (aunque viejo y API bastante cambiada)
     // https://github.com/fede1024/kafka-view/blob/master/examples/consumer_offsets_reader.rs
     pub fn create_async_consumer(brokers: &str, group_id: Option<&str>, auto_commit: bool) -> Self {
-        let consumer = if auto_commit && group_id.is_some() {
+        let consumer = if auto_commit && group_id.is_some(){
             ClientConfig::new()
                 .set("group.id", group_id.unwrap())
                 .set("bootstrap.servers", brokers)
@@ -197,6 +136,16 @@ impl KafkaConsumer {
             .subscribe(topics)
             .expect("Can't subscribe to specified topics");
 
+        // TODO: Esto está bien? `StreamConsumer` se supone que hace el poll periódico
+        // de forma automática.
+        //     https://github.com/fede1024/rust-rdkafka/blob/master/examples/asynchronous_processing.rs
+        // En el ejemplo del link de arriba no lo hace con loop, sino efectivamente crea una
+        // pipeline, lanza el loop de eventos de forma implícita y se olvida.
+        // [...] consumer.stream().try_for_each(|borrowed_message|
+        //
+        // En cambio en el siguiente
+        //     https://github.com/fede1024/rust-rdkafka/blob/master/examples/roundtrip.rs
+        // sí usa un loop.
         loop {
             println!("Waiting for message");
             match consumer.recv().await {

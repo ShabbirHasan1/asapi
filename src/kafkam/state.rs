@@ -30,6 +30,7 @@ pub enum KafkaMessage {
     // ConsumerMessage(KafkaMessageBody),
     ClusterMetadata((usize, Metadata, KafkaTopicsCount)),
     Error(KafkaError),
+    AskForMetadata(String),
 }
 
 #[derive(Eq, PartialEq, Debug, Default)]
@@ -68,6 +69,7 @@ pub struct KafkaLocalState {
     pub tmp_cluster_config: Cluster,
     pub current_view: KafkaPanel,
     pub current_cluster_idx: usize,
+    pub current_cluster_config: Option<Cluster>,
     pub current_cluster_metadata: Option<ClusterMetadata>,
     pub clusters_metadata_count: KafkaTopicsCount,
     pub is_first_update: bool,
@@ -86,6 +88,7 @@ impl Default for KafkaLocalState {
             tmp_cluster_config: Default::default(),
             current_view: KafkaPanel::default(),
             current_cluster_idx: usize::MAX,
+            current_cluster_config: Default::default(),
             current_cluster_metadata: Default::default(),
             clusters_metadata_count: Default::default(),
             is_first_update: true,
