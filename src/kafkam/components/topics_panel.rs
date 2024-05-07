@@ -15,8 +15,8 @@ use std::ops::RangeInclusive;
 use tokio::runtime::Runtime;
 use tokio::sync::mpsc::Sender;
 
-use crate::kafkam::admin as admin_presenter;
 use crate::kafkam::state::KafkaMessage;
+use crate::kafkam::{admin as admin_presenter, producer};
 use crate::{
     common::internationalization::I18n, components::widgets::ui_text_edit_singleline_hint,
     heading_strong, kafkam::view::KafkaView,
@@ -25,24 +25,92 @@ use crate::{
 impl KafkaView {
     pub fn topics_admin(&mut self, rt: &Runtime, ui: &mut egui::Ui, i18n: &I18n) {
         ui.horizontal(|ui| {
-            if ui.button(&i18n.kafka_create_topics).clicked() {
+            if ui.button(&i18n.kafka_create_topic).clicked() {
                 self.state.new_topic.show = true;
             }
             if self.state.new_topic.show {
-                self.show_create_topic_window(rt, ui, i18n);
+                self.create_topic_window(rt, ui, i18n);
             }
 
-            if ui.button(&i18n.kafka_delete_topics).clicked() {}
+            if ui.button(&i18n.kafka_delete_topic).clicked() {
+                self.state.delete_topic.show = true;
+            }
+            if self.state.delete_topic.show {
+                self.delete_topic_window(rt, ui, i18n);
+            }
 
-            if ui.button(&i18n.kafka_create_partitions).clicked() {}
+            if ui.button(&i18n.kafka_create_partition).clicked() {}
         });
 
         // --> Mostramos estadísticas <--
     }
     pub fn topics_stats(&self, ui: &mut egui::Ui, metadata: &Metadata, i18n: &I18n) {}
 
-    fn show_create_topic_window(&mut self, rt: &Runtime, ui: &mut egui::Ui, i18n: &I18n) {
-        egui::Window::new(&i18n.kafka_create_topics)
+    fn delete_topic_window(&mut self, rt: &Runtime, ui: &mut egui::Ui, i18n: &I18n) {
+        egui::Window::new(&i18n.kafka_delete_topic)
+            .collapsible(false)
+            .show(ui.ctx(), |ui| {
+                ui.horizontal(|ui| {
+                    egui::ComboBox::from_id_source("kafka_delete_topic")
+                        .selected_text(&self.state.delete_topic.selected_topic_name)
+                        .show_ui(ui, |ui| {
+                            self.state
+                                .current_cluster_metadata
+                                .as_ref()
+                                .unwrap()
+                                .topics()
+                                .iter()
+                                .map(|t| t.name().to_owned())
+                                .for_each(|k| {
+                                    // let k = t.name().to_owned(); // Es ~ a nivel de rendimiento y queda mejor con `map` que con este bind local.
+                                    ui.selectable_value(
+                                        &mut self.state.delete_topic.selected_topic_name,
+                                        k.clone(),
+                                        k,
+                                    );
+                                });
+                        });
+                    if ui.button(&i18n.kafka_cancel).clicked() {
+                        self.state.delete_topic.show = false;
+                    }
+                    if ui.button(&i18n.kafka_delete_topic).clicked() {
+                        self.state.delete_topic.show = false;
+                        let broker_url = self
+                            .state
+                            .current_cluster_config
+                            .as_ref()
+                            .map(|md| format!("{}:{}", md.host, md.port));
+                        let tx_cloned = self.state.tx.clone();
+                        let ctx = ui.ctx().clone();
+                        let name = self.state.delete_topic.selected_topic_name.clone();
+
+                        rt.spawn(async move {
+                            match broker_url {
+                                Some(url) => {
+                                    let result = admin_presenter::delete_topic(&url, &name).await;
+                                    match result {
+                                        Ok(_) => {
+                                            let _ = tx_cloned
+                                                .send(KafkaMessage::AskForMetadata(url))
+                                                .await;
+                                        }
+                                        Err(err) => {
+                                            let _ = tx_cloned.send(KafkaMessage::Error(err)).await;
+                                        }
+                                    }
+                                }
+                                None => todo!(),
+                            }
+
+                            ctx.request_repaint();
+                        });
+                    }
+                });
+            });
+    }
+
+    fn create_topic_window(&mut self, rt: &Runtime, ui: &mut egui::Ui, i18n: &I18n) {
+        egui::Window::new(&i18n.kafka_create_topic)
             .collapsible(false)
             .show(ui.ctx(), |ui| {
                 ui_text_edit_singleline_hint(
@@ -136,8 +204,10 @@ impl KafkaView {
                                     match result {
                                         Ok(_) => {
                                             // Si está ok, volvemos a pedir estadísticas de forma indirecta
-                                            let _ = tx_cloned.send(KafkaMessage::AskForMetadata(url)).await;
-                                        },
+                                            let _ = tx_cloned
+                                                .send(KafkaMessage::AskForMetadata(url))
+                                                .await;
+                                        }
                                         Err(err) => {
                                             let _ = tx_cloned.send(KafkaMessage::Error(err)).await;
                                         }

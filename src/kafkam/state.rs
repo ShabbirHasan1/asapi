@@ -65,6 +65,12 @@ pub struct KafkaNewTopic<'a> {
     pub parsed_config: Vec<(&'a str, &'a str)>,
 }
 
+#[derive(Default)]
+pub struct KafkaDeleteTopic {
+    pub show: bool,
+    pub selected_topic_name: String,
+}
+
 pub struct KafkaLocalState {
     pub tmp_cluster_config: Cluster,
     pub current_view: KafkaPanel,
@@ -77,6 +83,7 @@ pub struct KafkaLocalState {
     pub rx: tokio::sync::mpsc::Receiver<KafkaMessage>,
     pub selected_cluster_to_edit_idx: Option<usize>,
     pub new_topic: KafkaNewTopic<'static>,
+    pub delete_topic: KafkaDeleteTopic,
     pub last_error: Option<KafkaError>,
 }
 
@@ -94,6 +101,7 @@ impl Default for KafkaLocalState {
             is_first_update: true,
             selected_cluster_to_edit_idx: Default::default(),
             new_topic: Default::default(),
+            delete_topic: Default::default(),
             last_error: None,
             tx,
             rx,

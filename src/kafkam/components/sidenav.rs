@@ -196,16 +196,17 @@ impl KafkaView {
                     if ui.button(&i18n.kafka_btn_connect).clicked() {
                         self.state.current_cluster_idx = idx;
                         let broker_url = format!("{}:{}", cluster.host, cluster.port);
+                        let ctx = ui.ctx().clone();
 
                         match self.stats_presenter {
                             // (ref presenter) aquí no lo quiero para nada porque es productor y por lo tanto no necesita `unsubscribe`.
                             Some(_) => {
                                 self.stats_presenter = None;
-                                let producer = KafkaStatsProducerPresenter::new(&broker_url);
+                                let producer = KafkaStatsProducerPresenter::new(ctx, &broker_url);
                                 self.stats_presenter = Some(producer);
                             }
                             None => {
-                                let producer = KafkaStatsProducerPresenter::new(&broker_url);
+                                let producer = KafkaStatsProducerPresenter::new(ctx, &broker_url);
                                 self.stats_presenter = Some(producer);
                             }
                         }

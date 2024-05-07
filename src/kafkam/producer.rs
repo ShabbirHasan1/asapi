@@ -7,6 +7,7 @@
 // -------------------------------------------------------------------------
 
 use eframe::egui::Context;
+use log::info;
 use rdkafka::client::Client;
 use rdkafka::client::ClientContext;
 use rdkafka::config::ClientConfig;
@@ -59,7 +60,6 @@ pub fn get_cluster_metadata(
     });
 }
 
-
 /// Recuperamos datos de cluster y registramos callback para recibir estadísticas
 pub fn get_cluster_metadata_and_stats(
     rt: &Runtime,
@@ -72,7 +72,8 @@ pub fn get_cluster_metadata_and_stats(
     let ctx_cloned = ctx.clone();
 
     rt.spawn(async move {
-        let producer = KafkaStatsProducerPresenter::new(&broker_url);
+        let ctx_cloned_again = ctx_cloned.clone();
+        let producer = KafkaStatsProducerPresenter::new(ctx_cloned, &broker_url);
         let client = producer.client.client();
         let metadata = client.fetch_metadata(None, Duration::from_secs(20));
 
@@ -82,14 +83,14 @@ pub fn get_cluster_metadata_and_stats(
                 let _ = tx_cloned
                     .send(KafkaMessage::ClusterMetadata((idx, data, count)))
                     .await;
+                ctx_cloned_again.request_repaint();
             }
             Err(error) => {
                 log::error!("Error: {error:?}");
                 let _ = tx_cloned.send(KafkaMessage::Error(error)).await;
+                ctx_cloned_again.request_repaint();
             }
         }
-
-        ctx_cloned.request_repaint();
     });
 }
 
@@ -98,10 +99,13 @@ pub fn get_cluster_metadata_and_stats(
 // =================================
 // Podría (lo tenía de hecho) tenerlo en archivo propio, pero prefiero tenerlo
 // todo en los menos archivos mejor y con estructura similar: view|presenter|state
+use eframe::egui;
+
 pub struct StatsProducerContext {
     pub stats: Arc<Mutex<Vec<Statistics>>>,
     // para debug
     pub print: AtomicBool,
+    pub ctx: egui::Context,
 }
 
 impl ClientContext for StatsProducerContext {
@@ -118,6 +122,7 @@ impl ClientContext for StatsProducerContext {
         if self.print.load(std::sync::atomic::Ordering::SeqCst) {
             self.print.store(false, std::sync::atomic::Ordering::SeqCst);
         }
+        self.ctx.request_repaint();
     }
 }
 
@@ -127,11 +132,12 @@ pub struct KafkaStatsProducerPresenter {
 }
 
 impl KafkaStatsProducerPresenter {
-    pub fn new(brokers: &str) -> Self {
+    pub fn new(ctx: egui::Context, brokers: &str) -> Self {
         let stats = Arc::new(Mutex::new(Vec::with_capacity(1)));
         let context = StatsProducerContext {
             stats: stats.clone(),
             print: AtomicBool::new(true),
+            ctx
         };
         let client = ClientConfig::new()
             .set("bootstrap.servers", brokers)
@@ -144,7 +150,10 @@ impl KafkaStatsProducerPresenter {
     }
 }
 
-fn get_n_messages_per_topic<T: ClientContext>(data: &Metadata, client: &Client<T>) -> HashMap<String, i64> {
+fn get_n_messages_per_topic<T: ClientContext>(
+    data: &Metadata,
+    client: &Client<T>,
+) -> HashMap<String, i64> {
     let mut count: HashMap<String, i64> = HashMap::default();
     for topic in data.topics() {
         let mut message_count: i64 = 0;
