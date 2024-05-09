@@ -6,13 +6,17 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
-use std::fs;
-use std::io::{Error as IOError, ErrorKind};
-use tokio::fs as async_fs;
-use std::fs::OpenOptions;
+use std::fs::{self, OpenOptions};
 use std::io::Write;
+use std::io::{Error as IOError, ErrorKind};
+use std::path::{Path, PathBuf};
+use tokio::fs as async_fs;
 
 use crate::app_state::AppState;
+
+pub fn file_exists(fp: &str) -> bool {
+    Path::exists(Path::new(fp))
+}
 
 pub async fn async_save_state(state: &AppState, file_name: &str) -> Result<(), IOError> {
     let json_string = serde_json::to_string_pretty(state).map_err(|err| {
@@ -48,13 +52,25 @@ pub fn load_state(file_name: &str) -> Result<AppState, IOError> {
     Ok(state)
 }
 
-
 pub fn append_to_file(file_path: &str, text: &str) -> std::io::Result<()> {
     let mut file = OpenOptions::new()
-        .write(true)
+        // .write(true) // Innecesario por `append`.
         .append(true)
         .open(file_path)?;
 
     writeln!(file, "{}", text)?;
     Ok(())
+}
+
+pub fn list_files_in_directory(dir: &Path) -> Vec<PathBuf> {
+    fs::read_dir(dir).map_or_else(
+        |_| vec![],
+        |entries| {
+            entries
+                .flatten()
+                .filter(|p| p.path().is_file())
+                .map(|p| p.path())
+                .collect::<Vec<PathBuf>>()
+        },
+    )
 }
