@@ -6,9 +6,7 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
-use std::collections::HashSet;
-
-use crate::{error, info};
+use log::error;
 use redis::streams::{StreamReadOptions, StreamReadReply};
 use redis::JsonCommands;
 use redis::{self, Client, Commands, Connection, RedisError, RedisResult, Value};

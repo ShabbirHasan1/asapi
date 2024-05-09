@@ -24,8 +24,6 @@ mod sqlitem;
 mod sqlx_common;
 
 use common::internationalization::language_selector;
-use common::internationalization::language_selector;
-use components::top_bar::AppTopBar;
 use components::top_bar::AppTopBar;
 use eframe::egui;
 use kafkam::view::KafkaView;
@@ -143,9 +141,10 @@ impl eframe::App for Asapi {
             ViewType::Mongo => self
                 .mongo
                 .update(ctx, _frame, &mut self.app_state, &self.rt, &i18n),
-            ViewType::Kafka => self
-                .kafka
-                .update(ctx, _frame, &mut self.app_state, &self.rt, &i18n),
+            ViewType::Kafka => {
+                self.kafka
+                    .update(ctx, _frame, &mut self.app_state.kafka, &self.rt, &i18n)
+            }
             ViewType::Redis => {
                 self.redis
                     .update(ctx, _frame, &mut self.app_state.redis, &self.rt, &i18n)

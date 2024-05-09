@@ -8,8 +8,6 @@
 
 use redis::{self, Commands, Msg as PubSubMsg, RedisError, RedisResult};
 
-use crate::info;
-
 use super::create_conn_with_default;
 
 pub fn publish_to_channel(
@@ -39,15 +37,12 @@ pub fn subscribe_to_channel_std_thread(
             let msg = pubsub.get_message()?;
             let payload: String = msg.get_payload()?;
 
-            match payload.as_ref() {
-                "#break#" => {
-                    info!(
-                        ">>> Finishing subscription to channel {} <<<",
-                        msg.get_channel_name()
-                    );
-                    break;
-                } //ControlFlow::Break(()),
-                _ => (), // ControlFlow::Continue
+            if payload.as_str() == "#break#" {
+                log::info!(
+                    ">>> Finishing subscription to channel {} <<<",
+                    msg.get_channel_name()
+                );
+                break;
             }
 
             let _ = tx_cloned.send(msg);

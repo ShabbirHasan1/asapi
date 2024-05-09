@@ -8,15 +8,15 @@
 
 use eframe::egui;
 use log::info;
-use rdkafka::admin::{NewTopic, TopicReplication};
+
 use rdkafka::error::KafkaError;
 use rdkafka::metadata::Metadata;
 use std::ops::RangeInclusive;
 use tokio::runtime::Runtime;
-use tokio::sync::mpsc::Sender;
+
 
 use crate::kafkam::state::KafkaMessage;
-use crate::kafkam::{admin as admin_presenter, producer};
+use crate::kafkam::{admin as admin_presenter};
 use crate::{
     common::internationalization::I18n, components::widgets::ui_text_edit_singleline_hint,
     heading_strong, kafkam::view::KafkaView,
@@ -42,7 +42,7 @@ impl KafkaView {
 
         // --> Mostramos estadísticas <--
     }
-    pub fn topics_stats(&self, ui: &mut egui::Ui, metadata: &Metadata, i18n: &I18n) {}
+    pub fn topics_stats(&self, _ui: &mut egui::Ui, _metadata: &Metadata, _i18n: &I18n) {}
 
     fn delete_topic_window(&mut self, rt: &Runtime, ui: &mut egui::Ui, i18n: &I18n) {
         egui::Window::new(&i18n.kafka_delete_topic)
@@ -195,7 +195,11 @@ impl KafkaView {
                                                 .await;
                                         }
                                         Err(err) => {
-                                            let _ = tx_cloned.send(KafkaMessage::Error(err)).await;
+                                            let _ = tx_cloned
+                                                .send(KafkaMessage::Error(KafkaError::AdminOp(
+                                                    err.1,
+                                                )))
+                                                .await;
                                         }
                                     }
                                     ctx.request_repaint();

@@ -14,7 +14,7 @@ use tokio::runtime::Runtime;
 use crate::{
     kafkam::{
         presenter::KafkaConsumer,
-        state::{Cluster, KafkaConsumerMessage, KafkaPanel},
+        state::{Cluster, KafkaConsumerMessage},
         view::KafkaView,
     },
     qk_error,

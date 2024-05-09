@@ -11,7 +11,7 @@ use serde_json::{Map, Value};
 
 use crate::info;
 
-pub fn json_value_to_document(value: &Value) -> Document {
+pub fn _json_value_to_document(value: &Value) -> Document {
     match value {
         Value::Object(obj) => {
             let doc: Document = obj
@@ -157,11 +157,11 @@ fn adjust_object_id(value: &Value) -> Value {
     }
 }
 
-pub fn pprint_docs(docs: &[Document]) {
+pub fn _pprint_docs(docs: &[Document]) {
     info!("{}", doc_to_pretty_string(docs));
 }
 
-pub fn pprint_doc(doc: &Document) {
+pub fn _pprint_doc(doc: &Document) {
     let json: Value = doc_to_serde_value(doc);
     info!("{}", serde_json::to_string_pretty(&json).unwrap());
 }

@@ -16,7 +16,6 @@ use std::time::SystemTime;
 use crate::{
     common::internationalization::I18n,
     components::result_panel::ui_response_panel,
-    error,
     redism::{
         connection::RedisMenu,
         presenters::{
@@ -24,7 +23,7 @@ use crate::{
             stream::{self, blocking_xread, blocking_xread_group, read_stream_id},
             RedisResponse,
         },
-        state::{RedisStreamReaderStorage, RedisStreamState},
+        state::RedisStreamState,
         utils::value_map_to_string_btree_map,
         view::RedisView,
     },
@@ -99,8 +98,7 @@ impl RedisView {
             }
         }
         egui::CollapsingHeader::new(
-            &i18n
-                .redis_stream_reader_commands_header
+            i18n.redis_stream_reader_commands_header
                 .to_ascii_uppercase(),
         )
         .show_background(true)
@@ -265,7 +263,7 @@ impl RedisView {
     }
 
     fn show_regular_streams_commands(&mut self, ui: &mut egui::Ui, i18n: &I18n) {
-        egui::CollapsingHeader::new(&i18n.redis_commands_header.to_ascii_uppercase())
+        egui::CollapsingHeader::new(i18n.redis_commands_header.to_ascii_uppercase())
             .show_background(true)
             .default_open(true)
             .show(ui, |ui| {
@@ -748,10 +746,10 @@ impl RedisView {
                             &self.state.current_connection.port,
                             stream_name,
                         ) {
-                            Ok(s) => {
+                            Ok(_s) => {
                                 self.state.must_scan = true;
                             }
-                            Err(e) => error!("{:?}", e),
+                            Err(e) => log::error!("{:?}", e),
                         }
                         ui.close_menu();
                     }

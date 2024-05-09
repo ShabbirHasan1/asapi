@@ -185,14 +185,11 @@ impl MySqlView {
             let data_len = self.state.sql.current_table_rows.len();
 
             // --> Ejecutamos la consulta introducida por el usuario <--
+            let hover_menu = |ui: &mut egui::Ui| {
+                ui.label("Lanzar con \u{27a1} + \u{2ba8}");
+            };
             ui.horizontal(|ui| {
-                if ui
-                    .button("\u{25b6}")
-                    .on_hover_ui(|ui| {
-                        ui.label("Lanzar con \u{27a1} + \u{2ba8}");
-                    })
-                    .clicked()
-                {
+                if ui.button("\u{25b6}").on_hover_ui(hover_menu).clicked() {
                     self.run_statement(
                         ctx,
                         rt,

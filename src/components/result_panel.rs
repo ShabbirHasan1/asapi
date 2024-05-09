@@ -6,7 +6,7 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
-use std::error::Error;
+
 
 use eframe::{
     egui::{self, RichText},

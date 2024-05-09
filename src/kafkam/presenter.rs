@@ -6,31 +6,31 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
-use eframe::epaint::stats;
+
 // Para poder conectarme a señales del sistema.
 // use signal_hook::consts::signal::*;
 // use signal_hook::flag;
 use log::info;
-use rdkafka::admin::AdminClient;
+
 use rdkafka::client::ClientContext;
-use rdkafka::client::DefaultClientContext;
+
 use rdkafka::config::{ClientConfig, RDKafkaLogLevel};
 use rdkafka::consumer::stream_consumer::StreamConsumer;
-use rdkafka::consumer::{BaseConsumer, Consumer, ConsumerContext, Rebalance};
+use rdkafka::consumer::{Consumer, ConsumerContext, Rebalance};
 use rdkafka::error::KafkaResult;
 use rdkafka::message::{Headers, Message};
-use rdkafka::producer::BaseProducer;
-use rdkafka::producer::FutureProducer;
-use rdkafka::producer::ProducerContext;
+
+
+
 use rdkafka::statistics::Statistics;
 use rdkafka::topic_partition_list::TopicPartitionList;
 use rdkafka::util::Timeout;
-use std::cell::Cell;
-use std::sync::atomic::AtomicBool;
+
+
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
-use crate::common::traits::Create;
+
 use crate::kafkam::state::KafkaConsumerMessage;
 
 // =================================
@@ -42,22 +42,22 @@ use crate::kafkam::state::KafkaConsumerMessage;
 pub struct CustomConsumerContext;
 
 impl ClientContext for CustomConsumerContext {
-    fn stats(&self, statistics: Statistics) {
+    fn stats(&self, _statistics: Statistics) {
         info!("New Stats");
     }
 }
 
 impl ConsumerContext for CustomConsumerContext {
-    fn pre_rebalance(&self, rebalance: &Rebalance) {
+    fn pre_rebalance(&self, _rebalance: &Rebalance) {
 
         // println!("Pre rebalance {:?}", rebalance);
     }
 
-    fn post_rebalance(&self, rebalance: &Rebalance) {
+    fn post_rebalance(&self, _rebalance: &Rebalance) {
         // println!("Post rebalance {:?}", rebalance);
     }
 
-    fn commit_callback(&self, result: KafkaResult<()>, _offsets: &TopicPartitionList) {
+    fn commit_callback(&self, _result: KafkaResult<()>, _offsets: &TopicPartitionList) {
         // println!("Committing offsets: {:?}", result);
     }
 }

@@ -7,7 +7,7 @@
 // -------------------------------------------------------------------------
 
 use eframe::egui::Context;
-use log::info;
+
 use rdkafka::client::Client;
 use rdkafka::client::ClientContext;
 use rdkafka::config::ClientConfig;
@@ -16,7 +16,7 @@ use rdkafka::producer::BaseProducer;
 use rdkafka::producer::FutureProducer;
 use rdkafka::producer::Producer;
 use rdkafka::statistics::Statistics;
-use std::cell::Cell;
+
 use std::collections::HashMap;
 use std::sync::atomic::AtomicBool;
 use std::sync::{Arc, Mutex};

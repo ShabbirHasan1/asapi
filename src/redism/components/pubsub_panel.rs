@@ -14,7 +14,6 @@ use crate::{
     common::internationalization::I18n,
     info,
     redism::{
-        connection::scan,
         presenters::pubsub::{publish_to_channel, subscribe_to_channel_std_thread},
         view::RedisView,
     },

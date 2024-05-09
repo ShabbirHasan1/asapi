@@ -7,13 +7,13 @@
 // -------------------------------------------------------------------------
 use eframe::egui;
 use egui_extras::{Size, StripBuilder};
-use redis::{Connection, RedisResult};
+use log::error;
+use redis::Connection;
 use std::collections::BTreeMap;
 
 use crate::{
     common::internationalization::I18n,
     components::{result_panel::ui_response_panel, widgets::ui_text_edit_singleline_hint},
-    error,
     redism::{
         connection::RedisMenu,
         presenters::{delete_key, run_cmd, string::StringPresenter, RedisResponse},
@@ -43,7 +43,7 @@ use crate::{
 impl RedisView {
     pub fn show_strings(&mut self, ui: &mut egui::Ui, i18n: &I18n) {
         if self.state.selected_menu == RedisMenu::String {
-            egui::CollapsingHeader::new(&i18n.redis_commands_header.to_ascii_uppercase())
+            egui::CollapsingHeader::new(i18n.redis_commands_header.to_ascii_uppercase())
                 .show_background(true)
                 .default_open(true)
                 .show(ui, |ui| {

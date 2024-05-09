@@ -13,8 +13,6 @@ use tokio::runtime::Runtime;
 use crate::common::fs::append_to_file;
 use crate::common::internationalization::I18n;
 use crate::components::result_panel::ui_response_panel;
-use crate::error;
-use crate::info;
 
 use super::connection::{self, RedisMenu};
 use super::state::RedisAppState;
@@ -79,7 +77,7 @@ impl RedisView {
                         || send_command_button.clicked()
                     {
                         command_input.request_focus();
-                        info!("{}", self.state.current_command);
+                        log::info!("{}", self.state.current_command);
 
                         self.state
                             .cmd_history
@@ -100,14 +98,14 @@ impl RedisView {
                             }
                             // TODO: Change color
                             Err(e) => {
-                                info!("Error: {:?}", e);
+                                log::info!("Error: {:?}", e);
                                 self.state.last_result = Some(Err(e));
                             }
                         }
                         if let Err(e) =
                             append_to_file(file_path, &self.state.current_command.to_string())
                         {
-                            error!("Error al escribir en el archivo: {}", e);
+                            log::error!("Error al escribir en el archivo: {}", e);
                         }
                         self.state.current_command.clear();
                         self.state.current_history_index = self.state.cmd_history.len();

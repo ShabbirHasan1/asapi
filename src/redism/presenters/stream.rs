@@ -6,13 +6,13 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
+use log::error;
 use redis::streams::{StreamId, StreamReadOptions, StreamReadReply};
 use redis::{self, Commands, Connection, RedisResult, Value};
 use std::collections::{BTreeMap, HashMap};
 use std::time::SystemTime;
 
 use crate::common::traits::{Show, Tree};
-use crate::error;
 use crate::redism::connection::{create_conn, create_redis_connection};
 use crate::redism::parser::redis_value_to_string;
 use crate::redism::state::{RedisConnectionDefinition, RedisStreamReaderStorage, RedisStreamState};
@@ -309,14 +309,12 @@ pub fn blocking_xread_group(
                 .block(block)
                 .group(&st.xreadgroup_group, &st.xreadgroup_consumer)
         }
+    } else if noack {
+        StreamReadOptions::default()
+            .group(&st.xreadgroup_group, &st.xreadgroup_consumer)
+            .noack()
     } else {
-        if noack {
-            StreamReadOptions::default()
-                .group(&st.xreadgroup_group, &st.xreadgroup_consumer)
-                .noack()
-        } else {
-            StreamReadOptions::default().group(&st.xreadgroup_group, &st.xreadgroup_consumer)
-        }
+        StreamReadOptions::default().group(&st.xreadgroup_group, &st.xreadgroup_consumer)
     };
 
     xread_options(conn_def, keys, ids, ms, tx, opts);
@@ -377,11 +375,13 @@ fn xread_options(
     });
 }
 
-pub fn xread(
+type StreamsMap = HashMap<String, HashMap<String, BTreeMap<String, String>>>;
+
+pub fn _xread(
     conn_def: &RedisConnectionDefinition,
     st: &RedisStreamState,
-) -> Result<HashMap<String, HashMap<String, BTreeMap<String, String>>>, String> {
-    let mut streams: HashMap<String, HashMap<String, BTreeMap<String, String>>> = HashMap::new();
+) -> Result<StreamsMap, String> {
+    let mut streams: StreamsMap = HashMap::new();
     create_redis_connection(conn_def).map_or_else(
         |err| {
             Err(format!(
@@ -482,9 +482,9 @@ impl Show for StreamReadReply {
     }
 }
 
-pub fn xread_group(
+pub fn _xread_group(
     conn: &mut Connection,
-    streams: &mut HashMap<String, Vec<String>>,
+    _streams: &mut HashMap<String, Vec<String>>,
     st: &RedisStreamState,
 ) -> RedisResponse {
     read_operation(

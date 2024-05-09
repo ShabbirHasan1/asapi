@@ -7,9 +7,8 @@
 // -------------------------------------------------------------------------
 
 use eframe::egui;
+use std::collections::HashMap;
 use tokio::runtime::Runtime;
-
-use crate::app_state::AppState;
 
 use super::internationalization::I18n;
 

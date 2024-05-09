@@ -14,7 +14,6 @@ use redis::Connection;
 use crate::{
     common::internationalization::I18n,
     components::{result_panel::ui_response_panel, widgets::ui_text_edit_singleline_hint},
-    error, info,
     redism::{
         connection::RedisMenu,
         presenters::{
@@ -29,7 +28,7 @@ use crate::{
 impl RedisView {
     pub fn show_json(&mut self, ui: &mut egui::Ui, i18n: &I18n) {
         if self.state.selected_menu == RedisMenu::Json {
-            egui::CollapsingHeader::new(&i18n.redis_commands_header.to_ascii_uppercase())
+            egui::CollapsingHeader::new(i18n.redis_commands_header.to_ascii_uppercase())
                 .show_background(true)
                 .default_open(true)
                 .show(ui, |ui| {
@@ -913,9 +912,9 @@ impl RedisView {
                                 ) {
                                     Ok(s) => {
                                         self.state.must_scan = true;
-                                        info!("{:?}", s);
+                                        log::info!("{:?}", s);
                                     }
-                                    Err(e) => error!("{:?}", e),
+                                    Err(e) => log::error!("{:?}", e),
                                 }
                                 ui.close_menu();
                             }
