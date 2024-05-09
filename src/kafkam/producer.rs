@@ -16,6 +16,7 @@ use rdkafka::producer::BaseProducer;
 use rdkafka::producer::FutureProducer;
 use rdkafka::producer::Producer;
 use rdkafka::statistics::Statistics;
+use std::cell::Cell;
 use std::collections::HashMap;
 use std::sync::atomic::AtomicBool;
 use std::sync::{Arc, Mutex};
@@ -99,10 +100,34 @@ pub fn get_cluster_metadata_and_stats(
 // =================================
 // Podría (lo tenía de hecho) tenerlo en archivo propio, pero prefiero tenerlo
 // todo en los menos archivos mejor y con estructura similar: view|presenter|state
+use chrono::{Local, TimeZone, Timelike};
 use eframe::egui;
 
+fn get_now() -> String {
+    let now = Local::now();
+    let time = Local.timestamp_opt(now.timestamp(), 0);
+
+    match time {
+        chrono::offset::LocalResult::Single(time) => {
+            let hour = time.hour();
+            let minute = time.minute();
+            let second = time.second();
+
+            format!("{:02}:{:02}:{:02}", hour, minute, second)
+        }
+        chrono::offset::LocalResult::Ambiguous(_earliest, latest) => {
+            let hour = latest.hour();
+            let minute = latest.minute();
+            let second = latest.second();
+
+            format!("{:02}:{:02}:{:02}", hour, minute, second)
+        }
+        chrono::offset::LocalResult::None => String::default(),
+    }
+}
+
 pub struct StatsProducerContext {
-    pub stats: Arc<Mutex<Vec<Statistics>>>,
+    pub stats: Arc<Mutex<Vec<(String, Statistics)>>>,
     // para debug
     pub print: AtomicBool,
     pub ctx: egui::Context,
@@ -115,9 +140,9 @@ impl ClientContext for StatsProducerContext {
         // ciertas cosas, como consumo de memoria, etc.
         let mut stats = self.stats.lock().unwrap(); // Adquiere el lock una vez aquí
         if stats.is_empty() {
-            stats.push(statistics);
+            stats.push((get_now(), statistics));
         } else {
-            stats[0] = statistics;
+            stats[0] = (get_now(), statistics);
         }
         if self.print.load(std::sync::atomic::Ordering::SeqCst) {
             self.print.store(false, std::sync::atomic::Ordering::SeqCst);
@@ -128,7 +153,7 @@ impl ClientContext for StatsProducerContext {
 
 pub struct KafkaStatsProducerPresenter {
     pub client: FutureProducer<StatsProducerContext>,
-    pub stats: Arc<Mutex<Vec<Statistics>>>,
+    pub stats: Arc<Mutex<Vec<(String, Statistics)>>>,
 }
 
 impl KafkaStatsProducerPresenter {
@@ -137,11 +162,11 @@ impl KafkaStatsProducerPresenter {
         let context = StatsProducerContext {
             stats: stats.clone(),
             print: AtomicBool::new(true),
-            ctx
+            ctx,
         };
         let client = ClientConfig::new()
             .set("bootstrap.servers", brokers)
-            .set("statistics.interval.ms", "1000")
+            .set("statistics.interval.ms", "10000") // 10s
             .set("api.version.fallback.ms", "0") // por si corregía error con fetch_metadata, no lo ha conseguido
             .create_with_context(context)
             .expect("Producer creation failed");

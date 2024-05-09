@@ -129,8 +129,8 @@ impl KafkaView {
                 if let Ok(arr) = self.stats_presenter.as_ref().unwrap().stats.lock() {
                     arr.first().map_or_else(
                         || (),
-                        |fst| {
-                            show_stats(ui, fst);
+                        |(time, stats)| {
+                            show_stats(ui, time, stats, i18n);
                         },
                     );
                 }

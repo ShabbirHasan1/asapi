@@ -64,13 +64,13 @@ pub struct I18n {
     pub kafka_replication_factor: String,
     pub kafka_create_topic: String,
     pub kafka_delete_topic: String,
-    pub kafka_create_partition: String,
     pub kafka_new_topic_name_hint: String,
     pub kafka_new_topic_config: String,
     pub kafka_new_topic_n_partitions_hint: String,
     pub kafka_partitions_info: String,
     pub kafka_topics_info: String,
     pub kafka_topic_replication: String,
+    pub kafka_last_update: String,
 
     // Mongo
     pub mongo_connection_host: String,
@@ -217,11 +217,11 @@ pub fn language_selector(i: I18nOptions) -> I18n {
             kafka_partitions_info: String::from("Información de Particiones"),
             kafka_topics_info: String::from("Resumen"),
             kafka_delete_topic: String::from("Borrar Topic"),
-            kafka_create_partition: String::from("Crear Particiones"),
             kafka_new_topic_name_hint: String::from("Nombre"),
             kafka_new_topic_config: String::from("Configuración"),
             kafka_new_topic_n_partitions_hint: String::from("Particiones"),
             kafka_topic_replication: String::from("Configuración de Replicación para un nuevo Topic"),
+            kafka_last_update: String::from("Última Actualización"),
 
             // Mongo
             mongo_connection_host: "Host".to_owned(),
@@ -366,11 +366,11 @@ pub fn language_selector(i: I18nOptions) -> I18n {
             kafka_partitions_info: String::from("Partitions Information"),
             kafka_topics_info: String::from("Topic Info"),
             kafka_delete_topic: String::from("Delete Topic"),
-            kafka_create_partition: String::from("Create Partitions"),
             kafka_new_topic_name_hint: String::from("Name"),
             kafka_new_topic_config: String::from("Configuration"),
             kafka_new_topic_n_partitions_hint: String::from("Partitions"),
             kafka_topic_replication: String::from("Replication configuration for a new topic"),
+            kafka_last_update: String::from("Last Update"),
 
             // Mongo
             mongo_connection_host: "Host".to_owned(),

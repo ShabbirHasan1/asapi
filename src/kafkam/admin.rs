@@ -46,7 +46,7 @@ pub async fn create_topic(
     num_partitions: i32,
     replication: i32,
     config: Vec<(String, String)>,
-) -> Result<Result<String, (String, RDKafkaErrorCode)>, KafkaError> {
+) -> Result<String, (String, RDKafkaErrorCode)> {
     let admin: AdminClient<DefaultClientContext> = ClientConfig::new()
         .set("bootstrap.servers", broker_url)
         .create()
@@ -64,19 +64,19 @@ pub async fn create_topic(
     };
     let result = admin.create_topics([&topic], &opts).await;
 
+    log::info!("{result:?}");
     match result {
         Ok(v) => {
-            // Sólo creamos un topic.
-            if v.is_empty() {
-                Err(KafkaError::AdminOp(RDKafkaErrorCode::Fail))
-            } else {
-                Ok(v.first().unwrap().to_owned())
+            // Sólo creamos un topic luego solo necesitamos `first`.
+            match v.first() {
+                Some(fst) => fst.to_owned(),
+                None => Err(("Topic no se creó".to_string(), RDKafkaErrorCode::Fail)),
             }
         }
         Err(err) => {
             log::error!("{err:?}");
-            Err(err)
-        },
+            Err(("Topic no se creó".to_string(), RDKafkaErrorCode::Fail))
+        }
     }
 }
 
@@ -103,6 +103,7 @@ pub async fn delete_topic(
     }
 }
 
+// TODO: No en uso, no sé muy bien qué hacer con ella
 pub async fn delete_groups(
     broker_url: &str,
     group: &str,
@@ -126,10 +127,11 @@ pub async fn delete_groups(
     }
 }
 
+// TODO: No en uso, posiblmente nunca lo acabe usando.
 pub async fn create_partition(
     broker_url: &str,
     name: &str,
-    partition_count: usize
+    partition_count: usize,
 ) -> Result<Result<String, (String, RDKafkaErrorCode)>, KafkaError> {
     let admin: AdminClient<DefaultClientContext> = ClientConfig::new()
         .set("bootstrap.servers", broker_url)
@@ -139,7 +141,7 @@ pub async fn create_partition(
     let new_partition = NewPartitions {
         topic_name: name,
         new_partition_count: partition_count,
-        assignment: None
+        assignment: None,
     };
     let result = admin.create_partitions(&[new_partition], &opts).await;
 

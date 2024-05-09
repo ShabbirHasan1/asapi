@@ -6,16 +6,16 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
-use std::collections::HashSet;
-
 use eframe::egui;
-use egui_extras::{Size, StripBuilder};
-use log::info;
 use rdkafka::{statistics::Window, Statistics};
 
-use crate::{ui_title_and_value_grid_row, ui_title_and_value_grid_row_with_hint};
+use crate::{
+    common::internationalization::I18n, ui_title_and_value_grid_row,
+    ui_title_and_value_grid_row_with_hint,
+};
 
-pub fn show_stats(ui: &mut egui::Ui, stats: &Statistics) {
+pub fn show_stats(ui: &mut egui::Ui, last_update: &String, stats: &Statistics, i18n: &I18n) {
+    ui.label(format!("{}: {last_update}", &i18n.kafka_last_update));
     egui::ScrollArea::horizontal().show(ui, |ui| {
         egui::Grid::new("stats").num_columns(2).show(ui, |ui| {
             ui_title_and_value_grid_row!(ui, "Name", &stats.name);

@@ -38,8 +38,6 @@ impl KafkaView {
             if self.state.delete_topic.show {
                 self.delete_topic_window(rt, ui, i18n);
             }
-
-            if ui.button(&i18n.kafka_create_partition).clicked() {}
         });
 
         // --> Mostramos estadísticas <--
@@ -160,23 +158,11 @@ impl KafkaView {
                             })
                             .collect();
 
-                        // TODO: Aquí estoy usando una dirección del primer broker que salga.
-                        // Lo mejor es acceder a `app_state.brokers` y coger el que sea que
-                        // esté seleccionado actualmente, o mejor aún, guardar también la
-                        // actual configuración seleccionada.
                         let broker_url = self
                             .state
                             .current_cluster_config
                             .as_ref()
                             .map(|md| format!("{}:{}", md.host, md.port));
-                        // self.state
-                        // .current_cluster_metadata
-                        // .as_ref()
-                        // .and_then(|cls| {
-                        // cls.brokers()
-                        // .first()
-                        // .map(|md| format!("{}:{}", md.host(), md.port()))
-                        // });
 
                         match broker_url {
                             Some(url) => {
