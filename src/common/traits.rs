@@ -6,7 +6,12 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
-use std::collections::HashMap;
+use eframe::egui;
+use tokio::runtime::Runtime;
+
+use crate::app_state::AppState;
+
+use super::internationalization::I18n;
 
 pub trait ShowVec {
     fn to_string_vec(&self) -> Vec<String>;
@@ -28,4 +33,12 @@ pub trait Runner<T> {
 // de una definición de una conexión.
 pub trait ToUrl {
     fn to_url(&self) -> String;
+}
+
+pub trait Sidenav<T> {
+    fn show_sidenav(&mut self, rt: &Runtime, ctx: &egui::Context, app_st: &mut T, i18n: &I18n);
+}
+
+pub trait Create {
+    fn create(config: &str) -> Self;
 }

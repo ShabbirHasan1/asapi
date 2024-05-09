@@ -30,13 +30,26 @@ macro_rules! ui_button_w100 {
     }};
 }
 
+#[macro_export]
+macro_rules! heading_strong {
+    ($ui:expr, $text:expr) => {{
+        $ui.label(egui::RichText::new($text).heading().strong())
+    }};
+}
+#[macro_export]
+macro_rules! ui_text_edit_singleline_hint {
+    ($ui:expr, $hint:expr, $var:expr) => {{
+        $ui.add(egui::TextEdit::singleline(&mut $var).hint_text(&hint));
+    }};
+}
+
 // -->> Estas dos no funcionan
 #[macro_export]
 macro_rules! ted_singleline_w100 {
     ($ui:expr, $var:expr, $arg:expr) => {{
         $ui.add_sized(
             egui::vec2(100.0, 20.0),
-            egui::TextEdit::singleline(&mut $var).hint_text($arg),
+            egui::TextEdit::singleline(&mut $var).hint_text(&$arg),
         )
     }};
 }
@@ -51,3 +64,23 @@ macro_rules! ted_singleline_w50 {
     }};
 }
 // <<--
+
+#[macro_export]
+macro_rules! ui_title_and_value_grid_row_with_hint {
+    ($ui:expr, $title:expr, $value:expr, $hint:expr) => {{
+        $ui.monospace($title);
+        $ui.label($value).on_hover_ui(|ui| {
+            ui.label($hint);
+        });
+        $ui.end_row();
+    }};
+}
+
+#[macro_export]
+macro_rules! ui_title_and_value_grid_row {
+    ($ui:expr, $title:expr, $value:expr) => {{
+        $ui.monospace($title);
+        $ui.label($value);
+        $ui.end_row();
+    }};
+}

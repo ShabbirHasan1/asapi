@@ -6,197 +6,32 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
+use eframe::epaint::stats;
 // Para poder conectarme a señales del sistema.
 // use signal_hook::consts::signal::*;
 // use signal_hook::flag;
+use log::info;
 use rdkafka::admin::AdminClient;
-use rdkafka::client::{Client, DefaultClientContext};
+use rdkafka::client::ClientContext;
+use rdkafka::client::DefaultClientContext;
 use rdkafka::config::{ClientConfig, RDKafkaLogLevel};
 use rdkafka::consumer::stream_consumer::StreamConsumer;
 use rdkafka::consumer::{BaseConsumer, Consumer, ConsumerContext, Rebalance};
 use rdkafka::error::KafkaResult;
 use rdkafka::message::{Headers, Message};
-use rdkafka::metadata::Metadata;
+use rdkafka::producer::BaseProducer;
 use rdkafka::producer::FutureProducer;
+use rdkafka::producer::ProducerContext;
 use rdkafka::statistics::Statistics;
 use rdkafka::topic_partition_list::TopicPartitionList;
-use rdkafka::ClientContext;
-use std::sync::atomic::{AtomicBool, Ordering};
+use rdkafka::util::Timeout;
+use std::cell::Cell;
+use std::sync::atomic::AtomicBool;
 use std::sync::{Arc, Mutex};
-use std::thread;
 use std::time::Duration;
 
-use crate::{error, info};
-
-// =================================
-// Dominio
-// =================================
-pub struct KafkaConsumerMessage {
-    pub key: String,
-    pub topic: String,
-    pub offset: String,
-    pub timestamp: String,
-    pub partition: String,
-    pub payload: String,
-}
-
-pub enum KafkaMessage {
-    Str(String),
-    // ConsumerMessage(KafkaMessageBody),
-    ClusterMetadata((usize, Metadata)),
-}
-
-// =================================
-// Genéricas, referidas a structs/trait comunes
-// =================================
-pub struct Kafka {}
-
-impl Kafka {
-    pub fn extract_cluster_metadata_from_client<T: ClientContext>(
-        client: &Client<T>,
-    ) -> Option<Metadata> {
-        match client.fetch_metadata(None, Duration::from_secs(20)) {
-            Ok(metadata) => Some(metadata), // topics_info(&metadata);
-            Err(err) => {
-                error!("{:?}", err);
-                None
-            }
-        }
-    }
-}
-
-// =================================
-// Admin
-// =================================
-// Ahora mismo nada en uso, dejo porque a futuro seguro que necesitamos cuando
-// queramos implementar funcionalidades extra.
-pub struct KafkaAdmin {}
-
-impl KafkaAdmin {
-    pub fn create(broker: &str) {
-        // let broker = "localhost:9095";
-        let client: AdminClient<DefaultClientContext> = ClientConfig::new()
-            // let client = ClientConfig::new()
-            .set("bootstrap.servers", broker)
-            .create()
-            .expect("Error al crear AdminClient");
-        let mut message_count = 0;
-
-        match client.inner().fetch_metadata(None, Duration::from_secs(20)) {
-            Ok(metadata) => {
-                info!("Cluster information:");
-                info!("  Broker count: {}", metadata.brokers().len());
-                info!("  Topics count: {}", metadata.topics().len());
-                info!("  Metadata broker name: {}", metadata.orig_broker_name());
-                info!("  Metadata broker id: {}\n", metadata.orig_broker_id());
-
-                info!("Brokers:");
-                for broker in metadata.brokers() {
-                    info!(
-                        "  Id: {}  Host: {}:{}  ",
-                        broker.id(),
-                        broker.host(),
-                        broker.port()
-                    );
-                }
-
-                info!("\nTopics:");
-                for topic in metadata.topics() {
-                    info!("  Topic: {}  Err: {:?}", topic.name(), topic.error());
-                    for partition in topic.partitions() {
-                        info!(
-                            "     Partition: {}  Leader: {}  Replicas: {:?}  ISR: {:?}  Err: {:?}",
-                            partition.id(),
-                            partition.leader(),
-                            partition.replicas(),
-                            partition.isr(),
-                            partition.error()
-                        );
-                        if true {
-                            // if fetch_offsets {
-                            let consumer: BaseConsumer = ClientConfig::new()
-                                .set("bootstrap.servers", "localhost:9095")
-                                .create()
-                                .expect("Consumer creation failed");
-                            let (low, high) = consumer
-                                .fetch_watermarks(
-                                    topic.name(),
-                                    partition.id(),
-                                    Duration::from_secs(1),
-                                )
-                                .unwrap_or((-1, -1));
-                            info!(
-                                "       Low watermark: {}  High watermark: {} (difference: {})",
-                                low,
-                                high,
-                                high - low
-                            );
-                            message_count += high - low;
-                        }
-                    }
-                    // if fetch_offsets {
-                    if true {
-                        info!("     Total message count: {}", message_count);
-                    }
-                }
-            }
-            Err(err) => info!("{:?}", err),
-        }
-    }
-}
-
-// =================================
-// Productor
-// =================================
-// Podría (lo tenía de hecho) tenerlo en archivo propio, pero prefiero tenerlo
-// todo en los menos archivos mejor y con estructura similar: view|presenter|state
-pub struct CustomProducerContext;
-
-impl ClientContext for CustomProducerContext {
-    fn stats(&self, statistics: Statistics) {
-        // Procesar las estadísticas aquí
-        info!("Received statistics: {:?}", statistics);
-    }
-}
-
-pub struct KafkaProducer {}
-
-impl KafkaProducer {
-    pub fn stats_listener(brokers: &str) -> FutureProducer<CustomProducerContext> {
-        ClientConfig::new()
-            .set("bootstrap.servers", brokers)
-            .set("statistics.interval.ms", "1000")
-            .create_with_context(CustomProducerContext)
-            .expect("Producer creation failed")
-    }
-
-    pub fn run_producer_loop(
-        producer: FutureProducer<CustomProducerContext>,
-        running: Arc<AtomicBool>,
-    ) {
-        while running.load(Ordering::Relaxed) {
-            // Aquí puedes realizar acciones con el productor, como enviar mensajes
-
-            // Poll para asegurar que las devoluciones de llamada se ejecuten
-            producer.poll(Duration::from_millis(100));
-
-            // Pausa para reducir el uso de CPU
-            thread::sleep(Duration::from_millis(100));
-        }
-    }
-}
-
-// fn main() {
-// let producer = create_stats_producer();
-
-// Configuración para manejo de señales
-// let running = Arc::new(AtomicBool::new(true));
-// flag::register_usize(SIGINT, Arc::clone(&running), 0).unwrap();
-
-// run_producer_loop(producer, running);
-
-// info!("Shutting down");
-// }
+use crate::common::traits::Create;
+use crate::kafkam::state::KafkaConsumerMessage;
 
 // =================================
 // Consumidor
@@ -204,92 +39,96 @@ impl KafkaProducer {
 // A context can be used to change the behavior of producers and consumers by adding callbacks
 // that will be executed by librdkafka.
 // This particular context sets up custom callbacks to log rebalancing events.
-pub struct CustomContext;
+pub struct CustomConsumerContext;
 
-impl ClientContext for CustomContext {}
+impl ClientContext for CustomConsumerContext {
+    fn stats(&self, statistics: Statistics) {
+        info!("New Stats");
+    }
+}
 
-impl ConsumerContext for CustomContext {
+impl ConsumerContext for CustomConsumerContext {
     fn pre_rebalance(&self, rebalance: &Rebalance) {
-        info!("Pre rebalance {:?}", rebalance);
+
+        // println!("Pre rebalance {:?}", rebalance);
     }
 
     fn post_rebalance(&self, rebalance: &Rebalance) {
-        info!("Post rebalance {:?}", rebalance);
+        // println!("Post rebalance {:?}", rebalance);
     }
 
     fn commit_callback(&self, result: KafkaResult<()>, _offsets: &TopicPartitionList) {
-        info!("Committing offsets: {:?}", result);
+        // println!("Committing offsets: {:?}", result);
     }
 }
 
-pub struct StatsContext;
-
-impl ConsumerContext for StatsContext {}
-
-impl ClientContext for StatsContext {
-    fn stats(&self, statistics: Statistics) {
-        // Convertir las estadísticas a JSON para un análisis más fácil
-        // let stats_json: Value = serde_json::from_str(&statistics.to_json()).unwrap();
-
-        // Aquí puedes procesar las estadísticas como prefieras
-        info!("Statistics JSON: {statistics:?}");
-    }
-}
-
-pub trait Create<T> {
-    fn create(config: &str) -> T;
-}
-
-pub struct KafkaConsumer;
-
-impl Create<StreamConsumer<CustomContext>> for KafkaConsumer {
-    fn create(brokers: &str) -> StreamConsumer<CustomContext> {
-        let context = CustomContext;
-        ClientConfig::new()
-            // .set("group.id", group_id)
-            .set("bootstrap.servers", brokers)
-            .set("enable.partition.eof", "false")
-            .set("session.timeout.ms", "30000")
-            .set("enable.auto.commit", "false")
-            .set("statistics.interval.ms", "1000")
-            //.set("auto.offset.reset", "smallest")
-            .set_log_level(RDKafkaLogLevel::Debug)
-            .create_with_context(context)
-            .expect("Consumer creation failed")
-    }
+pub struct KafkaConsumer {
+    pub consumer: StreamConsumer<CustomConsumerContext>,
 }
 
 impl KafkaConsumer {
+    pub fn groups(&self, groups: Option<&str>) -> KafkaResult<()> {
+        let group_list = self
+            .consumer
+            .fetch_group_list(groups, Timeout::After(Duration::from_secs(10)))?;
+
+        for group in group_list.groups() {
+            println!("Group Name: {}", group.name());
+            println!("State: {}", group.state());
+            println!("Protocol: {}", group.protocol());
+            println!("Protocol Type: {}", group.protocol_type());
+            println!("Members: {}", group.members().len());
+            for member in group.members() {
+                println!("  Member ID: {}", member.id());
+                println!("  Client ID: {}", member.client_id());
+                println!("  Client Host: {}", member.client_host());
+                println!("  Assignment: {:?}", member.assignment());
+                println!("  Metadata: {:?}", member.metadata());
+            }
+        }
+
+        Ok(())
+    }
+
     // https://github.com/fede1024/rust-rdkafka/blob/master/examples/simple_consumer.rs
     //   y (aunque viejo y API bastante cambiada)
     // https://github.com/fede1024/kafka-view/blob/master/examples/consumer_offsets_reader.rs
-    pub async fn create_consumer(
-        brokers: &str,
-        group_id: &str,
-        auto_commit: bool,
-    ) -> StreamConsumer {
-        if auto_commit {
+    pub fn create_async_consumer(brokers: &str, group_id: Option<&str>, auto_commit: bool) -> Self {
+        let consumer = if auto_commit && group_id.is_some() {
             ClientConfig::new()
-                .set("group.id", group_id)
+                .set("group.id", group_id.unwrap())
                 .set("bootstrap.servers", brokers)
                 .set("enable.partition.eof", "false")
                 .set("session.timeout.ms", "30000")
-                .create()
+                .set("statistics.interval.ms", "1000")
+                .create_with_context(CustomConsumerContext)
                 .expect("Consumer creation failed")
-        } else {
+        } else if auto_commit {
             ClientConfig::new()
-                .set("group.id", group_id)
                 .set("bootstrap.servers", brokers)
+                .set("group.id", "fake")
                 .set("enable.auto.commit", "false")
                 .set("auto.offset.reset", "smallest")
                 .set_log_level(RDKafkaLogLevel::Debug)
-                .create()
+                .create_with_context(CustomConsumerContext)
                 .expect("Consumer creation failed")
-        }
+        } else {
+            ClientConfig::new()
+                .set("bootstrap.servers", brokers)
+                .set("group.id", "fake")
+                .set("enable.partition.eof", "false")
+                .set("session.timeout.ms", "30000")
+                .set("statistics.interval.ms", "1000")
+                .create_with_context(CustomConsumerContext)
+                .expect("Consumer creation failed")
+        };
+
+        Self { consumer }
     }
 
+    // TODO: Pasarlo a método porque el consumer lo tengo en `self`.
     pub async fn subscribe(
-        consumer: &StreamConsumer,
+        consumer: &StreamConsumer<CustomConsumerContext>,
         topics: &[&str],
         messages: Arc<Mutex<Vec<KafkaConsumerMessage>>>,
     ) {
@@ -297,6 +136,16 @@ impl KafkaConsumer {
             .subscribe(topics)
             .expect("Can't subscribe to specified topics");
 
+        // TODO: Esto está bien? `StreamConsumer` se supone que hace el poll periódico
+        // de forma automática.
+        //     https://github.com/fede1024/rust-rdkafka/blob/master/examples/asynchronous_processing.rs
+        // En el ejemplo del link de arriba no lo hace con loop, sino efectivamente crea una
+        // pipeline, lanza el loop de eventos de forma implícita y se olvida.
+        // [...] consumer.stream().try_for_each(|borrowed_message|
+        //
+        // En cambio en el siguiente
+        //     https://github.com/fede1024/rust-rdkafka/blob/master/examples/roundtrip.rs
+        // sí usa un loop.
         loop {
             info!("Waiting for message");
             match consumer.recv().await {
@@ -308,10 +157,6 @@ impl KafkaConsumer {
                             ""
                         }
                         Some(Ok(s)) => {
-                            // Envío a través de canales.
-                            // let _ = tx.send(msg).await;
-
-                            // ENVÍO A TRAVÉS DE ACTUALIZACIÓN DE VARIABLE COMPARTIDA. Dejo así para tener un modelo distinto.
                             let mut messages = messages.lock().unwrap();
                             let key = if m.key().is_none() {
                                 String::from("")

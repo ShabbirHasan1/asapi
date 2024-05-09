@@ -23,17 +23,18 @@ mod redism;
 mod sqlitem;
 mod sqlx_common;
 
-// Usos/importaciones necesarios.
+use common::internationalization::language_selector;
+use common::internationalization::language_selector;
+use components::top_bar::AppTopBar;
+use components::top_bar::AppTopBar;
 use eframe::egui;
 use kafkam::view::KafkaView;
+use log::info;
 use mongom::view::MongoView;
 use mysqlm::view::MySqlView;
 use pgm::view::PostgresView;
 use redism::view::RedisView;
 use sqlitem::view::SQLiteView;
-
-use common::internationalization::language_selector;
-use components::top_bar::AppTopBar;
 use std::fs::{self, OpenOptions};
 
 use crate::app_state::{AppState, ViewType};
@@ -158,7 +159,11 @@ fn configure_text_styles(ctx: &egui::Context) {
 }
 
 fn main() {
+    use env_logger::Env;
     let native_options = eframe::NativeOptions::default();
+    // TODO: Según producción o build, `debug` o `info`.
+    env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
+    info!("Inicio ASAPI");
 
     let _result = eframe::run_native(
         "asapi",

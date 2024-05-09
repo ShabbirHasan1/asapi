@@ -6,17 +6,40 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
-use rdkafka::metadata::Metadata as ClusterMetadata;
+use rdkafka::metadata::Metadata;
+use rdkafka::{error::KafkaError, metadata::Metadata as ClusterMetadata};
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
-use super::presenter::KafkaMessage;
+type KafkaTopicsCount = HashMap<String, i64>;
+
+// =================================
+// Dominio
+// =================================
+pub struct KafkaConsumerMessage {
+    pub key: String,
+    pub topic: String,
+    pub offset: String,
+    pub timestamp: String,
+    pub partition: String,
+    pub payload: String,
+}
+
+pub enum KafkaMessage {
+    Str(String),
+    // ConsumerMessage(KafkaMessageBody),
+    ClusterMetadata((usize, Metadata, KafkaTopicsCount)),
+    Error(KafkaError),
+    AskForMetadata(String),
+}
 
 #[derive(Eq, PartialEq, Debug, Default)]
 pub enum KafkaPanel {
-    #[default]
     Brokers,
+    #[default]
     Topics,
     Subscribe,
+    Stats,
 }
 
 #[derive(Default, Serialize, Clone, Debug, Deserialize)]
@@ -32,15 +55,36 @@ pub struct KafkaAppState {
     pub clusters: Vec<Cluster>,
 }
 
-// #[derive(Default)]
+#[derive(Default)]
+pub struct KafkaNewTopic<'a> {
+    pub show: bool,
+    pub name: String,
+    pub n_partitions: i32,
+    pub fixed_topic_replication: i32,
+    pub raw_config: String,
+    pub parsed_config: Vec<(&'a str, &'a str)>,
+}
+
+#[derive(Default)]
+pub struct KafkaDeleteTopic {
+    pub show: bool,
+    pub selected_topic_name: String,
+}
+
 pub struct KafkaLocalState {
     pub tmp_cluster_config: Cluster,
     pub current_view: KafkaPanel,
     pub current_cluster_idx: usize,
-    pub clusters_metadata: Vec<Option<ClusterMetadata>>,
+    pub current_cluster_config: Option<Cluster>,
+    pub current_cluster_metadata: Option<ClusterMetadata>,
+    pub clusters_metadata_count: KafkaTopicsCount,
     pub is_first_update: bool,
     pub tx: tokio::sync::mpsc::Sender<KafkaMessage>,
     pub rx: tokio::sync::mpsc::Receiver<KafkaMessage>,
+    pub selected_cluster_to_edit_idx: Option<usize>,
+    pub new_topic: KafkaNewTopic<'static>,
+    pub delete_topic: KafkaDeleteTopic,
+    pub last_error: Option<KafkaError>,
 }
 
 impl Default for KafkaLocalState {
@@ -48,11 +92,17 @@ impl Default for KafkaLocalState {
         let (tx, rx) = tokio::sync::mpsc::channel(8);
 
         Self {
-            tmp_cluster_config: Cluster::default(),
+            tmp_cluster_config: Default::default(),
             current_view: KafkaPanel::default(),
-            current_cluster_idx: usize::default(),
-            clusters_metadata: Vec::new(),
+            current_cluster_idx: usize::MAX,
+            current_cluster_config: Default::default(),
+            current_cluster_metadata: Default::default(),
+            clusters_metadata_count: Default::default(),
             is_first_update: true,
+            selected_cluster_to_edit_idx: Default::default(),
+            new_topic: Default::default(),
+            delete_topic: Default::default(),
+            last_error: None,
             tx,
             rx,
         }
