@@ -19,16 +19,11 @@ pub struct HttpAppState {
     pub current_workspace_idx: usize,
 }
 
-#[derive(Eq, PartialEq)]
+#[derive(Eq, PartialEq, Default)]
 pub enum HttpPanel {
+    #[default]
     Regular,
     Performance,
-}
-
-impl Default for HttpPanel {
-    fn default() -> Self {
-        HttpPanel::Regular
-    }
 }
 
 #[derive(Default)]

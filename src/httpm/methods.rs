@@ -11,8 +11,9 @@ use serde::{Deserialize, Serialize};
 use std::default::Default;
 use std::fmt::{self, Display};
 
-#[derive(Copy, Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
+#[derive(Copy, Clone, PartialEq, Eq, Serialize, Deserialize, Debug, Default)]
 pub enum HttpMethod {
+    #[default]
     Get,
     Post,
     Put,
@@ -20,19 +21,13 @@ pub enum HttpMethod {
 }
 
 impl HttpMethod {
-    pub fn to_reqwest_method(&self) -> Method {
+    pub fn parse_to_reqwest_method(&self) -> Method {
         match self {
             HttpMethod::Get => Method::GET,
             HttpMethod::Post => Method::POST,
             HttpMethod::Put => Method::PUT,
             HttpMethod::Delete => Method::DELETE,
         }
-    }
-}
-
-impl Default for HttpMethod {
-    fn default() -> Self {
-        HttpMethod::Get
     }
 }
 

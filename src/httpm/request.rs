@@ -11,6 +11,8 @@ use reqwest::{Client, Response};
 use serde_json::Value as JsonValue;
 use std::str::FromStr;
 
+use crate::info;
+
 use super::methods::HttpMethod;
 
 pub async fn api_request(
@@ -29,14 +31,14 @@ pub async fn api_request(
                 .map(|(k, v)| (k.clone(), serde_json::from_str(v).unwrap_or_default()))
                 .collect();
             let body = JsonValue::Object(json_map);
-            println!("{:?}", body);
+            info!("{:?}", body);
             client
-                .request(method.to_reqwest_method(), url)
+                .request(method.parse_to_reqwest_method(), url)
                 .headers(headers_map)
                 .json(&body)
         }
         HttpMethod::Get => client
-            .request(method.to_reqwest_method(), url)
+            .request(method.parse_to_reqwest_method(), url)
             .headers(headers_map),
         HttpMethod::Put => {
             let json_map: serde_json::Map<String, JsonValue> = body_params
@@ -44,24 +46,24 @@ pub async fn api_request(
                 .map(|(k, v)| (k.clone(), serde_json::from_str(v).unwrap_or_default()))
                 .collect();
             let body = JsonValue::Object(json_map);
-            println!("{:?}", body);
+            info!("{:?}", body);
             client
-                .request(method.to_reqwest_method(), url)
+                .request(method.parse_to_reqwest_method(), url)
                 .headers(headers_map)
                 .json(&body)
         }
         _ => client
-            .request(method.to_reqwest_method(), url)
+            .request(method.parse_to_reqwest_method(), url)
             .headers(headers_map),
     };
 
     let response: Response = request_builder.send().await?;
-    let status = response.status().clone();
+    let status = response.status();
     let response_headers = response.headers().clone();
 
     match response.text().await {
-        Ok(text) => return Ok((text, response_headers)),
-        Err(_) => return Ok((status.to_string(), response_headers)),
+        Ok(text) => Ok((text, response_headers)),
+        Err(_) => Ok((status.to_string(), response_headers)),
     }
 }
 
@@ -82,11 +84,11 @@ fn get_headers(vs: &Vec<(String, String)>) -> HeaderMap {
                 headers.insert(name, value);
             }
             _ => {
-                println!("Error for {key}: {value}");
+                info!("Error for {key}: {value}");
             }
         };
     }
-    println!("{:?}", headers);
+    info!("{:?}", headers);
 
     headers
 }

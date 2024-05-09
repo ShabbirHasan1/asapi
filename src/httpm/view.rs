@@ -24,6 +24,7 @@ use crate::app_state::AppState;
 use crate::common::fs::save_state;
 use crate::common::internationalization::I18n;
 use crate::common::syntax_highlighting::{highlight, CodeTheme};
+use crate::info;
 
 pub struct HttpView {
     tx: Sender<(String, HeaderMap)>,
@@ -77,19 +78,18 @@ impl HttpView {
             ctx.request_repaint();
         }
         if !self.state.has_been_updated {
-            if state.http.workspaces[state.http.current_workspace_idx]
+            if !state.http.workspaces[state.http.current_workspace_idx]
                 .requests
-                .len()
-                > 0
+                .is_empty()
             {
                 let idx = 0;
                 let request =
                     state.http.workspaces[state.http.current_workspace_idx].requests[idx].clone();
                 self.state.selected_request_idx = Some(idx);
                 self.method = request.method;
-                self.url = request.url.clone();
-                self.body.params = request.body_params.clone();
-                self.headers.params = request.headers_params.clone();
+                self.url = request.url;
+                self.body.params = request.body_params;
+                self.headers.params = request.headers_params;
                 self.state.has_request_some_change = false;
             }
             self.state.has_been_updated = true;
@@ -100,10 +100,10 @@ impl HttpView {
             self.state.response_headers = tuple.1;
             self.request_allowed = true;
         }
-        let events = ctx.input(|i| i.events.clone());
+        let events: Vec<egui::Event> = ctx.input(|i| i.events.clone());
         for event in &events {
             if let egui::Event::Paste(pasted_text) = event {
-                println!("{}", pasted_text);
+                info!("{}", pasted_text);
             }
         }
 
@@ -169,7 +169,7 @@ impl HttpView {
 
                     if selectable_value.clicked() {
                         // Acciones cuando se selecciona un espacio de trabajo
-                        println!(
+                        info!(
                             "CLICK  current_idx: {}, idx: {}",
                             state.http.current_workspace_idx, idx
                         );
@@ -200,7 +200,7 @@ impl HttpView {
                             body_params: self.body.params.clone(),
                             headers_params: self.headers.params.clone(),
                         };
-                        println!("{:?}", new_request);
+                        info!("{:?}", new_request);
                         current_workspace.requests.push(new_request);
                         self.state.has_request_some_change = false;
                         self.state.selected_request_idx = None;
@@ -288,7 +288,7 @@ impl HttpView {
                                         self.headers.params = request.headers_params.clone();
                                         self.response.clear();
                                         self.state.has_request_some_change = false;
-                                        println!("{} {}", idx, state.http.current_workspace_idx);
+                                        info!("{} {}", idx, state.http.current_workspace_idx);
                                     }
                                     buttons.push(button);
                                 });
@@ -404,12 +404,11 @@ impl HttpView {
                     // ui.with_layout(egui::Layout::left_to_right(egui::Align::Max), |ui| {
                     // --> Solo mostramos el rendimiento en caso de que tengamos una petición seleccionada <--
                     // Esto implica que para poder testear rendimiento hay que guardar la petición.
-                    if let Some(_) = self.state.selected_request_idx {
-                        if self.request_allowed
-                            && ui.button(&i18n.http_send_to_http_performance).clicked()
-                        {
-                            self.state.panel = HttpPanel::Performance;
-                        }
+                    if self.state.selected_request_idx.is_some()
+                        && self.request_allowed
+                        && ui.button(&i18n.http_send_to_http_performance).clicked()
+                    {
+                        self.state.panel = HttpPanel::Performance;
                     }
                     // });
                 });
@@ -477,10 +476,7 @@ impl HttpView {
                 egui::ScrollArea::vertical().show(ui, |ui| {
                     if self.state.show_hide_json_response {
                         let v: Value = serde_json::from_str(
-                            &self
-                                .response
-                                .trim_start_matches("\"")
-                                .trim_end_matches("\""),
+                            self.response.trim_start_matches('"').trim_end_matches('"'),
                         )
                         .unwrap_or("Error Parsing".into());
                         ui.set_width(ui.available_width());
@@ -499,21 +495,15 @@ impl HttpView {
                         );
                     }
                 });
-            } else {
-                match self.state.selected_request_idx {
-                    Some(idx) => {
-                        let mut request = state.http.workspaces[state.http.current_workspace_idx]
-                            .requests[idx]
-                            .clone();
+            } else if let Some(idx) = self.state.selected_request_idx {
+                let mut request =
+                    state.http.workspaces[state.http.current_workspace_idx].requests[idx].clone();
 
-                        let close_performance_panel =
-                            self.state.performance_panel.ui(ui, rt, &i18n, &mut request);
+                let close_performance_panel =
+                    self.state.performance_panel.ui(ui, rt, i18n, &mut request);
 
-                        if close_performance_panel {
-                            self.state.panel = HttpPanel::Regular;
-                        }
-                    }
-                    None => (),
+                if close_performance_panel {
+                    self.state.panel = HttpPanel::Regular;
                 }
             }
         });

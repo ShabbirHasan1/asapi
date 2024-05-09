@@ -17,9 +17,8 @@ impl Params {
             ui.label(label);
         });
 
-        for i in 0..params.len() {
+        for (header_key, header_value) in &mut params {
             ui.horizontal(|ui| {
-                let (header_key, header_value) = &mut params[i];
                 ui.add(egui::TextEdit::singleline(header_key).interactive(false));
 
                 ui.label(":");
