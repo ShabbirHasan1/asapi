@@ -6,6 +6,7 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
+use egui_file_dialog::FileDialog;
 use reqwest::header::HeaderMap;
 use serde::{Deserialize, Serialize};
 
@@ -28,6 +29,7 @@ pub enum HttpPanel {
 
 #[derive(Default)]
 pub struct HttpLocalState {
+    pub file_dialog: FileDialog,
     pub selected_request_idx: Option<usize>,
     pub has_request_some_change: bool,
     pub selected_request_action: Option<String>,
