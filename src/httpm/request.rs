@@ -7,9 +7,12 @@
 // -------------------------------------------------------------------------
 
 use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
-use reqwest::{Client, Response};
+use reqwest::{multipart, Body, Client, Response};
 use serde_json::Value as JsonValue;
+use std::path::PathBuf;
 use std::str::FromStr;
+use tokio::fs::File;
+use tokio_util::codec::{BytesCodec, FramedRead};
 
 use crate::info;
 
@@ -92,3 +95,74 @@ fn get_headers(vs: &Vec<(String, String)>) -> HeaderMap {
 
     headers
 }
+
+pub async fn upload_file(
+    file_path: &PathBuf,
+    file_name: String,
+    url: &str,
+) -> Result<String, String> {
+    let client = Client::new();
+    let file = File::open(file_path).await.map_err(|err| err.to_string())?;
+    let mime_type = mime_guess::from_path(file_path).first_or_octet_stream();
+    let stream = FramedRead::new(file, BytesCodec::new());
+    let file_body = Body::wrap_stream(stream);
+
+    let form = multipart::Part::stream(file_body)
+        .file_name(file_name)
+        .mime_str(mime_type.essence_str())
+        .map(|part| multipart::Form::new().part("file", part));
+
+    match form {
+        Ok(data) => {
+            let result = client
+                .post(url)
+                .multipart(data)
+                .send()
+                .await
+                .map_err(|e| e.to_string())?
+                .text()
+                .await
+                .map_err(|e| e.to_string())?;
+            Ok(result)
+        }
+        Err(err) => Err(format!("Problemas al enviar petición con subida de archivos {err:?}")),
+    }
+}
+
+// async fn upload_files() -> Result<(), Error> {
+//     let client = Client::new();
+//     let urls = vec![
+//         "/path/to/your/first_file.txt",
+//         "/path/to/your/second_file.pdf",
+//         // Añade más archivos según sea necesario
+//     ];
+//     let url = "http://example.com/upload";
+
+//     let mut form = reqwest::multipart::Form::new();
+
+//     // Añade cada archivo al formulario
+//     for file_path in urls {
+//         let path = Path::new(&file_path);
+//         let file_name = path.file_name().unwrap().to_str().unwrap();
+
+//         let mut file = File::open(&path).await?;
+//         let mut contents = Vec::new();
+//         file.read_to_end(&mut contents).await?;
+
+//         // Asume que el nombre del campo es el mismo que el nombre del archivo, ajusta según sea necesario
+//         form = form.part(file_name, reqwest::multipart::Part::bytes(contents).file_name(file_name).mime_type(from_path(&path).first_or_octet_stream()));
+//     }
+
+//     let response = client.post(url)
+//         .multipart(form)
+//         .send()
+//         .await?;
+
+//     if response.status().is_success() {
+//         println!("Archivos cargados exitosamente");
+//     } else {
+//         println!("Error al cargar archivos: {}", response.status());
+//     }
+
+//     Ok(())
+// }

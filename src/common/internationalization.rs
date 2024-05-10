@@ -42,6 +42,8 @@ pub struct I18n {
     pub http_send_to_http_performance: String,
     pub http_select_file: String,
     pub http_select_folder: String,
+    pub http_clean_file_folder_selection: String,
+    pub http_selected_files_prefix: String,
 
     // Kafka
     pub kafka_accept: String,
@@ -195,6 +197,8 @@ pub fn language_selector(i: I18nOptions) -> I18n {
             http_send_to_http_performance: "Rendimiento de la Petición".to_owned(),
             http_select_file: String::from("Seleccionar Archivo"),
             http_select_folder: String::from("Seleccionar Carpeta"),
+            http_clean_file_folder_selection: String::from("Eliminar Selección"),
+            http_selected_files_prefix: String::from("archivos seleccionados"),
 
             // Kafka
             kafka_accept: String::from("Aceptar"),
@@ -346,6 +350,8 @@ pub fn language_selector(i: I18nOptions) -> I18n {
             http_send_to_http_performance: "Request Performance".to_owned(),
             http_select_file: String::from("Select File"),
             http_select_folder: String::from("Select Folder"),
+            http_clean_file_folder_selection: String::from("Clean Selection"),
+            http_selected_files_prefix: String::from("selected files"),
 
             // Kafka
             kafka_accept: String::from("Accept"),
