@@ -9,7 +9,7 @@
 use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
 use reqwest::{multipart, Body, Client, Response};
 use serde_json::Value as JsonValue;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use tokio::fs::File;
 use tokio_util::codec::{BytesCodec, FramedRead};
@@ -34,7 +34,7 @@ pub async fn api_request(
                 .map(|(k, v)| (k.clone(), serde_json::from_str(v).unwrap_or_default()))
                 .collect();
             let body = JsonValue::Object(json_map);
-            info!("{:?}", body);
+
             client
                 .request(method.parse_to_reqwest_method(), url)
                 .headers(headers_map)
@@ -96,13 +96,22 @@ fn get_headers(vs: &Vec<(String, String)>) -> HeaderMap {
     headers
 }
 
+#[derive(Debug)]
+pub enum UploadError {
+    IOError(String),
+    RequestError(String),
+    MultipartError(String),
+}
+
 pub async fn upload_file(
-    file_path: &PathBuf,
+    file_path: &Path,
     file_name: String,
     url: &str,
-) -> Result<String, String> {
+    body_params: &[(String, String)],
+    headers: &Vec<(String, String)>, // shared: Arc<Mutex<String>>
+) -> Result<String, UploadError> {
     let client = Client::new();
-    let file = File::open(file_path).await.map_err(|err| err.to_string())?;
+    let file = File::open(file_path).await.map_err(|err| UploadError::IOError(err.to_string()))?;
     let mime_type = mime_guess::from_path(file_path).first_or_octet_stream();
     let stream = FramedRead::new(file, BytesCodec::new());
     let file_body = Body::wrap_stream(stream);
@@ -110,22 +119,30 @@ pub async fn upload_file(
     let form = multipart::Part::stream(file_body)
         .file_name(file_name)
         .mime_str(mime_type.essence_str())
-        .map(|part| multipart::Form::new().part("file", part));
+        .map_err(|err| UploadError::MultipartError(err.to_string()))
+        .map(|part| {
+            let mut form = multipart::Form::new().part("file", part);
+            for (k, v) in body_params {
+                form = form.text(k.clone(), v.clone());
+            }
+            form
+        });
 
     match form {
-        Ok(data) => {
+        Ok(form) => {
             let result = client
                 .post(url)
-                .multipart(data)
+                .headers(get_headers(headers))
+                .multipart(form)
                 .send()
                 .await
-                .map_err(|e| e.to_string())?
+                .map_err(|e| UploadError::RequestError(e.to_string()))?
                 .text()
                 .await
-                .map_err(|e| e.to_string())?;
+                .map_err(|e| UploadError::RequestError(e.to_string()))?;
             Ok(result)
         }
-        Err(err) => Err(format!("Problemas al enviar petición con subida de archivos {err:?}")),
+        Err(err) => Err(err)
     }
 }
 

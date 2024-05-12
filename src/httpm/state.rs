@@ -43,6 +43,7 @@ pub struct HttpFileState {
 
 #[derive(Default)]
 pub struct HttpLocalState {
+    pub upload_files: bool,
     pub selected_request_idx: Option<usize>,
     pub has_request_some_change: bool,
     pub selected_request_action: Option<String>,
@@ -52,4 +53,12 @@ pub struct HttpLocalState {
     pub panel: HttpPanel,
     pub performance_panel: HttpPerformanceView,
     pub files: HttpFileState,
+}
+
+impl HttpFileState {
+    pub fn reset(&mut self) {
+        self.selected_mode = None;
+        self.must_read = false;
+        self.files_in_selected_folder.clear();
+    }
 }

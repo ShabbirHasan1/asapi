@@ -7,6 +7,8 @@
 // -------------------------------------------------------------------------
 
 use std::collections::HashSet;
+use std::ffi::OsStr;
+use std::path::PathBuf;
 
 use eframe::egui;
 use egui_file_dialog::{DialogMode, DialogState, FileDialog};
@@ -19,7 +21,7 @@ use tokio::sync::mpsc::{self, Receiver, Sender};
 use super::components::body_params::BodyParams;
 use super::components::header_params::HeaderParams;
 use super::methods::HttpMethod;
-use super::request::api_request;
+use super::request::{self, api_request};
 use super::state::{HttpAppState, HttpLocalState, HttpPanel};
 use super::workspace::{Request, Workspace};
 
@@ -107,31 +109,27 @@ impl HttpView {
         // }
         // egui::introspection::font_id_ui(ui, &mut self.configuration.font_id);
         if self.state.files.must_read {
-            match (&self.state.files.current_state, &self.state.files.selected_mode) {
+            match (
+                &self.state.files.current_state,
+                &self.state.files.selected_mode,
+            ) {
                 (Some(st), Some(mode)) => {
-                    match (st, mode)  {
+                    match (st, mode) {
                         (DialogState::Selected(path), DialogMode::SelectDirectory) => {
                             self.state.files.files_in_selected_folder =
                                 list_files_in_directory(path.as_path());
                             self.state.files.must_read = false;
                         }
                         (DialogState::Selected(path), DialogMode::SelectFile) => {
-                            self.state.files.files_in_selected_folder =
-                                vec![path.to_path_buf()];
+                            self.state.files.files_in_selected_folder = vec![path.to_path_buf()];
                             self.state.files.must_read = false;
                         }
-                        _ => ()
+                        _ => (),
                     };
                 }
-                _ => ()
+                _ => (),
             }
         }
-        // if self.state.files.must_read {
-        // if let Some(path) = &self.state.files.selected_path {
-        // self.state.files.files_in_selected_folder = list_files_in_directory(path);
-        // self.state.files.must_read = false;
-        // }
-        // }
 
         // ===================================================================
         // == Subheader
@@ -283,7 +281,7 @@ impl HttpView {
                                         self.headers.params = request.headers_params.clone();
                                         self.response.clear();
                                         self.state.has_request_some_change = false;
-                                        info!("{} {}", idx, app_st.current_workspace_idx);
+                                        // info!("{} {}", idx, app_st.current_workspace_idx);
                                     }
                                     buttons.push(button);
                                 });
@@ -396,104 +394,60 @@ impl HttpView {
                         self.show_body = !self.show_body;
                     }
 
-                    match self.method {
-                        HttpMethod::Post => {
-                            if ui.button(&i18n.http_select_folder).clicked() {
-                                self.state.files.file_dialog.select_directory();
-                                self.state.files.must_read = true;
-                            }
-                            if ui.button(&i18n.http_select_file).clicked() {
-                                self.state.files.file_dialog.select_file();
-                                self.state.files.must_read = true;
-                            }
-                            ui.label(format!(
-                                "{} {}",
-                                self.state.files.files_in_selected_folder.len(),
-                                i18n.http_selected_files_prefix
-                            ))
-                            .on_hover_ui_at_pointer(|ui| {
-                                ui.label(
-                                    &self
-                                        .state
-                                        .files
-                                        .files_in_selected_folder
-                                        .iter()
-                                        .map(|p| p.to_str())
-                                        .filter(|p| p.is_some())
-                                        .map(|p| p.unwrap())
-                                        .collect::<Vec<&str>>()
-                                        .join("\n"),
-                                );
-                                // match (
-                                //     &self.state.files.selected_path,
-                                //     self.state.files.selected_mode,
-                                // ) {
-                                //     (Some(path), Some(DialogMode::SelectFile)) => {
-                                //         ui.label(path.to_str().unwrap_or_default());
-                                //     }
-                                //     (Some(path), Some(DialogMode::SelectDirectory)) => {
-                                //         // Podríamos leer también de variable `&self.state.files.files_in_selected_folder`.
-                                //         let files = list_files_in_directory(path);
-                                //         // let files = &self.state.files.files_in_selected_folder;
-                                //         // info!("{files:?}");
-                                //         ui.label(
-                                //             files
-                                //                 .iter()
-                                //                 .map(|p| p.to_str())
-                                //                 .filter(|p| p.is_some())
-                                //                 .map(|p| p.unwrap())
-                                //                 .collect::<Vec<&str>>()
-                                //                 .join("\n"),
-                                //         );
-                                //     }
-                                //     _ => (),
-                                // };
-                            });
-                            if ui.button(&i18n.http_clean_file_folder_selection).clicked() {
-                                // TODO: Poner todo este en `HttpFileState::reset()`
-                                self.state.files.selected_mode = None;
-                                // self.state.files.selected_path = None;
-                                self.state.files.must_read = false;
-                                self.state.files.files_in_selected_folder.clear();
-                            }
-                        }
-                        _ => {
-                            ui.add_enabled_ui(false, |ui| {
-                                ui.label(&i18n.http_select_folder);
-                            });
-                            ui.add_enabled_ui(false, |ui| {
-                                ui.label(&i18n.http_select_file);
-                            });
-                            ui.add_enabled_ui(false, |ui| {
-                                ui.label(format!(
-                                    "{} {}",
-                                    self.state.files.files_in_selected_folder.len(),
-                                    i18n.http_selected_files_prefix
-                                ));
-                            });
-                        }
-                    }
-                });
-
-                // ui.label(format!(
-                //     "Selected directory: {:?}",
-                //     self.state.selected_folder
-                // ));
-                ui.label(format!("Select path: {:?}", self.state.files.current_state));
-
-                if self.state.files.must_read {
-                    let mode = self.state.files.file_dialog.mode();
-                    let state = self.state.files.file_dialog.state();
-                    println!("State: {state:?} -- Mode {mode:?}");
-                    self.state.files.selected_mode = Some(mode);
-                    self.state.files.current_state = Some(state);
-
-                    // Necesario par aque abra.
-                    self.state.files.file_dialog.update(ctx);
-                    // if let Some(path) = self.state.files.file_dialog.update(ctx).selected() {
-                    // self.state.files.selected_path = Some(path.to_path_buf());
+                    // match self.method {
+                    //     HttpMethod::Post => {
+                    //         if ui.button(&i18n.http_select_folder).clicked() {
+                    //             self.state.files.file_dialog.select_directory();
+                    //             self.state.files.must_read = true;
+                    //         }
+                    //         if ui.button(&i18n.http_select_file).clicked() {
+                    //             self.state.files.file_dialog.select_file();
+                    //             self.state.files.must_read = true;
+                    //         }
+                    //         ui.label(format!(
+                    //             "{} {}",
+                    //             self.state.files.files_in_selected_folder.len(),
+                    //             i18n.http_selected_files_prefix
+                    //         ))
+                    //         .on_hover_ui_at_pointer(|ui| {
+                    //             ui.label(
+                    //                 &self
+                    //                     .state
+                    //                     .files
+                    //                     .files_in_selected_folder
+                    //                     .iter()
+                    //                     .map(|p| p.to_str())
+                    //                     .filter(|p| p.is_some())
+                    //                     .map(|p| p.unwrap())
+                    //                     .collect::<Vec<&str>>()
+                    //                     .join("\n"),
+                    //             );
+                    //         });
+                    //         if ui.button(&i18n.http_clean_file_folder_selection).clicked() {
+                    //             // TODO: Poner todo este en `HttpFileState::reset()`
+                    //             self.state.files.selected_mode = None;
+                    //             // self.state.files.selected_path = None;
+                    //             self.state.files.must_read = false;
+                    //             self.state.files.files_in_selected_folder.clear();
+                    //         }
+                    //     }
+                    //     _ => {
+                    //         ui.add_enabled_ui(false, |ui| {
+                    //             ui.label(&i18n.http_select_folder);
+                    //         });
+                    //         ui.add_enabled_ui(false, |ui| {
+                    //             ui.label(&i18n.http_select_file);
+                    //         });
+                    //         ui.add_enabled_ui(false, |ui| {
+                    //             ui.label(format!(
+                    //                 "{} {}",
+                    //                 self.state.files.files_in_selected_folder.len(),
+                    //                 i18n.http_selected_files_prefix
+                    //             ));
+                    //         });
+                    //     }
                     // }
-                }
+                });
 
                 if self.show_headers {
                     if let Some(value) = self.headers.create(ui) {
@@ -502,9 +456,19 @@ impl HttpView {
                 }
 
                 if self.show_body {
-                    if let Some(value) = self.body.create(ctx, ui, self.method) {
+                    if let Some(value) =
+                        self.body
+                            .create(ctx, ui, self.method, &mut self.state, i18n)
+                    {
                         self.state.has_request_some_change = value;
                     }
+                }
+
+                if self.state.files.must_read {
+                    self.state.files.selected_mode = Some(self.state.files.file_dialog.mode());
+                    self.state.files.current_state = Some(self.state.files.file_dialog.state());
+
+                    self.state.files.file_dialog.update(ctx);
                 }
 
                 ui.separator();
@@ -579,6 +543,115 @@ impl HttpView {
     }
 
     fn send_request(&mut self, ctx: &egui::Context, rt: &Runtime) {
+        if self.state.upload_files && self.method == HttpMethod::Post {
+            self.file_request(ctx, rt);
+        } else {
+            self.regular_request(ctx, rt);
+        }
+    }
+
+    fn file_request(&mut self, ctx: &egui::Context, rt: &Runtime) {
+        let url = self.url.clone();
+        let body = self.body.params.clone();
+        let headers = self.headers.params.clone();
+        let method = self.method;
+        self.request_allowed = false;
+
+        if self.state.files.files_in_selected_folder.len() == 1 && method == HttpMethod::Post {
+            let file_path = &self.state.files.files_in_selected_folder[0];
+            let path_cloned = file_path.clone(); // Esto está bien
+
+            let tx_cloned = self.tx.clone();
+            let ctx_cloned = ctx.clone();
+
+            rt.spawn(async move {
+                let name_cloned = path_cloned
+                    .file_name()
+                    .and_then(OsStr::to_str)
+                    .map(String::from);
+
+                if let Some(name) = name_cloned {
+                    let response =
+                        match request::upload_file(&path_cloned, name, &url, &body, &headers).await
+                        {
+                            Ok(_) => (
+                                String::from("Fake para probar subida archivos"),
+                                HeaderMap::default(),
+                            ),
+                            Err(error) => (
+                                format!("Error al realizar la solicitud: {:?}", error),
+                                HeaderMap::default(),
+                            ),
+                        };
+
+                    let _ = tx_cloned.send(response).await;
+                    ctx_cloned.request_repaint();
+                }
+                // let response =
+                //     match request::upload_file(&path_cloned, name_cloned, &url, &body, &headers)
+                //         .await
+                //     {
+                //         Ok(_) => {
+                //             todo!() // Implementa la lógica de éxito aquí
+                //         }
+                //         Err(error) => (
+                //             format!("Error al realizar la solicitud: {:?}", error),
+                //             HeaderMap::default(),
+                //         ),
+                //     };
+
+                // let _ = tx_cloned.send(response).await;
+                // ctx_cloned.request_repaint();
+            });
+        }
+    }
+
+    // fn file_request(&mut self, ctx: &egui::Context, rt: &Runtime) {
+    //     let url = self.url.clone();
+    //     let body = self.body.params.clone();
+    //     let headers = self.headers.params.clone();
+    //     let method = self.method;
+    //     self.request_allowed = false;
+
+    //     if self.state.files.files_in_selected_folder.len() == 1 && method == HttpMethod::Post {
+    //         let file_path = &self.state.files.files_in_selected_folder[0];
+    //         let file_path_cloned: PathBuf = file_path.clone();
+
+    //         let tx_cloned = self.tx.clone();
+    //         let ctx_cloned = ctx.clone();
+    //         rt.spawn(async move {
+    //             // let file_name: &str = file_path.file_name().and_then(|s| s.clone().to_str()).unwrap_or_default();
+    //             let file_name: Option<String> = file_path_cloned.clone()
+    //                 .file_name()
+    //                 .and_then(OsStr::to_str)
+    //                 .map(String::from);
+    //             if let Some(f_name) = file_name {
+    //                 let response = match request::upload_file(
+    //                     &file_path_cloned,
+    //                     &f_name,
+    //                     &url,
+    //                     &body,
+    //                     &headers,
+    //                 )
+    //                 .await
+    //                 {
+    //                     Ok(_) => {
+    //                         todo!()
+    //                     }
+    //                     Err(error) => (
+    //                         format!("Error al realizar la solicitud: {:?}", error),
+    //                         HeaderMap::default(),
+    //                     ),
+    //                 };
+
+    //                 let _ = tx_cloned.send(response).await;
+    //                 ctx_cloned.request_repaint();
+    //             }
+    //         });
+    //     }
+    // }
+
+    fn regular_request(&mut self, ctx: &egui::Context, rt: &Runtime) {
         let url = self.url.clone();
         let body = self.body.params.clone();
         let headers = self.headers.params.clone();

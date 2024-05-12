@@ -10,7 +10,10 @@ use eframe::egui;
 use egui_json_tree::JsonTree;
 use serde_json::Value as JsonValue;
 
-use crate::httpm::methods::HttpMethod;
+use crate::{
+    common::internationalization::I18n,
+    httpm::{methods::HttpMethod, state::HttpLocalState},
+};
 
 #[derive(Default)]
 pub struct BodyParams {
@@ -23,6 +26,8 @@ impl BodyParams {
         ctx: &egui::Context,
         ui: &mut egui::Ui,
         method: HttpMethod,
+        state: &mut HttpLocalState,
+        i18n: &I18n,
     ) -> Option<bool> {
         let mut has_changed = None;
         let mut idx_to_del: Option<usize> = None;
@@ -37,6 +42,53 @@ impl BodyParams {
             if editable && ui.button("+").clicked() {
                 self.params.push((String::new(), String::new()));
                 has_changed = Some(true);
+            }
+            if method == HttpMethod::Post {
+                ui.checkbox(&mut state.upload_files, "Multipart")
+                    .on_hover_text(&i18n.http_multipart_help);
+                if state.upload_files {
+                    if ui.button(&i18n.http_select_folder).clicked() {
+                        state.files.file_dialog.select_directory();
+                        state.files.must_read = true;
+                    }
+                    if ui.button(&i18n.http_select_file).clicked() {
+                        state.files.file_dialog.select_file();
+                        state.files.must_read = true;
+                    }
+                    ui.label(format!(
+                        "{} {}",
+                        state.files.files_in_selected_folder.len(),
+                        i18n.http_selected_files_prefix
+                    ))
+                    .on_hover_ui(|ui| {
+                        // egui::ScrollArea::vertical().show(ui, |ui| {
+                        // for f in state
+                        //     .files
+                        //     .files_in_selected_folder
+                        //     .iter()
+                        //     .map(|p| p.to_str())
+                        //     .filter(|p| p.is_some())
+                        //     .map(|p| p.unwrap())
+                        // {
+                        //     ui.label(f);
+                        // }
+                        ui.label(
+                            &state
+                                .files
+                                .files_in_selected_folder
+                                .iter()
+                                .map(|p| p.to_str())
+                                .filter(|p| p.is_some())
+                                .map(|p| p.unwrap())
+                                .collect::<Vec<&str>>()
+                                .join("\n"),
+                        );
+                        // });
+                    });
+                    if ui.button(&i18n.http_clean_file_folder_selection).clicked() {
+                        state.files.reset();
+                    }
+                }
             }
         });
 
