@@ -7,8 +7,9 @@
 // -------------------------------------------------------------------------
 
 use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
-use reqwest::{multipart, Body, Client, Response};
+use reqwest::{multipart, Body, Client, ClientBuilder, Response};
 use serde_json::Value as JsonValue;
+use std::ffi::OsStr;
 use std::iter::zip;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
@@ -104,14 +105,20 @@ pub enum UploadError {
     MultipartError(String),
 }
 
+use std::time::Duration;
+
 pub async fn upload_file(
-    file_path: &Path,
-    file_name: String,
+    file_path: &PathBuf,
     url: &str,
     body_params: &[(String, String)],
     headers: &Vec<(String, String)>, // shared: Arc<Mutex<String>>
 ) -> Result<String, UploadError> {
-    let client = Client::new();
+    // let client = Client::new();
+    let client = ClientBuilder::new()
+        // Por defecto es 90, lo reduzco.
+        .pool_idle_timeout(Some(Duration::from_secs(20)))
+        .build()
+        .unwrap();
     let file = File::open(file_path)
         .await
         .map_err(|err| UploadError::IOError(err.to_string()))?;
@@ -119,78 +126,103 @@ pub async fn upload_file(
     let stream = FramedRead::new(file, BytesCodec::new());
     let file_body = Body::wrap_stream(stream);
 
-    let form = multipart::Part::stream(file_body)
-        .file_name(file_name)
-        .mime_str(mime_type.essence_str())
-        .map_err(|err| UploadError::MultipartError(err.to_string()))
-        .map(|part| {
-            let mut form = multipart::Form::new().part("file", part);
-            for (k, v) in body_params {
-                form = form.text(k.clone(), v.clone());
-            }
-            form
-        });
+    let file_name = file_path
+        .file_name()
+        .and_then(OsStr::to_str)
+        .map(String::from);
+    if let Some(name) = file_name {
+        let form = multipart::Part::stream(file_body)
+            .file_name(name)
+            .mime_str(mime_type.essence_str())
+            .map_err(|err| UploadError::MultipartError(err.to_string()))
+            .map(|part| {
+                let mut form = multipart::Form::new().part("file", part);
+                for (k, v) in body_params {
+                    form = form.text(k.clone(), v.clone());
+                }
+                form
+            });
 
-    match form {
-        Ok(form) => {
-            let result = client
-                .post(url)
-                .headers(get_headers(headers))
-                .multipart(form)
-                .send()
-                .await
-                .map_err(|e| UploadError::RequestError(e.to_string()))?
-                .text()
-                .await
-                .map_err(|e| UploadError::RequestError(e.to_string()))?;
-            Ok(result)
+        match form {
+            Ok(form) => {
+                let result = client
+                    .post(url)
+                    .headers(get_headers(headers))
+                    .multipart(form)
+                    .send()
+                    .await
+                    .map_err(|e| UploadError::RequestError(e.to_string()))?
+                    .text()
+                    .await
+                    .map_err(|e| UploadError::RequestError(e.to_string()))?;
+                Ok(result)
+            }
+            Err(err) => Err(err),
         }
-        Err(err) => Err(err),
+    } else {
+        Err(UploadError::IOError("File no tiene nombre".to_string()))
     }
 }
 
-async fn upload_files(
-    file_paths: &Vec<&Path>,
-    file_names: &Vec<&str>,
+// TODO: Hay que añadir a la documentación de la web/aplicación
+// que cuando subimos archivos por ahora (240513) no permitimos
+// más que subir un campo `file` con un archivo, o un campo `files`
+// con muchos archivos.
+// Para saber cómo se hace esto de muchos archivos en el mismo `part`
+// esta conversación de stackoverflow es muy clarificadora.
+// https://stackoverflow.com/questions/36674161/http-multipart-form-data-multiple-files-in-one-input
+pub async fn upload_files(
+    file_paths: Vec<PathBuf>,
     url: &str,
     body_params: &[(String, String)],
     headers: &Vec<(String, String)>,
 ) -> Result<String, UploadError> {
-    let client = Client::new();
+    let client = ClientBuilder::new()
+        .pool_idle_timeout(Some(Duration::from_secs(20)))
+        .build()
+        .unwrap();
+    let mut form = multipart::Form::new();
+    // let mut parts: Vec<multipart::Part> = Vec::with_capacity(file_paths.len());
+    for file_path in &file_paths {
+        let file_name = file_path
+            .file_name()
+            .and_then(OsStr::to_str)
+            .map(String::from);
 
-    //     let urls = vec![
-    //         "/path/to/your/first_file.txt",
-    //         "/path/to/your/second_file.pdf",
-    //         // Añade más archivos según sea necesario
-    //     ];
-    //     let url = "http://example.com/upload";
+        if file_name.is_none() {
+            return Err(UploadError::IOError(String::from(
+                "El archivo no tiene nombre. Es un directorio?",
+            )));
+        }
+        println!("Uploaing files");
+        let file = File::open(file_path)
+            .await
+            .map_err(|err| UploadError::IOError(err.to_string()))?;
+        let mime_type = mime_guess::from_path(file_path).first_or_octet_stream();
+        let stream = FramedRead::new(file, BytesCodec::new());
+        let file_body = Body::wrap_stream(stream);
 
-    let mut form = reqwest::multipart::Form::new();
+        let part = multipart::Part::stream(file_body)
+            .file_name(file_name.unwrap())
+            .mime_str(mime_type.essence_str())
+            .map_err(|err| UploadError::MultipartError(err.to_string()))?;
+        form = form.part("files", part);
+    }
 
-    for (file_path, file_name) in zip(file_paths, file_names) {}
-    //     // Añade cada archivo al formulario
-    //     for file_path in urls {
-    //         let path = Path::new(&file_path);
-    //         let file_name = path.file_name().unwrap().to_str().unwrap();
+    for (k, v) in body_params {
+        form = form.text(k.clone(), v.clone());
+    }
 
-    //         let mut file = File::open(&path).await?;
-    //         let mut contents = Vec::new();
-    //         file.read_to_end(&mut contents).await?;
+    let result = client
+        .post(url)
+        .headers(get_headers(headers))
+        .multipart(form)
+        .send()
+        .await
+        .map_err(|e| UploadError::RequestError(e.to_string()))?
+        .text()
+        .await
+        .map_err(|e| UploadError::RequestError(e.to_string()))?;
 
-    //         // Asume que el nombre del campo es el mismo que el nombre del archivo, ajusta según sea necesario
-    //         form = form.part(file_name, reqwest::multipart::Part::bytes(contents).file_name(file_name).mime_type(from_path(&path).first_or_octet_stream()));
-    //     }
-
-    //     let response = client.post(url)
-    //         .multipart(form)
-    //         .send()
-    //         .await?;
-
-    //     if response.status().is_success() {
-    //         println!("Archivos cargados exitosamente");
-    //     } else {
-    //         println!("Error al cargar archivos: {}", response.status());
-    //     }
-
-    Ok(String::default())
+    Ok(result)
 }

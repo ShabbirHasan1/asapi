@@ -12,7 +12,7 @@ use egui_json_tree::JsonTree;
 use reqwest::header::HeaderMap;
 use serde_json::Value;
 use std::ffi::OsStr;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use tokio::runtime::Runtime;
 use tokio::sync::mpsc::{self, Receiver, Sender};
 
@@ -258,7 +258,8 @@ impl HttpView {
                                     );
 
                                     let show_update = self.state.has_request_some_change
-                                        && self.state.selected_request_idx.unwrap_or(usize::MAX) == idx;
+                                        && self.state.selected_request_idx.unwrap_or(usize::MAX)
+                                            == idx;
                                     button.context_menu(|ui| {
                                         super::components::context_menus::request(
                                             ui,
@@ -301,7 +302,7 @@ impl HttpView {
                                     .request_focus();
                                 });
                                 self.state.selected_request_action = HttpRequestAction::None;
-                            },
+                            }
                             HttpRequestAction::Delete => {
                                 app_st.workspaces[app_st.current_workspace_idx]
                                     .requests
@@ -309,7 +310,7 @@ impl HttpView {
                                 self.state.selected_request_action = HttpRequestAction::None;
                                 self.state.selected_request_idx = None;
                                 self.state.has_request_some_change = false;
-                            },
+                            }
                             HttpRequestAction::Update => {
                                 let current_wsp =
                                     &mut app_st.workspaces[app_st.current_workspace_idx];
@@ -544,94 +545,54 @@ impl HttpView {
 
     fn send_request(&mut self, ctx: &egui::Context, rt: &Runtime) {
         if self.state.upload_files && self.method == HttpMethod::Post {
-            self.file_request(ctx, rt);
+            self.file_request(
+                ctx,
+                rt,
+                self.state.files.selected_mode.is_some()
+                    && self.state.files.selected_mode.unwrap() == DialogMode::SelectDirectory,
+            );
         } else {
             self.regular_request(ctx, rt);
         }
     }
 
-    fn file_request(&mut self, ctx: &egui::Context, rt: &Runtime) {
+    fn file_request(&mut self, ctx: &egui::Context, rt: &Runtime, upload_many: bool) {
         let url = self.url.clone();
         let body = self.body.params.clone();
         let headers = self.headers.params.clone();
         let method = self.method;
         self.request_allowed = false;
 
-        if self.state.files.files_in_selected_folder.len() == 1 && method == HttpMethod::Post {
+        if method == HttpMethod::Post && self.state.files.files_in_selected_folder.len() > 0 {
             let file_path = &self.state.files.files_in_selected_folder[0];
             let path_cloned: PathBuf = file_path.clone(); // Esto está bien
-
             let tx_cloned = self.tx.clone();
             let ctx_cloned = ctx.clone();
+            let paths = self
+                .state
+                .files
+                .files_in_selected_folder
+                .clone();
 
             rt.spawn(async move {
-                let name_cloned = path_cloned
-                    .file_name()
-                    .and_then(OsStr::to_str)
-                    .map(String::from);
-
-                if let Some(name) = name_cloned {
-                    let response =
-                        match request::upload_file(&path_cloned, name, &url, &body, &headers).await
-                        {
-                            Ok(response) => (response, HeaderMap::default()),
-                            Err(error) => (
-                                format!("Error al realizar la solicitud: {:?}", error),
-                                HeaderMap::default(),
-                            ),
-                        };
-
-                    let _ = tx_cloned.send(response).await;
-                    ctx_cloned.request_repaint();
+                let response = match if upload_many {
+                    request::upload_files(paths, &url, &body, &headers).await
+                } else {
+                    request::upload_file(&path_cloned, &url, &body, &headers).await
                 }
+                {
+                    Ok(response) => (response, HeaderMap::default()),
+                    Err(error) => (
+                        format!("Error al realizar la solicitud: {:?}", error),
+                        HeaderMap::default(),
+                    ),
+                };
+
+                let _ = tx_cloned.send(response).await;
+                ctx_cloned.request_repaint();
             });
         }
     }
-
-    // fn file_request(&mut self, ctx: &egui::Context, rt: &Runtime) {
-    //     let url = self.url.clone();
-    //     let body = self.body.params.clone();
-    //     let headers = self.headers.params.clone();
-    //     let method = self.method;
-    //     self.request_allowed = false;
-
-    //     if self.state.files.files_in_selected_folder.len() == 1 && method == HttpMethod::Post {
-    //         let file_path = &self.state.files.files_in_selected_folder[0];
-    //         let file_path_cloned: PathBuf = file_path.clone();
-
-    //         let tx_cloned = self.tx.clone();
-    //         let ctx_cloned = ctx.clone();
-    //         rt.spawn(async move {
-    //             // let file_name: &str = file_path.file_name().and_then(|s| s.clone().to_str()).unwrap_or_default();
-    //             let file_name: Option<String> = file_path_cloned.clone()
-    //                 .file_name()
-    //                 .and_then(OsStr::to_str)
-    //                 .map(String::from);
-    //             if let Some(f_name) = file_name {
-    //                 let response = match request::upload_file(
-    //                     &file_path_cloned,
-    //                     &f_name,
-    //                     &url,
-    //                     &body,
-    //                     &headers,
-    //                 )
-    //                 .await
-    //                 {
-    //                     Ok(_) => {
-    //                         todo!()
-    //                     }
-    //                     Err(error) => (
-    //                         format!("Error al realizar la solicitud: {:?}", error),
-    //                         HeaderMap::default(),
-    //                     ),
-    //                 };
-
-    //                 let _ = tx_cloned.send(response).await;
-    //                 ctx_cloned.request_repaint();
-    //             }
-    //         });
-    //     }
-    // }
 
     fn regular_request(&mut self, ctx: &egui::Context, rt: &Runtime) {
         let url = self.url.clone();
