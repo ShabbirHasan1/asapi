@@ -167,9 +167,7 @@ async fn upload_files(
 
     let mut form = reqwest::multipart::Form::new();
 
-    for (file_path, file_name) in zip(file_paths, file_names) {
-        
-    }
+    for (file_path, file_name) in zip(file_paths, file_names) {}
     //     // Añade cada archivo al formulario
     //     for file_path in urls {
     //         let path = Path::new(&file_path);

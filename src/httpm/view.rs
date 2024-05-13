@@ -266,6 +266,7 @@ impl HttpView {
                                             &mut self.state.selected_request_idx,
                                             &mut self.state.selected_request_action,
                                             show_update,
+                                            i18n,
                                             |lui| lui.memory_mut(|mem| mem.toggle_popup(popup_id)),
                                         )
                                     });
@@ -278,7 +279,6 @@ impl HttpView {
                                         self.headers.params = request.headers_params.clone();
                                         self.response.clear();
                                         self.state.has_request_some_change = false;
-                                        // info!("{} {}", idx, app_st.current_workspace_idx);
                                     }
                                     buttons.push(button);
                                 });
@@ -300,6 +300,7 @@ impl HttpView {
                                     )
                                     .request_focus();
                                 });
+                                self.state.selected_request_action = HttpRequestAction::None;
                             },
                             HttpRequestAction::Delete => {
                                 app_st.workspaces[app_st.current_workspace_idx]
@@ -319,40 +320,9 @@ impl HttpView {
                                 current_req.body_params = self.body.params.clone();
                                 current_req.headers_params = self.headers.params.clone();
                                 self.state.has_request_some_change = false;
+                                self.state.selected_request_action = HttpRequestAction::None;
                             }
                         };
-                        // if let Some(action) = &self.state.selected_request_action {
-                            // if action == "Delete" {
-                                // app_st.workspaces[app_st.current_workspace_idx]
-                                    // .requests
-                                    // .remove(idx);
-                                // self.state.selected_request_action = None;
-                                // self.state.selected_request_idx = None;
-                                // self.state.has_request_some_change = false;
-                            // } else if action == "Rename" {
-                                // let button = &buttons[idx];
-                                ui.memory_mut(|mem| mem.toggle_popup(popup_id));
-                                // egui::popup::popup_below_widget(ui, popup_id, button, |ui| {
-                                    // ui.set_min_width(200.0);
-                                    // ui.label("Editar nombre de la petición");
-                                    // ui.text_edit_singleline(
-                                        // &mut current_workspace.requests[idx].name,
-                                    // )
-                                    // .request_focus();
-                                // });
-                            // } else if action == "Update" {
-                            //     let current_wsp =
-                            //         &mut app_st.workspaces[app_st.current_workspace_idx];
-                            //     let current_req = &mut current_wsp.requests
-                            //         [self.state.selected_request_idx.unwrap()];
-                            //     current_req.method = self.method;
-                            //     current_req.url = self.url.clone();
-                            //     current_req.body_params = self.body.params.clone();
-                            //     current_req.headers_params = self.headers.params.clone();
-
-                            //     self.state.has_request_some_change = false;
-                            // }
-                        // }
                     }
                 });
         }

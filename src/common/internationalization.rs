@@ -45,6 +45,9 @@ pub struct I18n {
     pub http_clean_file_folder_selection: String,
     pub http_selected_files_prefix: String,
     pub http_multipart_help: String,
+    pub http_context_menu_rename: String,
+    pub http_context_menu_delete: String,
+    pub http_context_menu_update: String,
 
     // Kafka
     pub kafka_accept: String,
@@ -201,6 +204,9 @@ pub fn language_selector(i: I18nOptions) -> I18n {
             http_clean_file_folder_selection: String::from("Limpiar Selección"),
             http_selected_files_prefix: String::from("archivos seleccionados"),
             http_multipart_help: String::from("Seleccinar para enviar petición como form/multipart, pertmitiendo subida de archivos"),
+            http_context_menu_rename: String::from("Renombrar"),
+            http_context_menu_delete: String::from("Borrar"),
+            http_context_menu_update: String::from("Actualizar"),
 
             // Kafka
             kafka_accept: String::from("Aceptar"),
@@ -355,6 +361,9 @@ pub fn language_selector(i: I18nOptions) -> I18n {
             http_clean_file_folder_selection: String::from("Clean Selection"),
             http_selected_files_prefix: String::from("selected files"),
             http_multipart_help: String::from("Selecting sends request as multipart, uploading files if selected"),
+            http_context_menu_rename: String::from("Rename"),
+            http_context_menu_delete: String::from("Delete"),
+            http_context_menu_update: String::from("Update"),
 
             // Kafka
             kafka_accept: String::from("Accept"),
