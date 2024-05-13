@@ -6,6 +6,7 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
+use std::default;
 use std::path::PathBuf;
 
 use egui_file_dialog::{DialogMode, DialogState, FileDialog};
@@ -42,11 +43,19 @@ pub struct HttpFileState {
 }
 
 #[derive(Default)]
+pub enum HttpRequestAction {
+    #[default]
+    None,
+    Rename,
+    Delete,
+    Update,
+}
+#[derive(Default)]
 pub struct HttpLocalState {
     pub upload_files: bool,
     pub selected_request_idx: Option<usize>,
     pub has_request_some_change: bool,
-    pub selected_request_action: Option<String>,
+    pub selected_request_action: HttpRequestAction,
     pub response_headers: HeaderMap,
     pub show_hide_json_response: bool,
     pub has_been_updated: bool,

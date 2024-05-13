@@ -8,29 +8,31 @@
 
 use eframe::egui;
 
+use crate::httpm::state::HttpRequestAction;
+
 pub fn request<F>(
     ui: &mut egui::Ui,
     idx: usize,
     selected_idx: &mut Option<usize>,
-    action_to_perform: &mut Option<String>,
+    action_to_perform: &mut HttpRequestAction,
     show_update: bool,
     cb: F,
 ) where
     F: Fn(&mut egui::Ui),
 {
     if ui.button("Rename").clicked() {
-        *action_to_perform = Some(String::from("Rename"));
+        *action_to_perform = HttpRequestAction::Rename;
         *selected_idx = Some(idx);
         cb(ui);
         ui.close_menu();
     }
     if ui.button("Delete").clicked() {
-        *action_to_perform = Some(String::from("Delete"));
+        *action_to_perform = HttpRequestAction::Delete;
         *selected_idx = Some(idx);
         ui.close_menu();
     }
     if show_update && ui.button("Actualizar").clicked() {
-        *action_to_perform = Some("Update".to_string());
+        *action_to_perform = HttpRequestAction::Update;
         *selected_idx = Some(idx);
         ui.close_menu();
     }

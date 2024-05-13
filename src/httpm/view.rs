@@ -6,15 +6,13 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
-use std::collections::HashSet;
-use std::ffi::OsStr;
-use std::path::PathBuf;
-
 use eframe::egui;
-use egui_file_dialog::{DialogMode, DialogState, FileDialog};
+use egui_file_dialog::{DialogMode, DialogState};
 use egui_json_tree::JsonTree;
 use reqwest::header::HeaderMap;
 use serde_json::Value;
+use std::ffi::OsStr;
+use std::path::PathBuf;
 use tokio::runtime::Runtime;
 use tokio::sync::mpsc::{self, Receiver, Sender};
 
@@ -22,7 +20,7 @@ use super::components::body_params::BodyParams;
 use super::components::header_params::HeaderParams;
 use super::methods::HttpMethod;
 use super::request::{self, api_request};
-use super::state::{HttpAppState, HttpLocalState, HttpPanel};
+use super::state::{HttpAppState, HttpLocalState, HttpPanel, HttpRequestAction};
 use super::workspace::{Request, Workspace};
 
 use crate::common::fs::list_files_in_directory;
@@ -215,7 +213,7 @@ impl HttpView {
                             body_params: self.body.params.clone(),
                             headers_params: self.headers.params.clone(),
                         };
-                        info!("{:?}", new_request);
+                        // info!("{:?}", new_request);
                         current_workspace.requests.push(new_request);
                         self.state.has_request_some_change = false;
                         self.state.selected_request_idx = None;
@@ -260,8 +258,7 @@ impl HttpView {
                                     );
 
                                     let show_update = self.state.has_request_some_change
-                                        && self.state.selected_request_idx.is_some()
-                                        && self.state.selected_request_idx.unwrap() == idx;
+                                        && self.state.selected_request_idx.unwrap_or(usize::MAX) == idx;
                                     button.context_menu(|ui| {
                                         super::components::context_menus::request(
                                             ui,
@@ -291,17 +288,10 @@ impl HttpView {
 
                     // Para evitar que se cierre la próxima vez.
                     if let Some(idx) = self.state.selected_request_idx {
-                        if let Some(action) = &self.state.selected_request_action {
-                            if action == "Delete" {
-                                app_st.workspaces[app_st.current_workspace_idx]
-                                    .requests
-                                    .remove(idx);
-                                self.state.selected_request_action = None;
-                                self.state.selected_request_idx = None;
-                                self.state.has_request_some_change = false;
-                            } else if action == "Rename" {
+                        match self.state.selected_request_action {
+                            HttpRequestAction::None => (),
+                            HttpRequestAction::Rename => {
                                 let button = &buttons[idx];
-                                // ui.memory_mut(|mem| mem.toggle_popup(popup_id));
                                 egui::popup::popup_below_widget(ui, popup_id, button, |ui| {
                                     ui.set_min_width(200.0);
                                     ui.label("Editar nombre de la petición");
@@ -310,7 +300,16 @@ impl HttpView {
                                     )
                                     .request_focus();
                                 });
-                            } else if action == "Update" {
+                            },
+                            HttpRequestAction::Delete => {
+                                app_st.workspaces[app_st.current_workspace_idx]
+                                    .requests
+                                    .remove(idx);
+                                self.state.selected_request_action = HttpRequestAction::None;
+                                self.state.selected_request_idx = None;
+                                self.state.has_request_some_change = false;
+                            },
+                            HttpRequestAction::Update => {
                                 let current_wsp =
                                     &mut app_st.workspaces[app_st.current_workspace_idx];
                                 let current_req = &mut current_wsp.requests
@@ -319,10 +318,41 @@ impl HttpView {
                                 current_req.url = self.url.clone();
                                 current_req.body_params = self.body.params.clone();
                                 current_req.headers_params = self.headers.params.clone();
-
                                 self.state.has_request_some_change = false;
                             }
-                        }
+                        };
+                        // if let Some(action) = &self.state.selected_request_action {
+                            // if action == "Delete" {
+                                // app_st.workspaces[app_st.current_workspace_idx]
+                                    // .requests
+                                    // .remove(idx);
+                                // self.state.selected_request_action = None;
+                                // self.state.selected_request_idx = None;
+                                // self.state.has_request_some_change = false;
+                            // } else if action == "Rename" {
+                                // let button = &buttons[idx];
+                                ui.memory_mut(|mem| mem.toggle_popup(popup_id));
+                                // egui::popup::popup_below_widget(ui, popup_id, button, |ui| {
+                                    // ui.set_min_width(200.0);
+                                    // ui.label("Editar nombre de la petición");
+                                    // ui.text_edit_singleline(
+                                        // &mut current_workspace.requests[idx].name,
+                                    // )
+                                    // .request_focus();
+                                // });
+                            // } else if action == "Update" {
+                            //     let current_wsp =
+                            //         &mut app_st.workspaces[app_st.current_workspace_idx];
+                            //     let current_req = &mut current_wsp.requests
+                            //         [self.state.selected_request_idx.unwrap()];
+                            //     current_req.method = self.method;
+                            //     current_req.url = self.url.clone();
+                            //     current_req.body_params = self.body.params.clone();
+                            //     current_req.headers_params = self.headers.params.clone();
+
+                            //     self.state.has_request_some_change = false;
+                            // }
+                        // }
                     }
                 });
         }
@@ -559,7 +589,7 @@ impl HttpView {
 
         if self.state.files.files_in_selected_folder.len() == 1 && method == HttpMethod::Post {
             let file_path = &self.state.files.files_in_selected_folder[0];
-            let path_cloned = file_path.clone(); // Esto está bien
+            let path_cloned: PathBuf = file_path.clone(); // Esto está bien
 
             let tx_cloned = self.tx.clone();
             let ctx_cloned = ctx.clone();
@@ -574,10 +604,7 @@ impl HttpView {
                     let response =
                         match request::upload_file(&path_cloned, name, &url, &body, &headers).await
                         {
-                            Ok(_) => (
-                                String::from("Fake para probar subida archivos"),
-                                HeaderMap::default(),
-                            ),
+                            Ok(response) => (response, HeaderMap::default()),
                             Err(error) => (
                                 format!("Error al realizar la solicitud: {:?}", error),
                                 HeaderMap::default(),
@@ -587,21 +614,6 @@ impl HttpView {
                     let _ = tx_cloned.send(response).await;
                     ctx_cloned.request_repaint();
                 }
-                // let response =
-                //     match request::upload_file(&path_cloned, name_cloned, &url, &body, &headers)
-                //         .await
-                //     {
-                //         Ok(_) => {
-                //             todo!() // Implementa la lógica de éxito aquí
-                //         }
-                //         Err(error) => (
-                //             format!("Error al realizar la solicitud: {:?}", error),
-                //             HeaderMap::default(),
-                //         ),
-                //     };
-
-                // let _ = tx_cloned.send(response).await;
-                // ctx_cloned.request_repaint();
             });
         }
     }
