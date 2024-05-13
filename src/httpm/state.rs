@@ -6,6 +6,10 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
+use std::default;
+use std::path::PathBuf;
+
+use egui_file_dialog::{DialogMode, DialogState, FileDialog};
 use reqwest::header::HeaderMap;
 use serde::{Deserialize, Serialize};
 
@@ -27,13 +31,40 @@ pub enum HttpPanel {
 }
 
 #[derive(Default)]
+pub struct HttpFileState {
+    pub file_dialog: FileDialog,
+    pub files_in_selected_folder: Vec<PathBuf>,
+    pub selected_mode: Option<DialogMode>,
+    pub current_state: Option<DialogState>,
+    pub must_read: bool,
+}
+
+#[derive(Default)]
+pub enum HttpRequestAction {
+    #[default]
+    None,
+    Rename,
+    Delete,
+    Update,
+}
+#[derive(Default)]
 pub struct HttpLocalState {
+    pub upload_files: bool,
     pub selected_request_idx: Option<usize>,
     pub has_request_some_change: bool,
-    pub selected_request_action: Option<String>,
+    pub selected_request_action: HttpRequestAction,
     pub response_headers: HeaderMap,
     pub show_hide_json_response: bool,
     pub has_been_updated: bool,
     pub panel: HttpPanel,
     pub performance_panel: HttpPerformanceView,
+    pub files: HttpFileState,
+}
+
+impl HttpFileState {
+    pub fn reset(&mut self) {
+        self.selected_mode = None;
+        self.must_read = false;
+        self.files_in_selected_folder.clear();
+    }
 }

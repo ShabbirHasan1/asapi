@@ -125,9 +125,10 @@ impl eframe::App for Asapi {
         });
 
         match self.app_state.selected_view {
-            ViewType::Http => self
-                .http
-                .update(ctx, _frame, &mut self.app_state, &self.rt, &i18n),
+            ViewType::Http => {
+                self.http
+                    .update(ctx, _frame, &mut self.app_state.http, &self.rt, &i18n)
+            }
             ViewType::Pg => self
                 .pg
                 .update(ctx, _frame, &mut self.app_state, &self.rt, &i18n),

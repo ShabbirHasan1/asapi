@@ -334,10 +334,53 @@
           }
         ],
         "show_options": false
+      },
+      {
+        "id": 4,
+        "name": "Spade",
+        "requests": [
+          {
+            "name": "http://localhost:8082",
+            "method": "Get",
+            "url": "http://localhost:8082",
+            "body_params": [],
+            "headers_params": [
+              [
+                "ferlola",
+                "etsia"
+              ]
+            ]
+          },
+          {
+            "name": "http://localhost:8082/images/upload",
+            "method": "Post",
+            "url": "http://localhost:8082/images/upload",
+            "body_params": [],
+            "headers_params": [
+              [
+                "ferlola",
+                "etsia"
+              ]
+            ]
+          },
+          {
+            "name": "http://localhost:8082/image/upload",
+            "method": "Post",
+            "url": "http://localhost:8082/image/upload",
+            "body_params": [],
+            "headers_params": [
+              [
+                "ferlola",
+                "etsia"
+              ]
+            ]
+          }
+        ],
+        "show_options": false
       }
     ],
-    "current_workspace_idx": 0
-  },
+    "current_workspace_idx": 4
+  }
   "pg": {
     "show_sidebar": true,
     "performance_table": false,

@@ -15,6 +15,7 @@ use std::fmt::{self, Display};
 pub enum HttpMethod {
     #[default]
     Get,
+    #[default]
     Post,
     Put,
     Delete,
