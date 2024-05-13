@@ -18,8 +18,6 @@ use tokio_util::codec::{BytesCodec, FramedRead};
 
 use crate::info;
 
-use crate::info;
-
 use super::methods::HttpMethod;
 
 pub async fn api_request(

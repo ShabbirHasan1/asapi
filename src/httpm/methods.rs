@@ -8,14 +8,12 @@
 
 use reqwest::Method;
 use serde::{Deserialize, Serialize};
-use std::default::Default;
 use std::fmt::{self, Display};
 
 #[derive(Copy, Clone, PartialEq, Eq, Serialize, Deserialize, Debug, Default)]
 pub enum HttpMethod {
     #[default]
     Get,
-    #[default]
     Post,
     Put,
     Delete,
