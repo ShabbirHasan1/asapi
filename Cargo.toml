@@ -5,11 +5,12 @@ name = "asapi"
 # + Versiones terciarias, mejoras/bugs
 # + Versiones preestablecias a seguir
 #   0.2.0 -> sqlx
-#   0.3.0 -> mongo <<== AQUÍ ESTAMOS
+#   0.3.0 -> mongo
 #   0.3.1 -> mejora kafka
-#   0.3.2 -> mejora http rendimiento
-#   0.3.3 -> mejora redis
-version = "0.3.0"
+#   0.3.2 -> mejora redis
+#   0.3.3 -> subida archivos <<== AQUÍ ESTAMOS
+#   0.3.4 -> mejora http rendimiento
+version = "0.3.3"
 edition = "2021"
 
 [profile.dev]
