@@ -16,34 +16,6 @@ CLOSED: [2024-02-28 mié 16:22] No está hecho en todo, pero sí en las tablas d
 *** Crates a revisar por si fuesen interesante
 **** [[https://github.com/tokio-rs/tracing][tracing]]
 
-* Mongo
- En studio3t se muestra como tabla en vez de listado de Json extensibles como hago yo. Si no existe un atributo en un documento, no se muestra nada en esa celda. Si el atributo es a su vez un json, se puede clicar y ver lo que hay dentro en una nueva tabla. No creo que merezca la pena, pero puede ser una idea a explorar en un futurio lejano.
-*** DONE Conectar
-CLOSED: [2024-02-28 mié 16:22]
-*** DONE Mostrar bases de datos
-CLOSED: [2024-02-28 mié 16:22]
-*** DONE Mostrar colecciones de la base de datos seleccionada
-CLOSED: [2024-02-28 mié 16:22]
-*** DONE Mostrar documentos de la colección seleccionada
-CLOSED: [2024-04-01 lun 22:39]
-*** DONE [#B] Botón de recarga para volver a mostrar todos los documentos de la colección
-CLOSED: [2024-04-05 vie 14:38]
-*** DONE Filtro con texto
-CLOSED: [2024-04-05 vie 14:39]
-*** DONE [#A] Poder limpiar filtro compuesto
-CLOSED: [2024-04-05 vie 16:14]
-*** DONE [#A] Filtro compuesto
-CLOSED: [2024-04-05 vie 16:14]
-*** DONE [#A] find
-CLOSED: [2024-04-05 vie 16:14]
-*** TODO [#A] insert
-*** TODO [#A] delete
-*** TODO [#B] Label sobre la que, si hacemos hover, se nos muestra la consulta parseada que se va a enviar a Mongo.
-*** TODO [#C] Mostrar info de la base de datos con hover sobre /Info/
-*** TODO [#C] Mostrar info de la colección con hover sobre /Info/
-*** TODO [#C] El /not/ aún no funciona
-*** TODO [#C] Mostra documentos de la colección con paginación
-
 * SQLx
 El módulo común de /sqlx/ lo llamo /sqlx_common/, el resto con el nombre más la /m/ final de /module/.
 ** General
@@ -78,6 +50,8 @@ CLOSED: [2023-12-27 mié 10:44]
 CLOSED: [2023-12-06 mié 15:29]
 *** DONE Usar Table y no grid par mostrar los datos de las tablas
 CLOSED: [2023-12-13 mié 12:54]
+*** BUGS
+**** TODO [#A] Cuando conecto a una nueva tras conectar a otra, y no se consigue establecer conexión, como no se borran las tablas existentes se puede romper por `unwrap` sobre `option`. Hay que borrar al reconectar a otra conexión se cree o no conexión.
 
 ** MySQL
 *** DONE Conectar

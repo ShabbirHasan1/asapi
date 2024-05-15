@@ -12,6 +12,7 @@ use std::collections::HashSet;
 use tokio::{runtime::Runtime, sync::mpsc::Sender};
 
 use crate::{
+    common::internationalization::I18n,
     pgm::{
         components::contextual_menus::TableInfo,
         presenter,
@@ -21,7 +22,6 @@ use crate::{
         components::context_menus::TableContextMenu,
         state::{QuerySort, SqlConnectionDefinition, SqlxMessage},
     },
-    common::internationalization::I18n,
 };
 pub struct PostgresSideNav;
 
@@ -138,15 +138,7 @@ impl PostgresSideNav {
                 } else if !pg_local_st.sql.hide_connections {
                     PostgresConnectionsSubpanel::show(ctx, rt, ui, pg_app_state, pg_local_st, i18n);
                 } else if !pg_local_st.sql.hide_tables {
-                    PostgresTablesSubpanel::show(
-                        ctx,
-                        rt,
-                        ui,
-                        tx,
-                        tx_sync,
-                        pg_local_st,
-                        i18n,
-                    );
+                    PostgresTablesSubpanel::show(ctx, rt, ui, tx, tx_sync, pg_local_st, i18n);
                 }
             });
         }
@@ -215,6 +207,9 @@ impl PostgresConnectionsSubpanel {
                         local_state.sql.current_connection_idx = idx;
                         // Este método pone `pool` a `None`.
                         close_connection(rt, local_state);
+                        local_state.sql.reset();
+                        // borro tablas
+                        local_state.sql.tables.clear();
 
                         // Si no conexión o la que existe no es la que clico, la defino
                         if local_state.pool.is_none() {
