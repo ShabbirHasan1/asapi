@@ -49,6 +49,7 @@ pub struct I18n {
     pub http_context_menu_delete: String,
     pub http_context_menu_update: String,
     pub http_body_add_files: String,
+    pub http_edit_request_name: String,
 
     // Kafka
     pub kafka_accept: String,
@@ -209,6 +210,7 @@ pub fn language_selector(i: I18nOptions) -> I18n {
             http_context_menu_delete: String::from("Borrar"),
             http_context_menu_update: String::from("Actualizar"),
             http_body_add_files: String::from("Añadir Archivo(s)"),
+            http_edit_request_name: String::from("Editar Nombre de la Petición"),
 
             // Kafka
             kafka_accept: String::from("Aceptar"),
@@ -367,6 +369,7 @@ pub fn language_selector(i: I18nOptions) -> I18n {
             http_context_menu_delete: String::from("Delete"),
             http_context_menu_update: String::from("Update"),
             http_body_add_files: String::from("Add File(s)"),
+            http_edit_request_name: String::from("Edit Request Name"),
 
             // Kafka
             kafka_accept: String::from("Accept"),

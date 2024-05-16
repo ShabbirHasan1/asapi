@@ -7,7 +7,7 @@
 // -------------------------------------------------------------------------
 
 use eframe::egui;
-use egui_file_dialog::{DialogMode, DialogState};
+use egui_file_dialog::DialogMode;
 use egui_json_tree::JsonTree;
 use reqwest::header::HeaderMap;
 use serde_json::Value;
@@ -19,10 +19,8 @@ use super::components::body_params::BodyParams;
 use super::components::header_params::HeaderParams;
 use super::methods::HttpMethod;
 use super::request::{self, api_request};
-use super::state::{HttpAppState, HttpLocalState, HttpPanel, HttpRequestAction};
-use super::workspace::{Request, Workspace};
+use super::state::{HttpAppState, HttpLocalState, HttpPanel};
 
-use crate::common::fs::list_files_in_directory;
 use crate::common::internationalization::I18n;
 use crate::common::syntax_highlighting::{highlight, CodeTheme};
 
@@ -72,10 +70,13 @@ impl HttpView {
         // =======================================
         // Preparación de cada ciclo
         // =======================================
+        // Cuando estamos en mododo `Performance` necesitamos repintado continuo.
         if self.state.panel == HttpPanel::Performance {
             ctx.request_repaint();
         }
-        if !self.state.has_been_updated {
+        // Solo en el primer renderizado y si hay workspaces cogemos la primera petición
+        // del `workspace` y rellenamos los datos con ella para tener una por defecto.
+        if !self.state.is_not_first_render {
             if !app_st.workspaces[app_st.current_workspace_idx]
                 .requests
                 .is_empty()
@@ -89,7 +90,7 @@ impl HttpView {
                 self.headers.params = request.headers_params;
                 self.state.has_request_some_change = false;
             }
-            self.state.has_been_updated = true;
+            self.state.is_not_first_render = true;
         }
 
         while let Ok(tuple) = self.rx.try_recv() {
@@ -200,7 +201,9 @@ impl HttpView {
                 });
 
                 if self.show_headers {
-                    if let Some(value) = self.headers.create(ui) {
+                    // self.state.has_request_some_change =
+                    // self.headers.show_headers(ui).unwrap_or(self.state.has_request_some_change);
+                    if let Some(value) = self.headers.show_headers(ui) {
                         self.state.has_request_some_change = value;
                     }
                 }
@@ -317,19 +320,14 @@ impl HttpView {
             let path_cloned: PathBuf = file_path.clone(); // Esto está bien
             let tx_cloned = self.tx.clone();
             let ctx_cloned = ctx.clone();
-            let paths = self
-                .state
-                .files
-                .files_in_selected_folder
-                .clone();
+            let paths = self.state.files.files_in_selected_folder.clone();
 
             rt.spawn(async move {
                 let response = match if upload_many {
                     request::upload_files(paths, &url, &body, &headers).await
                 } else {
                     request::upload_file(&path_cloned, &url, &body, &headers).await
-                }
-                {
+                } {
                     Ok(response) => (response, HeaderMap::default()),
                     Err(error) => (
                         format!("Error al realizar la solicitud: {:?}", error),

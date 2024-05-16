@@ -8,8 +8,8 @@
 
 use eframe::egui;
 
+use crate::httpm::request::Request;
 use crate::httpm::state::{HttpAppState, HttpRequestAction};
-use crate::httpm::workspace::Request;
 
 use crate::common::internationalization::I18n;
 use crate::httpm::view::HttpView;
@@ -28,6 +28,7 @@ impl HttpView {
                         name: self.url.clone(),
                         method: self.method,
                         url: self.url.clone(),
+                        multipart: self.state.upload_files,
                         body_params: self.body.params.clone(),
                         headers_params: self.headers.params.clone(),
                     };
@@ -91,6 +92,7 @@ impl HttpView {
                                     self.method = request.method;
                                     self.url = request.url.clone();
                                     self.body.params = request.body_params.clone();
+                                    self.body.multipart = request.multipart;
                                     self.headers.params = request.headers_params.clone();
                                     self.response.clear();
                                     self.state.has_request_some_change = false;
@@ -109,7 +111,7 @@ impl HttpView {
                             let button = &buttons[idx];
                             egui::popup::popup_below_widget(ui, popup_id, button, |ui| {
                                 ui.set_min_width(200.0);
-                                ui.label("Editar nombre de la petición");
+                                ui.label(&i18n.http_edit_request_name);
                                 ui.text_edit_singleline(&mut current_workspace.requests[idx].name)
                                     .request_focus();
                             });
@@ -131,6 +133,8 @@ impl HttpView {
                             current_req.url = self.url.clone();
                             current_req.body_params = self.body.params.clone();
                             current_req.headers_params = self.headers.params.clone();
+                            current_req.multipart = self.body.multipart;
+                            println!("Current request multipart? {}", current_req.multipart);
                             self.state.has_request_some_change = false;
                             self.state.selected_request_action = HttpRequestAction::None;
                         }

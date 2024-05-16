@@ -8,6 +8,7 @@
 
 use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
 use reqwest::{multipart, Body, Client, ClientBuilder, Response};
+use serde::{Deserialize, Serialize};
 use serde_json::Value as JsonValue;
 use std::ffi::OsStr;
 use std::path::PathBuf;
@@ -18,6 +19,16 @@ use tokio_util::codec::{BytesCodec, FramedRead};
 use crate::info;
 
 use crate::httpm::methods::HttpMethod;
+
+#[derive(Clone, Default, Serialize, Deserialize, Debug)]
+pub struct Request {
+    pub name: String,
+    pub method: HttpMethod,
+    pub url: String,
+    pub multipart: bool,
+    pub body_params: Vec<(String, String)>,
+    pub headers_params: Vec<(String, String)>,
+}
 
 pub async fn api_request(
     method: HttpMethod,

@@ -8,16 +8,7 @@
 
 use serde::{Deserialize, Serialize};
 
-use super::methods::HttpMethod;
-
-#[derive(Clone, Default, Serialize, Deserialize, Debug)]
-pub struct Request {
-    pub name: String,
-    pub method: HttpMethod,
-    pub url: String,
-    pub body_params: Vec<(String, String)>,
-    pub headers_params: Vec<(String, String)>,
-}
+use super::request::Request;
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct Workspace {

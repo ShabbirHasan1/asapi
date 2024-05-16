@@ -14,7 +14,7 @@ pub struct HeaderParams {
 }
 
 impl HeaderParams {
-    pub fn create(&mut self, ui: &mut egui::Ui) -> Option<bool> {
+    pub fn show_headers(&mut self, ui: &mut egui::Ui) -> Option<bool> {
         let mut has_changed = None;
         let mut idx_to_del: Option<usize> = None;
 

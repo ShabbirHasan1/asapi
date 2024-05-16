@@ -19,8 +19,7 @@ use tokio::sync::Semaphore;
 use crate::common::generator::{Gen, SimpleRGen};
 use crate::common::internationalization::I18n;
 use crate::httpm::methods::HttpMethod;
-use crate::httpm::request::api_request;
-use crate::httpm::workspace::Request;
+use crate::httpm::request::{api_request, Request};
 
 use super::components::params::Params;
 

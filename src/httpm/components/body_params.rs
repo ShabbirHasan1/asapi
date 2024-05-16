@@ -14,16 +14,19 @@ use egui_json_tree::JsonTree;
 use serde_json::Value as JsonValue;
 
 use crate::{
-    common::{fs::list_files_in_directory, internationalization::I18n},
+    common::{fs::list_files_in_directory, icon_moon::IconMoon, internationalization::I18n},
     httpm::{methods::HttpMethod, state::HttpLocalState},
 };
 
 #[derive(Default)]
 pub struct BodyParams {
-    pub params: Vec<(String, String)>,
-    pub has_files: Vec<bool>,
-    pub files: Vec<Vec<PathBuf>>,
+    pub multipart: bool, // Petición con posibilidad de archivos mediante multipart??
     pub selected_idx: usize,
+
+    // Estos tres vectores tienen que estar sincronizados, a.k.a., tener la misma longitud.
+    pub params: Vec<(String, String)>,
+    pub has_files: Vec<bool>,     // Cada campo tiene archivos?
+    pub files: Vec<Vec<PathBuf>>, // Archivos seleccionados, cada índice para cada parámetro.
 }
 
 impl BodyParams {
@@ -73,39 +76,13 @@ impl BodyParams {
                 has_changed = Some(true);
             }
             if method == HttpMethod::Post {
-                ui.checkbox(&mut state.upload_files, "Multipart")
-                    .on_hover_text(&i18n.http_multipart_help);
-                // if state.upload_files {
-                //     if ui.button(&i18n.http_select_folder).clicked() {
-                //         state.files.file_dialog.select_directory();
-                //         state.files.must_read = true;
-                //     }
-                //     if ui.button(&i18n.http_select_file).clicked() {
-                //         state.files.file_dialog.select_file();
-                //         state.files.must_read = true;
-                //     }
-                //     ui.label(format!(
-                //         "{} {}",
-                //         state.files.files_in_selected_folder.len(),
-                //         i18n.http_selected_files_prefix
-                //     ))
-                //     .on_hover_ui(|ui| {
-                //         ui.label(
-                //             &state
-                //                 .files
-                //                 .files_in_selected_folder
-                //                 .iter()
-                //                 .map(|p| p.to_str())
-                //                 .filter(|p| p.is_some())
-                //                 .map(|p| p.unwrap())
-                //                 .collect::<Vec<&str>>()
-                //                 .join("\n"),
-                //         );
-                //     });
-                //     if ui.button(&i18n.http_clean_file_folder_selection).clicked() {
-                //         state.files.reset();
-                //     }
-                // }
+                if ui
+                    .checkbox(&mut self.multipart, "Multipart")
+                    .on_hover_text(&i18n.http_multipart_help)
+                    .clicked()
+                {
+                    has_changed = Some(true);
+                }
             }
         });
 
@@ -129,6 +106,7 @@ impl BodyParams {
                             .desired_width(f32::INFINITY)
                     });
                 }
+
                 if state.upload_files {
                     ui.checkbox(&mut self.has_files[i], &i18n.http_body_add_files);
                     if self.has_files[i] {
@@ -145,7 +123,10 @@ impl BodyParams {
                         // TODO: Mostrar en hover sobre este botón la lista de archivos. El texto que ponga `Borrar n Seleccionados`.
                         let len = self.files[i].len();
                         if ui
-                            .add(egui::Button::new(format!("Borrar {len} archivos")))
+                            .add(egui::Button::new(format!(
+                                "Borrar {len} archivos {}",
+                                IconMoon::Letteri.as_str()
+                            )))
                             .on_hover_ui_at_pointer(|ui| {
                                 ui.label(
                                     &self.files[i]
