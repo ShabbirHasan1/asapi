@@ -17,6 +17,7 @@
             "name": "/fitosat/api/v1/project",
             "method": "Get",
             "url": "http://localhost:2015/fitosat/project/api/v1/9c892526-21d4-437d-a49b-ae1eb5414d60",
+            "multipart": false,
             "body_params": [],
             "headers_params": [
               [
@@ -29,6 +30,7 @@
             "name": "/pipeline/api/v1",
             "method": "Put",
             "url": "http://localhost:2015/fitosat/pipeline/api/v1",
+            "multipart": false,
             "body_params": [
               [
                 "status",
@@ -54,6 +56,7 @@
             "name": "/fitosat/subplot/api/v1/crop",
             "method": "Get",
             "url": "http://localhost:2015/fitosat/subplot/api/v1/crop",
+            "multipart": false,
             "body_params": [],
             "headers_params": [
               [
@@ -66,6 +69,7 @@
             "name": "/fitosat/subplot/api/v1/soil",
             "method": "Get",
             "url": "http://localhost:2015/fitosat/subplot/api/v1/soil",
+            "multipart": false,
             "body_params": [],
             "headers_params": [
               [
@@ -78,6 +82,7 @@
             "name": "/fitosat/subplot/api/v1/project/:project-id",
             "method": "Get",
             "url": "http://localhost:2015/fitosat/subplot/api/v1/project/2efa8127-fb47-4bd8-a52f-0c14517744d2",
+            "multipart": false,
             "body_params": [],
             "headers_params": [
               [
@@ -97,6 +102,7 @@
             "name": "/products/project/:projectid",
             "method": "Get",
             "url": "http://localhost:8808/products/project/44133baa-77f8-439f-997f-c5c9a9e7a259",
+            "multipart": false,
             "body_params": [],
             "headers_params": []
           },
@@ -104,6 +110,7 @@
             "name": "/sentinel/api/v1/:spId",
             "method": "Get",
             "url": "http://localhost:8808/sentinel/api/v1/45d6addf-598f-4442-8c4b-2b1ba494233a",
+            "multipart": false,
             "body_params": [],
             "headers_params": []
           },
@@ -111,6 +118,7 @@
             "name": "/sentinel/api/v1",
             "method": "Get",
             "url": "http://localhost:8808/sentinel/api/v1",
+            "multipart": false,
             "body_params": [],
             "headers_params": [
               [
@@ -123,6 +131,7 @@
             "name": "/sentinel/api/v1/debug",
             "method": "Put",
             "url": "http://localhost:8808/sentinel/api/v1/debug",
+            "multipart": false,
             "body_params": [
               [
                 "name",
@@ -147,6 +156,7 @@
             "name": "/sentinel/api/v1/create",
             "method": "Put",
             "url": "http://localhost:8808/sentinel/api/v1/create",
+            "multipart": false,
             "body_params": [
               [
                 "name",
@@ -176,6 +186,7 @@
             "name": "/sentinel/api/v1/:productId",
             "method": "Delete",
             "url": "http://localhost:8808/sentinel/api/v1/aa8dea2d-3b27-4c83-aee3-33ad08c00693",
+            "multipart": false,
             "body_params": [
               [
                 "name",
@@ -200,6 +211,7 @@
             "name": "/sentinel/api/v1/:productId",
             "method": "Put",
             "url": "http://localhost:8808/sentinel/api/v1/cd8dea2d-3b27-4c83-aee3-33ad08c00693",
+            "multipart": false,
             "body_params": [
               [
                 "id",
@@ -216,6 +228,7 @@
             "name": "/project/api/v1/:prId",
             "method": "Get",
             "url": "http://localhost:8808/project/api/v1/44133baa-77f8-439f-997f-c5c9a9e7a259",
+            "multipart": false,
             "body_params": [],
             "headers_params": []
           },
@@ -223,6 +236,7 @@
             "name": "/project/api/v1",
             "method": "Get",
             "url": "http://localhost:8808/project/api/v1",
+            "multipart": false,
             "body_params": [],
             "headers_params": []
           },
@@ -230,6 +244,7 @@
             "name": "/sentinel/api/v1",
             "method": "Get",
             "url": "http://localhost:8808/sentinel/api/v1",
+            "multipart": false,
             "body_params": [],
             "headers_params": []
           },
@@ -237,6 +252,7 @@
             "name": "http://localhost:8808/sentinel/api/v1/create",
             "method": "Put",
             "url": "http://localhost:8808/sentinel/api/v1/create",
+            "multipart": false,
             "body_params": [
               [
                 "name",
@@ -273,6 +289,7 @@
             "name": "https://httpbin.org/put",
             "method": "Put",
             "url": "https://httpbin.org/put",
+            "multipart": false,
             "body_params": [
               [
                 "id",
@@ -297,6 +314,7 @@
             "name": "https://httpbin.org/post",
             "method": "Post",
             "url": "https://httpbin.org/post",
+            "multipart": false,
             "body_params": [
               [
                 "id",
@@ -324,6 +342,7 @@
             "name": "http://localhost:2015/nc/available_indexes",
             "method": "Get",
             "url": "http://localhost:2015/nc/available_indexes",
+            "multipart": false,
             "body_params": [],
             "headers_params": [
               [
@@ -343,6 +362,7 @@
             "name": "http://localhost:8082",
             "method": "Get",
             "url": "http://localhost:8082",
+            "multipart": false,
             "body_params": [],
             "headers_params": [
               [
@@ -355,6 +375,7 @@
             "name": "http://localhost:8082/images/upload",
             "method": "Post",
             "url": "http://localhost:8082/images/upload",
+            "multipart": false,
             "body_params": [],
             "headers_params": [
               [
@@ -367,11 +388,34 @@
             "name": "http://localhost:8082/image/upload",
             "method": "Post",
             "url": "http://localhost:8082/image/upload",
+            "multipart": true,
             "body_params": [],
             "headers_params": [
               [
                 "ferlola",
                 "etsia"
+              ]
+            ]
+          },
+          {
+            "name": "http://localhost:8082/foo",
+            "method": "Post",
+            "url": "http://localhost:8082/foo",
+            "multipart": false,
+            "body_params": [
+              [
+                "body",
+                "\"value1\""
+              ]
+            ],
+            "headers_params": [
+              [
+                "ferlola",
+                "etsia"
+              ],
+              [
+                "header",
+                "value1"
               ]
             ]
           }

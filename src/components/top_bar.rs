@@ -30,6 +30,7 @@ impl AppTopBar {
         i18n: &I18n,
     ) {
         const FILE_NAME: &str = "asapi_workspaces.json";
+
         if self.is_export_confirmation_open {
             egui::Window::new("Confirmar Exportación")
                 // .open(&mut self.is_export_confirmation_open)
@@ -49,6 +50,7 @@ impl AppTopBar {
                     });
                 });
         }
+
         egui::menu::bar(ui, |ui| {
             // ui.set_width(200.0);
             ui.heading("ASAPI");

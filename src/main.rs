@@ -84,7 +84,10 @@ impl Asapi {
         const FILE_NAME: &str = "asapi_workspaces.json";
         let state = match load_state(FILE_NAME) {
             Ok(state) => state,
-            Err(_) => AppState::default(),
+            Err(err) => {
+                eprintln!("{err:?}");
+                AppState::default()
+            }
         };
 
         Self {

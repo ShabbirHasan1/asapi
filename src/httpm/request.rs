@@ -8,17 +8,27 @@
 
 use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
 use reqwest::{multipart, Body, Client, ClientBuilder, Response};
+use serde::{Deserialize, Serialize};
 use serde_json::Value as JsonValue;
 use std::ffi::OsStr;
-use std::iter::zip;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::str::FromStr;
 use tokio::fs::File;
 use tokio_util::codec::{BytesCodec, FramedRead};
 
 use crate::info;
 
-use super::methods::HttpMethod;
+use crate::httpm::methods::HttpMethod;
+
+#[derive(Clone, Default, Serialize, Deserialize, Debug)]
+pub struct Request {
+    pub name: String,
+    pub method: HttpMethod,
+    pub url: String,
+    pub multipart: bool,
+    pub body_params: Vec<(String, String)>,
+    pub headers_params: Vec<(String, String)>,
+}
 
 pub async fn api_request(
     method: HttpMethod,
@@ -115,8 +125,7 @@ pub async fn upload_file(
 ) -> Result<String, UploadError> {
     // let client = Client::new();
     let client = ClientBuilder::new()
-        // Por defecto es 90, lo reduzco.
-        .pool_idle_timeout(Some(Duration::from_secs(20)))
+        .pool_idle_timeout(Some(Duration::from_secs(20))) // Por defecto es 90, lo reduzco.
         .build()
         .unwrap();
     let file = File::open(file_path)
@@ -164,13 +173,101 @@ pub async fn upload_file(
     }
 }
 
-// TODO: Hay que añadir a la documentación de la web/aplicación
-// que cuando subimos archivos por ahora (240513) no permitimos
-// más que subir un campo `file` con un archivo, o un campo `files`
-// con muchos archivos.
-// Para saber cómo se hace esto de muchos archivos en el mismo `part`
-// esta conversación de stackoverflow es muy clarificadora.
-// https://stackoverflow.com/questions/36674161/http-multipart-form-data-multiple-files-in-one-input
+pub async fn upload_files_in_body_params(
+    url: &str,
+    headers: &Vec<(String, String)>,
+    body_params: &[(String, String)],
+    has_files: &[bool],
+    files: &[Vec<PathBuf>],
+) -> Result<String, UploadError> {
+    let client = ClientBuilder::new()
+        .pool_idle_timeout(Some(Duration::from_secs(20)))
+        .build()
+        .unwrap();
+    let mut form = multipart::Form::new();
+
+    for (idx, param_with_files) in has_files.iter().enumerate() {
+        let (k, v) = &body_params[idx];
+        let files = &files[idx];
+
+        if *param_with_files {
+            // Si el parámetro tiene un archivo, lo metemos como `part` en el `form`.
+            let file_path = &files[0];
+            if files.len() == 1 {
+                let file_name = file_path
+                    .file_name()
+                    .and_then(OsStr::to_str)
+                    .map(String::from);
+                if file_name.is_none() {
+                    return Err(UploadError::IOError(String::from(
+                        "El archivo no tiene nombre. Es un directorio?",
+                    )));
+                }
+
+                let file = File::open(file_path)
+                    .await
+                    .map_err(|err| UploadError::IOError(err.to_string()))?;
+                let mime_type = mime_guess::from_path(file_path).first_or_octet_stream();
+                let stream = FramedRead::new(file, BytesCodec::new());
+                let file_body = Body::wrap_stream(stream);
+
+                let part = multipart::Part::stream(file_body)
+                    .file_name(file_name.unwrap())
+                    .mime_str(mime_type.essence_str())
+                    .map_err(|err| UploadError::MultipartError(err.to_string()))?;
+                form = form.part(k.clone(), part);
+            } else if files.len() > 1 {
+                // Si tenemos maś de un archivo, los metemos en el mismo campo del part,
+                // que será el nombre del campo.
+                for file_path in files {
+                    let file_name = file_path
+                        .file_name()
+                        .and_then(OsStr::to_str)
+                        .map(String::from);
+
+                    if file_name.is_none() {
+                        return Err(UploadError::IOError(String::from(
+                            "El archivo no tiene nombre. Es un directorio?",
+                        )));
+                    }
+                    println!("Uploaing files");
+                    let file = File::open(file_path)
+                        .await
+                        .map_err(|err| UploadError::IOError(err.to_string()))?;
+                    let mime_type = mime_guess::from_path(file_path).first_or_octet_stream();
+                    let stream = FramedRead::new(file, BytesCodec::new());
+                    let file_body = Body::wrap_stream(stream);
+
+                    let part = multipart::Part::stream(file_body)
+                        .file_name(file_name.unwrap())
+                        .mime_str(mime_type.essence_str())
+                        .map_err(|err| UploadError::MultipartError(err.to_string()))?;
+                    form = form.part("files", part);
+                }
+            }
+        } else {
+            // Si no tenemos archivos, metemos el parámetro como texto.
+            form = form.text(k.clone(), v.clone());
+        }
+    }
+
+    let result = client
+        .post(url)
+        .headers(get_headers(headers))
+        .multipart(form)
+        .send()
+        .await
+        .map_err(|e| UploadError::RequestError(e.to_string()))?
+        .text()
+        .await
+        .map_err(|e| UploadError::RequestError(e.to_string()))?;
+
+    Ok(result)
+}
+
+/// Para saber cómo se hace esto de muchos archivos en el mismo `part`
+/// esta conversación de stackoverflow es muy clarificadora.
+/// https://stackoverflow.com/questions/36674161/http-multipart-form-data-multiple-files-in-one-input
 pub async fn upload_files(
     file_paths: Vec<PathBuf>,
     url: &str,
