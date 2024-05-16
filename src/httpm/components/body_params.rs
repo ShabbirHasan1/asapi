@@ -61,17 +61,6 @@ impl BodyParams {
                         i18n.http_selected_files_prefix
                     ))
                     .on_hover_ui(|ui| {
-                        // egui::ScrollArea::vertical().show(ui, |ui| {
-                        // for f in state
-                        //     .files
-                        //     .files_in_selected_folder
-                        //     .iter()
-                        //     .map(|p| p.to_str())
-                        //     .filter(|p| p.is_some())
-                        //     .map(|p| p.unwrap())
-                        // {
-                        //     ui.label(f);
-                        // }
                         ui.label(
                             &state
                                 .files
@@ -83,7 +72,6 @@ impl BodyParams {
                                 .collect::<Vec<&str>>()
                                 .join("\n"),
                         );
-                        // });
                     });
                     if ui.button(&i18n.http_clean_file_folder_selection).clicked() {
                         state.files.reset();
