@@ -91,41 +91,35 @@ impl HttpView {
             }
             self.state.has_been_updated = true;
         }
+
         while let Ok(tuple) = self.rx.try_recv() {
-            // self.messages.push(msg);
             self.response = tuple.0;
             self.state.response_headers = tuple.1;
             self.request_allowed = true;
         }
-        // let events: Vec<egui::Event> = ctx.input(|i| i.events.clone());
-        // for event in &events {
-        // if let egui::Event::Paste(pasted_text) = event {
-        // info!("{}", pasted_text);
+
+        // if self.state.files.must_read {
+        //     match (
+        //         &self.state.files.current_state,
+        //         &self.state.files.selected_mode,
+        //     ) {
+        //         (Some(st), Some(mode)) => {
+        //             match (st, mode) {
+        //                 (DialogState::Selected(path), DialogMode::SelectDirectory) => {
+        //                     self.state.files.files_in_selected_folder =
+        //                         list_files_in_directory(path.as_path());
+        //                     self.state.files.must_read = false;
+        //                 }
+        //                 (DialogState::Selected(path), DialogMode::SelectFile) => {
+        //                     self.state.files.files_in_selected_folder = vec![path.to_path_buf()];
+        //                     self.state.files.must_read = false;
+        //                 }
+        //                 _ => (),
+        //             };
+        //         }
+        //         _ => (),
+        //     }
         // }
-        // }
-        // egui::introspection::font_id_ui(ui, &mut self.configuration.font_id);
-        if self.state.files.must_read {
-            match (
-                &self.state.files.current_state,
-                &self.state.files.selected_mode,
-            ) {
-                (Some(st), Some(mode)) => {
-                    match (st, mode) {
-                        (DialogState::Selected(path), DialogMode::SelectDirectory) => {
-                            self.state.files.files_in_selected_folder =
-                                list_files_in_directory(path.as_path());
-                            self.state.files.must_read = false;
-                        }
-                        (DialogState::Selected(path), DialogMode::SelectFile) => {
-                            self.state.files.files_in_selected_folder = vec![path.to_path_buf()];
-                            self.state.files.must_read = false;
-                        }
-                        _ => (),
-                    };
-                }
-                _ => (),
-            }
-        }
 
         // ===================================================================
         // == Subheader
@@ -182,7 +176,6 @@ impl HttpView {
                         self.send_request(ctx, rt);
                     }
 
-                    // ui.with_layout(egui::Layout::left_to_right(egui::Align::Max), |ui| {
                     // --> Solo mostramos el rendimiento en caso de que tengamos una petición seleccionada <--
                     // Esto implica que para poder testear rendimiento hay que guardar la petición.
                     if self.state.selected_request_idx.is_some()
@@ -191,7 +184,6 @@ impl HttpView {
                     {
                         self.state.panel = HttpPanel::Performance;
                     }
-                    // });
                 });
 
                 ui.separator();

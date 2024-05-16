@@ -6,7 +6,6 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
-use std::default;
 use std::path::PathBuf;
 
 use egui_file_dialog::{DialogMode, DialogState, FileDialog};

@@ -10,15 +10,14 @@ use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
 use reqwest::{multipart, Body, Client, ClientBuilder, Response};
 use serde_json::Value as JsonValue;
 use std::ffi::OsStr;
-use std::iter::zip;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::str::FromStr;
 use tokio::fs::File;
 use tokio_util::codec::{BytesCodec, FramedRead};
 
 use crate::info;
 
-use super::methods::HttpMethod;
+use crate::httpm::methods::HttpMethod;
 
 pub async fn api_request(
     method: HttpMethod,
