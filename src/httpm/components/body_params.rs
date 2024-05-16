@@ -46,6 +46,7 @@ impl BodyParams {
             return None;
         }
 
+        // --> Gestión de ventanas para selección archivo / carpeta <--
         if state.files.must_read {
             match (&state.files.current_state, &state.files.selected_mode) {
                 (Some(st), Some(mode)) => {
@@ -96,9 +97,9 @@ impl BodyParams {
                 let (header_key, header_value) = &mut self.params[i];
                 ui.add(egui::TextEdit::singleline(header_key).hint_text("key"));
 
-                if !(state.upload_files && self.has_files[i]) {
+                if !(self.multipart && self.has_files[i]) {
                     ui.label(":");
-                    ui.add(if state.upload_files {
+                    ui.add(if self.multipart {
                         egui::TextEdit::singleline(header_value).hint_text("value")
                     } else {
                         egui::TextEdit::singleline(header_value)
@@ -107,7 +108,7 @@ impl BodyParams {
                     });
                 }
 
-                if state.upload_files {
+                if self.multipart {
                     ui.checkbox(&mut self.has_files[i], &i18n.http_body_add_files);
                     if self.has_files[i] {
                         if ui.button(&i18n.http_select_folder).clicked() {
@@ -125,7 +126,11 @@ impl BodyParams {
                         if ui
                             .add(egui::Button::new(format!(
                                 "Borrar {len} archivos {}",
-                                IconMoon::Letteri.as_str()
+                                if len > 0 {
+                                    IconMoon::Letteri.as_str()
+                                } else {
+                                    ""
+                                }
                             )))
                             .on_hover_ui_at_pointer(|ui| {
                                 ui.label(

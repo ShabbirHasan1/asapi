@@ -401,7 +401,7 @@
             "name": "http://localhost:8082/foo",
             "method": "Post",
             "url": "http://localhost:8082/foo",
-            "multipart": true,
+            "multipart": false,
             "body_params": [
               [
                 "body",

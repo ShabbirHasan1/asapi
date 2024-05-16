@@ -99,29 +99,6 @@ impl HttpView {
             self.request_allowed = true;
         }
 
-        // if self.state.files.must_read {
-        //     match (
-        //         &self.state.files.current_state,
-        //         &self.state.files.selected_mode,
-        //     ) {
-        //         (Some(st), Some(mode)) => {
-        //             match (st, mode) {
-        //                 (DialogState::Selected(path), DialogMode::SelectDirectory) => {
-        //                     self.state.files.files_in_selected_folder =
-        //                         list_files_in_directory(path.as_path());
-        //                     self.state.files.must_read = false;
-        //                 }
-        //                 (DialogState::Selected(path), DialogMode::SelectFile) => {
-        //                     self.state.files.files_in_selected_folder = vec![path.to_path_buf()];
-        //                     self.state.files.must_read = false;
-        //                 }
-        //                 _ => (),
-        //             };
-        //         }
-        //         _ => (),
-        //     }
-        // }
-
         // ===================================================================
         // == Subheader
         // ===================================================================
@@ -296,19 +273,51 @@ impl HttpView {
     }
 
     fn send_request(&mut self, ctx: &egui::Context, rt: &Runtime) {
-        if self.state.upload_files && self.method == HttpMethod::Post {
+        if self.body.multipart && self.method == HttpMethod::Post {
             self.file_request(
                 ctx,
                 rt,
-                self.state.files.selected_mode.is_some()
-                    && self.state.files.selected_mode.unwrap() == DialogMode::SelectDirectory,
+                // self.state.files.selected_mode.is_some()
+                // && self.state.files.selected_mode.unwrap() == DialogMode::SelectDirectory,
             );
         } else {
             self.regular_request(ctx, rt);
         }
     }
 
-    fn file_request(&mut self, ctx: &egui::Context, rt: &Runtime, upload_many: bool) {
+    fn file_request(&mut self, ctx: &egui::Context, rt: &Runtime) {
+        let url = self.url.clone();
+        let body = self.body.params.clone();
+        let headers = self.headers.params.clone();
+        let method = self.method;
+        self.request_allowed = false;
+
+        if method == HttpMethod::Post {
+            let tx_cloned = self.tx.clone();
+            let ctx_cloned = ctx.clone();
+            let has_files = self.body.has_files.clone();
+            let files = self.body.files.clone();
+
+            rt.spawn(async move {
+                let response = match request::upload_files_in_body_params(
+                    &url, &headers, &body, &has_files, &files,
+                )
+                .await
+                {
+                    Ok(response) => (response, HeaderMap::default()),
+                    Err(error) => (
+                        format!("Error al realizar la solicitud: {:?}", error),
+                        HeaderMap::default(),
+                    ),
+                };
+
+                let _ = tx_cloned.send(response).await;
+                ctx_cloned.request_repaint();
+            });
+        }
+    }
+
+    fn _file_request(&mut self, ctx: &egui::Context, rt: &Runtime, upload_many: bool) {
         let url = self.url.clone();
         let body = self.body.params.clone();
         let headers = self.headers.params.clone();

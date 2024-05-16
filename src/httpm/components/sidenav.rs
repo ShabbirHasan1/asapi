@@ -28,7 +28,7 @@ impl HttpView {
                         name: self.url.clone(),
                         method: self.method,
                         url: self.url.clone(),
-                        multipart: self.state.upload_files,
+                        multipart: self.body.multipart,
                         body_params: self.body.params.clone(),
                         headers_params: self.headers.params.clone(),
                     };
@@ -93,6 +93,8 @@ impl HttpView {
                                     self.url = request.url.clone();
                                     self.body.params = request.body_params.clone();
                                     self.body.multipart = request.multipart;
+                                    self.body.has_files = vec![false; request.body_params.len()];
+                                    self.body.files = vec![vec![]; request.body_params.len()];
                                     self.headers.params = request.headers_params.clone();
                                     self.response.clear();
                                     self.state.has_request_some_change = false;
@@ -134,7 +136,6 @@ impl HttpView {
                             current_req.body_params = self.body.params.clone();
                             current_req.headers_params = self.headers.params.clone();
                             current_req.multipart = self.body.multipart;
-                            println!("Current request multipart? {}", current_req.multipart);
                             self.state.has_request_some_change = false;
                             self.state.selected_request_action = HttpRequestAction::None;
                         }

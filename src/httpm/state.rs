@@ -53,7 +53,7 @@ pub enum HttpRequestAction {
 pub struct HttpLocalState {
     // TODO: Debería borrar esto (`upload_files`) y pasar a usar solo el `multipart` de la
     // petición que tengo actualmente seleccionada, en vez de sincronizar.
-    pub upload_files: bool,
+    // pub upload_files: bool,
     pub selected_request_idx: Option<usize>,
     pub has_request_some_change: bool,
     pub selected_request_action: HttpRequestAction,
