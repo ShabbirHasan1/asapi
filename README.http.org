@@ -1,8 +1,7 @@
 * Features
-** 
+**
 
 * Bugs [0/1]
 ** TODO Varios problemas cuando enviamos archivos
   - no se limpia cuando realizao un nuevo envío la respuesta preexistente, y si falla la nueva petición no se sobreescribe
-  - archivos ocultos no se envían
   - no se guardan los archivos en el json
