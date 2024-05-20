@@ -8,6 +8,8 @@
 
 use serde::{Deserialize, Serialize};
 
+use super::icon_moon::IconMoon;
+
 #[derive(Copy, Clone, PartialEq, Eq, Serialize, Deserialize, Debug, Default)]
 pub enum I18nOptions {
     #[default]
@@ -201,8 +203,8 @@ pub fn language_selector(i: I18nOptions) -> I18n {
             http_btn_update_request: "Actualizar".to_owned(),
             http_btn_send_request: "Lanzar Petición".to_owned(),
             http_send_to_http_performance: "Rendimiento de la Petición".to_owned(),
-            http_select_file: String::from("Subir Archivo"),
-            http_select_folder: String::from("Subir Carpeta"),
+            http_select_file: format!("{} Subir Archivo", IconMoon::File.as_str()),
+            http_select_folder: format!("{} Subir Carpeta", IconMoon::FolderOpen.as_str()),
             http_clean_file_folder_selection: String::from("Limpiar Selección"),
             http_selected_files_prefix: String::from("archivos seleccionados"),
             http_multipart_help: String::from("Seleccinar para enviar petición como form/multipart, pertmitiendo subida de archivos"),
@@ -360,8 +362,8 @@ pub fn language_selector(i: I18nOptions) -> I18n {
             http_btn_update_request: "Update".to_owned(),
             http_btn_send_request: "Send Request".to_owned(),
             http_send_to_http_performance: "Request Performance".to_owned(),
-            http_select_file: String::from("Upload File"),
-            http_select_folder: String::from("Upload Folder"),
+            http_select_folder: format!("{} Upload Folder", IconMoon::FolderOpen.as_str()),
+            http_select_file: format!("{} Upload File", IconMoon::File.as_str()),
             http_clean_file_folder_selection: String::from("Clean Selection"),
             http_selected_files_prefix: String::from("selected files"),
             http_multipart_help: String::from("Selecting sends request as multipart, uploading files if selected"),
