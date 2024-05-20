@@ -42,7 +42,7 @@ pub struct HttpFileState {
     pub must_read: bool,
 }
 
-#[derive(Default)]
+#[derive(Debug, Default)]
 pub enum HttpRequestAction {
     #[default]
     None,

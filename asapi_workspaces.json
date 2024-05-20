@@ -424,5 +424,109 @@
       }
     ],
     "current_workspace_idx": 4
+  },
+  "pg": {
+    "show_sidebar": true,
+    "performance_table": false,
+    "connections": [
+      {
+        "host": "localhost",
+        "port": "5432",
+        "user": "postgres",
+        "password": "password",
+        "dbname": "fitosat"
+      },
+      {
+        "host": "localhost",
+        "port": "5432",
+        "user": "postgres",
+        "password": "password",
+        "dbname": "fitosat"
+      },
+      {
+        "host": "localhost",
+        "port": "5432",
+        "user": "postgres",
+        "password": "password",
+        "dbname": "spade"
+      },
+      {
+        "host": "localhost",
+        "port": "5433",
+        "user": "postgres",
+        "password": "password",
+        "dbname": "spade"
+      },
+      {
+        "host": "foo",
+        "port": "543",
+        "user": "asfd",
+        "password": "asdfasdf",
+        "dbname": "asdf"
+      }
+    ]
+  },
+  "mysql": {
+    "show_sidebar": true,
+    "performance_table": false,
+    "connections": [
+      {
+        "host": "localhost",
+        "port": "3306",
+        "user": "user",
+        "password": "password",
+        "dbname": "mydatabase"
+      }
+    ]
+  },
+  "sqlite": {
+    "show_sidebar": true,
+    "performance_table": false,
+    "connections": [
+      {
+        "path": "/home/nando/projects/asapi/app/sqlite-ddbb/db.sqlite3"
+      }
+    ]
+  },
+  "redis": {
+    "show_sidebar": true,
+    "connections": [
+      {
+        "host": "localhost",
+        "port": "6379"
+      },
+      {
+        "host": "localhost",
+        "port": "6380"
+      }
+    ]
+  },
+  "mongo": {
+    "show_sidebar": true,
+    "performance_table": false,
+    "connections": [
+      {
+        "host": "localhost",
+        "port": "27017",
+        "user": "root",
+        "password": "password",
+        "is_srv": false
+      }
+    ]
+  },
+  "kafka": {
+    "show_sidebar": true,
+    "clusters": [
+      {
+        "name": "Clúster Local",
+        "host": "localhost",
+        "port": "9095"
+      },
+      {
+        "name": "",
+        "host": "",
+        "port": ""
+      }
+    ]
   }
 }

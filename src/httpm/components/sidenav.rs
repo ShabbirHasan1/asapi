@@ -155,6 +155,7 @@ impl HttpView {
                     match self.state.selected_request_action {
                         HttpRequestAction::None => (),
                         HttpRequestAction::Rename => {
+                            println!("{} - {:?}", idx, self.state.selected_request_action);
                             let button = &buttons[idx];
                             egui::popup::popup_below_widget(ui, popup_id, button, |ui| {
                                 ui.set_min_width(200.0);
@@ -162,7 +163,6 @@ impl HttpView {
                                 ui.text_edit_singleline(&mut current_workspace.requests[idx].name)
                                     .request_focus();
                             });
-                            self.state.selected_request_action = HttpRequestAction::None;
                         }
                         HttpRequestAction::Delete => {
                             app_st.workspaces[app_st.current_workspace_idx]
