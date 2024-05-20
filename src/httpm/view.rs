@@ -7,7 +7,6 @@
 // -------------------------------------------------------------------------
 
 use eframe::egui;
-use egui_file_dialog::DialogMode;
 use egui_json_tree::JsonTree;
 use reqwest::header::HeaderMap;
 use serde_json::Value;

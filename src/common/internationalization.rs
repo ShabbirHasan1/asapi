@@ -52,6 +52,9 @@ pub struct I18n {
     pub http_context_menu_update: String,
     pub http_body_add_files: String,
     pub http_edit_request_name: String,
+    pub http_save_request: String,
+    pub http_import_swagger: String,
+    pub http_swagger_json_limitation: String,
 
     // Kafka
     pub kafka_accept: String,
@@ -213,6 +216,9 @@ pub fn language_selector(i: I18nOptions) -> I18n {
             http_context_menu_update: String::from("Actualizar"),
             http_body_add_files: String::from("Añadir Archivo(s)"),
             http_edit_request_name: String::from("Editar Nombre de la Petición"),
+            http_save_request: String::from("Guardar Petición"),
+            http_import_swagger: format!("Importar OpenAPI {}", IconMoon::Letteri),
+            http_swagger_json_limitation: String::from("Solo JSON"),
 
             // Kafka
             kafka_accept: String::from("Aceptar"),
@@ -372,6 +378,9 @@ pub fn language_selector(i: I18nOptions) -> I18n {
             http_context_menu_update: String::from("Update"),
             http_body_add_files: String::from("Add File(s)"),
             http_edit_request_name: String::from("Edit Request Name"),
+            http_save_request: String::from("Save Request"),
+            http_import_swagger: format!("Import OpenAPI {}", IconMoon::Letteri),
+            http_swagger_json_limitation: String::from("Only JSON allowed"),
 
             // Kafka
             kafka_accept: String::from("Accept"),

@@ -8,10 +8,10 @@
 
 use eframe::egui;
 
+use crate::common::internationalization::I18n;
 use crate::httpm::request::Request;
 use crate::httpm::state::{HttpAppState, HttpRequestAction};
-
-use crate::common::internationalization::I18n;
+use crate::httpm::swagger;
 use crate::httpm::view::HttpView;
 
 use super::context_menus;
@@ -23,7 +23,9 @@ impl HttpView {
             .show(ctx, |ui| {
                 let current_workspace = &mut app_st.workspaces[app_st.current_workspace_idx];
 
-                if ui.button("Guardar petición").clicked() {
+                let save_request_btn =
+                    egui::Button::new(&i18n.http_save_request).min_size(egui::vec2(200.0, 16.0));
+                if ui.add(save_request_btn).clicked() {
                     let new_request = Request {
                         name: self.url.clone(),
                         method: self.method,
@@ -35,6 +37,49 @@ impl HttpView {
                     current_workspace.requests.push(new_request);
                     self.state.has_request_some_change = false;
                     self.state.selected_request_idx = None;
+                }
+
+                let import_swagger_btn =
+                    egui::Button::new(&i18n.http_import_swagger).min_size(egui::vec2(200.0, 16.0));
+                if ui
+                    .add(import_swagger_btn)
+                    .on_hover_ui_at_pointer(|ui| {
+                        ui.label(&i18n.http_swagger_json_limitation);
+                    })
+                    .clicked()
+                {
+                    self.state.files.swagger_file_dialog.select_file();
+                    self.state.show_confirmation_window = true;
+                }
+
+                // --> Gestión de la ventana de diálogo para seleccionar swagger <--
+                let swagger = if let Some(file) =
+                    self.state.files.swagger_file_dialog.update(ctx).selected()
+                {
+                    file.as_os_str().to_str().and_then(swagger::load_file_opt)
+                } else {
+                    None
+                };
+                if self.state.show_confirmation_window {
+                    match swagger {
+                        Some(ref s) => {
+                            egui::Window::new("Confirm Swagger Import").show(ctx, |ui| {
+                                ui.label(s.to_string());
+                                ui.horizontal(|ui| {
+                                    if ui.button("Cancelar").clicked() {
+                                        self.state.show_confirmation_window = false;
+                                    }
+                                    if ui.button("Aceptar").clicked() {
+                                        self.state.show_confirmation_window = false;
+
+                                        let mut requests = swagger::create_requests(s);
+                                        current_workspace.requests.append(&mut requests);
+                                    }
+                                })
+                            });
+                        }
+                        _ => {}
+                    }
                 }
 
                 ui.separator();
