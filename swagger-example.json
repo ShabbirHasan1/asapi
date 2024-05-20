@@ -1,0 +1,190 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "API de Ejemplo",
+    "description": "Esta es una API simple para demostración.",
+    "version": "1.0.0"
+  },
+  "host": "api.ejemplo.com",
+  "basePath": "/v1",
+  "schemes": ["https"],
+  "paths": {
+    "/tareas": {
+      "get": {
+        "summary": "Lista todas las tareas",
+        "operationId": "listTasks",
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "Token de autenticación JWT",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operación exitosa"
+          }
+        }
+      },
+      "post": {
+        "summary": "Crea una nueva tarea",
+        "operationId": "createTask",
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "Token de autenticación JWT",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "tarea",
+            "in": "body",
+            "description": "Tarea a añadir",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "titulo": {
+                  "type": "string"
+                },
+                "descripcion": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Tarea creada"
+          }
+        }
+      },
+      "put": {
+        "summary": "Actualiza una tarea existente",
+        "operationId": "updateTask",
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "Token de autenticación JWT",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "tareaId",
+            "in": "query",
+            "type": "string",
+            "required": true,
+            "description": "ID de la tarea a actualizar"
+          },
+          {
+            "name": "tarea",
+            "in": "body",
+            "description": "Datos actualizados de la tarea",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "titulo": {
+                  "type": "string"
+                },
+                "descripcion": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Tarea actualizada"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Elimina una tarea",
+        "operationId": "deleteTask",
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "Token de autenticación JWT",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "tareaId",
+            "in": "query",
+            "type": "string",
+            "required": true,
+            "description": "ID de la tarea a eliminar"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Tarea eliminada"
+          }
+        }
+      }
+    },
+    "/usuarios": {
+      "get": {
+        "summary": "Obtiene la lista de usuarios",
+        "operationId": "listUsers",
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "Token de autenticación JWT",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de usuarios"
+          }
+        }
+      },
+      "post": {
+        "summary": "Crea un nuevo usuario",
+        "operationId": "createUser",
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "Token de autenticación JWT",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "usuario",
+            "in": "body",
+            "description": "Información del nuevo usuario",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "nombre": {
+                  "type": "string"
+                },
+                "email": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Usuario creado"
+          }
+        }
+      }
+    }
+  }
+}

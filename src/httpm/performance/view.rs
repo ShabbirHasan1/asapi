@@ -148,12 +148,12 @@ impl HttpPerformanceView {
 
         if self.show_headers {
             self.params
-                .create(ui, request.headers_params.clone(), "Headers".to_string());
+                .create_header(ui, &mut request.headers_params, "Headers".to_string());
         }
 
         if !(method == HttpMethod::Get || method == HttpMethod::Delete) && self.show_body {
             self.params
-                .create(ui, request.body_params.clone(), "Body".to_string());
+                .create_body(ui, &mut request.body_params, "Body".to_string());
         }
 
         ui.separator();

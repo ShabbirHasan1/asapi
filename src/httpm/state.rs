@@ -32,13 +32,14 @@ pub enum HttpPanel {
 #[derive(Default)]
 pub struct HttpFileState {
     pub file_dialog: FileDialog,
+    pub swagger_file_dialog: FileDialog,
     pub files_in_selected_folder: Vec<PathBuf>,
     pub selected_mode: Option<DialogMode>,
     pub current_state: Option<DialogState>,
     pub must_read: bool,
 }
 
-#[derive(Default)]
+#[derive(Debug, Default)]
 pub enum HttpRequestAction {
     #[default]
     None,
@@ -60,4 +61,5 @@ pub struct HttpLocalState {
     pub panel: HttpPanel,
     pub performance_panel: HttpPerformanceView,
     pub files: HttpFileState,
+    pub show_confirmation_window: bool,
 }

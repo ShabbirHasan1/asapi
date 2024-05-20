@@ -8,6 +8,8 @@
 
 use serde::{Deserialize, Serialize};
 
+use super::icon_moon::IconMoon;
+
 #[derive(Copy, Clone, PartialEq, Eq, Serialize, Deserialize, Debug, Default)]
 pub enum I18nOptions {
     #[default]
@@ -50,6 +52,9 @@ pub struct I18n {
     pub http_context_menu_update: String,
     pub http_body_add_files: String,
     pub http_edit_request_name: String,
+    pub http_save_request: String,
+    pub http_import_swagger: String,
+    pub http_swagger_json_limitation: String,
 
     // Kafka
     pub kafka_accept: String,
@@ -201,8 +206,8 @@ pub fn language_selector(i: I18nOptions) -> I18n {
             http_btn_update_request: "Actualizar".to_owned(),
             http_btn_send_request: "Lanzar Petición".to_owned(),
             http_send_to_http_performance: "Rendimiento de la Petición".to_owned(),
-            http_select_file: String::from("Subir Archivo"),
-            http_select_folder: String::from("Subir Carpeta"),
+            http_select_file: format!("{} Subir Archivo", IconMoon::File.as_str()),
+            http_select_folder: format!("{} Subir Carpeta", IconMoon::FolderOpen.as_str()),
             http_clean_file_folder_selection: String::from("Limpiar Selección"),
             http_selected_files_prefix: String::from("archivos seleccionados"),
             http_multipart_help: String::from("Seleccinar para enviar petición como form/multipart, pertmitiendo subida de archivos"),
@@ -211,6 +216,9 @@ pub fn language_selector(i: I18nOptions) -> I18n {
             http_context_menu_update: String::from("Actualizar"),
             http_body_add_files: String::from("Añadir Archivo(s)"),
             http_edit_request_name: String::from("Editar Nombre de la Petición"),
+            http_save_request: String::from("Guardar Petición"),
+            http_import_swagger: format!("Importar OpenAPI {}", IconMoon::Letteri),
+            http_swagger_json_limitation: String::from("Solo JSON"),
 
             // Kafka
             kafka_accept: String::from("Aceptar"),
@@ -360,8 +368,8 @@ pub fn language_selector(i: I18nOptions) -> I18n {
             http_btn_update_request: "Update".to_owned(),
             http_btn_send_request: "Send Request".to_owned(),
             http_send_to_http_performance: "Request Performance".to_owned(),
-            http_select_file: String::from("Upload File"),
-            http_select_folder: String::from("Upload Folder"),
+            http_select_folder: format!("{} Upload Folder", IconMoon::FolderOpen.as_str()),
+            http_select_file: format!("{} Upload File", IconMoon::File.as_str()),
             http_clean_file_folder_selection: String::from("Clean Selection"),
             http_selected_files_prefix: String::from("selected files"),
             http_multipart_help: String::from("Selecting sends request as multipart, uploading files if selected"),
@@ -370,6 +378,9 @@ pub fn language_selector(i: I18nOptions) -> I18n {
             http_context_menu_update: String::from("Update"),
             http_body_add_files: String::from("Add File(s)"),
             http_edit_request_name: String::from("Edit Request Name"),
+            http_save_request: String::from("Save Request"),
+            http_import_swagger: format!("Import OpenAPI {}", IconMoon::Letteri),
+            http_swagger_json_limitation: String::from("Only JSON allowed"),
 
             // Kafka
             kafka_accept: String::from("Accept"),
