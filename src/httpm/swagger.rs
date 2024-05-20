@@ -183,7 +183,7 @@ impl Request {
             .unwrap_or(&vec![])
             .iter()
             .filter(|p| p.in_field == "body")
-            .map(|p| (p.name.clone(), p.type_.clone().unwrap_or_default()))
+            .map(|p| (p.name.clone(), p.type_.clone().unwrap_or_default(), false))
             .collect();
 
         let headers_params = operation

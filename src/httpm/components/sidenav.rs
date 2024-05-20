@@ -6,6 +6,8 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
+use std::path::PathBuf;
+
 use eframe::egui;
 
 use crate::common::internationalization::I18n;
@@ -136,10 +138,21 @@ impl HttpView {
                                     self.state.selected_request_idx = Some(idx);
                                     self.method = request.method;
                                     self.url = request.url.clone();
-                                    self.body.params = request.body_params.clone();
                                     self.body.multipart = request.multipart;
-                                    self.body.has_files = vec![false; request.body_params.len()];
+
+                                    self.body.params = request.body_params.clone();
                                     self.body.files = vec![vec![]; request.body_params.len()];
+                                    for (idx, param) in self.body.params.iter().enumerate() {
+                                        let has_files = param.2;
+                                        if has_files {
+                                            self.body.files[idx] = param
+                                                .1
+                                                .split(',')
+                                                .map(|s| PathBuf::from(s))
+                                                .collect::<Vec<PathBuf>>();
+                                        }
+                                    }
+
                                     self.headers.params = request.headers_params.clone();
                                     self.response.clear();
                                     self.state.has_request_some_change = false;

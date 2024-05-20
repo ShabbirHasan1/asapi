@@ -187,7 +187,7 @@ impl HttpView {
                 if self.show_body {
                     if let Some(value) =
                         self.body
-                            .create(ctx, ui, self.method, &mut self.state, i18n)
+                            .show(ctx, ui, self.method, &mut self.state, i18n)
                     {
                         self.state.has_request_some_change = value;
                     }
@@ -294,12 +294,12 @@ impl HttpView {
         if method == HttpMethod::Post {
             let tx_cloned = self.tx.clone();
             let ctx_cloned = ctx.clone();
-            let has_files = self.body.has_files.clone();
+            // let has_files = self.body.params.iter().map(|(_, _, f)| *f).collect::<Vec<bool>>();
             let files = self.body.files.clone();
 
             rt.spawn(async move {
                 let response = match request::upload_files_in_body_params(
-                    &url, &headers, &body, &has_files, &files,
+                    &url, &headers, &body, &files,
                 )
                 .await
                 {

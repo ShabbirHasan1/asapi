@@ -6,12 +6,11 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
-use std::path::PathBuf;
-
 use eframe::egui;
 use egui_file_dialog::{DialogMode, DialogState};
 use egui_json_tree::JsonTree;
 use serde_json::Value as JsonValue;
+use std::path::PathBuf;
 
 use crate::{
     common::{fs::list_files_in_directory, icon_moon::IconMoon, internationalization::I18n},
@@ -24,13 +23,13 @@ pub struct BodyParams {
     pub selected_idx: usize,
 
     // Estos tres vectores tienen que estar sincronizados, a.k.a., tener la misma longitud.
-    pub params: Vec<(String, String)>,
-    pub has_files: Vec<bool>,     // Cada campo tiene archivos?
+    pub params: Vec<(String, String, bool)>,
+    // pub has_files: Vec<bool>,     // Cada campo tiene archivos?
     pub files: Vec<Vec<PathBuf>>, // Archivos seleccionados, cada índice para cada parámetro.
 }
 
 impl BodyParams {
-    pub fn create(
+    pub fn show(
         &mut self,
         ctx: &egui::Context,
         ui: &mut egui::Ui,
@@ -52,7 +51,24 @@ impl BodyParams {
                 (Some(st), Some(mode)) => {
                     match (st, mode) {
                         (DialogState::Selected(path), DialogMode::SelectDirectory) => {
-                            self.files[self.selected_idx] = list_files_in_directory(path.as_path());
+                            let files = list_files_in_directory(path.as_path());
+                            self.files[self.selected_idx] = files.clone();
+                            let files_as_str = files
+                                .iter()
+                                .map(|s| s.as_os_str().to_str().unwrap_or_default())
+                                .collect::<Vec<&str>>()
+                                .join(", ");
+                            println!("{files_as_str}");
+                            self.params[self.selected_idx].1 = format!("\"{}\"", files_as_str);
+                            println!(
+                                "{} : {}",
+                                self.params[self.selected_idx].0, self.params[self.selected_idx].1
+                            );
+
+                            // .flat_map(OsStr::to_str)
+                            // .map(String::from);
+                            // self.params[self.selected_idx] =
+
                             state.files.must_read = false;
                             self.selected_idx = usize::MAX;
                         }
@@ -71,8 +87,7 @@ impl BodyParams {
         ui.horizontal(|ui| {
             ui.label("Body");
             if editable && ui.button("+").clicked() {
-                self.params.push((String::new(), String::new()));
-                self.has_files.push(false);
+                self.params.push((String::new(), String::new(), false));
                 self.files.push(vec![]);
                 has_changed = Some(true);
             }
@@ -94,23 +109,23 @@ impl BodyParams {
                     has_changed = Some(true);
                 }
 
-                let (header_key, header_value) = &mut self.params[i];
-                ui.add(egui::TextEdit::singleline(header_key).hint_text("key"));
+                let (k, v, param_with_files) = &mut self.params[i];
+                ui.add(egui::TextEdit::singleline(k).hint_text("key"));
 
-                if !(self.multipart && self.has_files[i]) {
+                if !(self.multipart && *param_with_files) {
                     ui.label(":");
                     ui.add(if self.multipart {
-                        egui::TextEdit::singleline(header_value).hint_text("value")
+                        egui::TextEdit::singleline(v).hint_text("value")
                     } else {
-                        egui::TextEdit::singleline(header_value)
+                        egui::TextEdit::singleline(v)
                             .hint_text("value")
                             .desired_width(f32::INFINITY)
                     });
                 }
 
                 if self.multipart {
-                    ui.checkbox(&mut self.has_files[i], &i18n.http_body_add_files);
-                    if self.has_files[i] {
+                    ui.checkbox(&mut self.params[i].2, &i18n.http_body_add_files);
+                    if self.params[i].2 {
                         if ui.button(&i18n.http_select_folder).clicked() {
                             self.selected_idx = i;
                             state.files.file_dialog.select_directory();
@@ -161,7 +176,7 @@ impl BodyParams {
             let json_map: serde_json::Map<String, JsonValue> = self
                 .params
                 .iter()
-                .map(|(k, v)| (k.clone(), serde_json::from_str(v).unwrap_or_default()))
+                .map(|(k, v, _)| (k.clone(), serde_json::from_str(v).unwrap_or_default()))
                 .collect();
             let json_value = JsonValue::Object(json_map);
             JsonTree::new("http_body", &json_value)

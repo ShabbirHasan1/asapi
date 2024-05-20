@@ -33,9 +33,6 @@ pub enum HttpPanel {
 pub struct HttpFileState {
     pub file_dialog: FileDialog,
     pub swagger_file_dialog: FileDialog,
-    // pub selected_path: Option<PathBuf>,
-    // pub selected_folder: Option<PathBuf>,
-    // pub selected_file: Option<PathBuf>,
     pub files_in_selected_folder: Vec<PathBuf>,
     pub selected_mode: Option<DialogMode>,
     pub current_state: Option<DialogState>,

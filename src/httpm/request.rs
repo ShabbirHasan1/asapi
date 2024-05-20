@@ -26,14 +26,14 @@ pub struct Request {
     pub method: HttpMethod,
     pub url: String,
     pub multipart: bool,
-    pub body_params: Vec<(String, String)>,
+    pub body_params: Vec<(String, String, bool)>, // key -- value -- has files
     pub headers_params: Vec<(String, String)>,
 }
 
 pub async fn api_request(
     method: HttpMethod,
     url: &str,
-    body_params: &[(String, String)],
+    body_params: &[(String, String, bool)],
     headers: &Vec<(String, String)>, // shared: Arc<Mutex<String>>
 ) -> Result<(String, HeaderMap), reqwest::Error> {
     let client = Client::new();
@@ -43,7 +43,7 @@ pub async fn api_request(
         HttpMethod::Post => {
             let json_map: serde_json::Map<String, JsonValue> = body_params
                 .iter()
-                .map(|(k, v)| (k.clone(), serde_json::from_str(v).unwrap_or_default()))
+                .map(|(k, v, _)| (k.clone(), serde_json::from_str(v).unwrap_or_default()))
                 .collect();
             let body = JsonValue::Object(json_map);
 
@@ -58,7 +58,7 @@ pub async fn api_request(
         HttpMethod::Put => {
             let json_map: serde_json::Map<String, JsonValue> = body_params
                 .iter()
-                .map(|(k, v)| (k.clone(), serde_json::from_str(v).unwrap_or_default()))
+                .map(|(k, v, _)| (k.clone(), serde_json::from_str(v).unwrap_or_default()))
                 .collect();
             let body = JsonValue::Object(json_map);
             info!("{:?}", body);
@@ -120,7 +120,7 @@ use std::time::Duration;
 pub async fn upload_file(
     file_path: &PathBuf,
     url: &str,
-    body_params: &[(String, String)],
+    body_params: &[(String, String, bool)],
     headers: &Vec<(String, String)>, // shared: Arc<Mutex<String>>
 ) -> Result<String, UploadError> {
     // let client = Client::new();
@@ -146,7 +146,7 @@ pub async fn upload_file(
             .map_err(|err| UploadError::MultipartError(err.to_string()))
             .map(|part| {
                 let mut form = multipart::Form::new().part("file", part);
-                for (k, v) in body_params {
+                for (k, v, _) in body_params {
                     form = form.text(k.clone(), v.clone());
                 }
                 form
@@ -176,8 +176,8 @@ pub async fn upload_file(
 pub async fn upload_files_in_body_params(
     url: &str,
     headers: &Vec<(String, String)>,
-    body_params: &[(String, String)],
-    has_files: &[bool],
+    body_params: &[(String, String, bool)],
+    // has_files: &[bool],
     files: &[Vec<PathBuf>],
 ) -> Result<String, UploadError> {
     let client = ClientBuilder::new()
@@ -186,8 +186,8 @@ pub async fn upload_files_in_body_params(
         .unwrap();
     let mut form = multipart::Form::new();
 
-    for (idx, param_with_files) in has_files.iter().enumerate() {
-        let (k, v) = &body_params[idx];
+    for (idx, (k, v, param_with_files)) in body_params.iter().enumerate() {
+        // let (k, v, f) = &body_params[idx];
         let files = &files[idx];
 
         if *param_with_files {
@@ -271,7 +271,7 @@ pub async fn upload_files_in_body_params(
 pub async fn upload_files(
     file_paths: Vec<PathBuf>,
     url: &str,
-    body_params: &[(String, String)],
+    body_params: &[(String, String, bool)],
     headers: &Vec<(String, String)>,
 ) -> Result<String, UploadError> {
     let client = ClientBuilder::new()
@@ -306,7 +306,7 @@ pub async fn upload_files(
         form = form.part("files", part);
     }
 
-    for (k, v) in body_params {
+    for (k, v, _) in body_params {
         form = form.text(k.clone(), v.clone());
     }
 
