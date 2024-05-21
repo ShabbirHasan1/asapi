@@ -6,7 +6,7 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
-use bson::{doc, Document};
+use bson::Document;
 use eframe::egui;
 use tokio::runtime::Runtime;
 

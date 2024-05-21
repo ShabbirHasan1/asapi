@@ -9,8 +9,7 @@
 use eframe::egui;
 use egui_extras::{Size, StripBuilder};
 use egui_json_tree::JsonTree;
-use log::info;
-use std::{collections::HashSet, time::Duration};
+use std::collections::HashSet;
 use tokio::runtime::Runtime;
 use tokio::sync::mpsc::Sender;
 
@@ -314,8 +313,12 @@ impl MongoConnectionsSubpanel {
                                     let ctx_cloned = ctx.clone();
 
                                     rt.spawn(async move {
-                                        list_database_names_in_connection(&tx_cloned, &client, &i18n_cloned)
-                                            .await;
+                                        list_database_names_in_connection(
+                                            &tx_cloned,
+                                            &client,
+                                            &i18n_cloned,
+                                        )
+                                        .await;
                                         ctx_cloned.request_repaint();
                                     });
                                 }
@@ -342,7 +345,7 @@ impl MongoConnectionsSubpanel {
         &self,
         rt: &Runtime,
         tx: &Sender<MongoMessage>,
-        ui: &mut egui_dynamic::Ui,
+        ui: &mut egui::Ui,
         local_st: &mut MongoLocalState,
         idx: Option<usize>,
         i18n: &I18n,

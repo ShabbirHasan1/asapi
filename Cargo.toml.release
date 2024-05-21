@@ -53,7 +53,7 @@ rust_decimal = "1.35.0"    # Tipos decimales en mysql.
 # ---------------------------------------------------------------------------
 # Redis
 # ---------------------------------------------------------------------------
-redis = { version = "0.1.0", path = "redis-dynamic", package = "redis-dynamic" }
+redis = { version = "0.25.2", features = ["tokio-comp", "streams", "json"] }
 
 # ----------------------------------------------------------------
 # Mongo

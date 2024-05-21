@@ -37,7 +37,9 @@ impl MongoView {
                         presenter::update(&tx, &client, &db_name, &col_name, filter, doc, action)
                             .await;
                     if let Err(err) = result {
-                        let _ = tx.send(MongoMessage::Error(format!("Update Error\n{:?}", err))).await;
+                        let _ = tx
+                            .send(MongoMessage::Error(format!("Update Error\n{:?}", err)))
+                            .await;
                     }
                     ctx_cloned.request_repaint();
                 });
@@ -52,7 +54,9 @@ impl MongoView {
             }
             (_, Err(e)) | (Err(e), _) => {
                 rt.spawn(async move {
-                    let _ = tx.send(MongoMessage::Error(format!("Update Error\n{e:?}"))).await;
+                    let _ = tx
+                        .send(MongoMessage::Error(format!("Update Error\n{e:?}")))
+                        .await;
                     ctx_cloned.request_repaint();
                 });
             }
