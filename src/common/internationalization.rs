@@ -88,11 +88,13 @@ pub struct I18n {
     pub kafka_last_update: String,
 
     // Mongo
+    pub mongo_connection_name: String,
     pub mongo_connection_host: String,
     pub mongo_connection_port: String,
     pub mongo_connection_user: String,
     pub mongo_connection_password: String,
     pub mongo_connection_srv: String,
+    pub mongo_connection_timeout: String,
     pub mongo_actions: String,
     pub mongo_insert_one_error: String,
     pub mongo_invalid_doc_to_insert: String,
@@ -113,6 +115,7 @@ pub struct I18n {
     pub mongo_new_document_heading: String,
     pub mongo_doc_menu_copy: String,
     pub mongo_doc_menu_delete_by_id: String,
+    pub mongo_edit_connection: String,
 
     // Redis
     pub redis_connections: String,
@@ -252,11 +255,13 @@ pub fn language_selector(i: I18nOptions) -> I18n {
             kafka_last_update: String::from("Última Actualización"),
 
             // Mongo
+            mongo_connection_name: String::from("Nombre"),
             mongo_connection_host: "Host".to_owned(),
             mongo_connection_port: "Puerto".to_owned(),
             mongo_connection_user: "Usuario".to_owned(),
             mongo_connection_password: "Password".to_owned(),
             mongo_connection_srv: "SRV".to_owned(),
+            mongo_connection_timeout: String::from("La operación de listar bases de datos excedió el tiempo límite"),
             mongo_actions: "Seleccionar Acción".to_owned(),
             mongo_insert_one_error: String::from("InsertOne acepta un único elemento"),
             mongo_invalid_doc_to_insert: String::from("El Documento que se está intentando isnertar no es válido"),
@@ -277,6 +282,7 @@ pub fn language_selector(i: I18nOptions) -> I18n {
             mongo_new_document_heading: String::from("Nuevo Documento"),
             mongo_doc_menu_copy: String::from("Copiar Documento"),
             mongo_doc_menu_delete_by_id: String::from("Borrar usando _id"),
+            mongo_edit_connection: String::from("Editar Conexión"),
 
             // Redis
             redis_connections: String::from("Conexiones"),
@@ -414,11 +420,13 @@ pub fn language_selector(i: I18nOptions) -> I18n {
             kafka_last_update: String::from("Last Update"),
 
             // Mongo
+            mongo_connection_name: String::from("Name"),
             mongo_connection_host: "Host".to_owned(),
             mongo_connection_port: "Port".to_owned(),
             mongo_connection_user: "User".to_owned(),
             mongo_connection_password: "Password".to_owned(),
             mongo_connection_srv: "SRV".to_owned(),
+            mongo_connection_timeout: String::from("Databases listing Operation Timeout"),
             mongo_actions: "Select Action".to_owned(),
             mongo_insert_one_error: String::from("InsertOne only accepts one element"),
             mongo_invalid_doc_to_insert: String::from("Invalid document"),
@@ -439,6 +447,7 @@ pub fn language_selector(i: I18nOptions) -> I18n {
             mongo_new_document_heading: String::from("New Document"),
             mongo_doc_menu_copy: String::from("Copy Document"),
             mongo_doc_menu_delete_by_id: String::from("Delete using _id"),
+            mongo_edit_connection: String::from("Edit Connection"),
 
             // Redis
             redis_connections: String::from("Connections"),

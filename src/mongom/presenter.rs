@@ -7,10 +7,12 @@
 // -------------------------------------------------------------------------
 use bson::{doc, Document};
 use futures::TryStreamExt as _;
+use log;
 use mongodb::error::Result as MongoResult;
 use mongodb::{options::FindOptions, Client};
 use serde_json::Value;
 use std::collections::HashSet;
+use std::time::Duration;
 use tokio::sync::mpsc::Sender;
 
 use crate::common::internationalization::I18n;
@@ -24,12 +26,31 @@ use super::{
 pub async fn list_database_names_in_connection(
     tx: &Sender<MongoMessage>,
     client: &Client,
+    i18n: &I18n,
 ) -> Vec<String> {
-    let ls = match client.list_database_names(None, None).await {
-        Ok(ls) => ls,
-        _ => vec![],
+    let timeout_duration = Duration::from_secs(5);
+    let ls = match tokio::time::timeout(timeout_duration, client.list_database_names(None, None))
+        .await
+    {
+        Ok(Ok(database_names)) => {
+            let _ = tx
+                .send(MongoMessage::Databases(database_names.to_owned()))
+                .await;
+            database_names
+        }
+        Ok(Err(e)) => {
+                let error_message = format!("{}: {}", &i18n.mongo_connection_timeout, e);
+            log::error!("{error_message}");
+            let _ = tx.send(MongoMessage::Error(error_message)).await;
+            vec![]
+        }
+        Err(e) => {
+            let error_message = format!("{}: {}", &i18n.mongo_connection_timeout, e);
+            log::error!("{error_message}");
+            let _ = tx.send(MongoMessage::Error(error_message)).await;
+            vec![]
+        }
     };
-    let _ = tx.send(MongoMessage::Databases(ls.to_owned())).await;
 
     ls
 }
@@ -41,10 +62,20 @@ pub async fn list_database_collections<'a>(
 ) -> Vec<String> {
     let db = client.database(db_name);
     let ls = match db.list_collection_names(None).await {
-        Ok(cs) => cs,
-        _ => vec![],
+        Ok(cs) => {
+            let _ = tx.send(MongoMessage::Collections(cs.to_owned())).await;
+            cs
+        }
+        Err(e) => {
+            let error_message = format!(
+                "La operación de listar bases de datos excedió el tiempo límite: {}",
+                e
+            );
+            log::error!("{error_message}");
+            let _ = tx.send(MongoMessage::Error(error_message)).await;
+            vec![]
+        }
     };
-    let _ = tx.send(MongoMessage::Collections(ls.to_owned())).await;
 
     ls
 }

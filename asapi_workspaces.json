@@ -515,11 +515,44 @@
     "performance_table": false,
     "connections": [
       {
+        "name": "Conexión 1",
+        "host": "localhost",
+        "port": "27017",
+        "user": "",
+        "password": "",
+        "is_srv": false
+      },
+      {
+        "name": "Conexión 2",
+        "host": "localhost",
+        "port": "27017",
+        "user": "root",
+        "password": "pass",
+        "is_srv": false
+      },
+      {
+        "name": "Conexión 3",
+        "host": "localhost",
+        "port": "2707",
+        "user": "wrong-user",
+        "password": "pass",
+        "is_srv": false
+      },
+      {
+        "name": "Conexión 4",
         "host": "localhost",
         "port": "27017",
         "user": "root",
         "password": "password",
         "is_srv": false
+      },
+      {
+        "name": "INCORRECTO password",
+        "host": "localhost",
+        "port": "27017",
+        "user": "root",
+        "password": "password",
+        "is_srv": true
       }
     ]
   },

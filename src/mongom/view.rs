@@ -11,15 +11,18 @@ use eframe::egui;
 use tokio::runtime::Runtime;
 use tokio::sync::mpsc::{Receiver, Sender};
 
-use crate::app_state::AppState;
+use crate::app_state::{self, AppState};
 use crate::common::internationalization::I18n;
+use crate::components::result_panel::ui_response_panel;
 use crate::mongom::state::MongoLocalState;
 
 use super::actions::MongoAction;
 use super::presenter;
+use super::state::MongoAppState;
 use super::{components::sidenav::MongoSideNav, state::MongoMessage};
 
 pub struct MongoView {
+    sidenav: MongoSideNav,
     pub state: MongoLocalState,
     pub tx: Sender<MongoMessage>,
     rx: Receiver<MongoMessage>,
@@ -31,7 +34,8 @@ impl Default for MongoView {
         let (tx, rx) = tokio::sync::mpsc::channel(8);
 
         Self {
-            state: MongoLocalState::default(),
+            sidenav: Default::default(),
+            state: Default::default(),
             tx,
             rx,
             first_render: false,
@@ -44,24 +48,27 @@ impl MongoView {
         &mut self,
         ctx: &egui::Context,
         _frame: &mut eframe::Frame,
-        app_state: &mut AppState,
+        app_st: &mut MongoAppState,
         rt: &Runtime,
         i18n: &I18n,
     ) {
         // =======================================
         // Acciones iniciales
         // =======================================
+
+        // Para debugear, me bloquea un poco porque si la conexión no es correcta (si al cluster)
+        // pero credenciales malas, lo reintenta por este block.
         #[cfg(debug_assertions)]
         if self.state.conn.client.is_some()
             && !self.first_render
-            && !app_state.mongo.connections.is_empty()
+            && !app_st.connections.is_empty()
         {
-            self.state.current_selection.conn_idx = 0;
+            // self.state.current_selection.conn_idx = 0;
             let tx = self.tx.clone();
             let client = self.state.conn.client.as_ref().unwrap().clone();
 
             let databases = rt.block_on(async {
-                presenter::list_database_names_in_connection(&tx, &client).await
+                presenter::list_database_names_in_connection(&tx, &client, i18n).await
             });
 
             if !databases.is_empty() {
@@ -85,6 +92,9 @@ impl MongoView {
                     self.first_render = true;
                 }
             }
+
+            // No quitar porque si no entra en bucle de intentar conectar y se queda congelada.
+            self.first_render = true;
         }
 
         while let Ok(message) = self.rx.try_recv() {
@@ -96,21 +106,15 @@ impl MongoView {
             {
                 self.find_all(rt, ctx);
             } else {
-                self.process_message(message);
+                self.process_message(app_st, message);
             }
         }
 
         // =======================================
         // Paneles laterales
         // =======================================
-        MongoSideNav::show(
-            ctx,
-            rt,
-            &self.tx,
-            &mut app_state.mongo,
-            &mut self.state,
-            i18n,
-        );
+        self.sidenav
+            .show(ctx, rt, &self.tx, app_st, &mut self.state, i18n);
 
         // =======================================
         // Panel central
@@ -134,10 +138,7 @@ impl MongoView {
 
             ui.separator();
 
-            if let Some(ref error_message) = self.state.last_error {
-                // TODO: Mostrar en color el mensaje de error.
-                ui.label(error_message);
-            }
+            ui_response_panel(ui, &self.state.last_error);
 
             // TODO:
             // Según la acción seleccionada, tenemos que mostrar una u otra cosa para montar
@@ -211,14 +212,14 @@ impl MongoView {
         });
     }
 
-    fn process_message(&mut self, message: MongoMessage) {
+    fn process_message(&mut self, app_st: &mut MongoAppState, message: MongoMessage) {
         match message {
             // Recibimos las bases de datos que hay en la conexión clicada.
             MongoMessage::Databases(ddbb) => {
                 self.state.db_names = ddbb;
-                if !cfg!(debug_assertions) {
-                    self.state.reset();
-                }
+                // if !cfg!(debug_assertions) {
+                //     self.state.reset();
+                // }
             }
             // Nos llegan las colecciones que existen en la db seleccionada.
             MongoMessage::Collections(collections) => {
@@ -237,7 +238,7 @@ impl MongoView {
                 self.state.current_available_keys = keys;
             }
             MongoMessage::Error(s) => {
-                self.state.last_error = Some(s);
+                self.state.last_error = Some(Err(s));
             }
             // `MongoMessage::InsertionSuccess/DeleteSuccess/ReplaceSuccess/UpdateSuccess` está
             // procesado arriba, no aquí bajo, de forma independiente, para no tener que pasar
@@ -246,6 +247,12 @@ impl MongoView {
             | MongoMessage::InsertionSuccess
             | MongoMessage::ReplaceSuccess
             | MongoMessage::UpdateSuccess => {}
+            MongoMessage::AddConnection(conn_definition) => {
+                app_st.connections.push(conn_definition);
+            }
+            MongoMessage::EditConnection((idx, conn_definition)) => {
+                app_st.connections[idx] = conn_definition;
+            }
         }
     }
 }

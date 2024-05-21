@@ -10,9 +10,7 @@ use mongodb::{
     options::{ClientOptions, ResolverConfig},
     Client,
 };
-use std::error::Error;
-
-use crate::info;
+use std::{error::Error, time::Duration};
 
 use super::state::{MongoConnectionDefinition, MongoLocalState};
 
@@ -31,20 +29,36 @@ pub async fn connect(
     user: &str,
     password: &str,
     is_srv: bool,
-) -> Result<Client, Box<dyn Error>> {
+) -> Result<Client, String> {
     let protocol = if is_srv { "mongodb+srv" } else { "mongodb" };
     let uri = format!("{protocol}://{user}:{password}@{host}:{port}/?retryWrites=true&w=majority");
-    info!("Trying to connect to {uri}");
-    let options =
-        ClientOptions::parse_with_resolver_config(&uri, ResolverConfig::cloudflare()).await?;
-    let client = Client::with_options(options)?;
-
-    Ok(client)
+    println!("Trying to connect to {uri}");
+    let options: Result<ClientOptions, mongodb::error::Error> =
+        ClientOptions::parse_with_resolver_config(&uri, ResolverConfig::cloudflare()).await;
+    match options {
+        Ok(mut options) => {
+            options.connect_timeout = Some(Duration::from_secs(5));
+            match Client::with_options(options) {
+                Ok(client) => {
+                    log::info!("Success with {uri}");
+                    Ok(client)
+                },
+                Err(err) => {
+                    log::error!("{err}", );
+                    Err(format!("{err:?}"))
+                },
+            }
+        }
+        Err(err) => {
+            log::error!("{}", err);
+            Err(format!("{err:?}"))
+        }
+    }
 }
 
 pub async fn connect_with_default(
     conn_definition: &MongoConnectionDefinition,
-) -> Result<Client, Box<dyn Error>> {
+) -> Result<Client, String> {
     let port = conn_definition.port.parse::<i16>().unwrap_or(27172);
     connect(
         &conn_definition.host,

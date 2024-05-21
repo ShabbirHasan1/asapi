@@ -16,6 +16,8 @@ use std::collections::{HashSet, VecDeque};
 
 #[derive(Debug, PartialEq)]
 pub enum MongoMessage {
+    AddConnection(MongoConnectionDefinition),
+    EditConnection((usize, MongoConnectionDefinition)),
     Databases(Vec<String>),
     Collections(Vec<String>),
     Documents((Vec<Document>, Vec<serde_json::Value>)),
@@ -35,8 +37,9 @@ pub struct MongoAppState {
     pub connections: Vec<MongoConnectionDefinition>,
 }
 
-#[derive(Clone, Serialize, Deserialize, Default, Debug)]
+#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq)]
 pub struct MongoConnectionDefinition {
+    pub name: String,
     pub host: String,
     pub port: String,
     pub user: String,
@@ -74,6 +77,17 @@ impl Default for MongoCurrentSelection {
     }
 }
 
+impl MongoCurrentSelection {
+    pub fn reset_to_new_db(&mut self) {
+        self.col_idx = Default::default();
+        self.col_idx = usize::MAX;
+        self.is_not = false;
+        self.show_user_free_input = false;
+        self.user_free_input = Default::default();
+        self.replace_new_document = Default::default();
+    }
+}
+
 pub struct MongoLocalState {
     // mantengo y cierro cuando elegimos otra como con postgres. En la documentaicón queda claro que esta es la forma de actuar y no crear un cliente cada vez, cuando habla de usarla en web frameworks.
     // pub conn: Box<Option<Client>>,
@@ -93,7 +107,7 @@ pub struct MongoLocalState {
     pub current_filter_value: String,
     pub db_names: Vec<String>,
     pub collections: Vec<String>,
-    pub last_error: Option<String>,
+    pub last_error: Option<Result<String, String>>,
     pub current_db_collections: Vec<String>, // Colecciones de la db seleccionada en panel laterial
     // Filtro
     pub filters: VecDeque<MongoFilter>,
@@ -135,11 +149,17 @@ impl MongoLocalState {
     /// Para ello limpiamos las colecciones, los documentos y
     /// la colección seleccionada.
     pub fn reset(&mut self) {
-        // self.current_collection.clear();
-        self.current_selection.col_idx = usize::MAX;
-        self.current_selection.col_name.clear();
+        self.reset_connection();
+        self.last_error = None;
+        self.db_names.clear()
+    }
+
+    pub fn reset_connection(&mut self) {
+        self.current_selection.reset_to_new_db();
         self.current_col_find_json_result.clear();
         self.current_available_keys.clear();
+        self.current_db_collections.clear();
+        self.conn = Default::default();
 
         self.clean_filter();
     }

@@ -6,7 +6,7 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
-use bson::{doc, Document};
+use bson::Document;
 use eframe::egui;
 use tokio::runtime::Runtime;
 
@@ -14,26 +14,32 @@ use crate::mongom::{actions::MongoAction, presenter, state::MongoMessage, view::
 
 impl MongoView {
     pub fn delete(&mut self, rt: &Runtime, ctx: &egui::Context) {
-        let doc: Document =
-            serde_json::from_str::<Document>(&self.state.current_selection.user_free_input)
-                .map_or_else(
-                    |e| {
-                        self.state.last_error = Some(format!("{:?}", e));
-                        doc! {}
-                    },
-                    |d| d,
-                );
-
-        // Guarda para no crear objeto vacío.
-        if doc.is_empty() {
-            return;
-        }
-
+        let doc = serde_json::from_str::<Document>(&self.state.current_selection.user_free_input);
         let action = self.state.selected_action.clone();
-        self.delete_action(rt, ctx, doc, action);
+
+        match doc {
+            Ok(doc) => {
+                self.delete_action(rt, ctx, doc, action);
+            }
+            Err(e) => {
+                let tx = self.tx.clone();
+                let ctx_cloned = ctx.clone();
+                rt.spawn(async move {
+                    let _ = tx.send(MongoMessage::Error(format!("{e:?}"))).await;
+
+                    ctx_cloned.request_repaint();
+                });
+            }
+        }
     }
 
-    pub fn delete_action(&self, rt: &Runtime, ctx: &egui::Context, doc: Document, action: MongoAction) {
+    pub fn delete_action(
+        &self,
+        rt: &Runtime,
+        ctx: &egui::Context,
+        doc: Document,
+        action: MongoAction,
+    ) {
         let tx = self.tx.clone();
         let ctx_cloned = ctx.clone();
         let client = self.state.conn.client.as_ref().unwrap().clone();

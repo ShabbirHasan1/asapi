@@ -1,10 +1,17 @@
 #+STARTUP: logdone
 
-* Mongo
-*** [#C] Intentar en /update/ poder pasar /pipeline/
+* Tareas
+** Features [17/19]
+*** TODO [#C] Intentar en /update/ poder pasar /pipeline/
 Para hacer una /pipeline/ es necesario pasar vector de /document/ al =update_many=, no un único documento al que añado =$set=.
-*** [#C] Poder usar /aggregate/
+*** TODO [#C] Poder usar /aggregate/
 https://www.mongodb.com/docs/drivers/rust/current/fundamentals/aggregation/
+*** DONE [#A] Usar /ui_result_panel/
+CLOSED: [2024-05-21 mar 15:15]
+*** DONE [#C] Mostrar errores al intentar conectar en el panel
+CLOSED: [2024-05-21 mar 14:22]
+*** DONE [#A] Poner nombre a las conexiones como a las request de http
+CLOSED: [2024-05-21 mar 12:10]
 *** DONE [#A] Menú contextual con tres puntos como sql, para al menos borrar objeto
 CLOSED: [2024-04-16 mar 12:14]
 *** DONE ReplaceOne/ReplaceMany
@@ -32,5 +39,14 @@ CLOSED: [2024-04-12 vie 11:04]
 *** DONE Mostrar información de colección y poder copiar
 *** DONE Mostrar entradas de filtro como JsonTree
 CLOSED: [2024-04-10 mié 17:20]
-** Bugs
-*** TODO [#A] Timeout para la conexión, para que no bloquee/crash la aplicación en caso de no poder conectar
+** Bugs [4/4]
+*** DONE [#B] Cuando cambio de /db/, no se actualiza la colección en la que me encuentro en el /breadcumb/
+CLOSED: [2024-05-21 mar 15:56]
+*** DONE [#B] El recuadro que marca a qué conexión estoy conectado no se actualiza bien
+CLOSED: [2024-05-21 mar 15:49]
+*** DONE [#B] Al desconectar de una conexión
+CLOSED: [2024-05-21 mar 15:49]
+**** no se limpian las db y colecciones de la anteriormente conectada
+**** tampoco los resultados, los documentos, de la última consulta
+*** DONE [#A] Timeout para la conexión, para que no bloquee/crash la aplicación en caso de no poder conectar
+CLOSED: [2024-05-21 mar 12:10] Era problema mío al lanzar la aplicación en modo /debug/.

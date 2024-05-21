@@ -14,6 +14,7 @@
 mod app_state;
 mod common;
 mod components;
+<<<<<<< HEAD
 mod httpm;
 mod kafkam;
 mod mongom;
@@ -22,10 +23,21 @@ mod pgm;
 mod redism;
 mod sqlitem;
 mod sqlx_common;
+=======
+// mod httpm;
+// mod kafkam;
+mod mongom;
+// mod mysqlm;
+// mod pgm;
+// mod redism;
+// mod sqlitem;
+// mod sqlx_common;
+>>>>>>> mongo/main
 
 use common::internationalization::language_selector;
 use components::top_bar::AppTopBar;
 use eframe::egui;
+<<<<<<< HEAD
 use kafkam::view::KafkaView;
 use log::info;
 use mongom::view::MongoView;
@@ -33,11 +45,24 @@ use mysqlm::view::MySqlView;
 use pgm::view::PostgresView;
 use redism::view::RedisView;
 use sqlitem::view::SQLiteView;
+=======
+// use kafkam::view::KafkaView;
+use log::info;
+use mongom::view::MongoView;
+// use mysqlm::view::MySqlView;
+// use pgm::view::PostgresView;
+// use redism::view::RedisView;
+// use sqlitem::view::SQLiteView;
+>>>>>>> mongo/main
 use std::fs::{self, OpenOptions};
 
 use crate::app_state::{AppState, ViewType};
 use crate::common::fs::load_state;
+<<<<<<< HEAD
 use crate::httpm::view::HttpView;
+=======
+// use crate::httpm::view::HttpView;
+>>>>>>> mongo/main
 
 /// Struct con los atributos que podemos pasar a cualquier parte de la apliación.
 ///
@@ -48,6 +73,7 @@ pub struct Asapi {
     top_bar: AppTopBar,
     app_state: AppState,
     rt: tokio::runtime::Runtime,
+<<<<<<< HEAD
     http: HttpView,
     pg: PostgresView,
     sqlite: SQLiteView,
@@ -55,6 +81,15 @@ pub struct Asapi {
     redis: RedisView,
     mongo: MongoView,
     kafka: KafkaView,
+=======
+    // http: HttpView,
+    // pg: PostgresView,
+    // sqlite: SQLiteView,
+    // mysql: MySqlView,
+    // redis: RedisView,
+    mongo: MongoView,
+    // kafka: KafkaView,
+>>>>>>> mongo/main
 }
 
 impl Asapi {
@@ -85,7 +120,11 @@ impl Asapi {
         let state = match load_state(FILE_NAME) {
             Ok(state) => state,
             Err(err) => {
+<<<<<<< HEAD
                 eprintln!("{err:?}");
+=======
+                log::error!("{err:?}");
+>>>>>>> mongo/main
                 AppState::default()
             }
         };
@@ -97,6 +136,7 @@ impl Asapi {
                 .enable_all()
                 .build()
                 .unwrap(),
+<<<<<<< HEAD
             http: HttpView::default(),
             pg: PostgresView::default(),
             mysql: MySqlView::default(),
@@ -104,6 +144,15 @@ impl Asapi {
             redis: RedisView::default(),
             mongo: MongoView::default(),
             kafka: KafkaView::default(),
+=======
+            // http: HttpView::default(),
+            // pg: PostgresView::default(),
+            // mysql: MySqlView::default(),
+            // sqlite: SQLiteView::default(),
+            // redis: RedisView::default(),
+            mongo: MongoView::default(),
+            // kafka: KafkaView::default(),
+>>>>>>> mongo/main
         }
     }
 }
@@ -128,6 +177,7 @@ impl eframe::App for Asapi {
         });
 
         match self.app_state.selected_view {
+<<<<<<< HEAD
             ViewType::Http => {
                 self.http
                     .update(ctx, _frame, &mut self.app_state.http, &self.rt, &i18n)
@@ -153,6 +203,34 @@ impl eframe::App for Asapi {
                 self.redis
                     .update(ctx, _frame, &mut self.app_state.redis, &self.rt, &i18n)
             }
+=======
+            // ViewType::Http => {
+            //     self.http
+            //         .update(ctx, _frame, &mut self.app_state.http, &self.rt, &i18n)
+            // }
+            // ViewType::Pg => self
+            //     .pg
+            //     .update(ctx, _frame, &mut self.app_state, &self.rt, &i18n),
+            // ViewType::MySql => self
+            //     .mysql
+            //     .update(ctx, _frame, &mut self.app_state, &self.rt, &i18n),
+            // ViewType::SQLite => {
+            //     self.sqlite
+            //         .update(ctx, _frame, &mut self.app_state, &self.rt, &i18n)
+            // }
+            ViewType::Mongo => {
+                self.mongo
+                    .update(ctx, _frame, &mut self.app_state.mongo, &self.rt, &i18n)
+            }
+            // ViewType::Kafka => {
+            //     self.kafka
+            //         .update(ctx, _frame, &mut self.app_state.kafka, &self.rt, &i18n)
+            // }
+            // ViewType::Redis => {
+            //     self.redis
+            //         .update(ctx, _frame, &mut self.app_state.redis, &self.rt, &i18n)
+            // }
+>>>>>>> mongo/main
         }
     }
 }

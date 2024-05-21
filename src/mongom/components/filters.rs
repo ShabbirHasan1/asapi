@@ -9,6 +9,7 @@
 use bson::Document;
 use eframe::egui::{self, Context};
 use egui_json_tree::JsonTree;
+use log;
 use serde_json::{json, Value};
 use std::collections::VecDeque;
 use tokio::runtime::Runtime;
@@ -229,8 +230,9 @@ impl MongoView {
                         }
                     }
                     Err(ref e) => {
-                        self.state.last_error = Some(format!("{:?}", e));
-                        log::error!("{}", self.state.last_error.as_ref().unwrap());
+                        let err = format!("{:?}", e);
+                        log::error!("{err}");
+                        self.state.last_error = Some(Err(err));
                     }
                 }
             }

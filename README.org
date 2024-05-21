@@ -2,6 +2,9 @@
 * Notas
 + ~A fecha 240117, instalo sqlx, no para usarla ya, sino porque la he descubierto y me servirá tanto para mysql como para sqlite. Aunque también sirve para postgres, no voy a usarla por ahora con él porque lo tengo más o menos manejado ya. Si a futuro quiero volver a intentar usar tokio con postgres puedo intentarlo usando sqlx y me quito una dependencia, pero no es ni mucho menos algo que me preocupe ahora mismo.~ Ya estoy usando sqlx.
 + Cada vista tiene su propio estado. Dicho estado se crea y destruye con la propia aplicación obviamente. Pero además, *no se serializa*, no hay forma de pasarlo a un archivo de texto, de importarlo/exportarlo. Todo lo que queramos que pueda ser mantenido entre sesiones ha de ir a las variables de estado de la aplicación: /RedisAppState/, /HttpState/, etc. No tienen consistencia en los nombres, debido a que han ido añadiéndose un poco libremente y ha sido a posterior cuando he visto la conexión entre ellas.
++ Para traerme una carpeta entera de otra rama
+#+begin_src git checkout rama -- relative/path
+#+end_src
 
 * General
 *** TODO Que el menú lateral pueda hacerse más pequeño, incluso ocultando parte de los elementos que tiene dentro.
