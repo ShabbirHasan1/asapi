@@ -16,6 +16,8 @@ use std::collections::{HashSet, VecDeque};
 
 #[derive(Debug, PartialEq)]
 pub enum MongoMessage {
+    AddConnection(MongoConnectionDefinition),
+    EditConnection((usize, MongoConnectionDefinition)),
     Databases(Vec<String>),
     Collections(Vec<String>),
     Documents((Vec<Document>, Vec<serde_json::Value>)),
@@ -35,8 +37,9 @@ pub struct MongoAppState {
     pub connections: Vec<MongoConnectionDefinition>,
 }
 
-#[derive(Clone, Serialize, Deserialize, Default, Debug)]
+#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq)]
 pub struct MongoConnectionDefinition {
+    pub name: String,
     pub host: String,
     pub port: String,
     pub user: String,

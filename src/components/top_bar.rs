@@ -119,115 +119,115 @@ impl AppTopBar {
             // --> Aquí ponemos botones de la barra <--
 
             ui.horizontal(|ui| {
-                let http_btn =
-                    ui.selectable_value(&mut app_state.selected_view, ViewType::Http, "Http");
-                http_btn.context_menu(|ui| {
-                    if ui
-                        .add(egui::Button::new(&i18n.top_http_toggle_sidebar))
-                        .clicked()
-                    {
-                        app_state.http.show_sidebar = !app_state.http.show_sidebar;
-                        ui.close_menu();
-                    }
-                });
+                // let http_btn =
+                //     ui.selectable_value(&mut app_state.selected_view, ViewType::Http, "Http");
+                // http_btn.context_menu(|ui| {
+                //     if ui
+                //         .add(egui::Button::new(&i18n.top_http_toggle_sidebar))
+                //         .clicked()
+                //     {
+                //         app_state.http.show_sidebar = !app_state.http.show_sidebar;
+                //         ui.close_menu();
+                //     }
+                // });
 
-                let kafka_btn =
-                    ui.selectable_value(&mut app_state.selected_view, ViewType::Kafka, "Kafka");
-                kafka_btn.context_menu(|ui| {
-                    if ui
-                        .add(egui::Button::new(&i18n.top_kafka_toggle_sidebar_cluster))
-                        .clicked()
-                    {
-                        app_state.kafka.show_sidebar = !app_state.kafka.show_sidebar;
-                        ui.close_menu();
-                    }
-                });
+                // let kafka_btn =
+                //     ui.selectable_value(&mut app_state.selected_view, ViewType::Kafka, "Kafka");
+                // kafka_btn.context_menu(|ui| {
+                //     if ui
+                //         .add(egui::Button::new(&i18n.top_kafka_toggle_sidebar_cluster))
+                //         .clicked()
+                //     {
+                //         app_state.kafka.show_sidebar = !app_state.kafka.show_sidebar;
+                //         ui.close_menu();
+                //     }
+                // });
 
-                let pg_btn =
-                    ui.selectable_value(&mut app_state.selected_view, ViewType::Pg, "Postgres");
-                pg_btn.context_menu(|ui| {
-                    if ui
-                        .add(egui::Button::new(&i18n.top_pg_toggle_sidebar_connections))
-                        .clicked()
-                    {
-                        app_state.pg.show_sidebar = !app_state.pg.show_sidebar;
-                        ui.close_menu();
-                    }
-                    if ui
-                        .checkbox(
-                            &mut app_state.pg.performance_table,
-                            &i18n.pg_performance_table,
-                        )
-                        .on_hover_text(&i18n.pg_info_performance_table)
-                        .clicked()
-                    {
-                        app_state.pg.show_sidebar = !app_state.pg.show_sidebar;
-                        ui.close_menu();
-                    }
-                });
+                // let pg_btn =
+                //     ui.selectable_value(&mut app_state.selected_view, ViewType::Pg, "Postgres");
+                // pg_btn.context_menu(|ui| {
+                //     if ui
+                //         .add(egui::Button::new(&i18n.top_pg_toggle_sidebar_connections))
+                //         .clicked()
+                //     {
+                //         app_state.pg.show_sidebar = !app_state.pg.show_sidebar;
+                //         ui.close_menu();
+                //     }
+                //     if ui
+                //         .checkbox(
+                //             &mut app_state.pg.performance_table,
+                //             &i18n.pg_performance_table,
+                //         )
+                //         .on_hover_text(&i18n.pg_info_performance_table)
+                //         .clicked()
+                //     {
+                //         app_state.pg.show_sidebar = !app_state.pg.show_sidebar;
+                //         ui.close_menu();
+                //     }
+                // });
 
-                let mysql_btn = ui.selectable_value(
-                    &mut app_state.selected_view,
-                    ViewType::MySql,
-                    "MySql/MariaDB",
-                );
-                mysql_btn.context_menu(|ui| {
-                    if ui
-                        .add(egui::Button::new(
-                            &i18n.top_mysql_toggle_sidebar_connections,
-                        ))
-                        .clicked()
-                    {
-                        app_state.mysql.show_sidebar = !app_state.mysql.show_sidebar;
-                        ui.close_menu();
-                    }
-                    if ui
-                        .checkbox(
-                            &mut app_state.mysql.performance_table,
-                            &i18n.mysql_performance_table,
-                        )
-                        .on_hover_text(&i18n.mysql_info_performance_table)
-                        .clicked()
-                    {
-                        ui.close_menu();
-                    }
-                });
+                // let mysql_btn = ui.selectable_value(
+                //     &mut app_state.selected_view,
+                //     ViewType::MySql,
+                //     "MySql/MariaDB",
+                // );
+                // mysql_btn.context_menu(|ui| {
+                //     if ui
+                //         .add(egui::Button::new(
+                //             &i18n.top_mysql_toggle_sidebar_connections,
+                //         ))
+                //         .clicked()
+                //     {
+                //         app_state.mysql.show_sidebar = !app_state.mysql.show_sidebar;
+                //         ui.close_menu();
+                //     }
+                //     if ui
+                //         .checkbox(
+                //             &mut app_state.mysql.performance_table,
+                //             &i18n.mysql_performance_table,
+                //         )
+                //         .on_hover_text(&i18n.mysql_info_performance_table)
+                //         .clicked()
+                //     {
+                //         ui.close_menu();
+                //     }
+                // });
 
-                let sqlite_btn =
-                    ui.selectable_value(&mut app_state.selected_view, ViewType::SQLite, "SQLite");
-                sqlite_btn.context_menu(|ui| {
-                    if ui
-                        .add(egui::Button::new(
-                            &i18n.top_sqlite_toggle_sidebar_connections,
-                        ))
-                        .clicked()
-                    {
-                        app_state.sqlite.show_sidebar = !app_state.sqlite.show_sidebar;
-                        ui.close_menu();
-                    }
-                    if ui
-                        .checkbox(
-                            &mut app_state.sqlite.performance_table,
-                            &i18n.sqlite_performance_table,
-                        )
-                        .on_hover_text(&i18n.sqlite_info_performance_table)
-                        .clicked()
-                    {
-                        ui.close_menu();
-                    }
-                });
+                // let sqlite_btn =
+                //     ui.selectable_value(&mut app_state.selected_view, ViewType::SQLite, "SQLite");
+                // sqlite_btn.context_menu(|ui| {
+                //     if ui
+                //         .add(egui::Button::new(
+                //             &i18n.top_sqlite_toggle_sidebar_connections,
+                //         ))
+                //         .clicked()
+                //     {
+                //         app_state.sqlite.show_sidebar = !app_state.sqlite.show_sidebar;
+                //         ui.close_menu();
+                //     }
+                //     if ui
+                //         .checkbox(
+                //             &mut app_state.sqlite.performance_table,
+                //             &i18n.sqlite_performance_table,
+                //         )
+                //         .on_hover_text(&i18n.sqlite_info_performance_table)
+                //         .clicked()
+                //     {
+                //         ui.close_menu();
+                //     }
+                // });
 
-                let redis_btn =
-                    ui.selectable_value(&mut app_state.selected_view, ViewType::Redis, "Redis");
-                redis_btn.context_menu(|ui| {
-                    if ui
-                        .add(egui::Button::new(&i18n.top_redis_toggle_sidebar))
-                        .clicked()
-                    {
-                        app_state.redis.show_sidebar = !app_state.redis.show_sidebar;
-                        ui.close_menu();
-                    }
-                });
+                // let redis_btn =
+                //     ui.selectable_value(&mut app_state.selected_view, ViewType::Redis, "Redis");
+                // redis_btn.context_menu(|ui| {
+                //     if ui
+                //         .add(egui::Button::new(&i18n.top_redis_toggle_sidebar))
+                //         .clicked()
+                //     {
+                //         app_state.redis.show_sidebar = !app_state.redis.show_sidebar;
+                //         ui.close_menu();
+                //     }
+                // });
 
                 let mongo_btn =
                     ui.selectable_value(&mut app_state.selected_view, ViewType::Mongo, "Mongo");
@@ -243,14 +243,14 @@ impl AppTopBar {
                     }
                 });
 
-                if http_btn.clicked()
-                    || pg_btn.clicked()
-                    || mysql_btn.clicked()
-                    || sqlite_btn.clicked()
-                    || mongo_btn.clicked()
-                    || redis_btn.clicked()
-                    || kafka_btn.clicked()
-                {
+                // if http_btn.clicked()
+                //     || pg_btn.clicked()
+                //     || mysql_btn.clicked()
+                //     || sqlite_btn.clicked()
+                //     || mongo_btn.clicked()
+                //     || redis_btn.clicked()
+                //     || kafka_btn.clicked()
+                if mongo_btn.clicked() {
                     let cloned_state = app_state.clone();
                     rt.spawn(async move {
                         let _ = async_save_state(&cloned_state, FILE_NAME).await;

@@ -11,15 +11,17 @@ use eframe::egui;
 use tokio::runtime::Runtime;
 use tokio::sync::mpsc::{Receiver, Sender};
 
-use crate::app_state::AppState;
+use crate::app_state::{self, AppState};
 use crate::common::internationalization::I18n;
 use crate::mongom::state::MongoLocalState;
 
 use super::actions::MongoAction;
 use super::presenter;
+use super::state::MongoAppState;
 use super::{components::sidenav::MongoSideNav, state::MongoMessage};
 
 pub struct MongoView {
+    sidenav: MongoSideNav,
     pub state: MongoLocalState,
     pub tx: Sender<MongoMessage>,
     rx: Receiver<MongoMessage>,
@@ -31,7 +33,8 @@ impl Default for MongoView {
         let (tx, rx) = tokio::sync::mpsc::channel(8);
 
         Self {
-            state: MongoLocalState::default(),
+            sidenav: Default::default(),
+            state: Default::default(),
             tx,
             rx,
             first_render: false,
@@ -44,7 +47,7 @@ impl MongoView {
         &mut self,
         ctx: &egui::Context,
         _frame: &mut eframe::Frame,
-        app_state: &mut AppState,
+        app_st: &mut MongoAppState,
         rt: &Runtime,
         i18n: &I18n,
     ) {
@@ -54,7 +57,7 @@ impl MongoView {
         #[cfg(debug_assertions)]
         if self.state.conn.client.is_some()
             && !self.first_render
-            && !app_state.mongo.connections.is_empty()
+            && !app_st.connections.is_empty()
         {
             self.state.current_selection.conn_idx = 0;
             let tx = self.tx.clone();
@@ -96,18 +99,18 @@ impl MongoView {
             {
                 self.find_all(rt, ctx);
             } else {
-                self.process_message(message);
+                self.process_message(app_st, message);
             }
         }
 
         // =======================================
         // Paneles laterales
         // =======================================
-        MongoSideNav::show(
+        self.sidenav.show(
             ctx,
             rt,
             &self.tx,
-            &mut app_state.mongo,
+            app_st,
             &mut self.state,
             i18n,
         );
@@ -211,7 +214,7 @@ impl MongoView {
         });
     }
 
-    fn process_message(&mut self, message: MongoMessage) {
+    fn process_message(&mut self, app_st: &mut MongoAppState, message: MongoMessage) {
         match message {
             // Recibimos las bases de datos que hay en la conexión clicada.
             MongoMessage::Databases(ddbb) => {
@@ -246,6 +249,12 @@ impl MongoView {
             | MongoMessage::InsertionSuccess
             | MongoMessage::ReplaceSuccess
             | MongoMessage::UpdateSuccess => {}
+            MongoMessage::AddConnection(conn_definition) => {
+                app_st.connections.push(conn_definition);
+            }
+            MongoMessage::EditConnection((idx, conn_definition)) => {
+                app_st.connections[idx] = conn_definition;
+            }
         }
     }
 }

@@ -14,30 +14,30 @@
 mod app_state;
 mod common;
 mod components;
-mod httpm;
-mod kafkam;
+// mod httpm;
+// mod kafkam;
 mod mongom;
-mod mysqlm;
-mod pgm;
-mod redism;
-mod sqlitem;
-mod sqlx_common;
+// mod mysqlm;
+// mod pgm;
+// mod redism;
+// mod sqlitem;
+// mod sqlx_common;
 
 use common::internationalization::language_selector;
 use components::top_bar::AppTopBar;
 use eframe::egui;
-use kafkam::view::KafkaView;
+// use kafkam::view::KafkaView;
 use log::info;
 use mongom::view::MongoView;
-use mysqlm::view::MySqlView;
-use pgm::view::PostgresView;
-use redism::view::RedisView;
-use sqlitem::view::SQLiteView;
+// use mysqlm::view::MySqlView;
+// use pgm::view::PostgresView;
+// use redism::view::RedisView;
+// use sqlitem::view::SQLiteView;
 use std::fs::{self, OpenOptions};
 
 use crate::app_state::{AppState, ViewType};
 use crate::common::fs::load_state;
-use crate::httpm::view::HttpView;
+// use crate::httpm::view::HttpView;
 
 /// Struct con los atributos que podemos pasar a cualquier parte de la apliación.
 ///
@@ -48,13 +48,13 @@ pub struct Asapi {
     top_bar: AppTopBar,
     app_state: AppState,
     rt: tokio::runtime::Runtime,
-    http: HttpView,
-    pg: PostgresView,
-    sqlite: SQLiteView,
-    mysql: MySqlView,
-    redis: RedisView,
+    // http: HttpView,
+    // pg: PostgresView,
+    // sqlite: SQLiteView,
+    // mysql: MySqlView,
+    // redis: RedisView,
     mongo: MongoView,
-    kafka: KafkaView,
+    // kafka: KafkaView,
 }
 
 impl Asapi {
@@ -85,7 +85,7 @@ impl Asapi {
         let state = match load_state(FILE_NAME) {
             Ok(state) => state,
             Err(err) => {
-                eprintln!("{err:?}");
+                log::error!("{err:?}");
                 AppState::default()
             }
         };
@@ -97,13 +97,13 @@ impl Asapi {
                 .enable_all()
                 .build()
                 .unwrap(),
-            http: HttpView::default(),
-            pg: PostgresView::default(),
-            mysql: MySqlView::default(),
-            sqlite: SQLiteView::default(),
-            redis: RedisView::default(),
+            // http: HttpView::default(),
+            // pg: PostgresView::default(),
+            // mysql: MySqlView::default(),
+            // sqlite: SQLiteView::default(),
+            // redis: RedisView::default(),
             mongo: MongoView::default(),
-            kafka: KafkaView::default(),
+            // kafka: KafkaView::default(),
         }
     }
 }
@@ -128,31 +128,32 @@ impl eframe::App for Asapi {
         });
 
         match self.app_state.selected_view {
-            ViewType::Http => {
-                self.http
-                    .update(ctx, _frame, &mut self.app_state.http, &self.rt, &i18n)
+            // ViewType::Http => {
+            //     self.http
+            //         .update(ctx, _frame, &mut self.app_state.http, &self.rt, &i18n)
+            // }
+            // ViewType::Pg => self
+            //     .pg
+            //     .update(ctx, _frame, &mut self.app_state, &self.rt, &i18n),
+            // ViewType::MySql => self
+            //     .mysql
+            //     .update(ctx, _frame, &mut self.app_state, &self.rt, &i18n),
+            // ViewType::SQLite => {
+            //     self.sqlite
+            //         .update(ctx, _frame, &mut self.app_state, &self.rt, &i18n)
+            // }
+            ViewType::Mongo => {
+                self.mongo
+                    .update(ctx, _frame, &mut self.app_state.mongo, &self.rt, &i18n)
             }
-            ViewType::Pg => self
-                .pg
-                .update(ctx, _frame, &mut self.app_state, &self.rt, &i18n),
-            ViewType::MySql => self
-                .mysql
-                .update(ctx, _frame, &mut self.app_state, &self.rt, &i18n),
-            ViewType::SQLite => {
-                self.sqlite
-                    .update(ctx, _frame, &mut self.app_state, &self.rt, &i18n)
-            }
-            ViewType::Mongo => self
-                .mongo
-                .update(ctx, _frame, &mut self.app_state, &self.rt, &i18n),
-            ViewType::Kafka => {
-                self.kafka
-                    .update(ctx, _frame, &mut self.app_state.kafka, &self.rt, &i18n)
-            }
-            ViewType::Redis => {
-                self.redis
-                    .update(ctx, _frame, &mut self.app_state.redis, &self.rt, &i18n)
-            }
+            // ViewType::Kafka => {
+            //     self.kafka
+            //         .update(ctx, _frame, &mut self.app_state.kafka, &self.rt, &i18n)
+            // }
+            // ViewType::Redis => {
+            //     self.redis
+            //         .update(ctx, _frame, &mut self.app_state.redis, &self.rt, &i18n)
+            // }
         }
     }
 }

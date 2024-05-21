@@ -1,6 +1,9 @@
 #+STARTUP: logdone
 
-* Mongo
+* Tareas
+** Features [14/16]
+*** TODO [#A] Poner nombre a las conexiones como a las request de http
+*** TODO [#B] Mostrar errores al intentar conectar en el panel
 *** [#C] Intentar en /update/ poder pasar /pipeline/
 Para hacer una /pipeline/ es necesario pasar vector de /document/ al =update_many=, no un único documento al que añado =$set=.
 *** [#C] Poder usar /aggregate/
@@ -32,5 +35,10 @@ CLOSED: [2024-04-12 vie 11:04]
 *** DONE Mostrar información de colección y poder copiar
 *** DONE Mostrar entradas de filtro como JsonTree
 CLOSED: [2024-04-10 mié 17:20]
-** Bugs
+** Bugs [0/4]
 *** TODO [#A] Timeout para la conexión, para que no bloquee/crash la aplicación en caso de no poder conectar
+*** TODO [#B] El recuadro que marca a qué conexión estoy conectado no se actualiza bien
+*** TODO [#B] Al desconectar de una conexión
+**** no se limpian las db y colecciones de la anteriormente conectada
+**** tampoco los resultados, los documentos, de la última consulta
+*** TODO [#B] Cuando cambio de /db/, no se actualiza la colección en la que me encuentro en el /breadcumb/

@@ -9,6 +9,7 @@
 use bson::Document;
 use eframe::egui::{self, Context};
 use egui_json_tree::JsonTree;
+use log;
 use serde_json::{json, Value};
 use std::collections::VecDeque;
 use tokio::runtime::Runtime;
@@ -21,7 +22,6 @@ use crate::mongom::filter::UserAction;
 use crate::mongom::filter::{MongoFilter, MongoOperator};
 use crate::mongom::parser::doc_to_pretty_string;
 use crate::mongom::view::MongoView;
-use crate::{error, info};
 
 impl MongoView {
     fn show_filters(
@@ -178,7 +178,7 @@ impl MongoView {
             }
             UserAction::Delete(idx) => {
                 let filter = MongoView::find_filter(&self.state.filters, idx);
-                info!("\nFiltro a Borrar (idx: {idx})\n {:?}", filter);
+                log::info!("\nFiltro a Borrar (idx: {idx})\n {:?}", filter);
                 let _ = MongoView::delete_filter(&mut self.state.filters, idx);
             }
             UserAction::None => (),
@@ -231,7 +231,7 @@ impl MongoView {
                     }
                     Err(ref e) => {
                         self.state.last_error = Some(format!("{:?}", e));
-                        error!("{}", self.state.last_error.as_ref().unwrap());
+                        log::error!("{}", self.state.last_error.as_ref().unwrap());
                     }
                 }
             }

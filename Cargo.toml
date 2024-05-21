@@ -43,24 +43,24 @@ env_logger = "0.11.3"
 egui-file-dialog = "0.5.0"
 rustc-hash = "1.1" # Para mejorar rendimiento de hash, como itero bastante, pero solamente da map y set, no btree
 
-# ---------------------------------------------------------------------------
-# Módulo HTTP
-# ---------------------------------------------------------------------------
-reqwest = { version = "0.12.4", features = ["json", "multipart", "stream"] }
-egui_plot = "0.27.2" # Para gráficas en panel de rendimiento.
-mime_guess = "2.0.4"
+# # ---------------------------------------------------------------------------
+# # Módulo HTTP
+# # ---------------------------------------------------------------------------
+# reqwest = { version = "0.12.4", features = ["json", "multipart", "stream"] }
+# egui_plot = "0.27.2" # Para gráficas en panel de rendimiento.
+# mime_guess = "2.0.4"
 
-# ---------------------------------------------------------------------------
-# Módulo SQLx
-# ---------------------------------------------------------------------------
-sqlx = { version = "0.7.4", features = [ "runtime-tokio", "tls-native-tls", "sqlite", "chrono", "mysql", "postgres", "uuid", "json", "rust_decimal" ] }
-regex = "1.10.4"           # Para extraer la acción que se correponse con la consulta escrita.
-rust_decimal = "1.35.0"    # Tipos decimales en mysql.
+# # ---------------------------------------------------------------------------
+# # Módulo SQLx
+# # ---------------------------------------------------------------------------
+# sqlx = { version = "0.7.4", features = [ "runtime-tokio", "tls-native-tls", "sqlite", "chrono", "mysql", "postgres", "uuid", "json", "rust_decimal" ] }
+# regex = "1.10.4"           # Para extraer la acción que se correponse con la consulta escrita.
+# rust_decimal = "1.35.0"    # Tipos decimales en mysql.
 
-# ---------------------------------------------------------------------------
-# Redis
-# ---------------------------------------------------------------------------
-redis = { version = "0.1.0", path = "redis-dynamic", package = "redis-dynamic" }
+# # ---------------------------------------------------------------------------
+# # Redis
+# # ---------------------------------------------------------------------------
+# redis = { version = "0.1.0", path = "redis-dynamic", package = "redis-dynamic" }
 
 # ----------------------------------------------------------------
 # Mongo
@@ -68,8 +68,8 @@ redis = { version = "0.1.0", path = "redis-dynamic", package = "redis-dynamic" }
 bson = { version = "2.10.0", features = ["chrono-0_4"] }
 mongodb = "2.8.2" # Por defecto ya lleva `tokio`.
 
-# ---------------------------------------------------------------------------
-# Kafka
-# ---------------------------------------------------------------------------
-rdkafka = { version = "0.36.2", features = ["cmake-build"] }
-clippy = "0.0.302"
+# # ---------------------------------------------------------------------------
+# # Kafka
+# # ---------------------------------------------------------------------------
+# rdkafka = { version = "0.36.2", features = ["cmake-build"] }
+# clippy = "0.0.302"

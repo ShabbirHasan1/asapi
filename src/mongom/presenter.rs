@@ -7,6 +7,7 @@
 // -------------------------------------------------------------------------
 use bson::{doc, Document};
 use futures::TryStreamExt as _;
+use log;
 use mongodb::error::Result as MongoResult;
 use mongodb::{options::FindOptions, Client};
 use serde_json::Value;
@@ -15,7 +16,6 @@ use tokio::sync::mpsc::Sender;
 
 use crate::common::internationalization::I18n;
 use crate::mongom::parser::doc_to_serde_value;
-use crate::{error, info};
 
 use super::{
     actions::MongoAction,
@@ -156,7 +156,7 @@ pub async fn update(
     let db = client.database(db_name);
     let collection = db.collection::<Document>(col_name);
 
-    info!("filter\n{:?}", filter);
+    log::info!("filter\n{:?}", filter);
 
     // Esta comprobación es redundante si el cliente es solo MongoView.insert
     if action == MongoAction::UpdateOne {
@@ -208,7 +208,7 @@ pub async fn delete(
 
     // Esta comprobación es redundante si el cliente es solo MongoView.insert
     if action == MongoAction::DeleteOne {
-        info!("Documento a borrar\n{:?}", doc);
+        log::info!("Documento a borrar\n{:?}", doc);
         let _ = collection.delete_one(doc, None).await?;
     } else {
         let _ = collection.delete_many(doc, None).await?;
@@ -231,7 +231,7 @@ pub async fn run_command(
         Ok(data) => Ok(data),
         Err(err) => {
             let msg = format!("{:?}", err);
-            error!("{msg}");
+            log::error!("{msg}");
             Err(MongoError::CommandError(msg))
         }
     }
