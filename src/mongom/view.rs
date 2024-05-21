@@ -54,6 +54,9 @@ impl MongoView {
         // =======================================
         // Acciones iniciales
         // =======================================
+
+        // Para debugear, me bloquea un poco porque si la conexión no es correcta (si al cluster)
+        // pero credenciales malas, lo reintenta por este block.
         #[cfg(debug_assertions)]
         if self.state.conn.client.is_some()
             && !self.first_render
@@ -88,6 +91,9 @@ impl MongoView {
                     self.first_render = true;
                 }
             }
+
+            // No quitar porque si no entra en bucle de intentar conectar y se queda congelada.
+            self.first_render = true;
         }
 
         while let Ok(message) = self.rx.try_recv() {
@@ -106,14 +112,8 @@ impl MongoView {
         // =======================================
         // Paneles laterales
         // =======================================
-        self.sidenav.show(
-            ctx,
-            rt,
-            &self.tx,
-            app_st,
-            &mut self.state,
-            i18n,
-        );
+        self.sidenav
+            .show(ctx, rt, &self.tx, app_st, &mut self.state, i18n);
 
         // =======================================
         // Panel central

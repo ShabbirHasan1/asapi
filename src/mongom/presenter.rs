@@ -12,6 +12,7 @@ use mongodb::error::Result as MongoResult;
 use mongodb::{options::FindOptions, Client};
 use serde_json::Value;
 use std::collections::HashSet;
+use std::time::Duration;
 use tokio::sync::mpsc::Sender;
 
 use crate::common::internationalization::I18n;
@@ -26,13 +27,31 @@ pub async fn list_database_names_in_connection(
     tx: &Sender<MongoMessage>,
     client: &Client,
 ) -> Vec<String> {
-    let ls = match client.list_database_names(None, None).await {
-        Ok(ls) => ls,
-        _ => vec![],
+
+    let timeout_duration = Duration::from_secs(5);
+    let ls = match tokio::time::timeout(timeout_duration, client.list_database_names(None, None)).await {
+        Ok(Ok(database_names)) => database_names,
+        Ok(Err(e)) => {
+            println!("Error al listar las bases de datos: {}", e);
+            vec![]
+        },
+        Err(_) => {
+            println!("La operación de listar bases de datos excedió el tiempo límite");
+            vec![]
+        },
     };
+
     let _ = tx.send(MongoMessage::Databases(ls.to_owned())).await;
 
     ls
+    // let ls = match client.list_database_names(None, None).await {
+    //     Ok(ls) => ls,
+    //     _ => vec![],
+    // };
+    // log::info!("LS: {ls:?}");
+    // let _ = tx.send(MongoMessage::Databases(ls.to_owned())).await;
+
+    // ls
 }
 
 pub async fn list_database_collections<'a>(

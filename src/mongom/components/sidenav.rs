@@ -9,7 +9,7 @@
 use eframe::egui;
 use egui_extras::{Size, StripBuilder};
 use egui_json_tree::JsonTree;
-use std::collections::HashSet;
+use std::{collections::HashSet, time::Duration};
 use tokio::runtime::Runtime;
 use tokio::sync::mpsc::Sender;
 
@@ -298,10 +298,13 @@ impl MongoConnectionsSubpanel {
                                     );
                                 // Si hemos conectado con éxito, mostramos colecciones en la conexión.
                                 if local_st.conn.client.is_some() {
+                                    log::info!("Conectado con éxito a {:?}", local_st.conn.conn_definition);
                                     let tx_cloned = tx.clone();
                                     let client = local_st.conn.client.as_ref().unwrap().clone();
                                     let ctx_cloned = ctx.clone();
+
                                     rt.spawn(async move {
+                                        log::info!("Buscamos ddbb en la conexión");
                                         list_database_names_in_connection(&tx_cloned, &client)
                                             .await;
                                         ctx_cloned.request_repaint();
