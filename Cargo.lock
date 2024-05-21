@@ -302,6 +302,7 @@ dependencies = [
  "regex",
  "reqwest",
  "rust_decimal",
+ "rustc-hash",
  "serde",
  "serde_json",
  "sqlx",

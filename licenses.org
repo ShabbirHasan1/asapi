@@ -1,0 +1,3 @@
+** Apache-2.0
+ - [[https://github.com/rust-lang/rustc-hash?tab=Apache-2.0-1-ov-file][rustc-hash]]
+
