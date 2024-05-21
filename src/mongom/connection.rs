@@ -6,7 +6,7 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
-use std::error::Error;
+use std::{error::Error, time::Duration};
 use mongodb::{
     options::{ClientOptions, ResolverConfig},
     Client,
@@ -35,12 +35,14 @@ pub async fn connect(
     let protocol = if is_srv { "mongodb+srv" } else { "mongodb" };
     let uri = format!("{protocol}://{user}:{password}@{host}:{port}/?retryWrites=true&w=majority");
     println!("Trying to connect to {uri}");
-    let options =
+    let mut options =
         ClientOptions::parse_with_resolver_config(&uri, ResolverConfig::cloudflare()).await?;
+     options.connect_timeout = Some(Duration::from_secs(5));
     let client = Client::with_options(options)?;
 
     Ok(client)
 }
+
 
 pub async fn connect_with_default(
     conn_definition: &MongoConnectionDefinition,

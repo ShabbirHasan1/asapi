@@ -3,7 +3,7 @@
 * Mongo
 *** [#C] Intentar en /update/ poder pasar /pipeline/
 Para hacer una /pipeline/ es necesario pasar vector de /document/ al =update_many=, no un único documento al que añado =$set=.
-*** [#B] Poder usar /aggregate/
+*** [#C] Poder usar /aggregate/
 https://www.mongodb.com/docs/drivers/rust/current/fundamentals/aggregation/
 *** DONE [#A] Menú contextual con tres puntos como sql, para al menos borrar objeto
 CLOSED: [2024-04-16 mar 12:14]
@@ -32,3 +32,5 @@ CLOSED: [2024-04-12 vie 11:04]
 *** DONE Mostrar información de colección y poder copiar
 *** DONE Mostrar entradas de filtro como JsonTree
 CLOSED: [2024-04-10 mié 17:20]
+** Bugs
+*** TODO [#A] Timeout para la conexión, para que no bloquee/crash la aplicación en caso de no poder conectar

@@ -5,11 +5,12 @@ name = "asapi"
 # + Versiones terciarias, mejoras/bugs
 # + Versiones preestablecias a seguir
 #   0.2.0 -> sqlx
-#   0.3.0 -> mongo <<== AQUÍ ESTAMOS
+#   0.3.0 -> mongo
 #   0.3.1 -> mejora kafka
-#   0.3.2 -> mejora http rendimiento
-#   0.3.3 -> mejora redis
-version = "0.3.0"
+#   0.3.2 -> mejora redis
+#   0.3.3 -> subida archivos <<== AQUÍ ESTAMOS
+#   0.3.4 -> mejora http rendimiento
+version = "0.3.3"
 edition = "2021"
 
 [profile.dev]
@@ -21,43 +22,54 @@ strip = "debuginfo"
 opt-level = 3
 
 [dependencies]
+# ---------------------------------------------------------------------------
 # Dependencias generales u ortogonales a todo el proyecto.
+# ---------------------------------------------------------------------------
 egui-dynamic = { version = "0.1.0", path = "egui-dynamic", package = "egui-dynamic" }
 
-eframe="0.26.2"
-egui_extras = "0.26.2"
-egui_json_tree = "0.4.0"
-# tokio[full] porque al final entre rt/sync/fs/io necesito casi todas.
-tokio = { version = "1.37.0", features = ["full"] }
-serde = "1.0.197"
-chrono = { version = "0.4.37", features = ["serde"] }
 uuid = "1.8.0"
+eframe="0.27.2"
+serde = "1.0.197"
 serde_json = "1.0.115"
-# Necesario para common/syntax_highlighting, puede ser útil intetar usarlo en más sitios.
-enum-map = { version = "2.7.3", features = ["serde"] }
+egui_extras = "0.27.2"
+egui_json_tree = "0.5.0"
+chrono = { version = "0.4.37", features = ["serde"] }
+futures = "0.3.30"                                     # Para lanzar futuros a los que esperar en rendimiento y Mongo.
+tokio = { version = "1.37.0", features = ["full"] }    # tokio[full] porque al final entre rt/sync/fs/io necesito casi todas.
+tokio-util = "0.7.11"
+enum-map = { version = "2.7.3", features = ["serde"] } # Necesario para common/syntax_highlighting, puede ser útil intetar usarlo en más sitios.
+log = "0.4.21"
+env_logger = "0.11.3"
+egui-file-dialog = "0.5.0"
+rustc-hash = "1.1" # Para mejorar rendimiento de hash, como itero bastante, pero solamente da map y set, no btree
 
+# ---------------------------------------------------------------------------
+# Módulo HTTP
+# ---------------------------------------------------------------------------
+reqwest = { version = "0.12.4", features = ["json", "multipart", "stream"] }
+egui_plot = "0.27.2" # Para gráficas en panel de rendimiento.
+mime_guess = "2.0.4"
 
+# ---------------------------------------------------------------------------
+# Módulo SQLx
+# ---------------------------------------------------------------------------
+sqlx = { version = "0.7.4", features = [ "runtime-tokio", "tls-native-tls", "sqlite", "chrono", "mysql", "postgres", "uuid", "json", "rust_decimal" ] }
+regex = "1.10.4"           # Para extraer la acción que se correponse con la consulta escrita.
+rust_decimal = "1.35.0"    # Tipos decimales en mysql.
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+# ---------------------------------------------------------------------------
+# Redis
+# ---------------------------------------------------------------------------
+redis = { version = "0.1.0", path = "redis-dynamic", package = "redis-dynamic" }
 
 # ----------------------------------------------------------------
 # Mongo
 # ----------------------------------------------------------------
-bson = { version = "2.9.0", features = ["chrono-0_4"] }
+bson = { version = "2.10.0", features = ["chrono-0_4"] }
 mongodb = "2.8.2" # Por defecto ya lleva `tokio`.
-futures = "0.3.30" # Mongo por Cursor
+
+# ---------------------------------------------------------------------------
+# Kafka
+# ---------------------------------------------------------------------------
+rdkafka = { version = "0.36.2", features = ["cmake-build"] }
+clippy = "0.0.302"
