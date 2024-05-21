@@ -138,11 +138,7 @@ impl MongoView {
 
             ui.separator();
 
-            if let Some(ref error_message) = self.state.last_error {
-                // TODO: Mostrar en color el mensaje de error.
-                // ui.label(error_message);
-                ui_response_panel(ui, &self.state.last_error);
-            }
+            ui_response_panel(ui, &self.state.last_error);
 
             // TODO:
             // Según la acción seleccionada, tenemos que mostrar una u otra cosa para montar

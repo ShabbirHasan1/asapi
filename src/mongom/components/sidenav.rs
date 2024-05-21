@@ -450,6 +450,10 @@ impl MongoDatabasesSubpanel {
                                 let tx_cloned = tx.clone();
                                 let client_ref = local_st.conn.client.as_ref().unwrap().clone();
                                 let db_name_cloned = db_name.clone();
+                                local_st.current_selection.reset_to_new_db();
+                                local_st.current_col_find_json_result.clear();
+                                local_st.current_col_find_document_result.clear();
+
                                 rt.spawn(async move {
                                     list_database_collections(
                                         &tx_cloned,

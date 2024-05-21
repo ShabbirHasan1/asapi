@@ -77,6 +77,17 @@ impl Default for MongoCurrentSelection {
     }
 }
 
+impl MongoCurrentSelection {
+    pub fn reset_to_new_db(&mut self) {
+        self.col_idx = Default::default();
+        self.col_idx = usize::MAX;
+        self.is_not = false;
+        self.show_user_free_input = false;
+        self.user_free_input = Default::default();
+        self.replace_new_document = Default::default();
+    }
+}
+
 pub struct MongoLocalState {
     // mantengo y cierro cuando elegimos otra como con postgres. En la documentaicón queda claro que esta es la forma de actuar y no crear un cliente cada vez, cuando habla de usarla en web frameworks.
     // pub conn: Box<Option<Client>>,
@@ -144,8 +155,7 @@ impl MongoLocalState {
     }
 
     pub fn reset_connection(&mut self) {
-        self.current_selection.col_idx = usize::MAX;
-        self.current_selection.col_name.clear();
+        self.current_selection.reset_to_new_db();
         self.current_col_find_json_result.clear();
         self.current_available_keys.clear();
         self.current_db_collections.clear();
