@@ -91,7 +91,8 @@ impl MongoSideNav {
 
                 // --> Abrimos ventana para definir conexión <--
                 ui.menu_button(&i18n.pg_btn_add_connection, |ui| {
-                    self.connections_subpanel.edit_connection(rt, tx, ui, local_st, None, i18n);
+                    self.connections_subpanel
+                        .edit_connection(rt, tx, ui, local_st, None, i18n);
                 });
 
                 // --> Mostramos Conexiones <--
@@ -143,9 +144,8 @@ impl MongoSideNav {
                         .size(Size::remainder())
                         .vertical(|mut strip| {
                             strip.cell(|ui| {
-                                self.connections_subpanel.show(
-                                    ctx, rt, tx, ui, app_st, local_st, i18n,
-                                );
+                                self.connections_subpanel
+                                    .show(ctx, rt, tx, ui, app_st, local_st, i18n);
                             });
                             strip.cell(|ui| {
                                 ui.vertical_centered(|ui| {
@@ -162,9 +162,8 @@ impl MongoSideNav {
                         .size(Size::remainder())
                         .vertical(|mut strip| {
                             strip.cell(|ui| {
-                                self.connections_subpanel.show(
-                                    ctx, rt, tx, ui, app_st, local_st, i18n,
-                                );
+                                self.connections_subpanel
+                                    .show(ctx, rt, tx, ui, app_st, local_st, i18n);
                             });
                             strip.cell(|ui| {
                                 ui.vertical_centered(|ui| {
@@ -277,6 +276,7 @@ impl MongoConnectionsSubpanel {
                         // --> Al clicar sobre conexión, conectamos y listamos tablas <--
                         // Si estamos ya mostrando esta conexión, clicar sobre ella no lanza ninguna acción.
                         if button.clicked() && local_st.current_selection.conn_idx != idx {
+                            local_st.reset();
                             local_st.current_selection.conn_idx = idx;
                             // Este método pone `pool` a `None`.
                             close_connection(rt, local_st);
@@ -292,13 +292,21 @@ impl MongoConnectionsSubpanel {
                                     is_srv: conn_definition.is_srv,
                                 };
                                 local_st.conn.conn_definition = conn.clone();
-                                local_st.conn.client =
-                                    rt.block_on(
-                                        async move { connect_with_default(&conn).await.ok() },
-                                    );
+                                local_st.conn.client = rt.block_on(async move {
+                                    match connect_with_default(&conn).await {
+                                        Ok(client) => Some(client),
+                                        Err(err) => {
+                                            let _ = tx.send(MongoMessage::Error(err)).await;
+                                            None
+                                        }
+                                    }
+                                });
                                 // Si hemos conectado con éxito, mostramos colecciones en la conexión.
                                 if local_st.conn.client.is_some() {
-                                    log::info!("Conectado con éxito a {:?}", local_st.conn.conn_definition);
+                                    log::info!(
+                                        "Conectado con éxito a {:?}",
+                                        local_st.conn.conn_definition
+                                    );
                                     let tx_cloned = tx.clone();
                                     let client = local_st.conn.client.as_ref().unwrap().clone();
                                     let ctx_cloned = ctx.clone();
@@ -372,9 +380,10 @@ impl MongoConnectionsSubpanel {
                 let tmp = local_st.tmp_conn_definition.clone();
                 rt.spawn(async move {
                     let _ = match idx {
-                        Some(idx) =>  tx_cloned.send(MongoMessage::EditConnection((idx, tmp))),
-                        _ => tx_cloned.send(MongoMessage::AddConnection(tmp))
-                    }.await;
+                        Some(idx) => tx_cloned.send(MongoMessage::EditConnection((idx, tmp))),
+                        _ => tx_cloned.send(MongoMessage::AddConnection(tmp)),
+                    }
+                    .await;
                 });
                 ui.close_menu();
             }

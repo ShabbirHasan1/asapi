@@ -138,11 +138,18 @@ impl MongoLocalState {
     /// Para ello limpiamos las colecciones, los documentos y
     /// la colección seleccionada.
     pub fn reset(&mut self) {
-        // self.current_collection.clear();
+        self.reset_connection();
+        self.last_error = None;
+        self.db_names.clear()
+    }
+
+    pub fn reset_connection(&mut self) {
         self.current_selection.col_idx = usize::MAX;
         self.current_selection.col_name.clear();
         self.current_col_find_json_result.clear();
         self.current_available_keys.clear();
+        self.current_db_collections.clear();
+        self.conn = Default::default();
 
         self.clean_filter();
     }

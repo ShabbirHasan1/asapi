@@ -27,31 +27,34 @@ pub async fn list_database_names_in_connection(
     tx: &Sender<MongoMessage>,
     client: &Client,
 ) -> Vec<String> {
-
     let timeout_duration = Duration::from_secs(5);
-    let ls = match tokio::time::timeout(timeout_duration, client.list_database_names(None, None)).await {
-        Ok(Ok(database_names)) => database_names,
+    let ls = match tokio::time::timeout(timeout_duration, client.list_database_names(None, None))
+        .await
+    {
+        Ok(Ok(database_names)) => {
+            let _ = tx
+                .send(MongoMessage::Databases(database_names.to_owned()))
+                .await;
+            database_names
+        }
         Ok(Err(e)) => {
-            println!("Error al listar las bases de datos: {}", e);
+            let error_message = format!("Error al listar las bases de datos: {}", e);
+            log::error!("{error_message}");
+            let _ = tx.send(MongoMessage::Error(error_message)).await;
             vec![]
-        },
-        Err(_) => {
-            println!("La operación de listar bases de datos excedió el tiempo límite");
+        }
+        Err(e) => {
+            let error_message = format!(
+                "La operación de listar bases de datos excedió el tiempo límite: {}",
+                e
+            );
+            log::error!("{error_message}");
+            let _ = tx.send(MongoMessage::Error(error_message)).await;
             vec![]
-        },
+        }
     };
 
-    let _ = tx.send(MongoMessage::Databases(ls.to_owned())).await;
-
     ls
-    // let ls = match client.list_database_names(None, None).await {
-    //     Ok(ls) => ls,
-    //     _ => vec![],
-    // };
-    // log::info!("LS: {ls:?}");
-    // let _ = tx.send(MongoMessage::Databases(ls.to_owned())).await;
-
-    // ls
 }
 
 pub async fn list_database_collections<'a>(
@@ -61,10 +64,20 @@ pub async fn list_database_collections<'a>(
 ) -> Vec<String> {
     let db = client.database(db_name);
     let ls = match db.list_collection_names(None).await {
-        Ok(cs) => cs,
-        _ => vec![],
+        Ok(cs) => {
+            let _ = tx.send(MongoMessage::Collections(cs.to_owned())).await;
+            cs
+        }
+        Err(e) => {
+            let error_message = format!(
+                "La operación de listar bases de datos excedió el tiempo límite: {}",
+                e
+            );
+            log::error!("{error_message}");
+            let _ = tx.send(MongoMessage::Error(error_message)).await;
+            vec![]
+        }
     };
-    let _ = tx.send(MongoMessage::Collections(ls.to_owned())).await;
 
     ls
 }

@@ -6,6 +6,10 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
+pub mod c_macros;
+pub mod result_panel;
+pub mod separators;
 pub mod toggle_selector;
 pub mod toggle_switch;
 pub mod top_bar;
+pub mod widgets;

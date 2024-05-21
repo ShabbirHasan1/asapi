@@ -219,9 +219,9 @@ impl MongoView {
             // Recibimos las bases de datos que hay en la conexión clicada.
             MongoMessage::Databases(ddbb) => {
                 self.state.db_names = ddbb;
-                if !cfg!(debug_assertions) {
-                    self.state.reset();
-                }
+                // if !cfg!(debug_assertions) {
+                //     self.state.reset();
+                // }
             }
             // Nos llegan las colecciones que existen en la db seleccionada.
             MongoMessage::Collections(collections) => {
