@@ -1,7 +1,9 @@
 * Features
-**
+** DONE Swagger
 
-* Bugs [0/1]
-** TODO Varios problemas cuando enviamos archivos
-  - no se limpia cuando realizao un nuevo envío la respuesta preexistente, y si falla la nueva petición no se sobreescribe
-  - no se guardan los archivos en el json
+* Bugs [1/2]
+** TODO Varios problemas cuando enviamos archivos [1/2]
+*** TODO no se limpia cuando realizao un nuevo envío la respuesta preexistente, y si falla la nueva petición no se sobreescribe
+*** DONE no se guardan los archivos en el json
+** DONE Edición de nombre de petición no funciona
+
