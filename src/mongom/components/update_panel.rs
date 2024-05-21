@@ -6,7 +6,7 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
-use bson::{doc, Document};
+use bson::Document;
 use eframe::egui;
 use tokio::runtime::Runtime;
 
@@ -17,50 +17,45 @@ use crate::{
 
 impl MongoView {
     pub fn update_doc(&mut self, rt: &Runtime, ctx: &egui::Context, _i18n: &I18n) {
-        let filter: Document =
-            serde_json::from_str::<Document>(&self.state.current_selection.user_free_input)
-                .map_or_else(
-                    |e| {
-                        self.state.last_error = Some(format!("{:?}", e));
-                        doc! {}
-                    },
-                    |d| d,
-                );
-        let doc: Document =
-            serde_json::from_str(&self.state.current_selection.replace_new_document).map_or_else(
-                |e| {
-                    self.state.last_error = Some(format!("{:?}", e));
-                    doc! {}
-                },
-                |d| d,
-            );
-        // Guarda para no crear objeto vacío.
-        if doc.is_empty() {
-            return;
-        }
+        let filter: Result<Document, serde_json::Error> =
+            serde_json::from_str(&self.state.current_selection.user_free_input);
+        let doc: Result<Document, serde_json::Error> =
+            serde_json::from_str(&self.state.current_selection.replace_new_document);
 
         let tx = self.tx.clone();
         let ctx_cloned = ctx.clone();
-        let client = self.state.conn.client.as_ref().unwrap().clone();
-        let db_name = self.state.current_selection.db_name.to_owned();
-        let col_name = self.state.current_selection.col_name.to_owned();
-        let action = self.state.selected_action.clone();
 
-        rt.spawn(async move {
-            let result = presenter::update(
-                &tx,
-                &client,
-                &db_name,
-                &col_name,
-                filter,
-                doc,
-                action,
-            )
-            .await;
-            if let Err(err) = result {
-                let _ = tx.send(MongoMessage::Error(format!("{:?}", err))).await;
+        match (filter, doc) {
+            (Ok(filter), Ok(doc)) => {
+                let client = self.state.conn.client.as_ref().unwrap().clone();
+                let db_name = self.state.current_selection.db_name.to_owned();
+                let col_name = self.state.current_selection.col_name.to_owned();
+                let action = self.state.selected_action.clone();
+
+                rt.spawn(async move {
+                    let result =
+                        presenter::update(&tx, &client, &db_name, &col_name, filter, doc, action)
+                            .await;
+                    if let Err(err) = result {
+                        let _ = tx.send(MongoMessage::Error(format!("Update Error\n{:?}", err))).await;
+                    }
+                    ctx_cloned.request_repaint();
+                });
             }
-            ctx_cloned.request_repaint();
-        });
+            (Err(e1), Err(e2)) => {
+                rt.spawn(async move {
+                    let _ = tx
+                        .send(MongoMessage::Error(format!("Update Error\n{e1:?}\n{e2:?}")))
+                        .await;
+                    ctx_cloned.request_repaint();
+                });
+            }
+            (_, Err(e)) | (Err(e), _) => {
+                rt.spawn(async move {
+                    let _ = tx.send(MongoMessage::Error(format!("Update Error\n{e:?}"))).await;
+                    ctx_cloned.request_repaint();
+                });
+            }
+        }
     }
 }

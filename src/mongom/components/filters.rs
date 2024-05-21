@@ -230,8 +230,9 @@ impl MongoView {
                         }
                     }
                     Err(ref e) => {
-                        self.state.last_error = Some(format!("{:?}", e));
-                        log::error!("{}", self.state.last_error.as_ref().unwrap());
+                        let err = format!("{:?}", e);
+                        log::error!("{err}");
+                        self.state.last_error = Some(Err(err));
                     }
                 }
             }

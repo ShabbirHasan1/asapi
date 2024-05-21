@@ -26,6 +26,7 @@ use super::{
 pub async fn list_database_names_in_connection(
     tx: &Sender<MongoMessage>,
     client: &Client,
+    i18n: &I18n,
 ) -> Vec<String> {
     let timeout_duration = Duration::from_secs(5);
     let ls = match tokio::time::timeout(timeout_duration, client.list_database_names(None, None))
@@ -38,16 +39,13 @@ pub async fn list_database_names_in_connection(
             database_names
         }
         Ok(Err(e)) => {
-            let error_message = format!("Error al listar las bases de datos: {}", e);
+                let error_message = format!("{}: {}", &i18n.mongo_connection_timeout, e);
             log::error!("{error_message}");
             let _ = tx.send(MongoMessage::Error(error_message)).await;
             vec![]
         }
         Err(e) => {
-            let error_message = format!(
-                "La operación de listar bases de datos excedió el tiempo límite: {}",
-                e
-            );
+            let error_message = format!("{}: {}", &i18n.mongo_connection_timeout, e);
             log::error!("{error_message}");
             let _ = tx.send(MongoMessage::Error(error_message)).await;
             vec![]

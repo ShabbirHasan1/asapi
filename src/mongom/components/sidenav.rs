@@ -308,12 +308,13 @@ impl MongoConnectionsSubpanel {
                                         local_st.conn.conn_definition
                                     );
                                     let tx_cloned = tx.clone();
+                                    let i18n_cloned = i18n.clone();
                                     let client = local_st.conn.client.as_ref().unwrap().clone();
                                     let ctx_cloned = ctx.clone();
 
                                     rt.spawn(async move {
                                         log::info!("Buscamos ddbb en la conexión");
-                                        list_database_names_in_connection(&tx_cloned, &client)
+                                        list_database_names_in_connection(&tx_cloned, &client, &i18n_cloned)
                                             .await;
                                         ctx_cloned.request_repaint();
                                     });

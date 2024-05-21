@@ -96,7 +96,7 @@ pub struct MongoLocalState {
     pub current_filter_value: String,
     pub db_names: Vec<String>,
     pub collections: Vec<String>,
-    pub last_error: Option<String>,
+    pub last_error: Option<Result<String, String>>,
     pub current_db_collections: Vec<String>, // Colecciones de la db seleccionada en panel laterial
     // Filtro
     pub filters: VecDeque<MongoFilter>,

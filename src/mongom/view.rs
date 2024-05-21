@@ -13,6 +13,7 @@ use tokio::sync::mpsc::{Receiver, Sender};
 
 use crate::app_state::{self, AppState};
 use crate::common::internationalization::I18n;
+use crate::components::result_panel::ui_response_panel;
 use crate::mongom::state::MongoLocalState;
 
 use super::actions::MongoAction;
@@ -67,7 +68,7 @@ impl MongoView {
             let client = self.state.conn.client.as_ref().unwrap().clone();
 
             let databases = rt.block_on(async {
-                presenter::list_database_names_in_connection(&tx, &client).await
+                presenter::list_database_names_in_connection(&tx, &client, i18n).await
             });
 
             if !databases.is_empty() {
@@ -139,7 +140,8 @@ impl MongoView {
 
             if let Some(ref error_message) = self.state.last_error {
                 // TODO: Mostrar en color el mensaje de error.
-                ui.label(error_message);
+                // ui.label(error_message);
+                ui_response_panel(ui, &self.state.last_error);
             }
 
             // TODO:
@@ -240,7 +242,7 @@ impl MongoView {
                 self.state.current_available_keys = keys;
             }
             MongoMessage::Error(s) => {
-                self.state.last_error = Some(s);
+                self.state.last_error = Some(Err(s));
             }
             // `MongoMessage::InsertionSuccess/DeleteSuccess/ReplaceSuccess/UpdateSuccess` está
             // procesado arriba, no aquí bajo, de forma independiente, para no tener que pasar
