@@ -43,7 +43,7 @@
         "is_srv": false
       },
       {
-        "name": "Conexión 5",
+        "name": "INCORRECTO password",
         "host": "localhost",
         "port": "27017",
         "user": "root",

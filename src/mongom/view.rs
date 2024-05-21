@@ -63,7 +63,7 @@ impl MongoView {
             && !self.first_render
             && !app_st.connections.is_empty()
         {
-            self.state.current_selection.conn_idx = 0;
+            // self.state.current_selection.conn_idx = 0;
             let tx = self.tx.clone();
             let client = self.state.conn.client.as_ref().unwrap().clone();
 

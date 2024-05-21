@@ -9,6 +9,7 @@
 use eframe::egui;
 use egui_extras::{Size, StripBuilder};
 use egui_json_tree::JsonTree;
+use log::info;
 use std::{collections::HashSet, time::Duration};
 use tokio::runtime::Runtime;
 use tokio::sync::mpsc::Sender;
@@ -235,7 +236,7 @@ impl MongoConnectionsSubpanel {
                                 .stroke(if idx == local_st.current_selection.conn_idx {
                                     egui::Stroke::new(1.0, egui::Color32::DARK_BLUE)
                                 } else {
-                                    egui::Stroke::new(0.0, egui::Color32::LIGHT_BLUE)
+                                    egui::Stroke::new(0.0, egui::Color32::RED)
                                 })
                         } else {
                             egui::Button::new(button_text).min_size(egui::vec2(200.0, 24.0))
@@ -313,7 +314,6 @@ impl MongoConnectionsSubpanel {
                                     let ctx_cloned = ctx.clone();
 
                                     rt.spawn(async move {
-                                        log::info!("Buscamos ddbb en la conexión");
                                         list_database_names_in_connection(&tx_cloned, &client, &i18n_cloned)
                                             .await;
                                         ctx_cloned.request_repaint();
