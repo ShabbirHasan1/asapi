@@ -321,6 +321,20 @@ impl Gen<i64, fn(&SimpleRGen) -> (i64, SimpleRGen)> {
     }
 }
 
+impl Gen<u8, fn(&SimpleRGen) -> (u8, SimpleRGen)> {
+    pub fn gen_u8() -> Gen<u8, fn(&SimpleRGen) -> (u8, SimpleRGen)> {
+        Gen::new(|rng| {
+            let (i, r) = rng.gen_i16();
+
+            if i < 0 {
+                (-i as u8, r)
+            } else {
+                (i as u8, r)
+            }
+        })
+    }
+}
+
 impl Gen<u64, fn(&SimpleRGen) -> (u64, SimpleRGen)> {
     pub fn gen_u64() -> Gen<u64, fn(&SimpleRGen) -> (u64, SimpleRGen)> {
         Gen::new(|rng| rng.gen_u64())

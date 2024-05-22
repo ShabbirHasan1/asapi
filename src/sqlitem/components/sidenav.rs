@@ -15,7 +15,7 @@ use crate::{
     },
     sqlx_common::{
         components::context_menus::TableContextMenu,
-        state::{QuerySort, SqlxMessage},
+        state::{QuerySort, SqlConnectionDefinition, SqlxMessage},
     },
 };
 use eframe::egui;
@@ -23,10 +23,23 @@ use egui_extras::{Size, StripBuilder};
 use std::collections::HashSet;
 use tokio::{runtime::Runtime, sync::mpsc::Sender};
 
-pub struct SQLiteSideNav;
+pub struct SQLiteSideNav {
+    connections_subpanel: SQLiteConnectionsSubpanel
+}
+
+impl Default for SQLiteSideNav {
+    fn default() -> Self {
+        SQLiteSideNav {
+            connections_subpanel: SQLiteConnectionsSubpanel {
+                is_edit_connection_menu_opened: false,
+            },
+        }
+    }
+}
 
 impl SQLiteSideNav {
     pub fn show(
+        &mut self,
         ctx: &egui::Context,
         rt: &Runtime,
         tx: &Sender<SqlxMessage>,
@@ -101,9 +114,10 @@ impl SQLiteSideNav {
                         .size(Size::remainder())
                         .vertical(|mut strip| {
                             strip.cell(|ui| {
-                                SQLiteConnectionsSubpanel::show(
+                                self.connections_subpanel.show(
                                     ctx,
                                     rt,
+                                    tx_sync,
                                     ui,
                                     sqlite_app_state,
                                     local_state,
@@ -126,9 +140,10 @@ impl SQLiteSideNav {
                             });
                         });
                 } else if !local_state.sql.hide_connections {
-                    SQLiteConnectionsSubpanel::show(
+                    self.connections_subpanel.show(
                         ctx,
                         rt,
+                        tx_sync,
                         ui,
                         sqlite_app_state,
                         local_state,
@@ -142,12 +157,16 @@ impl SQLiteSideNav {
     }
 }
 
-pub struct SQLiteConnectionsSubpanel;
+pub struct SQLiteConnectionsSubpanel {
+    is_edit_connection_menu_opened: bool
+}
 
 impl SQLiteConnectionsSubpanel {
     pub fn show(
+        &mut self,
         _ctx: &egui::Context,
         rt: &Runtime,
+        tx_sync: &std::sync::mpsc::Sender<SqlxMessage>,
         ui: &mut egui::Ui,
         app_st: &mut SQLiteAppState,
         local_st: &mut SQLiteState,
@@ -202,6 +221,30 @@ impl SQLiteConnectionsSubpanel {
                             local_st.sql.current_connection_idx = usize::MAX;
                             ui.close_menu();
                         }
+
+                        let mut menu_open = false;
+                        ui.menu_button(&i18n.sqlite.edit_connection, |ui| {
+                            menu_open = true;
+                            if menu_open && !self.is_edit_connection_menu_opened {
+                                local_st.tmp_connection = SqlConnectionDefinition {
+                                    name: conn_definition.name.clone(),
+                                    host: Default::default(),
+                                    port: Default::default(),
+                                    user: Default::default(),
+                                    password: Default::default(),
+                                    dbname: Default::default(),
+                                }
+                            }
+                            edit_connection(
+                                ui,
+                                i18n,
+                                &mut local_st.tmp_connection,
+                                tx_sync,
+                                Some(idx),
+                            );
+                        });
+
+                        self.is_edit_connection_menu_opened = menu_open;
 
                         if ui.button(&i18n.pg.reload_tables).clicked() {
                             local_st.connect_to_file = true;
@@ -329,4 +372,38 @@ fn close_connection(rt: &Runtime, local_state: &mut SQLiteState) {
     });
 
     local_state.pool = None;
+}
+
+fn edit_connection(
+    ui: &mut egui::Ui,
+    i18n: &I18nSqlx,
+    tmp_connection: &mut SqlConnectionDefinition,
+    tx: &std::sync::mpsc::Sender<SqlxMessage>,
+    idx: Option<usize>,
+) {
+    ui.set_min_width(200.0);
+
+    ui.horizontal(|ui| {
+        ui.label(&i18n.pg.connection_name);
+        ui.text_edit_singleline(&mut tmp_connection.name);
+    });
+
+    ui.horizontal(|ui| {
+        if ui.button(&i18n.pg.edit_connection_cancel).clicked() {
+            ui.close_menu();
+        }
+        if ui.button(&i18n.pg.edit_connection_confirm).clicked() {
+            match idx {
+                Some(idx) => {
+                    let _ = tx.send(SqlxMessage::EditConnection((idx, tmp_connection.clone())));
+                }
+                _ => {
+                    let _ = tx.send(SqlxMessage::AddConnection(tmp_connection.clone()));
+                }
+            }
+
+            tmp_connection.name.clear();
+            ui.close_menu();
+        }
+    });
 }

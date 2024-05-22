@@ -40,7 +40,7 @@ pub fn generate_sqlite_value(data_type: &SqliteType) -> String {
         SqliteType::Float => GenericGenerator::<f64>::run().to_string(),
         SqliteType::Null => "NULL".to_string(),
         // TODO: No tengo nada, es generar Vec<u8> en ppio.
-        SqliteType::Blob => todo!(),
+        SqliteType::Blob => GenericGenerator::<Vec<u8>>::run().to_string(),
         SqliteType::Numeric => generate_sqlite_value(&SqliteType::Float),
         SqliteType::Datetime => quote!(&NaiveDateTime::default().to_string()),
         SqliteType::Date => quote!(&NaiveDate::default().to_string()),

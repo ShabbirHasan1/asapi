@@ -57,9 +57,10 @@ CLOSED: [2024-03-26 mar 17:34]
 **** TODO [#A] Cuando no puede conectar, se queda bloqueada mucho tiempo.
 **** DONE No se borran las tablas tras seleccionar una nueva conexión.
 CLOSED: [2024-05-22 mié 15:30]
-** SQLite [3/5]
-*** TODO Editar nombre de conexión por hacerla más amigable
+** SQLite [4/5]
 *** TODO Revisar tipos de datos
+*** DONE Editar nombre de conexión por hacerla más amigable
+CLOSED: [2024-05-22 mié 16:16]
 *** DONE Dar opción en menú contextual de recargar tablas de conexión
 CLOSED: [2024-05-22 mié 15:56]
 *** DONE Conectar

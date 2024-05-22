@@ -12,7 +12,7 @@ use sqlx::Sqlite;
 use tokio::runtime::Runtime;
 
 use crate::app_state::AppState;
-use crate::common::internationalization::{I18n, I18nSqlx};
+use crate::common::internationalization::I18nSqlx;
 use crate::components::result_panel::ui_response_panel;
 use crate::quote;
 use crate::sqlx_common::components::window_generator::GeneratorWindow;
@@ -31,6 +31,7 @@ use super::state::{SQLiteAppState, SQLiteState};
 
 pub struct SQLiteView {
     state: SQLiteState,
+    sidenav: SQLiteSideNav,
     tx: tokio::sync::mpsc::Sender<SqlxMessage>,
     rx: tokio::sync::mpsc::Receiver<SqlxMessage>,
     // Para uso sin necesidad de Runtime. Nos simplifica objetos y firmas.
@@ -48,7 +49,8 @@ impl Default for SQLiteView {
         let ins_window = InsertionWindow::default();
 
         Self {
-            state: SQLiteState::default(),
+            sidenav: Default::default(),
+            state: Default::default(),
             tx,
             rx,
             tx_sync,
@@ -66,7 +68,7 @@ impl SQLiteView {
         _frame: &mut eframe::Frame,
         app_state: &mut AppState,
         rt: &Runtime,
-        i18n: &I18nSqlx
+        i18n: &I18nSqlx,
     ) {
         // =======================================
         // Acciones iniciales
@@ -139,7 +141,7 @@ impl SQLiteView {
         // =======================================
         // Paneles laterales
         // =======================================
-        SQLiteSideNav::show(
+        self.sidenav.show(
             ctx,
             rt,
             &self.tx,
@@ -178,13 +180,13 @@ impl SQLiteView {
                     });
                 });
 
-
             ui.separator();
 
             // --> Definimos la entrada y lanzar stmt por parte del usuario <--
             let theme = egui_extras::syntax_highlighting::CodeTheme::from_memory(ctx);
             let mut sql_layouter = |ui: &egui::Ui, string: &str, wrap_width: f32| {
-                let mut layout_job = egui_extras::syntax_highlighting::highlight(ui.ctx(), &theme, string, "sql");
+                let mut layout_job =
+                    egui_extras::syntax_highlighting::highlight(ui.ctx(), &theme, string, "sql");
                 layout_job.wrap.max_width = wrap_width;
                 ui.fonts(|f| f.layout_job(layout_job))
             };
@@ -338,8 +340,11 @@ impl SQLiteView {
                 let delete_stmt = format!("DELETE FROM {:}", t_name);
                 self.run_statement(ctx, rt, delete_stmt, !app_state.pg.performance_table, true);
             }
-            // Dos casos imposibles.
-            SqlxMessage::AddConnection(_) | SqlxMessage::EditConnection(_) => ()
+            SqlxMessage::EditConnection((idx, conn_definition)) => {
+                app_state.sqlite.connections[idx].name = conn_definition.name;
+            }
+            // Un caso manejado por otro lado
+            SqlxMessage::AddConnection(_) => (),
         }
     }
     fn run_statement(

@@ -91,6 +91,7 @@ pub struct I18nSqlite {
     pub connection_btn_help: String,
     pub close_connection: String,
     pub delete_connection: String,
+    pub edit_connection: String,
     pub reload_tables: String,
 }
 
@@ -317,6 +318,7 @@ pub fn language_selector(i: I18nOptions) -> I18n {
                     close_connection: String::from("Cerrar Conexión"),
                     delete_connection: String::from("Borrar Conexión"),
                     reload_tables: String::from("Recargar Tablas"),
+                    edit_connection: String::from("Editar Nombre de la Conexión"),
                 }
 
             },
@@ -509,6 +511,7 @@ pub fn language_selector(i: I18nOptions) -> I18n {
                     close_connection: String::from("Close Connection"),
                     delete_connection: String::from("Delete Connection"),
                     reload_tables: String::from("Reload Tables"),
+                    edit_connection: String::from("Edit Connection Name"),
                 }
             },
 

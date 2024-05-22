@@ -541,7 +541,7 @@
     "performance_table": false,
     "connections": [
       {
-        "name": "/home/nando/projects/asapi/app/sqlite-ddbb/db.sqlite3",
+        "name": "Atalaya Social",
         "path": "/home/nando/projects/asapi/app/sqlite-ddbb/db.sqlite3"
       }
     ]

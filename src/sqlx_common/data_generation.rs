@@ -71,13 +71,21 @@ impl Runner<Vec<i64>> for GenericGenerator<Vec<i64>> {
 impl Runner<u8> for GenericGenerator<u8> {
     fn run() -> u8 {
         let rng = SimpleRGen::new();
-        let v = Gen::gen_i16().sample(&rng);
+        Gen::gen_u8().sample(&rng)
+        // let v = Gen::gen_i16().sample(&rng);
 
-        if v < 0 {
-            -v as u8
-        } else {
-            v as u8
-        }
+        // if v < 0 {
+        //     -v as u8
+        // } else {
+        //     v as u8
+        // }
+    }
+}
+
+impl Runner<Vec<u8>> for GenericGenerator<Vec<u8>> {
+    fn run() -> Vec<u8> {
+        let rng = SimpleRGen::new();
+        Gen::list_of(Gen::gen_u8()).sample(&rng)
     }
 }
 
