@@ -41,7 +41,7 @@ impl SQLiteSideNav {
                 if ui
                     .button(&i18n.sqlite.btn_add_connection)
                     .on_hover_ui(|ui| {
-                        ui.label("Para conectar, clicar en definición de la conexión");
+                        ui.label(&i18n.sqlite.connection_btn_help);
                     })
                     .clicked()
                 {
@@ -61,10 +61,11 @@ impl SQLiteSideNav {
                         "\u{229f}"
                     };
 
-                    if ui.button(format!("{s1} Connections")).clicked() {
+                    if ui.button(format!("{s1} {}", i18n.connections)).clicked() {
                         local_state.sql.hide_connections = !local_state.sql.hide_connections;
                     }
-                    if ui.button(format!("{s2} Tables")).clicked() {
+
+                    if ui.button(format!("{s2} {}", i18n.tables)).clicked() {
                         local_state.sql.hide_tables = !local_state.sql.hide_tables;
                     }
                 });
@@ -78,6 +79,7 @@ impl SQLiteSideNav {
                 local_state.file_dialog.update(ctx);
                 let opt_conn_definition = local_state.file_dialog.selected().and_then(|path| {
                     path.to_str().map(|p| SQLiteConnectionDefinition {
+                        name: p.to_string(),
                         path: p.to_string(),
                     })
                 });
@@ -147,14 +149,14 @@ impl SQLiteConnectionsSubpanel {
         _ctx: &egui::Context,
         rt: &Runtime,
         ui: &mut egui::Ui,
-        sqlite_app_state: &mut SQLiteAppState,
-        local_state: &mut SQLiteState,
-        _i18n: &I18nSqlx,
+        app_st: &mut SQLiteAppState,
+        local_st: &mut SQLiteState,
+        i18n: &I18nSqlx,
     ) {
         egui::ScrollArea::vertical().show(ui, |ui| {
             let mut connections_to_delete: HashSet<usize> = HashSet::new();
 
-            for (idx, conn_definition) in sqlite_app_state.connections.iter_mut().enumerate() {
+            for (idx, conn_definition) in app_st.connections.iter_mut().enumerate() {
                 let sqlite_db_file_name = conn_definition
                     .path
                     .rfind('/')
@@ -167,49 +169,60 @@ impl SQLiteConnectionsSubpanel {
 
                     let button = ui
                         .add(
-                            egui::Button::new(sqlite_db_file_name)
-                                .min_size(egui::vec2(200.0, 24.0))
-                                .stroke(if idx == local_state.sql.current_connection_idx {
+                            egui::Button::new(format!(
+                                "Connection Name: {}\nFile Name: {}",
+                                conn_definition.name, sqlite_db_file_name
+                            ))
+                            .min_size(egui::vec2(200.0, 24.0))
+                            .stroke(
+                                if idx == local_st.sql.current_connection_idx {
                                     egui::Stroke::new(1.0, egui::Color32::DARK_BLUE)
                                 } else {
                                     egui::Stroke::new(0.0, egui::Color32::LIGHT_BLUE)
-                                }),
+                                },
+                            ),
                         )
                         .on_hover_ui(|ui| {
-                            ui.label(&conn_definition.path);
+                            ui.label(format!("Path: {}", conn_definition.path));
                         });
 
                     // --> Menú contextual para manejo de las conexiones <--
                     button.context_menu(|ui| {
-                        if ui.button("Close Connection").clicked() {
-                            close_connection(rt, local_state);
-                            local_state.sql.current_connection_idx = usize::MAX;
+                        if ui.button(&i18n.sqlite.close_connection).clicked() {
+                            close_connection(rt, local_st);
+                            local_st.sql.current_connection_idx = usize::MAX;
                             ui.close_menu();
                         }
-                        if ui.button("Delete Connection").clicked() {
+                        if ui.button(&i18n.sqlite.delete_connection).clicked() {
                             connections_to_delete.insert(idx);
                             // Si la conexión que borramos existe, cerramos
-                            if conn_definition.path == local_state.current_connection.path {
-                                close_connection(rt, local_state);
+                            if conn_definition.path == local_st.current_connection.path {
+                                close_connection(rt, local_st);
                             }
-                            local_state.sql.current_connection_idx = usize::MAX;
+                            local_st.sql.current_connection_idx = usize::MAX;
                             ui.close_menu();
+                        }
+
+                        if ui.button(&i18n.pg.reload_tables).clicked() {
+                            local_st.connect_to_file = true;
                         }
                     });
 
                     // Si estamos ya mostrando esta conexión, clicar sobre ella no lanza ninguna acción.
-                    if button.clicked() && local_state.sql.current_connection_idx != idx {
-                        local_state.sql.current_connection_idx = idx;
-                        close_connection(rt, local_state);
+                    if button.clicked() && local_st.sql.current_connection_idx != idx {
+                        local_st.sql.current_connection_idx = idx;
+                        close_connection(rt, local_st);
                         let file_path = conn_definition.path.clone();
 
-                        if (local_state.pool.is_none()
-                            || file_path != local_state.current_connection.path)
+                        if (local_st.pool.is_none()
+                            || file_path != local_st.current_connection.path)
                             && file_exists(&file_path)
                         {
-                            local_state.current_connection =
-                                SQLiteConnectionDefinition { path: file_path };
-                            local_state.connect_to_file = true;
+                            local_st.current_connection = SQLiteConnectionDefinition {
+                                name: conn_definition.name.clone(),
+                                path: file_path,
+                            };
+                            local_st.connect_to_file = true;
                         }
                     }
                 });
@@ -218,13 +231,13 @@ impl SQLiteConnectionsSubpanel {
             if !connections_to_delete.is_empty() {
                 let mut i = 0;
                 let mut to_retain: Vec<SQLiteConnectionDefinition> = Vec::new();
-                while i < sqlite_app_state.connections.len() {
+                while i < app_st.connections.len() {
                     if !connections_to_delete.contains(&i) {
-                        to_retain.push(sqlite_app_state.connections.get(i).unwrap().clone());
+                        to_retain.push(app_st.connections.get(i).unwrap().clone());
                     }
                     i += 1;
                 }
-                sqlite_app_state.connections = to_retain;
+                app_st.connections = to_retain;
             }
         });
     }

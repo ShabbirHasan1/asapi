@@ -134,6 +134,7 @@ pub struct SqlState {
     pub sql_statement: String,
     // almacenamos última respuesta a run_statemente para poder enseñar resultado
     pub last_response: Option<String>,
+    pub last_response_error: Option<Result<String, String>>,
     pub first_row_idx: usize,
     pub last_row_idx: usize,
     pub n_rows_to_show: usize, // número de filas a mostrar, para paginar
@@ -168,6 +169,7 @@ impl Default for SqlState {
             current_table_columns: Default::default(),
             sql_statement: Default::default(),
             last_response: None,
+            last_response_error: None,
             first_row_idx: 0,
             last_row_idx: 0,
             n_rows_to_show: 50,

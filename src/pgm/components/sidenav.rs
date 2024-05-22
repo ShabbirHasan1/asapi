@@ -83,41 +83,21 @@ impl PostgresSideNav {
                         .size(Size::remainder())
                         .vertical(|mut strip| {
                             strip.cell(|ui| {
-                                self.connections_subpanel.show(
-                                    ctx,
-                                    rt,
-                                    ui,
-                                    app_st,
-                                    local_st,
-                                    tx_sync,
-                                    i18n,
-                                );
+                                self.connections_subpanel
+                                    .show(ctx, rt, ui, app_st, local_st, tx_sync, i18n);
                             });
                             strip.cell(|ui| {
                                 ui.vertical_centered(|ui| {
                                     ui.separator();
                                     PostgresTablesSubpanel::show(
-                                        ctx,
-                                        rt,
-                                        ui,
-                                        tx,
-                                        tx_sync,
-                                        local_st,
-                                        i18n,
+                                        ctx, rt, ui, tx, tx_sync, local_st, i18n,
                                     );
                                 });
                             });
                         });
                 } else if !local_st.sql.hide_connections {
-                    self.connections_subpanel.show(
-                        ctx,
-                        rt,
-                        ui,
-                        app_st,
-                        local_st,
-                        tx_sync,
-                        i18n,
-                    );
+                    self.connections_subpanel
+                        .show(ctx, rt, ui, app_st, local_st, tx_sync, i18n);
                 } else if !local_st.sql.hide_tables {
                     PostgresTablesSubpanel::show(ctx, rt, ui, tx, tx_sync, local_st, i18n);
                 }
@@ -202,6 +182,22 @@ impl PostgresConnectionsSubpanel {
                         });
 
                         self.is_edit_connection_menu_opened = menu_open;
+
+                        if ui.button(&i18n.pg.reload_tables).clicked() {
+                            let pool_ref = local_st.pool.as_ref().unwrap().clone();
+                            let pool_ref_2 = local_st.pool.as_ref().unwrap().clone();
+
+                            local_st.sql.tables = rt.block_on(async move {
+                                presenter::list_connection_tables(&pool_ref).await
+                            });
+
+                            let tables = local_st.sql.tables.clone();
+                            let db_name = conn_definition.dbname.clone();
+
+                            local_st.sql.current_connection_tables_info = rt.block_on(async move {
+                                presenter::tables_info(&pool_ref_2, &db_name, tables.as_ref()).await
+                            });
+                        }
                     });
 
                     // --> Al clicar sobre conexión, conectamos y listamos tablas <--
@@ -211,7 +207,6 @@ impl PostgresConnectionsSubpanel {
                         // Este método pone `pool` a `None`.
                         close_connection(rt, local_st);
                         local_st.sql.reset();
-                        // borro tablas
                         local_st.sql.tables.clear();
 
                         // Si no conexión o la que existe no es la que clico, la defino
@@ -225,9 +220,21 @@ impl PostgresConnectionsSubpanel {
                                 dbname: conn_definition.dbname.clone(),
                             };
                             local_st.current_connection = conn.clone();
-                            local_st.pool = rt
-                                .block_on(async move { presenter::connect(conn).await })
-                                .ok();
+
+                            let result = rt.block_on(async move { presenter::connect(conn).await });
+
+                            match result {
+                                Ok(pool) => {
+                                    local_st.pool = Some(pool);
+                                }
+                                Err(err) => {
+                                    // No hace falta poner `local_st.pool` a `None` porque en `close_connection`
+                                    // ya lo estamos haciendo.
+                                    local_st.sql.last_response_error =
+                                        Some(Err(format!("{err:?}")));
+                                }
+                            }
+
                             if local_st.pool.is_some() {
                                 let pool_ref = local_st.pool.as_ref().unwrap().clone();
                                 let pool_ref2 = local_st.pool.as_ref().unwrap().clone();
@@ -241,7 +248,7 @@ impl PostgresConnectionsSubpanel {
                                     rt.block_on(async move {
                                         presenter::tables_info(
                                             &pool_ref2,
-                                            conn_definition.dbname.as_str(),
+                                            &conn_definition.dbname,
                                             tables.as_ref(),
                                         )
                                         .await

@@ -13,6 +13,7 @@ use tokio::runtime::Runtime;
 
 use crate::app_state::AppState;
 use crate::common::internationalization::{I18n, I18nSqlx};
+use crate::components::result_panel::ui_response_panel;
 use crate::quote;
 use crate::sqlx_common::components::window_generator::GeneratorWindow;
 use crate::sqlx_common::components::window_insertion::InsertionWindow;
@@ -154,10 +155,13 @@ impl SQLiteView {
         self.show_edit_row_window(ctx, rt, &mut app_state.sqlite);
 
         egui::CentralPanel::default().show(ctx, |ui| {
-            // if self.state.sql.current_table_rows.len() > 0 {
             ui.set_width(ui.available_width());
-            egui::CollapsingHeader::new("Table Columns")
+
+            ui_response_panel(ui, &self.state.sql.last_response_error);
+
+            egui::CollapsingHeader::new(&i18n.table_columns)
                 .default_open(false)
+                .show_background(true)
                 .show(ui, |ui| {
                     ui.horizontal_wrapped(|ui| {
                         for (idx, (c_name, _c_type)) in
@@ -173,7 +177,7 @@ impl SQLiteView {
                         }
                     });
                 });
-            // }
+
 
             ui.separator();
 

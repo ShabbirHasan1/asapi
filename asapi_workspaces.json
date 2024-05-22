@@ -4,7 +4,7 @@
     "dark_theme": false,
     "language": "ES"
   },
-  "selected_view": "Pg",
+  "selected_view": "SQLite",
   "show_settings": false,
   "http": {
     "show_sidebar": true,
@@ -517,6 +517,22 @@
         "user": "user",
         "password": "password",
         "dbname": "mydatabase"
+      },
+      {
+        "name": "[Error Pass] Conexión MariaDB",
+        "host": "localhost",
+        "port": "3306",
+        "user": "user",
+        "password": "pass",
+        "dbname": "mydatabase"
+      },
+      {
+        "name": "[Error host] Conexión MariaDB",
+        "host": "foo",
+        "port": "3306",
+        "user": "user",
+        "password": "password",
+        "dbname": "mydatabase"
       }
     ]
   },
@@ -525,6 +541,7 @@
     "performance_table": false,
     "connections": [
       {
+        "name": "/home/nando/projects/asapi/app/sqlite-ddbb/db.sqlite3",
         "path": "/home/nando/projects/asapi/app/sqlite-ddbb/db.sqlite3"
       }
     ]

@@ -180,6 +180,25 @@ impl MySqlConnectionsSubpanel {
                         });
 
                         self.is_edit_connection_menu_opened = menu_open;
+
+                        if ui.button(&i18n.mysql.reload_tables).clicked() {
+                            let pool_ref = local_st.pool.as_ref().unwrap().clone();
+                            let pool_ref_2 = local_st.pool.as_ref().unwrap().clone();
+                            let db_name = conn_definition.dbname.clone();
+
+                            local_st.sql.tables = rt.block_on(async move {
+                                presenter::list_connection_tables(&pool_ref, &db_name).await
+                            });
+
+                            let tables = local_st.sql.tables.clone();
+                            let db_name2 = conn_definition.dbname.clone();
+
+                            local_st.sql.current_connection_tables_info = rt.block_on(async move {
+                                presenter::tables_info(&pool_ref_2, &db_name2, tables.as_ref())
+                                    .await
+                                    .map_or(HashMap::new(), |v| v)
+                            });
+                        }
                     });
 
                     // --> Al clicar sobre conexión, conectamos y listamos tablas <--
@@ -188,6 +207,8 @@ impl MySqlConnectionsSubpanel {
                         local_st.sql.current_connection_idx = idx;
                         // Este método pone `pool` a `None`.
                         close_connection(rt, local_st);
+                        local_st.sql.reset();
+                        local_st.sql.tables.clear();
 
                         // Si no conexión o la que existe no es la que clico, la defino
                         if local_st.pool.is_none() {
@@ -200,9 +221,19 @@ impl MySqlConnectionsSubpanel {
                                 dbname: conn_definition.dbname.clone(),
                             };
                             local_st.current_connection = conn.clone();
-                            local_st.pool = rt
-                                .block_on(async move { presenter::connect(conn).await })
-                                .ok();
+                            let result = rt.block_on(async move { presenter::connect(conn).await });
+
+                            match result {
+                                Ok(pool) => {
+                                    local_st.pool = Some(pool);
+                                }
+                                Err(err) => {
+                                    // No hace falta poner `local_st.pool` a `None` porque en `close_connection`
+                                    // ya lo estamos haciendo.
+                                    local_st.sql.last_response_error =
+                                        Some(Err(format!("{err:?}")));
+                                }
+                            }
                             if local_st.pool.is_some() {
                                 let name1 = conn_definition.dbname.as_str();
                                 let pool_ref = local_st.pool.as_ref().unwrap().clone();
@@ -217,7 +248,7 @@ impl MySqlConnectionsSubpanel {
                                     rt.block_on(async move {
                                         presenter::tables_info(
                                             &pool_ref2,
-                                            conn_definition.dbname.as_str(),
+                                            &conn_definition.dbname,
                                             tables.as_ref(),
                                         )
                                         .await

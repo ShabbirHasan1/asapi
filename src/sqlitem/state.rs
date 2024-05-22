@@ -36,6 +36,7 @@ pub struct SQLiteState {
     pub connect_to_file: bool,
     pub current_connection: SQLiteConnectionDefinition,
     pub sql: SqlState,
+    pub tmp_connection_name: String,
 }
 
 /// No tengo muy claro cómo hacerlo mejor.
@@ -45,5 +46,6 @@ pub struct SQLiteState {
 pub struct SQLiteConnectionDefinition {
     // pub path: std::path::Path,
     // pub path: OsStr
+    pub name: String,
     pub path: String,
 }

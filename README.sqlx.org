@@ -11,10 +11,13 @@ CLOSED: [2024-05-22 mié 12:18]
 *** DONE Refactorizar para usar sqlx
 CLOSED: [2024-03-26 mar 17:34]
 
-** Postgres [10/12]
+** Postgres [11/14]
 *** TODO Revisar tipos de datos
 *** TODO Tamaño de campo de claves en /body/ y /headers/
+*** TODO Probar distintos protocolos de conexión
 Cuando hacemos pequeña la ventana no reduce y se acaba tapando el valor sin que se hayan reducido las /keys/.
+*** DONE Dar opción en menú contextual de recargar tablas de conexión
+CLOSED: [2024-05-22 mié 12:56]
 *** CANCELED Generador de código a partir de /Gen/
 CLOSED: [2024-02-28 mié 16:22]
 *** DONE [#A] Mostrar cómo se queda el estado de una tabla tras:
@@ -40,14 +43,25 @@ CLOSED: [2023-12-06 mié 15:29]
 *** DONE Usar Table y no grid par mostrar los datos de las tablas
 CLOSED: [2023-12-13 mié 12:54]
 *** BUGS
-**** TODO [#A] Cuando conecto a una nueva tras conectar a otra, y no se consigue establecer conexión, como no se borran las tablas existentes se puede romper por `unwrap` sobre `option`. Hay que borrar al reconectar a otra conexión se cree o no conexión.
+**** DOING [#A] Cuando conecto a una nueva tras conectar a otra, y no se consigue establecer conexión, como no se borran las tablas existentes se puede romper por `unwrap` sobre `option`. Hay que borrar al reconectar a otra conexión se cree o no conexión.
+Hace tiempo que no lo reproduzco, dejo como en DOING pero por no cancelarla.
 
-** MySQL [1/2]
+** MySQL [2/4]
 *** TODO Revisar tipos de datos
+*** TODO Probar distintos protocolos de conexión
+*** DONE Dar opción en menú contextual de recargar tablas de conexión
+CLOSED: [2024-05-22 mié 15:27]
 *** DONE Conectar
 CLOSED: [2024-03-26 mar 17:34]
-** SQLite [2/3]
+*** BUGS [1/2]
+**** TODO [#A] Cuando no puede conectar, se queda bloqueada mucho tiempo.
+**** DONE No se borran las tablas tras seleccionar una nueva conexión.
+CLOSED: [2024-05-22 mié 15:30]
+** SQLite [3/5]
+*** TODO Editar nombre de conexión por hacerla más amigable
 *** TODO Revisar tipos de datos
+*** DONE Dar opción en menú contextual de recargar tablas de conexión
+CLOSED: [2024-05-22 mié 15:56]
 *** DONE Conectar
 CLOSED: [2024-02-28 mié 16:21]
 *** DONE Problema con conectar directamente tras abrir archivo

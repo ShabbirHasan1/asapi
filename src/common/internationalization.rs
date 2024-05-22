@@ -67,6 +67,7 @@ pub struct I18nPg {
     pub close_connection: String,
     pub delete_connection: String,
     pub edit_connection: String,
+    pub reload_tables: String,
 }
 
 #[derive(Clone)]
@@ -76,6 +77,7 @@ pub struct I18nMySql {
     pub close_connection: String,
     pub delete_connection: String,
     pub edit_connection: String,
+    pub reload_tables: String,
 }
 
 #[derive(Clone)]
@@ -86,12 +88,19 @@ pub struct I18nSqlite {
     pub btn_table_data_insertion: String,
     pub info_performance_table: String,
     pub performance_table: String,
+    pub connection_btn_help: String,
+    pub close_connection: String,
+    pub delete_connection: String,
+    pub reload_tables: String,
 }
 
 #[derive(Clone)]
 pub struct I18nSqlx {
     pub connections: String,
     pub tables: String,
+    pub table_columns: String,
+
+    // Sub-structs para cada `DBMS`.
     pub pg: I18nPg,
     pub mysql: I18nMySql,
     pub sqlite: I18nSqlite,
@@ -256,6 +265,7 @@ pub fn language_selector(i: I18nOptions) -> I18n {
             sqlx: I18nSqlx{
                 connections: String::from("Conexiones"),
                 tables: String::from("Tablas"),
+                table_columns: String::from("Columnas Existentes"),
 
                 pg: I18nPg {
                     connection_name: String::from("Nombre"),
@@ -283,6 +293,7 @@ pub fn language_selector(i: I18nOptions) -> I18n {
                     close_connection: String::from("Cerrar Conexión"),
                     delete_connection: String::from("Borrar Conexión"),
                     edit_connection: String::from("Editar Conexión"),
+                    reload_tables: String::from("Recargar Tablas"),
                 },
 
                 mysql: I18nMySql {
@@ -291,6 +302,7 @@ pub fn language_selector(i: I18nOptions) -> I18n {
                     close_connection: String::from("Cerrar Conexión"),
                     delete_connection: String::from("Borrar Conexión"),
                     edit_connection: String::from("Editar Conexión"),
+                    reload_tables: String::from("Recargar Tablas"),
                 },
 
                 sqlite: I18nSqlite {
@@ -301,6 +313,10 @@ pub fn language_selector(i: I18nOptions) -> I18n {
                     btn_table_data_insertion: "Insertar Fila".to_owned(),
                     info_performance_table: "El borrado de filas no es posible con tabla con mejor rendimiento.\nSeleccione esta opción para una cantidad de celdas (celdas x columnas) masiva, del orden de 1e5, o cuando la cantidad de datos dentro de las celdas pueda ser muy grande y tenga centeneras o miles de estas celdas, como puede ser el caso de grandes textos, binarios o datos geográficos.".to_owned(),
                     performance_table: "Tabla Optimizada".to_owned(),
+                    connection_btn_help: String::from("Para conectar, clicar en definición de la conexión"),
+                    close_connection: String::from("Cerrar Conexión"),
+                    delete_connection: String::from("Borrar Conexión"),
+                    reload_tables: String::from("Recargar Tablas"),
                 }
 
             },
@@ -442,6 +458,7 @@ pub fn language_selector(i: I18nOptions) -> I18n {
             sqlx: I18nSqlx {
                 connections: String::from("Connections"),
                 tables: String::from("Tables"),
+                table_columns: String::from("Table Columns"),
 
                 pg: I18nPg {
                     info_performance_table: "Deletion is forbidden for performance table.\nSelect this for massive quantity of cells (rows x columns), order of 1e5, or when massive amount of data inside the cells, like long varchar, big json/binaries/arrays or geographical data.".to_owned(),
@@ -469,6 +486,7 @@ pub fn language_selector(i: I18nOptions) -> I18n {
                     close_connection: String::from("Close Connection"),
                     delete_connection: String::from("Delete Connection"),
                     edit_connection: String::from("Edit Connection"),
+                    reload_tables: String::from("Reload Tables"),
                 },
 
                 mysql: I18nMySql {
@@ -477,6 +495,7 @@ pub fn language_selector(i: I18nOptions) -> I18n {
                     close_connection: String::from("Close Connection"),
                     delete_connection: String::from("Delete Connection"),
                     edit_connection: String::from("Edit Connection"),
+                    reload_tables: String::from("Reload Tables"),
                 },
 
                 sqlite: I18nSqlite {
@@ -486,6 +505,10 @@ pub fn language_selector(i: I18nOptions) -> I18n {
                     btn_table_data_insertion: "Insert Row".to_owned(),
                     info_performance_table: "Deletion is forbidden for performance table.\nSelect this for massive quantity of cells (rows x columns), order of 1e5, or when massive amount of data inside the cells, like long varchar, big binaries o geographical data.".to_owned(),
                     performance_table: "Performance Table".to_owned(),
+                    connection_btn_help: String::from("To connect, click connection definition button"),
+                    close_connection: String::from("Close Connection"),
+                    delete_connection: String::from("Delete Connection"),
+                    reload_tables: String::from("Reload Tables"),
                 }
             },
 
