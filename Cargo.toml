@@ -9,9 +9,9 @@ name = "asapi"
 #   0.3.1 -> mejora kafka
 #   0.3.2 -> mejora redis
 #   0.3.3 -> subida archivos <<== AQUÍ ESTAMOS
-#   0.3.4.X -> refactorizaciones varias
+#   0.3.4XX -> refactorizaciones varias
 #   0.3.x -> mejora http rendimiento
-version = "0.3.4.1"
+version = "0.3.401"
 edition = "2021"
 
 [profile.dev]
