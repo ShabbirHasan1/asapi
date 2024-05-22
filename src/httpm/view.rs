@@ -175,8 +175,6 @@ impl HttpView {
                 });
 
                 if self.show_headers {
-                    // self.state.has_request_some_change =
-                    // self.headers.show_headers(ui).unwrap_or(self.state.has_request_some_change);
                     if let Some(value) = self.headers.show_headers(ui) {
                         self.state.has_request_some_change = value;
                     }
@@ -236,12 +234,6 @@ impl HttpView {
                             .default_expand(egui_json_tree::DefaultExpand::ToLevel(10))
                             .show(ui);
                     } else {
-                        // let theme = CodeTheme::from_memory(ui.ctx());
-                        // let mut json_layouter = |ui: &egui::Ui, string: &str, wrap_width: f32| {
-                        // let mut layout_job = highlight(ui.ctx(), &theme, string, "json");
-                        // layout_job.wrap.max_width = wrap_width;
-                        // ui.fonts(|f| f.layout_job(layout_job))
-                        // };
                         let theme =
                             egui_extras::syntax_highlighting::CodeTheme::from_memory(ui.ctx());
                         let mut json_layouter = |ui: &egui::Ui, string: &str, wrap_width: f32| {
@@ -256,6 +248,7 @@ impl HttpView {
                         };
                         ui.add(
                             egui::TextEdit::multiline(&mut self.response)
+                                .interactive(false)
                                 .font(egui::TextStyle::Monospace) // for cursor height
                                 .code_editor()
                                 .desired_rows(10)
@@ -280,6 +273,7 @@ impl HttpView {
     }
 
     fn send_request(&mut self, ctx: &egui::Context, rt: &Runtime) {
+        self.response.clear();
         if self.body.multipart && self.method == HttpMethod::Post {
             self.file_request(ctx, rt);
         } else {
