@@ -23,6 +23,7 @@ pub enum QuerySort {
 /// Voy con String y ya se verá si necesito cambiar.
 #[derive(Clone, Serialize, Deserialize, Default, Debug)]
 pub struct SqlConnectionDefinition {
+    pub name: String,
     pub host: String,
     pub port: String,
     pub user: String,
@@ -34,7 +35,8 @@ impl PartialEq for SqlConnectionDefinition {
     fn eq(&self, other: &Self) -> bool {
         // No uso password xq no tiene sentido conexiones al mismo sitio
         // con distinto password.
-        self.host == other.host
+        self.name == other.name
+            && self.host == other.host
             && self.port == other.port
             && self.dbname == other.dbname
             && self.user == other.user
@@ -61,9 +63,9 @@ impl Default for SqlAppState {
 #[derive(Default)]
 pub struct SqlLocalState<T: Database> {
     pub pool: Option<Pool<T>>,
-    pub current_connection: SqlConnectionDefinition,
+    // pub current_connection: SqlConnectionDefinition,
     // Datos que almacenamos de forma temporal.
-    pub tmp_pg_connection: SqlConnectionDefinition,
+    // pub tmp_sql_connection: SqlConnectionDefinition,
     pub sql: SqlState,
 }
 
@@ -76,6 +78,8 @@ pub enum SqlxMessage {
     SelectResponse((Vec<Vec<String>>, Vec<(String, String)>, bool)),
     Error(String),
     Empty, // para errores, pero para poder resetear (o cualquier otra cosa que necesitemos).
+    AddConnection(SqlConnectionDefinition),
+    EditConnection((usize, SqlConnectionDefinition)),
 }
 
 #[derive(Default)]

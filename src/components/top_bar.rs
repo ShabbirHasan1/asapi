@@ -156,9 +156,9 @@ impl AppTopBar {
                     if ui
                         .checkbox(
                             &mut app_state.pg.performance_table,
-                            &i18n.pg_performance_table,
+                            &i18n.sqlx.pg.performance_table,
                         )
-                        .on_hover_text(&i18n.pg_info_performance_table)
+                        .on_hover_text(&i18n.sqlx.pg.info_performance_table)
                         .clicked()
                     {
                         app_state.pg.show_sidebar = !app_state.pg.show_sidebar;
@@ -184,9 +184,9 @@ impl AppTopBar {
                     if ui
                         .checkbox(
                             &mut app_state.mysql.performance_table,
-                            &i18n.mysql_performance_table,
+                            &i18n.sqlx.mysql.performance_table,
                         )
-                        .on_hover_text(&i18n.mysql_info_performance_table)
+                        .on_hover_text(&i18n.sqlx.mysql.info_performance_table)
                         .clicked()
                     {
                         ui.close_menu();
@@ -208,9 +208,9 @@ impl AppTopBar {
                     if ui
                         .checkbox(
                             &mut app_state.sqlite.performance_table,
-                            &i18n.sqlite_performance_table,
+                            &i18n.sqlx.sqlite.performance_table,
                         )
-                        .on_hover_text(&i18n.sqlite_info_performance_table)
+                        .on_hover_text(&i18n.sqlx.sqlite.info_performance_table)
                         .clicked()
                     {
                         ui.close_menu();

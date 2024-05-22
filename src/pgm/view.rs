@@ -10,13 +10,8 @@ use sqlx::postgres::PgRow;
 use sqlx::Postgres;
 use tokio::runtime::Runtime;
 
-use super::components::sidenav::PostgresSideNav;
-use super::data_generation::generate_pg_value;
-use super::parser::pg_type_from_string;
-use super::pg_type::PgType;
-use super::presenter::run_statement_with_delete_control;
-use super::state::{PgAppState, PostgresState};
 use crate::app_state::AppState;
+use crate::common::internationalization::I18nSqlx;
 use crate::quote;
 use crate::sqlx_common::components::window_generator::GeneratorWindow;
 use crate::sqlx_common::components::window_insertion::InsertionWindow;
@@ -25,9 +20,16 @@ use crate::sqlx_common::presenter::SqlPresenter;
 use crate::sqlx_common::state::{QuerySort, SqlxMessage};
 use crate::sqlx_common::table::{PerformanceTable, RegularTable};
 use crate::sqlx_common::traits::{Presenter, Show};
-use crate::common::internationalization::I18n;
+
+use super::components::sidenav::PostgresSideNav;
+use super::data_generation::generate_pg_value;
+use super::parser::pg_type_from_string;
+use super::pg_type::PgType;
+use super::presenter::run_statement_with_delete_control;
+use super::state::{PgAppState, PostgresState};
 
 pub struct PostgresView {
+    sidenav: PostgresSideNav,
     state: PostgresState,
     tx: tokio::sync::mpsc::Sender<SqlxMessage>,
     rx: tokio::sync::mpsc::Receiver<SqlxMessage>,
@@ -46,7 +48,8 @@ impl Default for PostgresView {
         let ins_window = InsertionWindow::default();
 
         Self {
-            state: PostgresState::default(),
+            sidenav: Default::default(),
+            state: Default::default(),
             tx,
             rx,
             tx_sync,
@@ -64,7 +67,7 @@ impl PostgresView {
         _frame: &mut eframe::Frame,
         app_state: &mut AppState,
         rt: &Runtime,
-        i18n: &I18n,
+        i18n: &I18nSqlx,
     ) {
         // =======================================
         // Acciones iniciales
@@ -109,7 +112,7 @@ impl PostgresView {
         // =======================================
         // Paneles laterales
         // =======================================
-        PostgresSideNav::show(
+        self.sidenav.show(
             ctx,
             rt,
             &self.tx,
@@ -151,7 +154,8 @@ impl PostgresView {
             // --> Definimos la entrada y lanzar stmt por parte del usuario <--
             let theme = egui_extras::syntax_highlighting::CodeTheme::from_memory(ctx);
             let mut sql_layouter = |ui: &egui::Ui, string: &str, wrap_width: f32| {
-                let mut layout_job = egui_extras::syntax_highlighting::highlight(ui.ctx(), &theme, string, "sql");
+                let mut layout_job =
+                    egui_extras::syntax_highlighting::highlight(ui.ctx(), &theme, string, "sql");
                 layout_job.wrap.max_width = wrap_width;
                 ui.fonts(|f| f.layout_job(layout_job))
             };
@@ -235,13 +239,6 @@ impl PostgresView {
                 .as_ref()
                 .unwrap()
                 .clone();
-            // let pool = self.state.pool.as_ref().unwrap();
-
-            // if self.state.sql.data_gen.show_generator_window {
-            //     GeneratorWindow::show(rt, pool, &self.tx, ctx, &mut self.state.sql, &t_name, i18n);
-            // } else if self.state.sql.data_gen.show_insertion_window {
-            //     InsertionWindow::show(rt, pool, &self.tx, ctx, &mut self.state.sql, &t_name, i18n);
-            // }
 
             if self.state.sql.data_gen.show_generator_window {
                 let pr = SqlPresenter::<Postgres>::default();
@@ -310,6 +307,12 @@ impl PostgresView {
                 let delete_stmt = format!("DELETE FROM {:}", t_name);
                 println!("{delete_stmt}");
                 self.run_statement(ctx, rt, delete_stmt, !app_state.pg.performance_table, true);
+            }
+            SqlxMessage::AddConnection(def) => {
+                app_state.pg.connections.push(def);
+            }
+            SqlxMessage::EditConnection((idx, def)) => {
+                app_state.pg.connections[idx] = def;
             }
         }
     }

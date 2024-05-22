@@ -7,7 +7,7 @@
 // -------------------------------------------------------------------------
 
 use crate::{
-    common::{fs::file_exists, internationalization::I18n},
+    common::{fs::file_exists, internationalization::I18nSqlx},
     sqlitem::{
         components::contextual_menus::TableInfo,
         presenter,
@@ -33,13 +33,13 @@ impl SQLiteSideNav {
         tx_sync: &std::sync::mpsc::Sender<SqlxMessage>,
         sqlite_app_state: &mut SQLiteAppState,
         local_state: &mut SQLiteState,
-        i18n: &I18n,
+        i18n: &I18nSqlx,
     ) {
         if sqlite_app_state.show_sidebar {
             egui::SidePanel::left("sqlite_connections_panel").show(ctx, |ui| {
                 // --> Abrimos archivo sqlite y conectamos <--
                 if ui
-                    .button(&i18n.sqlite_btn_add_connection)
+                    .button(&i18n.sqlite.btn_add_connection)
                     .on_hover_ui(|ui| {
                         ui.label("Para conectar, clicar en definición de la conexión");
                     })
@@ -149,7 +149,7 @@ impl SQLiteConnectionsSubpanel {
         ui: &mut egui::Ui,
         sqlite_app_state: &mut SQLiteAppState,
         local_state: &mut SQLiteState,
-        _i18n: &I18n,
+        _i18n: &I18nSqlx,
     ) {
         egui::ScrollArea::vertical().show(ui, |ui| {
             let mut connections_to_delete: HashSet<usize> = HashSet::new();
@@ -239,7 +239,7 @@ impl SQLiteTablesSubpanel {
         tx: &Sender<SqlxMessage>,
         tx_sync: &std::sync::mpsc::Sender<SqlxMessage>,
         local_st: &mut SQLiteState,
-        i18n: &I18n,
+        i18n: &I18nSqlx,
     ) {
         egui::ScrollArea::vertical().show(ui, |ui| {
             egui::Grid::new("sqlite_db_tables")

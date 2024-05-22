@@ -19,7 +19,7 @@ use super::presenter::run_statement_with_delete_control;
 use super::state::{MySqlAppState, MySqlState};
 
 use crate::app_state::AppState;
-use crate::common::internationalization::I18n;
+use crate::common::internationalization::I18nSqlx;
 use crate::quote;
 use crate::sqlx_common::components::window_generator::GeneratorWindow;
 use crate::sqlx_common::components::window_insertion::InsertionWindow;
@@ -66,7 +66,7 @@ impl MySqlView {
         _frame: &mut eframe::Frame,
         app_state: &mut AppState,
         rt: &Runtime,
-        i18n: &I18n,
+        i18n: &I18nSqlx,
     ) {
         // =======================================
         // Acciones iniciales
@@ -303,6 +303,12 @@ impl MySqlView {
             SqlxMessage::DeleteAllStmt(t_name) => {
                 let delete_stmt = format!("DELETE FROM {:}", t_name);
                 self.run_statement(ctx, rt, delete_stmt, !app_state.pg.performance_table, true);
+            }
+            SqlxMessage::AddConnection(def) => {
+                app_state.mysql.connections.push(def);
+            }
+            SqlxMessage::EditConnection((idx, def)) => {
+                app_state.mysql.connections[idx] = def;
             }
         }
     }

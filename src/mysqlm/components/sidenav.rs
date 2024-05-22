@@ -6,7 +6,13 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
+use eframe::egui;
+use egui_extras::{Size, StripBuilder};
+use std::collections::{HashMap, HashSet};
+use tokio::{runtime::Runtime, sync::mpsc::Sender};
+
 use crate::{
+    common::internationalization::I18nSqlx,
     mysqlm::{
         components::contextual_menus::TableInfo,
         presenter,
@@ -16,12 +22,7 @@ use crate::{
         components::context_menus::TableContextMenu,
         state::{QuerySort, SqlConnectionDefinition, SqlxMessage},
     },
-    common::internationalization::I18n,
 };
-use eframe::egui;
-use egui_extras::{Size, StripBuilder};
-use std::collections::{HashMap, HashSet};
-use tokio::{runtime::Runtime, sync::mpsc::Sender};
 
 pub struct MySqlSideNav;
 
@@ -33,7 +34,7 @@ impl MySqlSideNav {
         tx_sync: &std::sync::mpsc::Sender<SqlxMessage>,
         mysql_app_state: &mut MySqlAppState,
         mysql_local_st: &mut MySqlState,
-        i18n: &I18n,
+        i18n: &I18nSqlx,
     ) {
         if mysql_app_state.show_sidebar {
             egui::SidePanel::left("mysql_connections_panel").show(ctx, |ui| {
@@ -50,53 +51,53 @@ impl MySqlSideNav {
                         "\u{229f}"
                     };
 
-                    if ui.button(format!("{s1} Connections")).clicked() {
+                    if ui.button(format!("{s1} {}", i18n.connections)).clicked() {
                         mysql_local_st.sql.hide_connections = !mysql_local_st.sql.hide_connections;
                     }
-                    if ui.button(format!("{s2} Tables")).clicked() {
+                    if ui.button(format!("{s2} {}", i18n.tables)).clicked() {
                         mysql_local_st.sql.hide_tables = !mysql_local_st.sql.hide_tables;
                     }
                 });
 
                 // --> Abrimos ventana para definir conexión <--
-                ui.menu_button(&i18n.pg_btn_add_connection, |ui| {
+                ui.menu_button(&i18n.pg.btn_add_connection, |ui| {
                     ui.set_min_width(200.0);
 
                     ui.horizontal(|ui| {
-                        ui.label(&i18n.pg_connection_host);
-                        ui.text_edit_singleline(&mut mysql_local_st.tmp_pg_connection.host);
+                        ui.label(&i18n.pg.connection_host);
+                        ui.text_edit_singleline(&mut mysql_local_st.tmp_connection.host);
                     });
 
                     ui.horizontal(|ui| {
-                        ui.label(&i18n.pg_connection_port);
-                        ui.text_edit_singleline(&mut mysql_local_st.tmp_pg_connection.port);
+                        ui.label(&i18n.pg.connection_port);
+                        ui.text_edit_singleline(&mut mysql_local_st.tmp_connection.port);
                     });
 
                     ui.horizontal(|ui| {
-                        ui.label(&i18n.pg_connection_user);
-                        ui.text_edit_singleline(&mut mysql_local_st.tmp_pg_connection.user);
+                        ui.label(&i18n.pg.connection_user);
+                        ui.text_edit_singleline(&mut mysql_local_st.tmp_connection.user);
                     });
 
                     ui.horizontal(|ui| {
-                        ui.label(&i18n.pg_connection_password);
-                        ui.text_edit_singleline(&mut mysql_local_st.tmp_pg_connection.password);
+                        ui.label(&i18n.pg.connection_password);
+                        ui.text_edit_singleline(&mut mysql_local_st.tmp_connection.password);
                     });
 
                     ui.horizontal(|ui| {
-                        ui.label(&i18n.pg_connection_dbname);
-                        ui.text_edit_singleline(&mut mysql_local_st.tmp_pg_connection.dbname);
+                        ui.label(&i18n.pg.connection_dbname);
+                        ui.text_edit_singleline(&mut mysql_local_st.tmp_connection.dbname);
                     });
 
                     ui.horizontal(|ui| {
-                        if ui.button(&i18n.kafka_edit_cluster_cancel).clicked() {
+                        if ui.button(&i18n.pg.edit_connection_cancel).clicked() {
                             ui.close_menu();
                         }
-                        if ui.button(&i18n.kafka_edit_cluster_save).clicked() {
+                        if ui.button(&i18n.pg.edit_connection_confirm).clicked() {
                             // TODO: Añadir al listado
                             mysql_app_state
                                 .connections
-                                .push(mysql_local_st.tmp_pg_connection.clone());
-                            mysql_local_st.tmp_pg_connection = SqlConnectionDefinition::default();
+                                .push(mysql_local_st.tmp_connection.clone());
+                            mysql_local_st.tmp_connection = SqlConnectionDefinition::default();
                             ui.close_menu();
                         }
                     });
@@ -134,22 +135,9 @@ impl MySqlSideNav {
                             });
                         });
                 } else if !mysql_local_st.sql.hide_connections {
-                    MySqlConnectionsSubpanel::show(
-                        rt,
-                        ui,
-                        mysql_app_state,
-                        mysql_local_st,
-                        i18n,
-                    );
+                    MySqlConnectionsSubpanel::show(rt, ui, mysql_app_state, mysql_local_st, i18n);
                 } else if !mysql_local_st.sql.hide_tables {
-                    MySqlTablesSubpanel::show(
-                        rt,
-                        ui,
-                        tx,
-                        tx_sync,
-                        mysql_local_st,
-                        i18n,
-                    );
+                    MySqlTablesSubpanel::show(rt, ui, tx, tx_sync, mysql_local_st, i18n);
                 }
             });
         }
@@ -164,7 +152,7 @@ impl MySqlConnectionsSubpanel {
         ui: &mut egui::Ui,
         pg_app_state: &mut MySqlAppState,
         local_state: &mut MySqlState,
-        _i18n: &I18n,
+        _i18n: &I18nSqlx
     ) {
         egui::ScrollArea::vertical().show(ui, |ui| {
             let mut connections_to_delete: HashSet<usize> = HashSet::new();
@@ -221,6 +209,7 @@ impl MySqlConnectionsSubpanel {
                         // Si no conexión o la que existe no es la que clico, la defino
                         if local_state.pool.is_none() {
                             let conn = SqlConnectionDefinition {
+                                name: conn_definition.name.clone(),
                                 host: conn_definition.host.clone(),
                                 port: conn_definition.port.clone(),
                                 user: conn_definition.user.clone(),
@@ -281,7 +270,7 @@ impl MySqlTablesSubpanel {
         tx: &Sender<SqlxMessage>,
         tx_sync: &std::sync::mpsc::Sender<SqlxMessage>,
         local_state: &mut MySqlState,
-        i18n: &I18n,
+        i18n: &I18nSqlx
     ) {
         egui::ScrollArea::vertical().show(ui, |ui| {
             egui::Grid::new("mysql_db_tables")

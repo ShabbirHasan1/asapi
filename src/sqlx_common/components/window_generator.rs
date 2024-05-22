@@ -11,17 +11,15 @@ use sqlx::Database;
 use std::fmt::Debug;
 use std::{marker::PhantomData, ops::RangeInclusive};
 
+use crate::common::internationalization::I18nSqlx;
 use crate::common::traits::Runner;
 use crate::components::toggle_switch;
 use crate::quote;
-use crate::{
-    common::internationalization::I18n,
-    sqlx_common::{
-        data_generation::GenericGenerator,
-        presenter::create_columns_string,
-        state::{SqlState, SqlxMessage},
-        traits::Presenter,
-    },
+use crate::sqlx_common::{
+    data_generation::GenericGenerator,
+    presenter::create_columns_string,
+    state::{SqlState, SqlxMessage},
+    traits::Presenter,
 };
 
 pub struct GeneratorWindow<R, DB, T>(PhantomData<R>, PhantomData<DB>, PhantomData<T>);
@@ -43,7 +41,7 @@ where
         ctx: &egui::Context,
         state: &mut SqlState,
         t_name: &str,
-        _i18n: &I18n,
+        _i18n: &I18nSqlx,
         presenter: &impl Presenter,
         parse_type_representation: impl Fn(&str) -> T,
         generate_value: impl Fn(&T) -> String,

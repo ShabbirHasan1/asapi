@@ -12,7 +12,7 @@ use sqlx::Sqlite;
 use tokio::runtime::Runtime;
 
 use crate::app_state::AppState;
-use crate::common::internationalization::I18n;
+use crate::common::internationalization::{I18n, I18nSqlx};
 use crate::quote;
 use crate::sqlx_common::components::window_generator::GeneratorWindow;
 use crate::sqlx_common::components::window_insertion::InsertionWindow;
@@ -65,7 +65,7 @@ impl SQLiteView {
         _frame: &mut eframe::Frame,
         app_state: &mut AppState,
         rt: &Runtime,
-        i18n: &I18n,
+        i18n: &I18nSqlx
     ) {
         // =======================================
         // Acciones iniciales
@@ -334,6 +334,8 @@ impl SQLiteView {
                 let delete_stmt = format!("DELETE FROM {:}", t_name);
                 self.run_statement(ctx, rt, delete_stmt, !app_state.pg.performance_table, true);
             }
+            // Dos casos imposibles.
+            SqlxMessage::AddConnection(_) | SqlxMessage::EditConnection(_) => ()
         }
     }
     fn run_statement(

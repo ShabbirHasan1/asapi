@@ -119,13 +119,14 @@ impl eframe::App for Asapi {
             }
             ViewType::Pg => self
                 .pg
-                .update(ctx, _frame, &mut self.app_state, &self.rt, &i18n),
-            ViewType::MySql => self
-                .mysql
-                .update(ctx, _frame, &mut self.app_state, &self.rt, &i18n),
+                .update(ctx, _frame, &mut self.app_state, &self.rt, &i18n.sqlx),
+            ViewType::MySql => {
+                self.mysql
+                    .update(ctx, _frame, &mut self.app_state, &self.rt, &i18n.sqlx)
+            }
             ViewType::SQLite => {
                 self.sqlite
-                    .update(ctx, _frame, &mut self.app_state, &self.rt, &i18n)
+                    .update(ctx, _frame, &mut self.app_state, &self.rt, &i18n.sqlx)
             }
         }
     }

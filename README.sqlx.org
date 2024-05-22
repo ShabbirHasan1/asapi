@@ -2,16 +2,20 @@
 
 * SQLx
 El módulo común de /sqlx/ lo llamo /sqlx_common/, el resto con el nombre más la /m/ final de /module/.
-** General
+** General [2/3]
 Hago al generar/insertar un doble cambio de string a tipo y tipo a string, y no uso el enum que me va a dar en ppio mejor rendimiento. Esto tengo que cambiarlo, en todos a la vez al usar la mismas clases para las ventanas generadoras
-*** DONE Refactorizar para usar sqlx en pg
+*** TODO Poder editar conexiones en MySQL
+*** DONE Poder editar conexiones en Postgres
+CLOSED: [2024-05-22 mié 12:18]
+*** DONE Refactorizar para usar sqlx
 CLOSED: [2024-03-26 mar 17:34]
 
-** Postgres
-*** CANCELED Generador de código a partir de /Gen/
-CLOSED: [2024-02-28 mié 16:22]
+** Postgres [10/12]
+*** TODO Revisar tipos de datos
 *** TODO Tamaño de campo de claves en /body/ y /headers/
 Cuando hacemos pequeña la ventana no reduce y se acaba tapando el valor sin que se hayan reducido las /keys/.
+*** CANCELED Generador de código a partir de /Gen/
+CLOSED: [2024-02-28 mié 16:22]
 *** DONE [#A] Mostrar cómo se queda el estado de una tabla tras:
 CLOSED: [2024-01-29 lun 12:35]
 + /update/
@@ -37,10 +41,12 @@ CLOSED: [2023-12-13 mié 12:54]
 *** BUGS
 **** TODO [#A] Cuando conecto a una nueva tras conectar a otra, y no se consigue establecer conexión, como no se borran las tablas existentes se puede romper por `unwrap` sobre `option`. Hay que borrar al reconectar a otra conexión se cree o no conexión.
 
-** MySQL
+** MySQL [1/2]
+*** TODO Revisar tipos de datos
 *** DONE Conectar
 CLOSED: [2024-03-26 mar 17:34]
-** SQLite
+** SQLite [2/3]
+*** TODO Revisar tipos de datos
 *** DONE Conectar
 CLOSED: [2024-02-28 mié 16:21]
 *** DONE Problema con conectar directamente tras abrir archivo

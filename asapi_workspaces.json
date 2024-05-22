@@ -465,6 +465,7 @@
     "performance_table": false,
     "connections": [
       {
+        "name": "DB1",
         "host": "localhost",
         "port": "5432",
         "user": "postgres",
@@ -472,6 +473,7 @@
         "dbname": "fitosat"
       },
       {
+        "name": "DB2",
         "host": "localhost",
         "port": "5432",
         "user": "postgres",
@@ -479,6 +481,7 @@
         "dbname": "fitosat"
       },
       {
+        "name": "DB3",
         "host": "localhost",
         "port": "5432",
         "user": "postgres",
@@ -486,6 +489,7 @@
         "dbname": "spade"
       },
       {
+        "name": "DB4",
         "host": "localhost",
         "port": "5433",
         "user": "postgres",
@@ -493,6 +497,7 @@
         "dbname": "spade"
       },
       {
+        "name": "Db modificada",
         "host": "foo",
         "port": "543",
         "user": "asfd",
@@ -506,6 +511,7 @@
     "performance_table": false,
     "connections": [
       {
+        "name": "DB1",
         "host": "localhost",
         "port": "3306",
         "user": "user",
