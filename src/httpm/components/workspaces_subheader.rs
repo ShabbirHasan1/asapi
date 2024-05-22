@@ -6,9 +6,11 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
+use std::path::PathBuf;
+
 use eframe::egui;
 
-use crate::common::internationalization::I18n;
+use crate::common::internationalization::I18nHttp;
 use crate::httpm::state::HttpAppState;
 use crate::httpm::view::HttpView;
 use crate::httpm::workspace::Workspace;
@@ -18,7 +20,7 @@ impl HttpView {
         &mut self,
         ctx: &egui::Context,
         app_st: &mut HttpAppState,
-        i18n: &I18n,
+        i18n: &I18nHttp,
     ) {
         egui::TopBottomPanel::top("subheader").show(ctx, |ui| {
             ui.horizontal(|ui| {
@@ -62,7 +64,35 @@ impl HttpView {
                 }
 
                 for (idx, workspace) in app_st.workspaces.iter_mut().enumerate() {
-                    ui.selectable_value(&mut app_st.current_workspace_idx, idx, &workspace.name);
+                    if ui
+                        .selectable_value(&mut app_st.current_workspace_idx, idx, &workspace.name)
+                        .clicked()
+                    {
+                        self.state.selected_request_idx = Some(0);
+                        let fst_request = workspace.requests.first();
+
+                        if let Some(req) = fst_request {
+                            self.method = req.method;
+                            self.url = req.url.clone();
+                            self.body.multipart = req.multipart;
+                            self.body.params = req.body_params.clone();
+                            self.body.files = vec![vec![]; req.body_params.len()];
+                            for (idx, param) in self.body.params.iter().enumerate() {
+                                let has_files = param.2;
+                                if has_files {
+                                    self.body.files[idx] = param
+                                        .1
+                                        .split(',')
+                                        .map(|s| PathBuf::from(s))
+                                        .collect::<Vec<PathBuf>>();
+                                }
+                            }
+
+                            self.headers.params = req.headers_params.clone();
+                            self.response.clear();
+                            self.state.has_request_some_change = false;
+                        }
+                    }
                 }
             });
         });

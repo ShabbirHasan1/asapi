@@ -8,7 +8,7 @@
 
 use eframe::egui;
 
-use crate::{common::internationalization::I18n, httpm::state::HttpRequestAction};
+use crate::{common::internationalization::I18nHttp, httpm::state::HttpRequestAction};
 
 pub fn request<F>(
     ui: &mut egui::Ui,
@@ -16,7 +16,7 @@ pub fn request<F>(
     selected_idx: &mut Option<usize>,
     action_to_perform: &mut HttpRequestAction,
     show_update: bool,
-    i18n: &I18n,
+    i18n: &I18nHttp,
     cb: F,
 ) where
     F: Fn(&mut egui::Ui),

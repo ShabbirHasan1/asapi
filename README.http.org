@@ -1,9 +1,16 @@
-* Features
-** DONE Swagger
 
-* Bugs [1/2]
-** TODO Varios problemas cuando enviamos archivos [1/2]
-*** TODO no se limpia cuando realizao un nuevo envío la respuesta preexistente, y si falla la nueva petición no se sobreescribe
+#+STARTUP: logdone
+
+* Features [1/1]
+** DONE Pasar a usar /egui_extras/ para colorear código respuesta json.
+CLOSED: [2024-05-22 mié 10:19]
+
+* Bugs [2/2]
+** DONE [#B] Varios problemas cuando enviamos archivos [2/2]
+CLOSED: [2024-05-22 mié 10:37]
+*** DONE no se limpia cuando realizo un nuevo envío la respuesta preexistente, y si falla la nueva petición no se sobreescribe
+CLOSED: [2024-05-22 mié 10:21] Lo que hago, que es lo lógico, no es esperar la nueva respuesta para borrar, sino borrar nada más clico en el botón de /lanzar petición/.
+
 *** DONE no se guardan los archivos en el json
-** DONE Edición de nombre de petición no funciona
-
+CLOSED: [2024-05-22 mié 10:20]
+** DONE [#A] Cuando cambio de /workspace/, no se seleccionan automáticamente los datos de la primera petición del nuevo /ws/ seleccionado

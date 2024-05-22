@@ -32,7 +32,7 @@ chrono = { version = "0.4.37", features = ["serde"] }
 clippy = "0.0.302"
 eframe="0.27.2"
 egui-file-dialog = "0.5.0"
-egui_extras = "0.27.2"
+egui_extras = { version = "0.27.2", features = ["syntect"] }
 egui_json_tree = "0.5.0"
 enum-map = { version = "2.7.3", features = ["serde"] } # Necesario para common/syntax_highlighting, puede ser útil intetar usarlo en más sitios.
 env_logger = "0.11.3"
