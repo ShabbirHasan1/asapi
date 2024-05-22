@@ -30,6 +30,7 @@ use crate::sqlx_common::table::{PerformanceTable, RegularTable};
 use crate::sqlx_common::traits::{Presenter, Show};
 
 pub struct MySqlView {
+    sidenav: MySqlSideNav,
     state: MySqlState,
     tx: tokio::sync::mpsc::Sender<SqlxMessage>,
     rx: tokio::sync::mpsc::Receiver<SqlxMessage>,
@@ -48,7 +49,8 @@ impl Default for MySqlView {
         let ins_window = InsertionWindow::default();
 
         Self {
-            state: MySqlState::default(),
+            sidenav: Default::default(),
+            state: Default::default(),
             tx,
             rx,
             tx_sync,
@@ -111,7 +113,7 @@ impl MySqlView {
         // =======================================
         // Paneles laterales
         // =======================================
-        MySqlSideNav::show(
+        self.sidenav.show(
             ctx,
             rt,
             &self.tx,

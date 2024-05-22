@@ -44,40 +44,40 @@ impl PostgresSideNav {
         rt: &Runtime,
         tx: &Sender<SqlxMessage>,
         tx_sync: &std::sync::mpsc::Sender<SqlxMessage>,
-        pg_app_state: &mut PgAppState,
-        pg_local_st: &mut PostgresState,
+        app_st: &mut PgAppState,
+        local_st: &mut PostgresState,
         i18n: &I18nSqlx,
     ) {
-        if pg_app_state.show_sidebar {
+        if app_st.show_sidebar {
             egui::SidePanel::left("postgres_connections_panel").show(ctx, |ui| {
                 // --> Decidimos qué mostrar <--
                 ui.horizontal(|ui| {
-                    let s1 = if pg_local_st.sql.hide_connections {
+                    let s1 = if local_st.sql.hide_connections {
                         "\u{229e}"
                     } else {
                         "\u{229f}"
                     };
-                    let s2 = if pg_local_st.sql.hide_tables {
+                    let s2 = if local_st.sql.hide_tables {
                         "\u{229e}"
                     } else {
                         "\u{229f}"
                     };
 
                     if ui.button(format!("{s1} {}", i18n.connections)).clicked() {
-                        pg_local_st.sql.hide_connections = !pg_local_st.sql.hide_connections;
+                        local_st.sql.hide_connections = !local_st.sql.hide_connections;
                     }
                     if ui.button(format!("{s2} {}", i18n.tables)).clicked() {
-                        pg_local_st.sql.hide_tables = !pg_local_st.sql.hide_tables;
+                        local_st.sql.hide_tables = !local_st.sql.hide_tables;
                     }
                 });
 
                 // --> Abrimos ventana para definir conexión <--
                 ui.menu_button(&i18n.pg.btn_add_connection, |ui| {
-                    edit_connection(ui, i18n, pg_local_st, tx_sync, None);
+                    edit_connection(ui, i18n, &mut local_st.tmp_connection, tx_sync, None);
                 });
 
                 // --> Mostramos Conexiones <--
-                if !pg_local_st.sql.hide_connections && !pg_local_st.sql.hide_tables {
+                if !local_st.sql.hide_connections && !local_st.sql.hide_tables {
                     StripBuilder::new(ui)
                         .size(Size::remainder())
                         .size(Size::remainder())
@@ -87,8 +87,8 @@ impl PostgresSideNav {
                                     ctx,
                                     rt,
                                     ui,
-                                    pg_app_state,
-                                    pg_local_st,
+                                    app_st,
+                                    local_st,
                                     tx_sync,
                                     i18n,
                                 );
@@ -102,24 +102,24 @@ impl PostgresSideNav {
                                         ui,
                                         tx,
                                         tx_sync,
-                                        pg_local_st,
+                                        local_st,
                                         i18n,
                                     );
                                 });
                             });
                         });
-                } else if !pg_local_st.sql.hide_connections {
+                } else if !local_st.sql.hide_connections {
                     self.connections_subpanel.show(
                         ctx,
                         rt,
                         ui,
-                        pg_app_state,
-                        pg_local_st,
+                        app_st,
+                        local_st,
                         tx_sync,
                         i18n,
                     );
-                } else if !pg_local_st.sql.hide_tables {
-                    PostgresTablesSubpanel::show(ctx, rt, ui, tx, tx_sync, pg_local_st, i18n);
+                } else if !local_st.sql.hide_tables {
+                    PostgresTablesSubpanel::show(ctx, rt, ui, tx, tx_sync, local_st, i18n);
                 }
             });
         }
@@ -192,7 +192,13 @@ impl PostgresConnectionsSubpanel {
                             if menu_open && !self.is_edit_connection_menu_opened {
                                 local_st.tmp_connection = conn_definition.clone();
                             }
-                            edit_connection(ui, i18n, local_st, tx_sync, Some(idx));
+                            edit_connection(
+                                ui,
+                                i18n,
+                                &mut local_st.tmp_connection,
+                                tx_sync,
+                                Some(idx),
+                            );
                         });
 
                         self.is_edit_connection_menu_opened = menu_open;
@@ -352,8 +358,7 @@ fn close_connection(rt: &Runtime, local_state: &mut PostgresState) {
 fn edit_connection(
     ui: &mut egui::Ui,
     i18n: &I18nSqlx,
-    pg_local_st: &mut PostgresState,
-    // pg_app_state: &mut PgAppState,
+    tmp_connection: &mut SqlConnectionDefinition,
     tx: &std::sync::mpsc::Sender<SqlxMessage>,
     idx: Option<usize>,
 ) {
@@ -361,32 +366,32 @@ fn edit_connection(
 
     ui.horizontal(|ui| {
         ui.label(&i18n.pg.connection_name);
-        ui.text_edit_singleline(&mut pg_local_st.tmp_connection.name);
+        ui.text_edit_singleline(&mut tmp_connection.name);
     });
 
     ui.horizontal(|ui| {
         ui.label(&i18n.pg.connection_host);
-        ui.text_edit_singleline(&mut pg_local_st.tmp_connection.host);
+        ui.text_edit_singleline(&mut tmp_connection.host);
     });
 
     ui.horizontal(|ui| {
         ui.label(&i18n.pg.connection_port);
-        ui.text_edit_singleline(&mut pg_local_st.tmp_connection.port);
+        ui.text_edit_singleline(&mut tmp_connection.port);
     });
 
     ui.horizontal(|ui| {
         ui.label(&i18n.pg.connection_user);
-        ui.text_edit_singleline(&mut pg_local_st.tmp_connection.user);
+        ui.text_edit_singleline(&mut tmp_connection.user);
     });
 
     ui.horizontal(|ui| {
         ui.label(&i18n.pg.connection_password);
-        ui.text_edit_singleline(&mut pg_local_st.tmp_connection.password);
+        ui.text_edit_singleline(&mut tmp_connection.password);
     });
 
     ui.horizontal(|ui| {
         ui.label(&i18n.pg.connection_dbname);
-        ui.text_edit_singleline(&mut pg_local_st.tmp_connection.dbname);
+        ui.text_edit_singleline(&mut tmp_connection.dbname);
     });
 
     ui.horizontal(|ui| {
@@ -396,19 +401,14 @@ fn edit_connection(
         if ui.button(&i18n.pg.edit_connection_confirm).clicked() {
             match idx {
                 Some(idx) => {
-                    let _ = tx.send(SqlxMessage::EditConnection((
-                        idx,
-                        pg_local_st.tmp_connection.clone(),
-                    )));
+                    let _ = tx.send(SqlxMessage::EditConnection((idx, tmp_connection.clone())));
                 }
                 _ => {
-                    let _ = tx.send(SqlxMessage::AddConnection(
-                        pg_local_st.tmp_connection.clone(),
-                    ));
+                    let _ = tx.send(SqlxMessage::AddConnection(tmp_connection.clone()));
                 }
             }
 
-            pg_local_st.tmp_connection = SqlConnectionDefinition::default();
+            *tmp_connection = SqlConnectionDefinition::default();
             ui.close_menu();
         }
     });

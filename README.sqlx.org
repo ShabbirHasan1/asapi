@@ -2,9 +2,10 @@
 
 * SQLx
 El módulo común de /sqlx/ lo llamo /sqlx_common/, el resto con el nombre más la /m/ final de /module/.
-** General [2/3]
+** General [3/3]
 Hago al generar/insertar un doble cambio de string a tipo y tipo a string, y no uso el enum que me va a dar en ppio mejor rendimiento. Esto tengo que cambiarlo, en todos a la vez al usar la mismas clases para las ventanas generadoras
-*** TODO Poder editar conexiones en MySQL
+*** DONE Poder editar conexiones en MySQL
+CLOSED: [2024-05-22 mié 12:44]
 *** DONE Poder editar conexiones en Postgres
 CLOSED: [2024-05-22 mié 12:18]
 *** DONE Refactorizar para usar sqlx

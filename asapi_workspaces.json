@@ -511,7 +511,7 @@
     "performance_table": false,
     "connections": [
       {
-        "name": "DB1",
+        "name": "Conexión MariaDB",
         "host": "localhost",
         "port": "3306",
         "user": "user",
