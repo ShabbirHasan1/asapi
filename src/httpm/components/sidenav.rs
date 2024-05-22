@@ -10,7 +10,7 @@ use std::path::PathBuf;
 
 use eframe::egui;
 
-use crate::common::internationalization::I18n;
+use crate::common::internationalization::I18nHttp;
 use crate::httpm::request::Request;
 use crate::httpm::state::{HttpAppState, HttpRequestAction};
 use crate::httpm::swagger;
@@ -19,7 +19,12 @@ use crate::httpm::view::HttpView;
 use super::context_menus;
 
 impl HttpView {
-    pub fn show_sidenav(&mut self, ctx: &egui::Context, app_st: &mut HttpAppState, i18n: &I18n) {
+    pub fn show_sidenav(
+        &mut self,
+        ctx: &egui::Context,
+        app_st: &mut HttpAppState,
+        i18n: &I18nHttp,
+    ) {
         egui::SidePanel::left("side_panel")
             .resizable(true)
             .show(ctx, |ui| {

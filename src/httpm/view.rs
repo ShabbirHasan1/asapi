@@ -19,7 +19,7 @@ use super::methods::HttpMethod;
 use super::request::{self, api_request};
 use super::state::{HttpAppState, HttpLocalState, HttpPanel};
 
-use crate::common::internationalization::I18n;
+use crate::common::internationalization::I18nHttp;
 
 pub struct HttpView {
     tx: Sender<(String, HeaderMap)>,
@@ -62,7 +62,7 @@ impl HttpView {
         _frame: &mut eframe::Frame,
         app_st: &mut HttpAppState,
         rt: &Runtime,
-        i18n: &I18n,
+        i18n: &I18nHttp,
     ) {
         // =======================================
         // Preparación de cada ciclo
@@ -133,8 +133,8 @@ impl HttpView {
 
                 // --> Elección Verbo HTTP <--
                 ui.horizontal(|ui| {
-                    ui.label("Method:");
-                    let response = egui::ComboBox::from_id_source("Method")
+                    ui.label(&i18n.http_request_method);
+                    let response = egui::ComboBox::from_id_source(&i18n.http_request_method)
                         .selected_text(self.method.to_string())
                         .show_ui(ui, |ui| {
                             ui.selectable_value(&mut self.method, HttpMethod::Get, "GET");
@@ -238,14 +238,19 @@ impl HttpView {
                     } else {
                         // let theme = CodeTheme::from_memory(ui.ctx());
                         // let mut json_layouter = |ui: &egui::Ui, string: &str, wrap_width: f32| {
-                            // let mut layout_job = highlight(ui.ctx(), &theme, string, "json");
-                            // layout_job.wrap.max_width = wrap_width;
-                            // ui.fonts(|f| f.layout_job(layout_job))
+                        // let mut layout_job = highlight(ui.ctx(), &theme, string, "json");
+                        // layout_job.wrap.max_width = wrap_width;
+                        // ui.fonts(|f| f.layout_job(layout_job))
                         // };
-                        let theme = egui_extras::syntax_highlighting::CodeTheme::from_memory(ui.ctx());
+                        let theme =
+                            egui_extras::syntax_highlighting::CodeTheme::from_memory(ui.ctx());
                         let mut json_layouter = |ui: &egui::Ui, string: &str, wrap_width: f32| {
-                            let mut layout_job =
-                                egui_extras::syntax_highlighting::highlight(ui.ctx(), &theme, string, "json");
+                            let mut layout_job = egui_extras::syntax_highlighting::highlight(
+                                ui.ctx(),
+                                &theme,
+                                string,
+                                "json",
+                            );
                             layout_job.wrap.max_width = wrap_width;
                             ui.fonts(|f| f.layout_job(layout_job))
                         };
@@ -256,7 +261,7 @@ impl HttpView {
                                 .desired_rows(10)
                                 .lock_focus(true)
                                 .desired_width(f32::INFINITY)
-                                .layouter(&mut json_layouter)
+                                .layouter(&mut json_layouter),
                         );
                     }
                 });
@@ -265,7 +270,7 @@ impl HttpView {
                     app_st.workspaces[app_st.current_workspace_idx].requests[idx].clone();
 
                 let close_performance_panel =
-                    self.state.performance_panel.ui(ui, rt, i18n, &mut request);
+                    self.state.performance_panel.show(ui, rt, i18n, &mut request);
 
                 if close_performance_panel {
                     self.state.panel = HttpPanel::Regular;

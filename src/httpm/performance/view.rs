@@ -17,7 +17,7 @@ use tokio::sync::mpsc::{self, Receiver, Sender};
 use tokio::sync::Semaphore;
 
 use crate::common::generator::{Gen, SimpleRGen};
-use crate::common::internationalization::I18n;
+use crate::common::internationalization::{I18n, I18nHttp};
 use crate::httpm::methods::HttpMethod;
 use crate::httpm::request::{api_request, Request};
 
@@ -70,14 +70,14 @@ impl Default for HttpPerformanceView {
 
 impl HttpPerformanceView {
     //  Esta función se llama continuamente pero no de forma directa sino que es controlada por HttpView.
-    pub fn ui(
+    pub fn show(
         &mut self,
         // ctx: &egui::Context,
         ui: &mut egui::Ui,
         // _frame: &mut eframe::Frame,
         // state: &mut AppState,
         rt: &Runtime,
-        i18n: &I18n,
+        i18n: &I18nHttp,
         request: &mut Request,
     ) -> bool {
         let _ = i18n;

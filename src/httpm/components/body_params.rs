@@ -13,7 +13,7 @@ use serde_json::Value as JsonValue;
 use std::path::PathBuf;
 
 use crate::{
-    common::{fs::list_files_in_directory, icon_moon::IconMoon, internationalization::I18n},
+    common::{fs::list_files_in_directory, icon_moon::IconMoon, internationalization::I18nHttp},
     httpm::{methods::HttpMethod, state::HttpLocalState},
 };
 
@@ -35,7 +35,7 @@ impl BodyParams {
         ui: &mut egui::Ui,
         method: HttpMethod,
         state: &mut HttpLocalState,
-        i18n: &I18n,
+        i18n: &I18nHttp,
     ) -> Option<bool> {
         let mut has_changed = None;
         let mut idx_to_del: Option<usize> = None;

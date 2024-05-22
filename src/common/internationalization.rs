@@ -18,25 +18,7 @@ pub enum I18nOptions {
 }
 
 #[derive(Clone)]
-pub struct I18n {
-    // intern: I18nOptions,
-    pub debug_json_string: String,
-
-    // Barra superior
-    pub top_menu_config: String,
-    pub top_http_toggle_sidebar: String,
-    pub top_redis_toggle_sidebar: String,
-    pub top_pg_toggle_sidebar_connections: String,
-    pub top_pg_toggle_sidebar_tables: String,
-    pub top_kafka_toggle_sidebar_cluster: String,
-    pub top_mongo_toggle_sidebar_connections: String,
-    pub top_sqlite_toggle_sidebar_connections: String,
-    pub top_mysql_toggle_sidebar_connections: String,
-    pub top_import_json_state: String,
-    pub top_export_json_state: String,
-    pub top_export_warning: String,
-
-    // Http
+pub struct I18nHttp {
     pub http_btn_edit_ws_name: String,
     pub http_btn_delete_ws: String,
     pub http_btn_update_request: String,
@@ -55,6 +37,29 @@ pub struct I18n {
     pub http_save_request: String,
     pub http_import_swagger: String,
     pub http_swagger_json_limitation: String,
+    pub http_request_method: String,
+}
+
+#[derive(Clone)]
+pub struct I18n {
+    pub http: I18nHttp,
+
+    // intern: I18nOptions,
+    pub debug_json_string: String,
+
+    // Barra superior
+    pub top_menu_config: String,
+    pub top_http_toggle_sidebar: String,
+    pub top_redis_toggle_sidebar: String,
+    pub top_pg_toggle_sidebar_connections: String,
+    pub top_pg_toggle_sidebar_tables: String,
+    pub top_kafka_toggle_sidebar_cluster: String,
+    pub top_mongo_toggle_sidebar_connections: String,
+    pub top_sqlite_toggle_sidebar_connections: String,
+    pub top_mysql_toggle_sidebar_connections: String,
+    pub top_import_json_state: String,
+    pub top_export_json_state: String,
+    pub top_export_warning: String,
 
     // Kafka
     pub kafka_accept: String,
@@ -200,25 +205,27 @@ pub fn language_selector(i: I18nOptions) -> I18n {
             top_export_json_state: "Exportar a JSON".to_owned(),
             top_export_warning: "Exportar sobreescribirá los datos que tenga guardados actualmente".to_owned(),
 
-            // Http
-            http_btn_edit_ws_name: "Editar nombre del espacio de trabajo".to_owned(),
-            http_btn_delete_ws: "Borrar espacio de trabajo".to_owned(),
-            http_btn_update_request: "Actualizar".to_owned(),
-            http_btn_send_request: "Lanzar Petición".to_owned(),
-            http_send_to_http_performance: "Rendimiento de la Petición".to_owned(),
-            http_select_file: format!("{} Subir Archivo", IconMoon::File.as_str()),
-            http_select_folder: format!("{} Subir Carpeta", IconMoon::FolderOpen.as_str()),
-            http_clean_file_folder_selection: String::from("Limpiar Selección"),
-            http_selected_files_prefix: String::from("archivos seleccionados"),
-            http_multipart_help: String::from("Seleccinar para enviar petición como form/multipart, pertmitiendo subida de archivos"),
-            http_context_menu_rename: String::from("Renombrar"),
-            http_context_menu_delete: String::from("Borrar"),
-            http_context_menu_update: String::from("Actualizar"),
-            http_body_add_files: String::from("Añadir Archivo(s)"),
-            http_edit_request_name: String::from("Editar Nombre de la Petición"),
-            http_save_request: String::from("Guardar Petición"),
-            http_import_swagger: format!("Importar OpenAPI {}", IconMoon::Letteri),
-            http_swagger_json_limitation: String::from("Solo JSON"),
+            http: I18nHttp {
+                http_btn_edit_ws_name: "Editar nombre del espacio de trabajo".to_owned(),
+                http_btn_delete_ws: "Borrar espacio de trabajo".to_owned(),
+                http_btn_update_request: "Actualizar".to_owned(),
+                http_btn_send_request: "Lanzar Petición".to_owned(),
+                http_send_to_http_performance: "Rendimiento de la Petición".to_owned(),
+                http_select_file: format!("{} Subir Archivo", IconMoon::File.as_str()),
+                http_select_folder: format!("{} Subir Carpeta", IconMoon::FolderOpen.as_str()),
+                http_clean_file_folder_selection: String::from("Limpiar Selección"),
+                http_selected_files_prefix: String::from("archivos seleccionados"),
+                http_multipart_help: String::from("Seleccinar para enviar petición como form/multipart, pertmitiendo subida de archivos"),
+                http_context_menu_rename: String::from("Renombrar"),
+                http_context_menu_delete: String::from("Borrar"),
+                http_context_menu_update: String::from("Actualizar"),
+                http_body_add_files: String::from("Añadir Archivo(s)"),
+                http_edit_request_name: String::from("Editar Nombre de la Petición"),
+                http_save_request: String::from("Guardar Petición"),
+                http_import_swagger: format!("Importar OpenAPI {}", IconMoon::Letteri),
+                http_swagger_json_limitation: String::from("Solo JSON"),
+                http_request_method: String::from("Método")
+            },
 
             // Kafka
             kafka_accept: String::from("Aceptar"),
@@ -362,26 +369,27 @@ pub fn language_selector(i: I18nOptions) -> I18n {
             top_export_json_state: "Export to JSON".to_owned(),
             top_export_warning: "Export will override data currently stored".to_owned(),
 
-            // Http
-            http_btn_edit_ws_name: "Edit workspace name".to_owned(),
-            http_btn_delete_ws: "Delete workspace".to_owned(),
-            http_btn_update_request: "Update".to_owned(),
-            http_btn_send_request: "Send Request".to_owned(),
-            http_send_to_http_performance: "Request Performance".to_owned(),
-            http_select_folder: format!("{} Upload Folder", IconMoon::FolderOpen.as_str()),
-            http_select_file: format!("{} Upload File", IconMoon::File.as_str()),
-            http_clean_file_folder_selection: String::from("Clean Selection"),
-            http_selected_files_prefix: String::from("selected files"),
-            http_multipart_help: String::from("Selecting sends request as multipart, uploading files if selected"),
-            http_context_menu_rename: String::from("Rename"),
-            http_context_menu_delete: String::from("Delete"),
-            http_context_menu_update: String::from("Update"),
-            http_body_add_files: String::from("Add File(s)"),
-            http_edit_request_name: String::from("Edit Request Name"),
-            http_save_request: String::from("Save Request"),
-            http_import_swagger: format!("Import OpenAPI {}", IconMoon::Letteri),
-            http_swagger_json_limitation: String::from("Only JSON allowed"),
-
+            http: I18nHttp {
+                http_btn_edit_ws_name: "Edit workspace name".to_owned(),
+                http_btn_delete_ws: "Delete workspace".to_owned(),
+                http_btn_update_request: "Update".to_owned(),
+                http_btn_send_request: "Send Request".to_owned(),
+                http_send_to_http_performance: "Request Performance".to_owned(),
+                http_select_folder: format!("{} Upload Folder", IconMoon::FolderOpen.as_str()),
+                http_select_file: format!("{} Upload File", IconMoon::File.as_str()),
+                http_clean_file_folder_selection: String::from("Clean Selection"),
+                http_selected_files_prefix: String::from("selected files"),
+                http_multipart_help: String::from("Selecting sends request as multipart, uploading files if selected"),
+                http_context_menu_rename: String::from("Rename"),
+                http_context_menu_delete: String::from("Delete"),
+                http_context_menu_update: String::from("Update"),
+                http_body_add_files: String::from("Add File(s)"),
+                http_edit_request_name: String::from("Edit Request Name"),
+                http_save_request: String::from("Save Request"),
+                http_import_swagger: format!("Import OpenAPI {}", IconMoon::Letteri),
+                http_swagger_json_limitation: String::from("Only JSON allowed"),
+                http_request_method: String::from("Method")
+            },
             // Kafka
             kafka_accept: String::from("Accept"),
             kafka_cancel: String::from("Cancel"),
