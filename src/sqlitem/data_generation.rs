@@ -18,16 +18,6 @@ pub trait SQLiteRunner<T> {
     fn run() -> T;
 }
 
-// // TODO: Esto iría mejor o bien en `parser.rs`, o bien directamente no existiendo.
-// pub fn get_generator(col_type: &str) -> (String, SqliteType) {
-//     let data_type = SqliteType::from_string(col_type);
-
-//     match data_type {
-//         SqliteType::Null => ("NULL".to_string(), data_type),
-//         _ => (data_type.to_string(), data_type),
-//     }
-// }
-
 pub fn generate_sqlite_value(data_type: &SqliteType) -> String {
     match data_type {
         SqliteType::Bool => GenericGenerator::<bool>::run().to_string(),
@@ -39,8 +29,11 @@ pub fn generate_sqlite_value(data_type: &SqliteType) -> String {
         SqliteType::Char(n_chars) => generate_sqlite_value(&SqliteType::Varchar(*n_chars)),
         SqliteType::Float => GenericGenerator::<f64>::run().to_string(),
         SqliteType::Null => "NULL".to_string(),
-        // TODO: No tengo nada, es generar Vec<u8> en ppio.
-        SqliteType::Blob => GenericGenerator::<Vec<u8>>::run().to_string(),
+        SqliteType::Blob => GenericGenerator::<Vec<u8>>::run()
+            .iter()
+            .map(|b| b.to_string())
+            .collect::<Vec<String>>()
+            .join(","),
         SqliteType::Numeric => generate_sqlite_value(&SqliteType::Float),
         SqliteType::Datetime => quote!(&NaiveDateTime::default().to_string()),
         SqliteType::Date => quote!(&NaiveDate::default().to_string()),
