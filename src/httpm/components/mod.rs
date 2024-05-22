@@ -9,3 +9,5 @@
 pub mod body_params;
 pub mod context_menus;
 pub mod header_params;
+pub mod sidenav;
+pub mod workspaces_subheader;

@@ -17,9 +17,9 @@ use super::mysql_type::MySqlType;
 use super::parser::mysql_type_from_string;
 use super::presenter::run_statement_with_delete_control;
 use super::state::{MySqlAppState, MySqlState};
+
 use crate::app_state::AppState;
 use crate::common::internationalization::I18n;
-use crate::common::syntax_highlighting::{highlight, CodeTheme};
 use crate::quote;
 use crate::sqlx_common::components::window_generator::GeneratorWindow;
 use crate::sqlx_common::components::window_insertion::InsertionWindow;
@@ -150,9 +150,10 @@ impl MySqlView {
             ui.separator();
 
             // --> Definimos la entrada y lanzar stmt por parte del usuario <--
-            let theme = CodeTheme::from_memory(ctx);
+            let theme = egui_extras::syntax_highlighting::CodeTheme::from_memory(ctx);
             let mut sql_layouter = |ui: &egui::Ui, string: &str, wrap_width: f32| {
-                let mut layout_job = highlight(ui.ctx(), &theme, string, "sql");
+                let mut layout_job =
+                    egui_extras::syntax_highlighting::highlight(ui.ctx(), &theme, string, "sql");
                 layout_job.wrap.max_width = wrap_width;
                 ui.fonts(|f| f.layout_job(layout_job))
             };

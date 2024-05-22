@@ -109,13 +109,14 @@ impl eframe::App for Asapi {
         egui::TopBottomPanel::top("decoration").show(ctx, |ui| {
             egui::warn_if_debug_build(ui);
             self.top_bar
-                .update(ctx, ui, &self.rt, &mut self.app_state, i18n.clone());
+                .update(ctx, ui, &self.rt, &mut self.app_state, &i18n);
         });
 
         match self.app_state.selected_view {
-            ViewType::Http => self
-                .http
-                .update(ctx, _frame, &mut self.app_state, &self.rt, &i18n),
+            ViewType::Http => {
+                self.http
+                    .update(ctx, _frame, &mut self.app_state.http, &self.rt, &i18n.http)
+            }
             ViewType::Pg => self
                 .pg
                 .update(ctx, _frame, &mut self.app_state, &self.rt, &i18n),

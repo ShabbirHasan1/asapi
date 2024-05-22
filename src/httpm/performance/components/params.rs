@@ -12,18 +12,46 @@ use eframe::egui;
 pub struct Params {}
 
 impl Params {
-    pub fn create(&mut self, ui: &mut egui::Ui, mut params: Vec<(String, String)>, label: String) {
+    pub fn create_header(
+        &mut self,
+        ui: &mut egui::Ui,
+        params: &mut Vec<(String, String)>,
+        label: String,
+    ) {
         ui.horizontal(|ui| {
             ui.label(label);
         });
 
-        for (header_key, header_value) in &mut params {
+        for (header_key, header_value) in params {
             ui.horizontal(|ui| {
                 ui.add(egui::TextEdit::singleline(header_key).interactive(false));
 
                 ui.label(":");
                 ui.add(
                     egui::TextEdit::singleline(header_value)
+                        .interactive(false)
+                        .desired_width(f32::INFINITY),
+                );
+            });
+        }
+    }
+
+    pub fn create_body(
+        &mut self,
+        ui: &mut egui::Ui,
+        params: &mut Vec<(String, String, bool)>,
+        label: String,
+    ) {
+        ui.horizontal(|ui| {
+            ui.label(label);
+        });
+
+        for (k, v, _) in params {
+            ui.horizontal(|ui| {
+                ui.add(egui::TextEdit::singleline(k).interactive(false));
+                ui.label(":");
+                ui.add(
+                    egui::TextEdit::singleline(v)
                         .interactive(false)
                         .desired_width(f32::INFINITY),
                 );

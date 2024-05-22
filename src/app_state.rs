@@ -11,22 +11,23 @@ use serde::{Deserialize, Serialize};
 use crate::common::internationalization::I18nOptions;
 use crate::httpm::state::HttpAppState;
 use crate::httpm::workspace::Workspace;
+// use crate::kafkam::state::KafkaAppState;
+// use crate::mongom::state::MongoAppState;
 use crate::mysqlm::state::MySqlAppState;
 use crate::pgm::state::PgAppState;
+// use crate::redism::state::RedisAppState;
 use crate::sqlitem::state::SQLiteAppState;
 
-#[derive(Clone, Deserialize, Serialize, Copy, PartialEq, Debug)]
+#[derive(Clone, Deserialize, Serialize, Copy, PartialEq, Debug, Default)]
 pub enum ViewType {
     Http,
+    #[default]
     Pg,
     MySql,
     SQLite,
-}
-
-impl Default for ViewType {
-    fn default() -> Self {
-        ViewType::Http
-    }
+    // Redis,
+    // Mongo,
+    // Kafka,
 }
 
 #[derive(Clone, Serialize, Deserialize, Default, Debug)]
@@ -45,6 +46,9 @@ pub struct AppState {
     pub pg: PgAppState,
     pub mysql: MySqlAppState,
     pub sqlite: SQLiteAppState,
+    // pub redis: RedisAppState,
+    // pub mongo: MongoAppState,
+    // pub kafka: KafkaAppState,
 }
 
 impl Default for AppState {
@@ -61,6 +65,9 @@ impl Default for AppState {
             pg: PgAppState::default(),
             mysql: MySqlAppState::default(),
             sqlite: SQLiteAppState::default(),
+            // redis: RedisAppState::default(),
+            // mongo: MongoAppState::default(),
+            // kafka: KafkaAppState::default(),
         }
     }
 }

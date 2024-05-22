@@ -11,6 +11,6 @@ pub mod methods;
 mod performance;
 pub mod request;
 pub mod state;
-pub mod swagger;
+mod swagger;
 pub mod view;
 pub mod workspace;

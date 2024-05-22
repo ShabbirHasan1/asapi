@@ -26,7 +26,6 @@ use crate::sqlx_common::state::{QuerySort, SqlxMessage};
 use crate::sqlx_common::table::{PerformanceTable, RegularTable};
 use crate::sqlx_common::traits::{Presenter, Show};
 use crate::common::internationalization::I18n;
-use crate::common::syntax_highlighting::{highlight, CodeTheme};
 
 pub struct PostgresView {
     state: PostgresState,
@@ -150,9 +149,9 @@ impl PostgresView {
             ui.separator();
 
             // --> Definimos la entrada y lanzar stmt por parte del usuario <--
-            let theme = CodeTheme::from_memory(ctx);
+            let theme = egui_extras::syntax_highlighting::CodeTheme::from_memory(ctx);
             let mut sql_layouter = |ui: &egui::Ui, string: &str, wrap_width: f32| {
-                let mut layout_job = highlight(ui.ctx(), &theme, string, "sql");
+                let mut layout_job = egui_extras::syntax_highlighting::highlight(ui.ctx(), &theme, string, "sql");
                 layout_job.wrap.max_width = wrap_width;
                 ui.fonts(|f| f.layout_job(layout_job))
             };

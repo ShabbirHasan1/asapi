@@ -16,28 +16,23 @@ use tokio::sync::mpsc::{self, Receiver, Sender};
 use super::components::body_params::BodyParams;
 use super::components::header_params::HeaderParams;
 use super::methods::HttpMethod;
-use super::request::api_request;
-use super::state::{HttpLocalState, HttpPanel};
-use super::workspace::{Request, Workspace};
+use super::request::{self, api_request};
+use super::state::{HttpAppState, HttpLocalState, HttpPanel};
 
-use crate::app_state::AppState;
-use crate::common::fs::save_state;
-use crate::common::internationalization::I18n;
-use crate::common::syntax_highlighting::{highlight, CodeTheme};
+use crate::common::internationalization::I18nHttp;
 
 pub struct HttpView {
     tx: Sender<(String, HeaderMap)>,
     rx: Receiver<(String, HeaderMap)>,
     request_allowed: bool,
-    url: String,
-    method: HttpMethod,
-    response: String,
+    pub url: String,
+    pub method: HttpMethod,
+    pub response: String,
     show_headers: bool,
     show_body: bool,
-    body: BodyParams,
-    headers: HeaderParams,
-    state: HttpLocalState,
-    file_name: String,
+    pub body: BodyParams,
+    pub headers: HeaderParams,
+    pub state: HttpLocalState,
 }
 
 impl Default for HttpView {
@@ -49,14 +44,13 @@ impl Default for HttpView {
             rx,
             request_allowed: true,
             url: String::from("https://jsonplaceholder.typicode.com/todos"), //String::from::new(),
-            method: HttpMethod::Get,
+            method: Default::default(),
             response: String::new(),
             body: BodyParams::default(),
-            headers: HeaderParams::default(),
-            state: HttpLocalState::default(),
+            headers: Default::default(),
+            state: Default::default(),
             show_headers: true,
             show_body: true,
-            file_name: "asapi_workspaces.json".into(),
         }
     }
 }
@@ -66,272 +60,52 @@ impl HttpView {
         &mut self,
         ctx: &egui::Context,
         _frame: &mut eframe::Frame,
-        state: &mut AppState,
+        app_st: &mut HttpAppState,
         rt: &Runtime,
-        i18n: &I18n,
+        i18n: &I18nHttp,
     ) {
         // =======================================
         // Preparación de cada ciclo
         // =======================================
+        // Cuando estamos en mododo `Performance` necesitamos repintado continuo.
         if self.state.panel == HttpPanel::Performance {
             ctx.request_repaint();
         }
-        if !self.state.has_been_updated {
-            if !state.http.workspaces[state.http.current_workspace_idx]
+        // Solo en el primer renderizado y si hay workspaces cogemos la primera petición
+        // del `workspace` y rellenamos los datos con ella para tener una por defecto.
+        if !self.state.is_not_first_render {
+            if !app_st.workspaces[app_st.current_workspace_idx]
                 .requests
                 .is_empty()
             {
                 let idx = 0;
-                let request =
-                    state.http.workspaces[state.http.current_workspace_idx].requests[idx].clone();
+                let request = app_st.workspaces[app_st.current_workspace_idx].requests[idx].clone();
                 self.state.selected_request_idx = Some(idx);
                 self.method = request.method;
-                self.url = request.url.clone();
-                self.body.params = request.body_params.clone();
-                self.headers.params = request.headers_params.clone();
+                self.url = request.url;
+                self.body.params = request.body_params;
+                self.headers.params = request.headers_params;
                 self.state.has_request_some_change = false;
             }
-            self.state.has_been_updated = true;
+            self.state.is_not_first_render = true;
         }
+
         while let Ok(tuple) = self.rx.try_recv() {
-            // self.messages.push(msg);
             self.response = tuple.0;
             self.state.response_headers = tuple.1;
             self.request_allowed = true;
         }
-        let events = ctx.input(|i| i.events.clone());
-        for event in &events {
-            if let egui::Event::Paste(pasted_text) = event {
-                println!("{}", pasted_text);
-            }
-        }
-
-        // egui::introspection::font_id_ui(ui, &mut self.configuration.font_id);
 
         // ===================================================================
         // == Subheader
         // ===================================================================
-        egui::TopBottomPanel::top("subheader").show(ctx, |ui| {
-            // --> Workspaces <--
-            ui.horizontal(|ui| {
-                if ui.button("+").clicked() {
-                    let new_workspace = Workspace {
-                        id: state.http.workspaces.len(),
-                        name: format!("Workspace {}", state.http.workspaces.len() + 1),
-                        ..Workspace::default()
-                    };
-                    state.http.workspaces.push(new_workspace);
-                }
-
-                let edit_button = ui.button("edit");
-                let popup_id = ui.make_persistent_id("my_unique_id");
-                if edit_button.clicked() {
-                    ui.memory_mut(|mem| mem.toggle_popup(popup_id));
-                }
-                let mut idx_to_delete: Option<usize> = None;
-
-                if let Some(workspace) = state
-                    .http
-                    .workspaces
-                    .get_mut(state.http.current_workspace_idx)
-                {
-                    egui::popup::popup_below_widget(ui, popup_id, &edit_button, |ui| {
-                        ui.set_min_width(200.0);
-                        ui.label(&i18n.http_btn_edit_ws_name);
-                        ui.text_edit_singleline(&mut workspace.name).request_focus();
-                        if ui.button(&i18n.http_btn_delete_ws).clicked() {
-                            idx_to_delete = Some(state.http.current_workspace_idx);
-                        }
-                    });
-                }
-
-                if let Some(idx) = idx_to_delete {
-                    if idx == state.http.workspaces.len() - 1
-                        && state.http.current_workspace_idx > 0
-                    {
-                        state.http.current_workspace_idx -= 1;
-                    }
-
-                    state.http.workspaces.remove(idx);
-
-                    if state.http.workspaces.is_empty() {
-                        state.http.workspaces = vec![Workspace::default()];
-                    }
-                }
-
-                for (idx, workspace) in state.http.workspaces.iter_mut().enumerate() {
-                    let selectable_value = ui.selectable_value(
-                        &mut state.http.current_workspace_idx,
-                        idx,
-                        &workspace.name,
-                    );
-
-                    if selectable_value.clicked() {
-                        // Acciones cuando se selecciona un espacio de trabajo
-                        println!(
-                            "CLICK  current_idx: {}, idx: {}",
-                            state.http.current_workspace_idx, idx
-                        );
-                    }
-                }
-            });
-        });
+        self.show_ws_subheaders(ctx, app_st, i18n);
 
         // ===================================================================
         // == Lateral
         // ===================================================================
-        if state.http.show_sidebar {
-            egui::SidePanel::left("side_panel")
-                .resizable(true)
-                // .max_width(200.0)
-                .show(ctx, |ui| {
-                    // ui.set_width(200.0);
-                    // ui.heading("Requests");
-
-                    let current_workspace =
-                        &mut state.http.workspaces[state.http.current_workspace_idx];
-
-                    if ui.button("Guardar petición").clicked() {
-                        let new_request = Request {
-                            name: self.url.clone(),
-                            method: self.method,
-                            url: self.url.clone(),
-                            body_params: self.body.params.clone(),
-                            headers_params: self.headers.params.clone(),
-                        };
-                        println!("{:?}", new_request);
-                        current_workspace.requests.push(new_request);
-                        self.state.has_request_some_change = false;
-                        self.state.selected_request_idx = None;
-                    }
-
-                    ui.separator();
-
-                    let mut buttons = Vec::with_capacity(current_workspace.requests.len());
-                    let popup_id = ui.make_persistent_id("edit-request-popup-id");
-
-                    // --> Listado de peticiones en el ws actual <--
-                    egui::ScrollArea::vertical().show(ui, |ui| {
-                        // let (response, painter) = ui.allocate_space(ui.available_size());
-                        // let button_min_width = if state.http.show_sidebar { 200.0 } else { 0.0 };
-                        for (idx, request) in current_workspace.requests.iter().enumerate() {
-                            ui.horizontal(|ui| {
-                                let stroke_color = if self.state.selected_request_idx.is_some()
-                                    && self.state.has_request_some_change
-                                {
-                                    egui::Color32::DARK_RED
-                                } else {
-                                    egui::Color32::LIGHT_GREEN
-                                };
-                                let stroke_width =
-                                    if let Some(selected_idx) = self.state.selected_request_idx {
-                                        if selected_idx == idx {
-                                            1.0
-                                        } else {
-                                            0.0
-                                        }
-                                    } else {
-                                        0.0
-                                    };
-                                ui.with_layout(egui::Layout::top_down(egui::Align::LEFT), |ui| {
-                                    let button = ui.add(
-                                        egui::Button::new(format!(
-                                            "{} - {}",
-                                            request.method, request.name
-                                        ))
-                                        .min_size(egui::vec2(200.0, 16.0))
-                                        .stroke(egui::Stroke::new(stroke_width, stroke_color)),
-                                    );
-                                    // if self.state.has_request_some_change
-                                    // && self.state.selected_request_idx.is_some()
-                                    // && ui
-                                    // .add(
-                                    // egui::Button::new(&i18n.http_btn_update_request)
-                                    // .fill(egui::Color32::LIGHT_RED),
-                                    // )
-                                    // .clicked()
-                                    // {
-                                    // let current_wsp =
-                                    // &mut state.http.workspaces[state.http.current_workspace_idx];
-                                    // let current_req =
-                                    // &mut current_wsp.requests[self.state.selected_request_idx.unwrap()];
-                                    // current_req.method = self.method;
-                                    // current_req.url = self.url.clone();
-                                    // current_req.body_params = self.body.params.clone();
-                                    // current_req.headers_params = self.headers.params.clone();
-
-                                    // let _ = save_state(state, &self.file_name);
-                                    // self.state.has_request_some_change = false;
-                                    // ui.separator();
-                                    // }
-
-                                    let show_update = self.state.has_request_some_change
-                                        && self.state.selected_request_idx.is_some()
-                                        && self.state.selected_request_idx.unwrap() == idx;
-                                    button.context_menu(|ui| {
-                                        super::components::context_menus::request(
-                                            ui,
-                                            idx,
-                                            &mut self.state.selected_request_idx,
-                                            &mut self.state.selected_request_action,
-                                            show_update,
-                                            |lui| lui.memory_mut(|mem| mem.toggle_popup(popup_id)),
-                                        )
-                                    });
-
-                                    if button.clicked() {
-                                        self.state.selected_request_idx = Some(idx);
-                                        self.method = request.method;
-                                        self.url = request.url.clone();
-                                        self.body.params = request.body_params.clone();
-                                        self.headers.params = request.headers_params.clone();
-                                        self.response.clear();
-                                        self.state.has_request_some_change = false;
-                                        println!("{} {}", idx, state.http.current_workspace_idx);
-                                    }
-                                    buttons.push(button);
-                                });
-                            });
-                        }
-                    });
-
-                    // Para evitar que se cierre la próxima vez.
-                    if let Some(idx) = self.state.selected_request_idx {
-                        if let Some(action) = &self.state.selected_request_action {
-                            if action == "Delete" {
-                                state.http.workspaces[state.http.current_workspace_idx]
-                                    .requests
-                                    .remove(idx);
-                                self.state.selected_request_action = None;
-                                self.state.selected_request_idx = None;
-                                self.state.has_request_some_change = false;
-                            } else if action == "Rename" {
-                                let button = &buttons[idx];
-                                // ui.memory_mut(|mem| mem.toggle_popup(popup_id));
-                                egui::popup::popup_below_widget(ui, popup_id, button, |ui| {
-                                    ui.set_min_width(200.0);
-                                    ui.label("Editar nombre de la petición");
-                                    ui.text_edit_singleline(
-                                        &mut current_workspace.requests[idx].name,
-                                    )
-                                    .request_focus();
-                                });
-                            } else if action == "Update" {
-                                let current_wsp =
-                                    &mut state.http.workspaces[state.http.current_workspace_idx];
-                                let current_req = &mut current_wsp.requests
-                                    [self.state.selected_request_idx.unwrap()];
-                                current_req.method = self.method;
-                                current_req.url = self.url.clone();
-                                current_req.body_params = self.body.params.clone();
-                                current_req.headers_params = self.headers.params.clone();
-
-                                let _ = save_state(state, &self.file_name);
-                                self.state.has_request_some_change = false;
-                            }
-                        }
-                    }
-                });
+        if app_st.show_sidebar {
+            self.show_sidenav(ctx, app_st, i18n);
         }
 
         // =================================
@@ -341,29 +115,6 @@ impl HttpView {
             if self.state.panel == HttpPanel::Regular {
                 // --> Introducción URL <--
                 ui.horizontal(|ui| {
-                    // if self.state.has_request_some_change
-                    //     && self.state.selected_request_idx.is_some()
-                    //     && ui
-                    //         .add(
-                    //             egui::Button::new(&i18n.http_btn_update_request)
-                    //                 .fill(egui::Color32::LIGHT_RED),
-                    //         )
-                    //         .clicked()
-                    // {
-                    //     let current_wsp =
-                    //         &mut state.http.workspaces[state.http.current_workspace_idx];
-                    //     let current_req =
-                    //         &mut current_wsp.requests[self.state.selected_request_idx.unwrap()];
-                    //     current_req.method = self.method;
-                    //     current_req.url = self.url.clone();
-                    //     current_req.body_params = self.body.params.clone();
-                    //     current_req.headers_params = self.headers.params.clone();
-
-                    //     let _ = save_state(state, &self.file_name);
-                    //     self.state.has_request_some_change = false;
-                    //     ui.separator();
-                    // }
-
                     let url_text = egui::TextEdit::singleline(&mut self.url);
                     ui.label("URL:");
                     let url_input_widget = ui.add_sized(ui.available_size(), url_text);
@@ -382,8 +133,8 @@ impl HttpView {
 
                 // --> Elección Verbo HTTP <--
                 ui.horizontal(|ui| {
-                    ui.label("Method:");
-                    let response = egui::ComboBox::from_id_source("Method")
+                    ui.label(&i18n.http_request_method);
+                    let response = egui::ComboBox::from_id_source(&i18n.http_request_method)
                         .selected_text(self.method.to_string())
                         .show_ui(ui, |ui| {
                             ui.selectable_value(&mut self.method, HttpMethod::Get, "GET");
@@ -400,7 +151,6 @@ impl HttpView {
                         self.send_request(ctx, rt);
                     }
 
-                    // ui.with_layout(egui::Layout::left_to_right(egui::Align::Max), |ui| {
                     // --> Solo mostramos el rendimiento en caso de que tengamos una petición seleccionada <--
                     // Esto implica que para poder testear rendimiento hay que guardar la petición.
                     if self.state.selected_request_idx.is_some()
@@ -409,7 +159,6 @@ impl HttpView {
                     {
                         self.state.panel = HttpPanel::Performance;
                     }
-                    // });
                 });
 
                 ui.separator();
@@ -426,15 +175,23 @@ impl HttpView {
                 });
 
                 if self.show_headers {
-                    if let Some(value) = self.headers.create(ui) {
+                    if let Some(value) = self.headers.show_headers(ui) {
                         self.state.has_request_some_change = value;
                     }
                 }
 
                 if self.show_body {
-                    if let Some(value) = self.body.create(ctx, ui, self.method) {
+                    if let Some(value) = self.body.show(ctx, ui, self.method, &mut self.state, i18n)
+                    {
                         self.state.has_request_some_change = value;
                     }
+                }
+
+                if self.state.files.must_read {
+                    self.state.files.selected_mode = Some(self.state.files.file_dialog.mode());
+                    self.state.files.current_state = Some(self.state.files.file_dialog.state());
+
+                    self.state.files.file_dialog.update(ctx);
                 }
 
                 ui.separator();
@@ -454,12 +211,6 @@ impl HttpView {
                             })
                     });
 
-                let theme = CodeTheme::from_memory(ui.ctx());
-                let mut json_layouter = |ui: &egui::Ui, string: &str, wrap_width: f32| {
-                    let mut layout_job = highlight(ui.ctx(), &theme, string, "json");
-                    layout_job.wrap.max_width = wrap_width;
-                    ui.fonts(|f| f.layout_job(layout_job))
-                };
                 ui.horizontal(|ui| {
                     ui.label("Parse JSON Response");
                     ui.add(crate::components::toggle_switch::toggle(
@@ -483,8 +234,21 @@ impl HttpView {
                             .default_expand(egui_json_tree::DefaultExpand::ToLevel(10))
                             .show(ui);
                     } else {
+                        let theme =
+                            egui_extras::syntax_highlighting::CodeTheme::from_memory(ui.ctx());
+                        let mut json_layouter = |ui: &egui::Ui, string: &str, wrap_width: f32| {
+                            let mut layout_job = egui_extras::syntax_highlighting::highlight(
+                                ui.ctx(),
+                                &theme,
+                                string,
+                                "json",
+                            );
+                            layout_job.wrap.max_width = wrap_width;
+                            ui.fonts(|f| f.layout_job(layout_job))
+                        };
                         ui.add(
                             egui::TextEdit::multiline(&mut self.response)
+                                .interactive(false)
                                 .font(egui::TextStyle::Monospace) // for cursor height
                                 .code_editor()
                                 .desired_rows(10)
@@ -496,10 +260,10 @@ impl HttpView {
                 });
             } else if let Some(idx) = self.state.selected_request_idx {
                 let mut request =
-                    state.http.workspaces[state.http.current_workspace_idx].requests[idx].clone();
+                    app_st.workspaces[app_st.current_workspace_idx].requests[idx].clone();
 
                 let close_performance_panel =
-                    self.state.performance_panel.ui(ui, rt, i18n, &mut request);
+                    self.state.performance_panel.show(ui, rt, i18n, &mut request);
 
                 if close_performance_panel {
                     self.state.panel = HttpPanel::Regular;
@@ -509,6 +273,77 @@ impl HttpView {
     }
 
     fn send_request(&mut self, ctx: &egui::Context, rt: &Runtime) {
+        self.response.clear();
+        if self.body.multipart && self.method == HttpMethod::Post {
+            self.file_request(ctx, rt);
+        } else {
+            self.regular_request(ctx, rt);
+        }
+    }
+
+    fn file_request(&mut self, ctx: &egui::Context, rt: &Runtime) {
+        let url = self.url.clone();
+        let body = self.body.params.clone();
+        let headers = self.headers.params.clone();
+        let method = self.method;
+        self.request_allowed = false;
+
+        if method == HttpMethod::Post {
+            let tx_cloned = self.tx.clone();
+            let ctx_cloned = ctx.clone();
+            let files = self.body.files.clone();
+
+            rt.spawn(async move {
+                let response =
+                    match request::upload_files_in_body_params(&url, &headers, &body, &files).await
+                    {
+                        Ok(response) => (response, HeaderMap::default()),
+                        Err(error) => (
+                            format!("Error al realizar la solicitud: {:?}", error),
+                            HeaderMap::default(),
+                        ),
+                    };
+
+                let _ = tx_cloned.send(response).await;
+                ctx_cloned.request_repaint();
+            });
+        }
+    }
+
+    // fn _file_request(&mut self, ctx: &egui::Context, rt: &Runtime, upload_many: bool) {
+    //     let url = self.url.clone();
+    //     let body = self.body.params.clone();
+    //     let headers = self.headers.params.clone();
+    //     let method = self.method;
+    //     self.request_allowed = false;
+
+    //     if method == HttpMethod::Post && self.state.files.files_in_selected_folder.len() > 0 {
+    //         let file_path = &self.state.files.files_in_selected_folder[0];
+    //         let path_cloned: PathBuf = file_path.clone(); // Esto está bien
+    //         let tx_cloned = self.tx.clone();
+    //         let ctx_cloned = ctx.clone();
+    //         let paths = self.state.files.files_in_selected_folder.clone();
+
+    //         rt.spawn(async move {
+    //             let response = match if upload_many {
+    //                 request::upload_files(paths, &url, &body, &headers).await
+    //             } else {
+    //                 request::upload_file(&path_cloned, &url, &body, &headers).await
+    //             } {
+    //                 Ok(response) => (response, HeaderMap::default()),
+    //                 Err(error) => (
+    //                     format!("Error al realizar la solicitud: {:?}", error),
+    //                     HeaderMap::default(),
+    //                 ),
+    //             };
+
+    //             let _ = tx_cloned.send(response).await;
+    //             ctx_cloned.request_repaint();
+    //         });
+    //     }
+    // }
+
+    fn regular_request(&mut self, ctx: &egui::Context, rt: &Runtime) {
         let url = self.url.clone();
         let body = self.body.params.clone();
         let headers = self.headers.params.clone();

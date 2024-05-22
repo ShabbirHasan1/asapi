@@ -13,7 +13,6 @@ use tokio::runtime::Runtime;
 
 use crate::app_state::AppState;
 use crate::common::internationalization::I18n;
-use crate::common::syntax_highlighting::{highlight, CodeTheme};
 use crate::quote;
 use crate::sqlx_common::components::window_generator::GeneratorWindow;
 use crate::sqlx_common::components::window_insertion::InsertionWindow;
@@ -90,7 +89,7 @@ impl SQLiteView {
             if let Some(ref pool_ref) = self.state.pool {
                 // let pool_ref = self.state.pool.as_ref().unwrap().clone();
                 self.state.sql.current_connection_tables_info =
-                    rt.block_on(async move { presenter::tables_info(&pool_ref).await });
+                    rt.block_on(async move { presenter::tables_info(pool_ref).await });
                 self.state.sql.tables = self
                     .state
                     .sql
@@ -179,9 +178,9 @@ impl SQLiteView {
             ui.separator();
 
             // --> Definimos la entrada y lanzar stmt por parte del usuario <--
-            let theme = CodeTheme::from_memory(ctx);
+            let theme = egui_extras::syntax_highlighting::CodeTheme::from_memory(ctx);
             let mut sql_layouter = |ui: &egui::Ui, string: &str, wrap_width: f32| {
-                let mut layout_job = highlight(ui.ctx(), &theme, string, "sql");
+                let mut layout_job = egui_extras::syntax_highlighting::highlight(ui.ctx(), &theme, string, "sql");
                 layout_job.wrap.max_width = wrap_width;
                 ui.fonts(|f| f.layout_job(layout_job))
             };
@@ -214,14 +213,11 @@ impl SQLiteView {
             let data_len = self.state.sql.current_table_rows.len();
 
             // --> Ejecutamos la consulta introducida por el usuario <--
+            let hover_menu = |ui: &mut egui::Ui| {
+                ui.label("Lanzar con \u{27a1} + \u{2ba8}");
+            };
             ui.horizontal(|ui| {
-                if ui
-                    .button("\u{25b6}")
-                    .on_hover_ui(|ui| {
-                        ui.label("Lanzar con \u{27a1} + \u{2ba8}");
-                    })
-                    .clicked()
-                {
+                if ui.button("\u{25b6}").on_hover_ui(hover_menu).clicked() {
                     self.run_statement(
                         ctx,
                         rt,

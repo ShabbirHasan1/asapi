@@ -1,7 +1,10 @@
 #+STARTUP: logdone
 * Notas
-+ A fecha 240117, instalo sqlx, no para usarla ya, sino porque la he descubierto y me servirá tanto para mysql como para sqlite. Aunque también sirve para postgres, no voy a usarla por ahora con él porque lo tengo más o menos manejado ya. Si a futuro quiero volver a intentar usar tokio con postgres puedo intentarlo usando sqlx y me quito una dependencia, pero no es ni mucho menos algo que me preocupe ahora mismo.
++ ~A fecha 240117, instalo sqlx, no para usarla ya, sino porque la he descubierto y me servirá tanto para mysql como para sqlite. Aunque también sirve para postgres, no voy a usarla por ahora con él porque lo tengo más o menos manejado ya. Si a futuro quiero volver a intentar usar tokio con postgres puedo intentarlo usando sqlx y me quito una dependencia, pero no es ni mucho menos algo que me preocupe ahora mismo.~ Ya estoy usando sqlx.
 + Cada vista tiene su propio estado. Dicho estado se crea y destruye con la propia aplicación obviamente. Pero además, *no se serializa*, no hay forma de pasarlo a un archivo de texto, de importarlo/exportarlo. Todo lo que queramos que pueda ser mantenido entre sesiones ha de ir a las variables de estado de la aplicación: /RedisAppState/, /HttpState/, etc. No tienen consistencia en los nombres, debido a que han ido añadiéndose un poco libremente y ha sido a posterior cuando he visto la conexión entre ellas.
++ Para traerme una carpeta entera de otra rama
+#+begin_src git checkout rama -- relative/path
+#+end_src
 
 * General
 *** TODO Que el menú lateral pueda hacerse más pequeño, incluso ocultando parte de los elementos que tiene dentro.
@@ -9,55 +12,11 @@ No sé si es muy factible haciendo desborde de elementos.
 *** Crear adaptadores de configuración, y añadir en la configuración un valor que indique la versión que es.
 De esta forma podremos a partir de por ejemplo v1 crear un modificador que cree v2, etc. También se puede usar para tener exportadores manuales en los que los usuarios participen en caso de rupturas muy grandes, aunque no debería ser problema. Si alguien pasa de v1 a v8 simplemente tendremos que aplicar de forma secuencial todos los adaptadores.
 *OJO* Esto me obliga a tener un versionado del estado, esto es, no puedo chafar el estado sin más, he de guardar las distintas versiones a partir de tener todo eso implementado.
+*** Analizar si es interesante usar [[https://github.com/Adanos020/egui_dock][egui_dock]] o [[https://github.com/rerun-io/egui_tiles][egui_tiles]]
 *** DONE En varias situaciones, dar opción a usuario a invertir el sentido del listado
 CLOSED: [2024-02-28 mié 16:22] No está hecho en todo, pero sí en las tablas de Postgres, puedo usar de guía para otras veces que se presente la necesidad.
 
 * Otros
 *** Crates a revisar por si fuesen interesante
 **** [[https://github.com/tokio-rs/tracing][tracing]]
-
-
-* SQLx
-El módulo común de /sqlx/ lo llamo /sqlx_common/, el resto con el nombre más la /m/ final de /module/.
-** General
-Hago al generar/insertar un doble cambio de string a tipo y tipo a string, y no uso el enum que me va a dar en ppio mejor rendimiento. Esto tengo que cambiarlo, en todos a la vez al usar la mismas clases para las ventanas generadoras
-*** DONE Refactorizar para usar sqlx en pg
-CLOSED: [2024-03-26 mar 17:34]
-
-** Postgres
-*** CANCELED Generador de código a partir de /Gen/
-CLOSED: [2024-02-28 mié 16:22]
-*** TODO Tamaño de campo de claves en /body/ y /headers/
-Cuando hacemos pequeña la ventana no reduce y se acaba tapando el valor sin que se hayan reducido las /keys/.
-*** DONE [#A] Mostrar cómo se queda el estado de una tabla tras:
-CLOSED: [2024-01-29 lun 12:35]
-+ /update/
-+ /insert/
-+ /delete/
-*** DONE [#A] Mostrar tipos de una tabla con /hover/ sobre ella
-CLOSED: [2024-01-29 lun 07:33]
-*** DONE [#A] Mostrar de alguna forma el tipo de la columna
-CLOSED: [2024-01-29 lun 06:41]
-*** DONE [#C] Formatear mejor la tabla con los resultados, ahora es un problema cómo se muestran
-CLOSED: [2024-01-27 sáb 08:00] Lo que he conseguido es todo lo que se puede conseguir.
-*** DONE [#B] Poder manejar varias sesiones cada una con una conexión distinta, similar a los distintos espacios de trabajo del módulo HTTP.
-CLOSED: [2024-01-27 sáb 08:00] Guardo un listado con los datos de las conexiones, pero no la conexión en sí. Muy complicado poder guardar `pg::Client`, no es clonable obviamente, y hay que retocar mucho. Y tampoco me importa cerrar y abrir en cada nuevo click, es ligero para el número de veces que se hará en una sesión típica.
-*** DONE [#A] Poder conectar y reconectar con otros datos de sesión, cerrando la conexión existente.
-CLOSED: [2024-01-20 sáb 11:14]
-*** DONE [#B] /Multiline/ para introducir comandos.
-Cancelado porque no queda muy bien a nivel estético.
-CLOSED: [2023-12-27 mié 10:44]
-*** DONE Conectar
-CLOSED: [2023-12-06 mié 15:29]
-*** DONE Usar Table y no grid par mostrar los datos de las tablas
-CLOSED: [2023-12-13 mié 12:54]
-
-** MySQL
-*** DONE Conectar
-CLOSED: [2024-03-26 mar 17:34]
-** SQLite
-*** DONE Conectar
-CLOSED: [2024-02-28 mié 16:21]
-*** DONE Problema con conectar directamente tras abrir archivo
-CLOSED: [2024-03-26 mar 17:34]
 

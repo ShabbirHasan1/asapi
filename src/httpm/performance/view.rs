@@ -16,11 +16,10 @@ use tokio::runtime::Runtime;
 use tokio::sync::mpsc::{self, Receiver, Sender};
 use tokio::sync::Semaphore;
 
-use crate::httpm::methods::HttpMethod;
-use crate::httpm::request::api_request;
-use crate::httpm::workspace::Request;
 use crate::common::generator::{Gen, SimpleRGen};
-use crate::common::internationalization::I18n;
+use crate::common::internationalization::{I18nHttp};
+use crate::httpm::methods::HttpMethod;
+use crate::httpm::request::{api_request, Request};
 
 use super::components::params::Params;
 
@@ -71,14 +70,14 @@ impl Default for HttpPerformanceView {
 
 impl HttpPerformanceView {
     //  Esta función se llama continuamente pero no de forma directa sino que es controlada por HttpView.
-    pub fn ui(
+    pub fn show(
         &mut self,
         // ctx: &egui::Context,
         ui: &mut egui::Ui,
         // _frame: &mut eframe::Frame,
         // state: &mut AppState,
         rt: &Runtime,
-        i18n: &I18n,
+        i18n: &I18nHttp,
         request: &mut Request,
     ) -> bool {
         let _ = i18n;
@@ -87,7 +86,7 @@ impl HttpPerformanceView {
         // Preparación de cada ciclo
         // =======================================
         while let Ok(response) = self.rx.try_recv() {
-            println!("{:?}", response.duration);
+            log::info!("{:?}", response.duration);
             self.chart.push(response);
         }
 
@@ -128,7 +127,7 @@ impl HttpPerformanceView {
                             send_concurrent_requests(tx_cloned, req, t, c).await;
                         });
                     }
-                    _ => println!("Wrong params as n requests"),
+                    _ => log::error!("Wrong params as n requests"),
                 }
             }
         });
@@ -149,12 +148,12 @@ impl HttpPerformanceView {
 
         if self.show_headers {
             self.params
-                .create(ui, request.headers_params.clone(), "Headers".to_string());
+                .create_header(ui, &mut request.headers_params, "Headers".to_string());
         }
 
-        if !(method == HttpMethod::Get || method == HttpMethod::Delete) && self.show_body{
+        if !(method == HttpMethod::Get || method == HttpMethod::Delete) && self.show_body {
             self.params
-                .create(ui, request.body_params.clone(), "Body".to_string());
+                .create_body(ui, &mut request.body_params, "Body".to_string());
         }
 
         ui.separator();
@@ -173,7 +172,7 @@ async fn send_request(request: &Request) -> Result<String, String> {
 
     let rng = SimpleRGen::new();
     let (wait_ms, _) = Gen::gen_in_range(1000, 6000).run(&rng);
-    println!("Waiting {wait_ms:?} ms.");
+    log::info!("Waiting {wait_ms:?} ms.");
 
     tokio::time::sleep(tokio::time::Duration::from_millis(wait_ms as u64)).await;
     match api_request(method, &url, &body, &headers).await {

@@ -145,9 +145,7 @@ pub struct PgCustomType {
 
 pub fn ty_to_type(ty: &PgTypeInfo) -> Option<PgType> {
     let oid = ty.oid();
-    if oid.is_none() {
-        return None;
-    }
+    oid?;
 
     let kind = ty.kind();
     let name: String = ty.name().to_string();
