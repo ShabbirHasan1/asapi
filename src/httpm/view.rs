@@ -10,7 +10,6 @@ use eframe::egui;
 use egui_json_tree::JsonTree;
 use reqwest::header::HeaderMap;
 use serde_json::Value;
-use std::path::PathBuf;
 use tokio::runtime::Runtime;
 use tokio::sync::mpsc::{self, Receiver, Sender};
 
@@ -21,7 +20,6 @@ use super::request::{self, api_request};
 use super::state::{HttpAppState, HttpLocalState, HttpPanel};
 
 use crate::common::internationalization::I18n;
-use crate::common::syntax_highlighting::{highlight, CodeTheme};
 
 pub struct HttpView {
     tx: Sender<(String, HeaderMap)>,
@@ -185,9 +183,7 @@ impl HttpView {
                 }
 
                 if self.show_body {
-                    if let Some(value) =
-                        self.body
-                            .show(ctx, ui, self.method, &mut self.state, i18n)
+                    if let Some(value) = self.body.show(ctx, ui, self.method, &mut self.state, i18n)
                     {
                         self.state.has_request_some_change = value;
                     }
@@ -217,12 +213,6 @@ impl HttpView {
                             })
                     });
 
-                let theme = CodeTheme::from_memory(ui.ctx());
-                let mut json_layouter = |ui: &egui::Ui, string: &str, wrap_width: f32| {
-                    let mut layout_job = highlight(ui.ctx(), &theme, string, "json");
-                    layout_job.wrap.max_width = wrap_width;
-                    ui.fonts(|f| f.layout_job(layout_job))
-                };
                 ui.horizontal(|ui| {
                     ui.label("Parse JSON Response");
                     ui.add(crate::components::toggle_switch::toggle(
@@ -246,6 +236,19 @@ impl HttpView {
                             .default_expand(egui_json_tree::DefaultExpand::ToLevel(10))
                             .show(ui);
                     } else {
+                        // let theme = CodeTheme::from_memory(ui.ctx());
+                        // let mut json_layouter = |ui: &egui::Ui, string: &str, wrap_width: f32| {
+                            // let mut layout_job = highlight(ui.ctx(), &theme, string, "json");
+                            // layout_job.wrap.max_width = wrap_width;
+                            // ui.fonts(|f| f.layout_job(layout_job))
+                        // };
+                        let theme = egui_extras::syntax_highlighting::CodeTheme::from_memory(ui.ctx());
+                        let mut json_layouter = |ui: &egui::Ui, string: &str, wrap_width: f32| {
+                            let mut layout_job =
+                                egui_extras::syntax_highlighting::highlight(ui.ctx(), &theme, string, "json");
+                            layout_job.wrap.max_width = wrap_width;
+                            ui.fonts(|f| f.layout_job(layout_job))
+                        };
                         ui.add(
                             egui::TextEdit::multiline(&mut self.response)
                                 .font(egui::TextStyle::Monospace) // for cursor height
@@ -253,7 +256,7 @@ impl HttpView {
                                 .desired_rows(10)
                                 .lock_focus(true)
                                 .desired_width(f32::INFINITY)
-                                .layouter(&mut json_layouter),
+                                .layouter(&mut json_layouter)
                         );
                     }
                 });
@@ -273,12 +276,7 @@ impl HttpView {
 
     fn send_request(&mut self, ctx: &egui::Context, rt: &Runtime) {
         if self.body.multipart && self.method == HttpMethod::Post {
-            self.file_request(
-                ctx,
-                rt,
-                // self.state.files.selected_mode.is_some()
-                // && self.state.files.selected_mode.unwrap() == DialogMode::SelectDirectory,
-            );
+            self.file_request(ctx, rt);
         } else {
             self.regular_request(ctx, rt);
         }
@@ -294,21 +292,18 @@ impl HttpView {
         if method == HttpMethod::Post {
             let tx_cloned = self.tx.clone();
             let ctx_cloned = ctx.clone();
-            // let has_files = self.body.params.iter().map(|(_, _, f)| *f).collect::<Vec<bool>>();
             let files = self.body.files.clone();
 
             rt.spawn(async move {
-                let response = match request::upload_files_in_body_params(
-                    &url, &headers, &body, &files,
-                )
-                .await
-                {
-                    Ok(response) => (response, HeaderMap::default()),
-                    Err(error) => (
-                        format!("Error al realizar la solicitud: {:?}", error),
-                        HeaderMap::default(),
-                    ),
-                };
+                let response =
+                    match request::upload_files_in_body_params(&url, &headers, &body, &files).await
+                    {
+                        Ok(response) => (response, HeaderMap::default()),
+                        Err(error) => (
+                            format!("Error al realizar la solicitud: {:?}", error),
+                            HeaderMap::default(),
+                        ),
+                    };
 
                 let _ = tx_cloned.send(response).await;
                 ctx_cloned.request_repaint();
@@ -316,38 +311,38 @@ impl HttpView {
         }
     }
 
-    fn _file_request(&mut self, ctx: &egui::Context, rt: &Runtime, upload_many: bool) {
-        let url = self.url.clone();
-        let body = self.body.params.clone();
-        let headers = self.headers.params.clone();
-        let method = self.method;
-        self.request_allowed = false;
+    // fn _file_request(&mut self, ctx: &egui::Context, rt: &Runtime, upload_many: bool) {
+    //     let url = self.url.clone();
+    //     let body = self.body.params.clone();
+    //     let headers = self.headers.params.clone();
+    //     let method = self.method;
+    //     self.request_allowed = false;
 
-        if method == HttpMethod::Post && self.state.files.files_in_selected_folder.len() > 0 {
-            let file_path = &self.state.files.files_in_selected_folder[0];
-            let path_cloned: PathBuf = file_path.clone(); // Esto está bien
-            let tx_cloned = self.tx.clone();
-            let ctx_cloned = ctx.clone();
-            let paths = self.state.files.files_in_selected_folder.clone();
+    //     if method == HttpMethod::Post && self.state.files.files_in_selected_folder.len() > 0 {
+    //         let file_path = &self.state.files.files_in_selected_folder[0];
+    //         let path_cloned: PathBuf = file_path.clone(); // Esto está bien
+    //         let tx_cloned = self.tx.clone();
+    //         let ctx_cloned = ctx.clone();
+    //         let paths = self.state.files.files_in_selected_folder.clone();
 
-            rt.spawn(async move {
-                let response = match if upload_many {
-                    request::upload_files(paths, &url, &body, &headers).await
-                } else {
-                    request::upload_file(&path_cloned, &url, &body, &headers).await
-                } {
-                    Ok(response) => (response, HeaderMap::default()),
-                    Err(error) => (
-                        format!("Error al realizar la solicitud: {:?}", error),
-                        HeaderMap::default(),
-                    ),
-                };
+    //         rt.spawn(async move {
+    //             let response = match if upload_many {
+    //                 request::upload_files(paths, &url, &body, &headers).await
+    //             } else {
+    //                 request::upload_file(&path_cloned, &url, &body, &headers).await
+    //             } {
+    //                 Ok(response) => (response, HeaderMap::default()),
+    //                 Err(error) => (
+    //                     format!("Error al realizar la solicitud: {:?}", error),
+    //                     HeaderMap::default(),
+    //                 ),
+    //             };
 
-                let _ = tx_cloned.send(response).await;
-                ctx_cloned.request_repaint();
-            });
-        }
-    }
+    //             let _ = tx_cloned.send(response).await;
+    //             ctx_cloned.request_repaint();
+    //         });
+    //     }
+    // }
 
     fn regular_request(&mut self, ctx: &egui::Context, rt: &Runtime) {
         let url = self.url.clone();
