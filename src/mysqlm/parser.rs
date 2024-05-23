@@ -85,14 +85,14 @@ pub fn mysqlrow_value_to_string(row: &MySqlRow, idx: usize, col: &MySqlColumn) -
         MySqlType::VarBinary(_) => value_vecu8_to_utf8_string(row, idx),
         MySqlType::Binary(_) => value_vecu8_to_utf8_string(row, idx),
         // Estos cinco están en `ColumnType` de sqlx.
-        MySqlType::Enum => value_to_string::<String>(row, idx),
+        MySqlType::Enum(_) => value_to_string::<String>(row, idx),
         MySqlType::Year => value_to_string::<u16>(row, idx),
         MySqlType::Geometry => value_vecu8_to_utf8_string(row, idx),
         // Estos me salen como MySqlType::Text y MySqlType::Char, realmente aquí no llegamos nunca
         //   - fecha   24/05/23
         //   - versión    0.7.4
+        MySqlType::Set(_) => value_to_string::<String>(row, idx),
         MySqlType::Json => String::default(),
-        MySqlType::Set => String::default(),
     }
     // IpAddr	VARCHAR, TEXT
     // Ipv4Addr	INET4 (MariaDB-only), VARCHAR, TEXT

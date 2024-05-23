@@ -11,7 +11,7 @@ use chrono::{NaiveDate, NaiveTime};
 use rust_decimal::Decimal;
 
 use super::mysql_type::MySqlType;
-use crate::common::generator::{random_select_from_pair, Gen, SimpleRGen};
+use crate::common::generator::{random_select_from_pair, random_select_from_vec, Gen, SimpleRGen};
 use crate::common::traits::Runner as _;
 use crate::quote;
 use crate::sqlx_common::data_generation::GenericGenerator;
@@ -83,8 +83,19 @@ pub fn generate_mysql_value(data_type: &MySqlType) -> String {
         MySqlType::TinyBlob => generate_mysql_value(&MySqlType::Blob(8)),
         MySqlType::TinyText => generate_mysql_value(&MySqlType::Text(8)),
         // TODO:
-        MySqlType::Set => todo!(),
-        MySqlType::Enum => todo!(),
+        MySqlType::Set(s) => {
+            let options = s.split(",").collect::<Vec<&str>>();
+            // TODO: Podemos hacer que se seleccionen `n` elementos, con 0 < n < options.len()
+            let selected = random_select_from_vec(options).sample(&SimpleRGen::new());
+
+            selected.to_owned()
+        }
+        MySqlType::Enum(s) => {
+            let options = s.split(",").collect::<Vec<&str>>();
+            let selected = random_select_from_vec(options).sample(&SimpleRGen::new());
+
+            selected.to_owned()
+        }
         MySqlType::Geometry => todo!(),
         MySqlType::Json => todo!(),
     }

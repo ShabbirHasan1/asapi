@@ -296,20 +296,6 @@ impl Gen<i8, fn(&SimpleRGen) -> (i8, SimpleRGen)> {
     }
 }
 
-pub fn random_select_from_pair<T>(p: (T, T)) -> Gen<T, impl Fn(&SimpleRGen) -> (T, SimpleRGen)>
-where
-    T: Clone,
-{
-    Gen::new(move |rng| {
-        let (b, s) = rng.gen_bool();
-        if b {
-            (p.0.clone(), s)
-        } else {
-            (p.1.clone(), s)
-        }
-    })
-}
-
 impl Gen<i16, fn(&SimpleRGen) -> (i16, SimpleRGen)> {
     pub fn gen_i16() -> Gen<i16, fn(&SimpleRGen) -> (i16, SimpleRGen)> {
         Gen::new(|rng| rng.gen_i16())
@@ -598,3 +584,31 @@ where
 //         })
 //     }
 // }
+
+pub fn random_select_from_pair<T>(p: (T, T)) -> Gen<T, impl Fn(&SimpleRGen) -> (T, SimpleRGen)>
+where
+    T: Clone,
+{
+    Gen::new(move |rng| {
+        let (b, s) = rng.gen_bool();
+        if b {
+            (p.0.clone(), s)
+        } else {
+            (p.1.clone(), s)
+        }
+    })
+}
+
+pub fn random_select_from_vec<T>(p: Vec<T>) -> Gen<T, impl Fn(&SimpleRGen) -> (T, SimpleRGen)>
+where
+    T: Clone,
+{
+    let len = p.len();
+
+    Gen::new(move |rng| {
+        let (u, s) = rng.gen_u32();
+        let i = (u as usize) % len;
+
+        (p[i].clone(), s)
+    })
+}

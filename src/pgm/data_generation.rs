@@ -12,6 +12,7 @@ use chrono::{NaiveDate, NaiveTime};
 use super::pg_type::PgType;
 use crate::common::generator::{Gen, SimpleRGen};
 use crate::common::traits::Runner as _;
+use crate::quote;
 use crate::sqlx_common::data_generation::GenericGenerator;
 
 pub fn generate_pg_value(data_type: &PgType) -> String {
@@ -29,28 +30,22 @@ pub fn generate_pg_value(data_type: &PgType) -> String {
         // PgType::Blob => todo!(),
         // PgType::Numeric => generate_pg_value(&PgType::Float),
         // PgType::Datetime => quote!(&NaiveDateTime::default().to_string()),
-        PgType::Date => format!("'{}'", &NaiveDate::default().to_string()),
-        PgType::Time => format!("'{}'", &NaiveTime::default().to_string()),
-        PgType::Timestamp => format!("'{}'", &NaiveDateTime::default().to_string()),
-        PgType::Timestamptz => format!("'{}'", &DateTime::<Utc>::default().to_rfc2822()),
+        PgType::Date => quote!(NaiveDate::default().to_string()),
+        PgType::Time => quote!(NaiveTime::default().to_string()),
+        PgType::Timestamp => quote!(NaiveDateTime::default().to_string()),
+        PgType::Timestamptz => quote!(DateTime::<Utc>::default().to_rfc2822()),
         PgType::Int2 => GenericGenerator::<i16>::run().to_string(),
         PgType::Int4 => GenericGenerator::<i32>::run().to_string(),
         PgType::Int8 => GenericGenerator::<i64>::run().to_string(),
         PgType::Float4 => GenericGenerator::<f32>::run().to_string(),
         PgType::Float8 => GenericGenerator::<f64>::run().to_string(),
-        PgType::Char => format!(
-            "'{}'",
-            Gen::gen_alpha_lower_with_len(1)
-                .sample(&SimpleRGen::new())
-                .chars()
-                .next()
-                .unwrap_or_default()
-        ),
-        PgType::Text => format!(
-            "'{}'",
-            &Gen::gen_alpha_lower_with_max_len(20).sample(&SimpleRGen::new()),
-        ),
-        PgType::Uuid => format!("'{}'", &Gen::gen_random_uuid().sample(&SimpleRGen::new())),
+        PgType::Char => quote!(Gen::gen_alpha_lower_with_len(1)
+            .sample(&SimpleRGen::new())
+            .chars()
+            .next()
+            .unwrap_or_default()),
+        PgType::Text => quote!(Gen::gen_alpha_lower_with_max_len(20).sample(&SimpleRGen::new())),
+        PgType::Uuid => quote!(&Gen::gen_random_uuid().sample(&SimpleRGen::new())),
         PgType::Varchar => generate_pg_value(&PgType::Text),
         PgType::Int2Array => todo!(),
         PgType::Int4Array => todo!(),

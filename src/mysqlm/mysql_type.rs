@@ -38,7 +38,7 @@ pub enum MySqlType {
     Datetime,
     Decimal,
     Double,
-    Enum,
+    Enum(String),
     Float,
     Geometry,
     Int24,
@@ -52,7 +52,7 @@ pub enum MySqlType {
 
     // NewDecimal, // Comento porque no sé cómo extraerla, se representa igual que `Decimal`.
     Null,
-    Set,
+    Set(String),
     Short,
     ShortUnsigned, // Lo creo yo.
     String,
@@ -88,8 +88,7 @@ impl MySqlType {
             "DATETIME" => MySqlType::Datetime,
             "DECIMAL" => MySqlType::Decimal,
             "DOUBLE" => MySqlType::Double,
-            "ENUM" => MySqlType::Enum,
-            // "ENUM" => MySqlType::StringEnum,
+            "ENUM" => MySqlType::Enum(String::new()),
             "FLOAT" => MySqlType::Float,
             "GEOMETRY" => MySqlType::Geometry,
             "INT UNSIGNED" => MySqlType::LongUnsigned,
@@ -102,7 +101,7 @@ impl MySqlType {
             "MEDIUMINT" => MySqlType::Int24,
             "MEDIUMTEXT" => MySqlType::MediumText,
             "NULL" => MySqlType::Null,
-            "SET" => MySqlType::Set,
+            "SET" => MySqlType::Set(String::new()),
             "SMALLINT UNSIGNED" => MySqlType::ShortUnsigned,
             "SMALLINT" => MySqlType::Short,
             "TEXT" => MySqlType::Text(u32::MAX),
@@ -131,7 +130,7 @@ impl MySqlType {
             "DATETIME" => MySqlType::Datetime,
             "DECIMAL" => MySqlType::Decimal,
             "DOUBLE" => MySqlType::Double,
-            "ENUM" => MySqlType::Enum,
+            // "ENUM" => MySqlType::Enum,
             // "ENUM" => MySqlType::StringEnum,
             "FLOAT" => MySqlType::Float,
             "GEOMETRY" => MySqlType::Geometry,
@@ -141,7 +140,7 @@ impl MySqlType {
             "MEDIUMINT" => MySqlType::Int24,
             "MEDIUMTEXT" => MySqlType::MediumText,
             "NULL" => MySqlType::Null,
-            "SET" => MySqlType::Set,
+            // "SET" => MySqlType::Set,
             "SMALLINT UNSIGNED" => MySqlType::ShortUnsigned,
             "SMALLINT" => MySqlType::Short,
             "TEXT" => MySqlType::Text(65355), // máximo valor si no se especifica
@@ -157,6 +156,22 @@ impl MySqlType {
             "YEAR" => MySqlType::Year,
             // Tenemos que extraer.
             _ => {
+                let re_enum = Regex::new(r"(?i)ENUM\((.*?)\)").unwrap();
+                if let Some(caps) = re_enum.captures(s) {
+                    return match caps.get(1).map(|v| v.as_str()) {
+                        Some(v) => MySqlType::Enum(v.to_string()),
+                        None => MySqlType::String, // Match Binary y no sabemos cúal : STRING
+                    };
+                }
+
+                let re_set = Regex::new(r"(?i)SET\((.*?)\)").unwrap();
+                if let Some(caps) = re_set.captures(s) {
+                    return match caps.get(1).map(|v| v.as_str()) {
+                        Some(v) => MySqlType::Enum(v.to_string()),
+                        None => MySqlType::String, // Match Binary y no sabemos cúal : STRING
+                    };
+                }
+
                 let re_binary = Regex::new(r"(?i)BINARY\((\d+)\)").unwrap();
                 if let Some(caps) = re_binary.captures(s) {
                     return match caps.get(1).and_then(|v| v.as_str().parse::<u32>().ok()) {
