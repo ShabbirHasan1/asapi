@@ -21,6 +21,7 @@ use std::fmt::Display;
 #[repr(u32)]
 pub enum MySqlType {
     Bit,
+    Binary,
     Blob,
     BlobBinary, // Lo creo yo.
     Boolean,    // Lo creo yo.
@@ -48,7 +49,7 @@ pub enum MySqlType {
     Short,
     ShortUnsigned, // Lo creo yo.
     String,
-    StringBinary, // Lo creo yo.
+    // StringBinary, // Lo creo yo -> Binary que es lo que hay en la librería, no sé por qué creé este.
     // StringEnum,   // Lo creo yo. // comento porque no sé cómo extraer, se representa igual que enum
     Time,
     Timestamp,
@@ -70,7 +71,7 @@ impl MySqlType {
         match name {
             "BIGINT UNSIGNED" => MySqlType::LongLongUnsigned,
             "BIGINT" => MySqlType::LongLong,
-            "BINARY" => MySqlType::StringBinary,
+            "BINARY" => MySqlType::Binary,
             "BIT" => MySqlType::Bit,
             "BLOB" => MySqlType::BlobBinary,
             "BOOLEAN" => MySqlType::Boolean,
@@ -115,7 +116,7 @@ impl MySqlType {
         match s {
             "BIGINT UNSIGNED" => MySqlType::LongLongUnsigned,
             "BIGINT" => MySqlType::LongLong,
-            "BINARY" => MySqlType::StringBinary,
+            "BINARY" => MySqlType::Binary,
             "BIT" => MySqlType::Bit,
             "BLOB" => MySqlType::BlobBinary,
             "BOOLEAN" => MySqlType::Boolean,
@@ -164,68 +165,42 @@ impl MySqlType {
     }
 }
 
-impl Display for MySqlType {
-    fn fmt(&self, _f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        todo!()
-    }
-}
+// Los `ty.name()` se extraen a partir del `ColumnType` de la feature `mysql` del crate `sqlx`:
+// pub enum ColumnType {
+//     Decimal = 0x00,
+//     Tiny = 0x01,
+//     Short = 0x02,
+//     Long = 0x03,
+//     Float = 0x04,
+//     Double = 0x05,
+//     Null = 0x06,
+//     Timestamp = 0x07,
+//     LongLong = 0x08,
+//     Int24 = 0x09,
+//     Date = 0x0a,
+//     Time = 0x0b,
+//     Datetime = 0x0c,
+//     Year = 0x0d,
+//     VarChar = 0x0f,
+//     Bit = 0x10,
+//     Json = 0xf5,
+//     NewDecimal = 0xf6,
+//     Enum = 0xf7,
+//     Set = 0xf8,
+//     TinyBlob = 0xf9,
+//     MediumBlob = 0xfa,
+//     LongBlob = 0xfb,
+//     Blob = 0xfc,
+//     VarString = 0xfd,
+//     String = 0xfe,
+//     Geometry = 0xff,
+// }
 
 pub fn ty_to_type(ty: &MySqlTypeInfo) -> Option<MySqlType> {
-    let name = ty.name();
-    let t = MySqlType::from_string(name);
+    let t = MySqlType::from_string(ty.name());
 
     match t {
         MySqlType::Null => None,
         _ => Some(t),
     }
-}
-
-impl MySqlType {
-    // pub fn to_string(&self) -> String {
-    //     self.to_str().to_string()
-    // }
-
-    // pub fn to_str(&self) -> &str {
-    //     match self {
-    //         MySqlType::LongLongUnsigned => "BIGINT UNSIGNED",
-    //         MySqlType::LongLong => "BIGINT",
-    //         MySqlType::StringBinary => "BINARY",
-    //         MySqlType::Bit => "BIT",
-    //         MySqlType::BlobBinary => "BLOB",
-    //         MySqlType::Boolean => "BOOLEAN",
-    //         MySqlType::String => "CHAR",
-    //         MySqlType::Date => "DATE",
-    //         MySqlType::Datetime => "DATETIME",
-    //         MySqlType::Decimal => "DECIMAL",
-    //         MySqlType::Double => "DOUBLE",
-    //         MySqlType::Enum => "ENUM",
-    //         // MySqlType::StringEnum => "ENUM",
-    //         MySqlType::Float => "FLOAT",
-    //         MySqlType::Geometry => "GEOMETRY",
-    //         MySqlType::LongUnsigned => "INT UNSIGNED",
-    //         MySqlType::Long => "INT",
-    //         MySqlType::Json => "JSON",
-    //         MySqlType::LongBlobBinary => "LONGBLOB",
-    //         MySqlType::LongBlob => "LONGTEXT",
-    //         MySqlType::MediumBlobBinary => "MEDIUMBLOB",
-    //         MySqlType::Int24Unsigned => "MEDIUMINT UNSIGNED",
-    //         MySqlType::Int24 => "MEDIUMINT",
-    //         MySqlType::MediumBlob => "MEDIUMTEXT",
-    //         MySqlType::Null => "NULL",
-    //         MySqlType::Set => "SET",
-    //         MySqlType::ShortUnsigned => "SMALLINT UNSIGNED",
-    //         MySqlType::Short => "SMALLINT",
-    //         MySqlType::Blob => "TEXT",
-    //         MySqlType::Time => "TIME",
-    //         MySqlType::Timestamp => "TIMESTAMP",
-    //         MySqlType::TinyBlobBinary => "TINYBLOB",
-    //         MySqlType::TinyUnsigned => "TINYINT UNSIGNED",
-    //         MySqlType::Tiny => "TINYINT",
-    //         MySqlType::TinyBlob => "TINYTEXT",
-    //         MySqlType::VarCharBinary => "VARBINARY",
-    //         MySqlType::VarChar => "VARCHAR",
-    //         MySqlType::Year => "YEAR",
-    //         _ => "NULL",
-    //     }
-    // }
 }

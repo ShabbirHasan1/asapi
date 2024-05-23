@@ -15,7 +15,7 @@ use super::components::sidenav::MySqlSideNav;
 use super::data_generation::generate_mysql_value;
 use super::mysql_type::MySqlType;
 use super::parser::mysql_type_from_string;
-use super::presenter::run_statement_with_delete_control;
+use super::presenter;
 use super::state::{MySqlAppState, MySqlState};
 
 use crate::app_state::AppState;
@@ -328,6 +328,9 @@ impl MySqlView {
         delete_allowed: bool,
         make_all_visible: bool,
     ) {
+        self.state.sql.last_response_error = None;
+        self.state.sql.reset();
+
         // Guarda por si lanzamos query cuando no hay conexión.
         // Poddríamos hacer renderizado condicional, pero así reducimos algo la indentación.
         if self.state.pool.is_none() {
@@ -339,7 +342,7 @@ impl MySqlView {
         let cloned_ctx = ctx.clone();
 
         rt.spawn(async move {
-            run_statement_with_delete_control(
+            presenter::run_statement_with_delete_control(
                 &pool_ref,
                 &tx_cloned,
                 stmt.as_ref(),

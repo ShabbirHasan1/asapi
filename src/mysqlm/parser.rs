@@ -31,13 +31,14 @@ impl ShowVec for MySqlRow {
 
 pub fn mysqlrow_value_to_string(row: &MySqlRow, idx: usize, col: &MySqlColumn) -> String {
     let result = row.try_get_raw(idx);
-    if result.is_err() {
-        return "NULL".to_string();
-    }
     let mysql_type_opt = ty_to_type(col.type_info());
-    if mysql_type_opt.is_none() {
-        return "NULL".to_string();
+
+    if result.is_err() || mysql_type_opt.is_none() {
+        return "NULL".to_owned();
     }
+
+    // println!("{} : {}", col.name(), col.type_info());
+
     let mysql_type = mysql_type_opt.as_ref().unwrap();
 
     // https://docs.rs/sqlx/latest/sqlx/mysql/types/index.html
@@ -50,12 +51,10 @@ pub fn mysqlrow_value_to_string(row: &MySqlRow, idx: usize, col: &MySqlColumn) -
         MySqlType::Datetime => value_to_string::<chrono::NaiveDateTime>(row, idx),
         MySqlType::Decimal => value_to_string::<Decimal>(row, idx),
         MySqlType::Double => value_to_string::<f64>(row, idx),
-        MySqlType::Enum => todo!(),
         MySqlType::Float => value_to_string::<f32>(row, idx),
-        MySqlType::Geometry => todo!(),
         MySqlType::Int24 => value_to_string::<i64>(row, idx),
         MySqlType::Int24Unsigned => value_to_string::<u64>(row, idx),
-        MySqlType::Json => value_vecu8_to_utf8_string(row, idx),
+        // MySqlType::Json => value_vecu8_to_utf8_string(row, idx),
         MySqlType::Long => value_to_string::<i32>(row, idx),
         MySqlType::LongUnsigned => value_to_string::<u32>(row, idx),
         MySqlType::LongBlob => value_vecu8_to_utf8_string(row, idx),
@@ -65,11 +64,9 @@ pub fn mysqlrow_value_to_string(row: &MySqlRow, idx: usize, col: &MySqlColumn) -
         MySqlType::MediumBlob => value_vecu8_to_utf8_string(row, idx),
         MySqlType::MediumBlobBinary => value_vecu8_to_utf8_string(row, idx),
         MySqlType::Null => String::from("NULL"),
-        MySqlType::Set => todo!(),
         MySqlType::Short => value_to_string::<i16>(row, idx),
         MySqlType::ShortUnsigned => value_to_string::<u16>(row, idx),
         MySqlType::String => value_to_string::<String>(row, idx),
-        MySqlType::StringBinary => todo!(),
         MySqlType::Time => value_to_string::<chrono::NaiveTime>(row, idx),
         MySqlType::Timestamp => value_to_string::<chrono::DateTime<chrono::Utc>>(row, idx)
             .to_string()
@@ -83,7 +80,17 @@ pub fn mysqlrow_value_to_string(row: &MySqlRow, idx: usize, col: &MySqlColumn) -
         MySqlType::Uuid => value_to_string::<String>(row, idx),
         MySqlType::VarChar => value_to_string::<String>(row, idx),
         MySqlType::VarCharBinary => value_vecu8_to_utf8_string(row, idx),
-        MySqlType::Year => todo!(),
+        // TODO
+        MySqlType::Binary => value_vecu8_to_utf8_string(row, idx),
+        // Estos cinco están en `ColumnType` de sqlx.
+        MySqlType::Enum => value_to_string::<String>(row, idx),
+        MySqlType::Year => value_to_string::<u16>(row, idx),
+        MySqlType::Geometry => value_vecu8_to_utf8_string(row, idx),
+        // Estos me salen como MySqlType::Text y MySqlType::Char, realmente aquí no llegamos nunca
+        //   - fecha   24/05/23
+        //   - versión    0.7.4
+        MySqlType::Json => String::default(),
+        MySqlType::Set => String::default(),
     }
     // IpAddr	VARCHAR, TEXT
     // Ipv4Addr	INET4 (MariaDB-only), VARCHAR, TEXT
@@ -111,9 +118,9 @@ fn value_vecu8_to_utf8_string(row: &MySqlRow, idx: usize) -> String {
     // Option para poder representar columnas NULLABLE
     match row.try_get::<Option<Vec<u8>>, usize>(idx) {
         Ok(v) => v.map_or("NULL".to_string(), |v| {
-            String::from_utf8(v).map_or(String::from("ERR parsing"), |v| v)
+            String::from_utf8(v).map_or(String::from("ERR parsing Vec<u8>"), |v| v)
         }),
-        Err(_err) => String::from("ERR parsing"),
+        Err(_err) => String::from("ERR parsing Vec<u8>"),
     }
 }
 

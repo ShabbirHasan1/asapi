@@ -152,6 +152,7 @@ impl SqlState {
         self.current_table_rows.clear();
         self.current_table_columns.clear();
         self.last_response = None;
+        self.last_response_error = None;
     }
 }
 
@@ -162,7 +163,7 @@ impl Default for SqlState {
             tables: Default::default(),
             current_connection_idx: usize::MAX,
             current_connection_tables_info: Default::default(),
-            current_table_idx: Default::default(),
+            current_table_idx: usize::MAX,
             hide_connections: Default::default(),
             hide_tables: Default::default(),
             current_table_rows: Default::default(),

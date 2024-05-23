@@ -23,36 +23,24 @@ use crate::sqlx_common::data_generation::GenericGenerator;
 // https://docs.rs/sqlx/latest/sqlx/mysql/types/index.html
 pub fn generate_mysql_value(data_type: &MySqlType) -> String {
     match data_type {
-        MySqlType::Bit => todo!(),
-        MySqlType::Blob => todo!(),
-        MySqlType::BlobBinary => todo!(),
         MySqlType::Boolean => GenericGenerator::<bool>::run().to_string(),
         MySqlType::Date => quote!(&NaiveDate::default().to_string()),
         MySqlType::Datetime => quote!(&NaiveDateTime::default().to_string()),
         MySqlType::Decimal => decimal_generation(),
         MySqlType::Double => GenericGenerator::<f64>::run().to_string(),
-        MySqlType::Enum => todo!(),
         MySqlType::Float => GenericGenerator::<f32>::run().to_string(),
-        MySqlType::Geometry => todo!(),
         MySqlType::Int24 => GenericGenerator::<i64>::run().to_string(),
         MySqlType::Int24Unsigned => GenericGenerator::<u64>::run().to_string(),
-        MySqlType::Json => todo!(),
         MySqlType::Long => GenericGenerator::<i32>::run().to_string(),
         MySqlType::LongUnsigned => GenericGenerator::<u32>::run().to_string(),
-        MySqlType::LongBlob => todo!(),
-        MySqlType::LongBlobBinary => todo!(),
         MySqlType::LongLong => GenericGenerator::<i64>::run().to_string(),
         MySqlType::LongLongUnsigned => GenericGenerator::<u64>::run().to_string(),
-        MySqlType::MediumBlob => todo!(),
-        MySqlType::MediumBlobBinary => todo!(),
         MySqlType::Null => String::from("NULL"),
-        MySqlType::Set => todo!(),
         MySqlType::Short => GenericGenerator::<i16>::run().to_string(),
         MySqlType::ShortUnsigned => GenericGenerator::<u16>::run().to_string(),
         MySqlType::String => {
             quote!(&Gen::gen_alpha_lower_with_max_len(20).sample(&SimpleRGen::new()))
         }
-        MySqlType::StringBinary => todo!(),
         MySqlType::Time => quote!(&NaiveTime::default().to_string()),
         MySqlType::Timestamp => quote!(&GenericGenerator::<DateTime<Utc>>::run()
             .to_string()
@@ -60,12 +48,25 @@ pub fn generate_mysql_value(data_type: &MySqlType) -> String {
             .unwrap()),
         MySqlType::Tiny => GenericGenerator::<i8>::run().to_string(),
         MySqlType::TinyUnsigned => GenericGenerator::<u8>::run().to_string(),
-        MySqlType::TinyBlob => todo!(),
-        MySqlType::TinyBlobBinary => todo!(),
         MySqlType::Uuid => {
             quote!(&Gen::gen_random_uuid().sample(&SimpleRGen::new()))
         }
         MySqlType::VarChar => generate_mysql_value(&MySqlType::String),
+        // TODO:
+        MySqlType::Binary => todo!(),
+        MySqlType::Bit => todo!(),
+        MySqlType::Blob => todo!(),
+        MySqlType::BlobBinary => todo!(),
+        MySqlType::MediumBlob => todo!(),
+        MySqlType::MediumBlobBinary => todo!(),
+        MySqlType::Enum => todo!(),
+        MySqlType::Geometry => todo!(),
+        MySqlType::Json => todo!(),
+        MySqlType::LongBlob => todo!(),
+        MySqlType::LongBlobBinary => todo!(),
+        MySqlType::Set => todo!(),
+        MySqlType::TinyBlob => todo!(),
+        MySqlType::TinyBlobBinary => todo!(),
         MySqlType::VarCharBinary => todo!(),
         MySqlType::Year => todo!(),
     }

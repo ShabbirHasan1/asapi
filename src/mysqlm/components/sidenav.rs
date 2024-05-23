@@ -209,6 +209,8 @@ impl MySqlConnectionsSubpanel {
                         close_connection(rt, local_st);
                         local_st.sql.reset();
                         local_st.sql.tables.clear();
+                        local_st.sql.current_table_idx = usize::MAX;
+                        local_st.sql.sql_statement.clear();
 
                         // Si no conexión o la que existe no es la que clico, la defino
                         if local_st.pool.is_none() {
@@ -283,24 +285,24 @@ impl MySqlTablesSubpanel {
         ui: &mut egui::Ui,
         tx: &Sender<SqlxMessage>,
         tx_sync: &std::sync::mpsc::Sender<SqlxMessage>,
-        local_state: &mut MySqlState,
+        local_st: &mut MySqlState,
         i18n: &I18nSqlx,
     ) {
         egui::ScrollArea::vertical().show(ui, |ui| {
             egui::Grid::new("mysql_db_tables")
                 .num_columns(2)
                 .show(ui, |ui| {
-                    for (t_idx, t_name) in local_state.sql.tables.clone().iter().enumerate() {
+                    for (t_idx, t_name) in local_st.sql.tables.clone().iter().enumerate() {
                         ui.label(
                             egui::RichText::new("Info")
                                 .color(egui::Color32::from_rgb(128, 128, 128)),
                         )
                         .on_hover_ui(|ui| {
-                            TableInfo::show(ui, &local_state.sql, t_name);
+                            TableInfo::show(ui, &local_st.sql, t_name);
                         });
 
                         let table_btn = ui.selectable_value(
-                            &mut local_state.sql.current_table_idx,
+                            &mut local_st.sql.current_table_idx,
                             t_idx,
                             t_name,
                         );
@@ -312,14 +314,15 @@ impl MySqlTablesSubpanel {
                                 // &pool_ref.clone(),
                                 ui,
                                 tx_sync,
-                                &mut local_state.sql,
+                                &mut local_st.sql,
                                 i18n,
                                 t_name,
                             );
                         });
 
                         if table_btn.clicked() {
-                            let pool_ref = local_state.pool.as_ref().unwrap().clone();
+                            local_st.sql.reset();
+                            let pool_ref = local_st.pool.as_ref().unwrap().clone();
                             let tx_cloned = tx.clone();
                             let t_name_string = t_name.to_string();
                             rt.spawn(async move {
@@ -332,8 +335,8 @@ impl MySqlTablesSubpanel {
                                 .await
                             });
                             // Para desmarcar orden de búsqueda.
-                            local_state.sql.query_sort = QuerySort::None;
-                            local_state.sql.sql_statement = format!("SELECT * FROM {}", t_name);
+                            local_st.sql.query_sort = QuerySort::None;
+                            local_st.sql.sql_statement = format!("SELECT * FROM {}", t_name);
                         }
 
                         ui.end_row();
