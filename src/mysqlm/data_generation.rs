@@ -39,7 +39,9 @@ pub fn generate_mysql_value(data_type: &MySqlType) -> String {
         MySqlType::Short => GenericGenerator::<i16>::run().to_string(),
         MySqlType::ShortUnsigned => GenericGenerator::<u16>::run().to_string(),
         MySqlType::String => {
-            quote!(&Gen::gen_alpha_lower_with_max_len(20).sample(&SimpleRGen::new()))
+            let tmp = quote!(&Gen::gen_alpha_lower_with_max_len(20).sample(&SimpleRGen::new()));
+            println!("tmp: {tmp}");
+            tmp
         }
         MySqlType::Time => quote!(&NaiveTime::default().to_string()),
         MySqlType::Timestamp => quote!(&GenericGenerator::<DateTime<Utc>>::run()
@@ -53,7 +55,10 @@ pub fn generate_mysql_value(data_type: &MySqlType) -> String {
         }
         MySqlType::VarChar => generate_mysql_value(&MySqlType::String),
         // TODO:
-        MySqlType::Binary => todo!(),
+        MySqlType::Binary(len) => {
+            quote!(Gen::gen_alpha_lower_with_max_len(*len).sample(&SimpleRGen::new()))
+        }
+        MySqlType::VarBinary(len) => generate_mysql_value(&MySqlType::Binary(*len)),
         MySqlType::Bit => todo!(),
         MySqlType::Blob => todo!(),
         MySqlType::BlobBinary => todo!(),
@@ -67,7 +72,6 @@ pub fn generate_mysql_value(data_type: &MySqlType) -> String {
         MySqlType::Set => todo!(),
         MySqlType::TinyBlob => todo!(),
         MySqlType::TinyBlobBinary => todo!(),
-        MySqlType::VarCharBinary => todo!(),
         MySqlType::Year => todo!(),
     }
 }

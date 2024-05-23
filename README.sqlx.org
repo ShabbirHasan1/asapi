@@ -13,9 +13,10 @@ CLOSED: [2024-03-26 mar 17:34]
 
 ** Postgres [11/14]
 *** TODO Revisar tipos de datos
-*** TODO Tamaño de campo de claves en /body/ y /headers/
 *** TODO Probar distintos protocolos de conexión
 Cuando hacemos pequeña la ventana no reduce y se acaba tapando el valor sin que se hayan reducido las /keys/.
+*** DOING Tamaño de campo de claves en /body/ y /headers/
+Dejo como doing porque ahora mismo no sé a qué me refiero aquí.
 *** DONE Dar opción en menú contextual de recargar tablas de conexión
 CLOSED: [2024-05-22 mié 12:56]
 *** CANCELED Generador de código a partir de /Gen/
@@ -46,16 +47,20 @@ CLOSED: [2023-12-13 mié 12:54]
 **** DOING [#A] Cuando conecto a una nueva tras conectar a otra, y no se consigue establecer conexión, como no se borran las tablas existentes se puede romper por `unwrap` sobre `option`. Hay que borrar al reconectar a otra conexión se cree o no conexión.
 Hace tiempo que no lo reproduzco, dejo como en DOING pero por no cancelarla.
 
-** MySQL [2/4]
-*** TODO Revisar tipos de datos
+** MySQL [3/5]
+*** TODO Finalizar generadores
 *** TODO Probar distintos protocolos de conexión
+*** DONE Revisar tipos de datos
+CLOSED: [2024-05-23 jue 15:21]
 *** DONE Dar opción en menú contextual de recargar tablas de conexión
 CLOSED: [2024-05-22 mié 15:27]
 *** DONE Conectar
 CLOSED: [2024-03-26 mar 17:34]
-*** BUGS [0/3]
-**** TODO No se borran errores tras nueva consulta y se mantiene el error anterior si hay algún problema en el parser
-**** TODO No se borran las tablas tras seleccionar una nueva conexión.
+*** BUGS [2/3]
+**** DONE No se borran errores tras nueva consulta y se mantiene el error anterior si hay algún problema en el parser
+CLOSED: [2024-05-23 jue 15:22]
+**** DONE No se borran las tablas tras seleccionar una nueva conexión.
+CLOSED: [2024-05-23 jue 15:22]
 **** DOING [#A] Cuando no puede conectar, se queda bloqueada mucho tiempo.
 Dejo en /doing/ porque no consigo reproducirlo
 ** SQLite [5/5]

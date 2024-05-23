@@ -8,16 +8,15 @@
 
 // Basado en type_info.rs de sqlx, extraigo lo que allí es privado.
 
-use crate::{
-    common::traits::ShowVec,
-    mysqlm::mysql_type::{ty_to_type, MySqlType},
-};
+use crate::{common::traits::ShowVec, mysqlm::mysql_type::MySqlType};
 use rust_decimal::Decimal;
 use sqlx::{
     mysql::{MySqlColumn, MySqlRow},
     Column, Decode, MySql, Row, Type,
 };
 use std::fmt;
+
+use super::mysql_type::ty_to_type;
 
 impl ShowVec for MySqlRow {
     fn to_string_vec(&self) -> Vec<String> {
@@ -79,9 +78,8 @@ pub fn mysqlrow_value_to_string(row: &MySqlRow, idx: usize, col: &MySqlColumn) -
         MySqlType::TinyBlobBinary => value_vecu8_to_utf8_string(row, idx),
         MySqlType::Uuid => value_to_string::<String>(row, idx),
         MySqlType::VarChar => value_to_string::<String>(row, idx),
-        MySqlType::VarCharBinary => value_vecu8_to_utf8_string(row, idx),
-        // TODO
-        MySqlType::Binary => value_vecu8_to_utf8_string(row, idx),
+        MySqlType::VarBinary(_) => value_vecu8_to_utf8_string(row, idx),
+        MySqlType::Binary(_) => value_vecu8_to_utf8_string(row, idx),
         // Estos cinco están en `ColumnType` de sqlx.
         MySqlType::Enum => value_to_string::<String>(row, idx),
         MySqlType::Year => value_to_string::<u16>(row, idx),

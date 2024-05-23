@@ -13,6 +13,7 @@
 // No puedo usar name porque entonces pierdo el enum, puesto cada enum tiene un name
 // distinto, y para eso me habría quedado con la implementación con Postgres.
 
+use regex::Regex;
 use sqlx::{mysql::MySqlTypeInfo, TypeInfo};
 use std::fmt::Display;
 
@@ -21,7 +22,7 @@ use std::fmt::Display;
 #[repr(u32)]
 pub enum MySqlType {
     Bit,
-    Binary,
+    Binary(usize),
     Blob,
     BlobBinary, // Lo creo yo.
     Boolean,    // Lo creo yo.
@@ -58,7 +59,7 @@ pub enum MySqlType {
     TinyBlob,
     TinyBlobBinary, // Lo creo yo.
     VarChar,
-    VarCharBinary, // Lo creo yo.
+    VarBinary(usize), // Lo creo yo. Existe en mysql pero no en MySqlTypeColumn o como se llame en sqlx.
     // VarString, // Comento porque no sé cómo extraerla, se representa igual que `VarChar`.
     Year,
     // Especiales, solo para generación
@@ -71,7 +72,9 @@ impl MySqlType {
         match name {
             "BIGINT UNSIGNED" => MySqlType::LongLongUnsigned,
             "BIGINT" => MySqlType::LongLong,
-            "BINARY" => MySqlType::Binary,
+            // Esto, que es un poco locura, nos da igual en realidad porque este tipo lo gastamos solamente
+            // para representar el valor de lo que hay en la base de datos, no para generar valores.
+            "BINARY" => MySqlType::Binary(usize::MAX),
             "BIT" => MySqlType::Bit,
             "BLOB" => MySqlType::BlobBinary,
             "BOOLEAN" => MySqlType::Boolean,
@@ -104,7 +107,7 @@ impl MySqlType {
             "TINYINT UNSIGNED" => MySqlType::TinyUnsigned,
             "TINYINT" => MySqlType::Tiny,
             "TINYTEXT" => MySqlType::TinyBlob,
-            "VARBINARY" => MySqlType::VarCharBinary,
+            "VARBINARY" => MySqlType::VarBinary(usize::MAX),
             "VARCHAR" => MySqlType::VarChar,
             "YEAR" => MySqlType::Year,
             _ => MySqlType::Null,
@@ -116,7 +119,6 @@ impl MySqlType {
         match s {
             "BIGINT UNSIGNED" => MySqlType::LongLongUnsigned,
             "BIGINT" => MySqlType::LongLong,
-            "BINARY" => MySqlType::Binary,
             "BIT" => MySqlType::Bit,
             "BLOB" => MySqlType::BlobBinary,
             "BOOLEAN" => MySqlType::Boolean,
@@ -147,10 +149,25 @@ impl MySqlType {
             "TINYINT UNSIGNED" => MySqlType::TinyUnsigned,
             "TINYINT" => MySqlType::Tiny,
             "TINYTEXT" => MySqlType::TinyBlob,
-            "VARBINARY" => MySqlType::VarCharBinary,
             "YEAR" => MySqlType::Year,
             // Tenemos que extraer.
             _ => {
+                let re_binary = Regex::new(r"(?i)BINARY\((\d+)\)").unwrap();
+                if let Some(caps) = re_binary.captures(s) {
+                    return match caps.get(1).and_then(|v| v.as_str().parse::<usize>().ok()) {
+                        Some(v) => MySqlType::Binary(v),
+                        None => MySqlType::String, // Match Binary y no sabemos cúal : STRING
+                    };
+                }
+
+                let re_binary = Regex::new(r"(?i)VARBINARY\((\d+)\)").unwrap();
+                if let Some(caps) = re_binary.captures(s) {
+                    return match caps.get(1).and_then(|v| v.as_str().parse::<usize>().ok()) {
+                        Some(v) => MySqlType::VarBinary(v),
+                        None => MySqlType::String, // Match Binary y no sabemos cúal : STRING
+                    };
+                }
+
                 if s.starts_with("INT") {
                     MySqlType::Long
                 } else if s.starts_with("INT UNSIGNED") {
