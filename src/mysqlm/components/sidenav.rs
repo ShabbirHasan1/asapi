@@ -198,6 +198,7 @@ impl MySqlConnectionsSubpanel {
                                     .await
                                     .map_or(HashMap::new(), |v| v)
                             });
+                            ui.close_menu();
                         }
                     });
 

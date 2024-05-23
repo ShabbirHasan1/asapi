@@ -53,7 +53,7 @@ pub fn generate_mysql_value(data_type: &MySqlType) -> String {
         }
         MySqlType::VarChar => generate_mysql_value(&MySqlType::String),
         MySqlType::Binary(len) => {
-            quote!(Gen::gen_alpha_lower_with_max_len(*len).sample(&SimpleRGen::new()))
+            quote!(Gen::gen_alpha_lower_with_max_len(*len as usize).sample(&SimpleRGen::new()))
         }
         MySqlType::VarBinary(len) => generate_mysql_value(&MySqlType::Binary(*len)),
         // TODO:
@@ -68,21 +68,25 @@ pub fn generate_mysql_value(data_type: &MySqlType) -> String {
                 s = _s;
             }
 
-            println!("Bit of {len} chars: {bits}");
             format!("b{}", quote!(bits))
         }
-        MySqlType::Blob => todo!(),
-        MySqlType::BlobBinary => todo!(),
-        MySqlType::MediumBlob => todo!(),
-        MySqlType::MediumBlobBinary => todo!(),
+        MySqlType::Blob(len) => generate_mysql_value(&MySqlType::Text(*len)),
+        MySqlType::Text(len) => {
+            quote!(Gen::gen_alpha_lower_with_max_len(*len as usize).sample(&SimpleRGen::new()))
+        }
+        // No uso la longitud máximo y pongo el número de bits porque se me va de madre.
+        // MySqlType::LongBlob => generate_mysql_value(&MySqlType::Blob(2_u32.pow(32) - 1)),
+        MySqlType::MediumBlob => generate_mysql_value(&MySqlType::Blob(24)),
+        MySqlType::MediumText => generate_mysql_value(&MySqlType::Text(24)),
+        MySqlType::LongBlob => generate_mysql_value(&MySqlType::Blob(32)),
+        MySqlType::LongText => generate_mysql_value(&MySqlType::Text(32)),
+        MySqlType::TinyBlob => generate_mysql_value(&MySqlType::Blob(8)),
+        MySqlType::TinyText => generate_mysql_value(&MySqlType::Text(8)),
+        // TODO:
+        MySqlType::Set => todo!(),
         MySqlType::Enum => todo!(),
         MySqlType::Geometry => todo!(),
         MySqlType::Json => todo!(),
-        MySqlType::LongBlob => todo!(),
-        MySqlType::LongBlobBinary => todo!(),
-        MySqlType::Set => todo!(),
-        MySqlType::TinyBlob => todo!(),
-        MySqlType::TinyBlobBinary => todo!(),
     }
 }
 

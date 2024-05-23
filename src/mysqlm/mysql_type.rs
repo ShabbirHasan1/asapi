@@ -15,17 +15,25 @@
 
 use regex::Regex;
 use sqlx::{mysql::MySqlTypeInfo, TypeInfo};
-use std::fmt::Display;
 
 // Tipos copiados de la librería y algunos añadidos para no tener que usar flags y extraer con regexp.
 #[derive(Debug)]
 #[repr(u32)]
 pub enum MySqlType {
     Bit(usize),
-    Binary(usize),
-    Blob,
-    BlobBinary, // Lo creo yo.
-    Boolean,    // Lo creo yo.
+    Binary(u32),
+    // Blob
+    Blob(u32),
+    TinyBlob,
+    MediumBlob,
+    LongBlob,
+    // Text
+    Text(u32),
+    TinyText,
+    MediumText,
+    LongText,
+
+    Boolean, // Lo creo yo.
     Date,
     Datetime,
     Decimal,
@@ -38,12 +46,10 @@ pub enum MySqlType {
     Json,
     Long,
     LongUnsigned, // Lo creo yo.
-    LongBlob,
-    LongBlobBinary, // Lo creo yo.
+
     LongLong,
     LongLongUnsigned, // Lo creo yo.
-    MediumBlob,
-    MediumBlobBinary, // Lo creo yo.
+
     // NewDecimal, // Comento porque no sé cómo extraerla, se representa igual que `Decimal`.
     Null,
     Set,
@@ -56,10 +62,9 @@ pub enum MySqlType {
     Timestamp,
     Tiny,
     TinyUnsigned, // Lo creo yo.
-    TinyBlob,
-    TinyBlobBinary, // Lo creo yo.
+
     VarChar,
-    VarBinary(usize), // Lo creo yo. Existe en mysql pero no en MySqlTypeColumn o como se llame en sqlx.
+    VarBinary(u32), // Lo creo yo. Existe en mysql pero no en MySqlTypeColumn o como se llame en sqlx.
     // VarString, // Comento porque no sé cómo extraerla, se representa igual que `VarChar`.
     Year,
     // Especiales, solo para generación
@@ -74,9 +79,9 @@ impl MySqlType {
             "BIGINT" => MySqlType::LongLong,
             // Esto, que es un poco locura, nos da igual en realidad porque este tipo lo gastamos solamente
             // para representar el valor de lo que hay en la base de datos, no para generar valores.
-            "BINARY" => MySqlType::Binary(usize::MAX),
+            "BINARY" => MySqlType::Binary(u32::MAX),
             "BIT" => MySqlType::Bit(usize::MAX),
-            "BLOB" => MySqlType::BlobBinary,
+            "BLOB" => MySqlType::Blob(u32::MAX),
             "BOOLEAN" => MySqlType::Boolean,
             "CHAR" => MySqlType::String,
             "DATE" => MySqlType::Date,
@@ -90,24 +95,24 @@ impl MySqlType {
             "INT UNSIGNED" => MySqlType::LongUnsigned,
             "INT" => MySqlType::Long,
             "JSON" => MySqlType::Json,
-            "LONGBLOB" => MySqlType::LongBlobBinary,
-            "LONGTEXT" => MySqlType::LongBlob,
-            "MEDIUMBLOB" => MySqlType::MediumBlobBinary,
+            "LONGBLOB" => MySqlType::LongBlob,
+            "LONGTEXT" => MySqlType::LongText,
+            "MEDIUMBLOB" => MySqlType::MediumBlob,
             "MEDIUMINT UNSIGNED" => MySqlType::Int24Unsigned,
             "MEDIUMINT" => MySqlType::Int24,
-            "MEDIUMTEXT" => MySqlType::MediumBlob,
+            "MEDIUMTEXT" => MySqlType::MediumText,
             "NULL" => MySqlType::Null,
             "SET" => MySqlType::Set,
             "SMALLINT UNSIGNED" => MySqlType::ShortUnsigned,
             "SMALLINT" => MySqlType::Short,
-            "TEXT" => MySqlType::Blob,
+            "TEXT" => MySqlType::Text(u32::MAX),
             "TIME" => MySqlType::Time,
             "TIMESTAMP" => MySqlType::Timestamp,
-            "TINYBLOB" => MySqlType::TinyBlobBinary,
+            "TINYBLOB" => MySqlType::TinyBlob,
             "TINYINT UNSIGNED" => MySqlType::TinyUnsigned,
             "TINYINT" => MySqlType::Tiny,
-            "TINYTEXT" => MySqlType::TinyBlob,
-            "VARBINARY" => MySqlType::VarBinary(usize::MAX),
+            "TINYTEXT" => MySqlType::TinyText,
+            "VARBINARY" => MySqlType::VarBinary(u32::MAX),
             "VARCHAR" => MySqlType::VarChar,
             "YEAR" => MySqlType::Year,
             _ => MySqlType::Null,
@@ -120,7 +125,6 @@ impl MySqlType {
             "BIGINT UNSIGNED" => MySqlType::LongLongUnsigned,
             "BIGINT" => MySqlType::LongLong,
             // "BIT" => MySqlType::Bit,
-            "BLOB" => MySqlType::BlobBinary,
             "BOOLEAN" => MySqlType::Boolean,
             "CHAR" => MySqlType::String,
             "DATE" => MySqlType::Date,
@@ -132,37 +136,46 @@ impl MySqlType {
             "FLOAT" => MySqlType::Float,
             "GEOMETRY" => MySqlType::Geometry,
             "JSON" => MySqlType::Json,
-            "LONGBLOB" => MySqlType::LongBlobBinary,
-            "LONGTEXT" => MySqlType::LongBlob,
-            "MEDIUMBLOB" => MySqlType::MediumBlobBinary,
+            "LONGTEXT" => MySqlType::LongText,
             "MEDIUMINT UNSIGNED" => MySqlType::Int24Unsigned,
             "MEDIUMINT" => MySqlType::Int24,
-            "MEDIUMTEXT" => MySqlType::MediumBlob,
+            "MEDIUMTEXT" => MySqlType::MediumText,
             "NULL" => MySqlType::Null,
             "SET" => MySqlType::Set,
             "SMALLINT UNSIGNED" => MySqlType::ShortUnsigned,
             "SMALLINT" => MySqlType::Short,
-            "TEXT" => MySqlType::Blob,
+            "TEXT" => MySqlType::Text(65355), // máximo valor si no se especifica
             "TIME" => MySqlType::Time,
             "TIMESTAMP" => MySqlType::Timestamp,
-            "TINYBLOB" => MySqlType::TinyBlobBinary,
+            "BLOB" => MySqlType::Blob(65355), // máximo valor si no se especifica
+            "LONGBLOB" => MySqlType::LongBlob,
+            "MEDIUMBLOB" => MySqlType::MediumBlob,
+            "TINYBLOB" => MySqlType::TinyBlob,
             "TINYINT UNSIGNED" => MySqlType::TinyUnsigned,
             "TINYINT" => MySqlType::Tiny,
-            "TINYTEXT" => MySqlType::TinyBlob,
+            "TINYTEXT" => MySqlType::TinyText,
             "YEAR" => MySqlType::Year,
             // Tenemos que extraer.
             _ => {
                 let re_binary = Regex::new(r"(?i)BINARY\((\d+)\)").unwrap();
                 if let Some(caps) = re_binary.captures(s) {
-                    return match caps.get(1).and_then(|v| v.as_str().parse::<usize>().ok()) {
+                    return match caps.get(1).and_then(|v| v.as_str().parse::<u32>().ok()) {
                         Some(v) => MySqlType::Binary(v),
+                        None => MySqlType::String, // Match Binary y no sabemos cúal : STRING
+                    };
+                }
+
+                let re_text = Regex::new(r"(?i)TEXT\((\d+)\)").unwrap();
+                if let Some(caps) = re_text.captures(s) {
+                    return match caps.get(1).and_then(|v| v.as_str().parse::<u32>().ok()) {
+                        Some(v) => MySqlType::Text(v),
                         None => MySqlType::String, // Match Binary y no sabemos cúal : STRING
                     };
                 }
 
                 let re_varbinary = Regex::new(r"(?i)VARBINARY\((\d+)\)").unwrap();
                 if let Some(caps) = re_varbinary.captures(s) {
-                    return match caps.get(1).and_then(|v| v.as_str().parse::<usize>().ok()) {
+                    return match caps.get(1).and_then(|v| v.as_str().parse::<u32>().ok()) {
                         Some(v) => MySqlType::VarBinary(v),
                         None => MySqlType::String, // Match Binary y no sabemos cúal : STRING
                     };
@@ -181,6 +194,16 @@ impl MySqlType {
                     return match caps.get(1).and_then(|v| v.as_str().parse::<usize>().ok()) {
                         Some(_) => MySqlType::Year, // No usamos ancho, deprecated, siempre 4: https://dev.mysql.com/doc/refman/8.0/en/year.html
                         None => MySqlType::String,
+                    };
+                }
+
+                // Blob puede no tener (entonces len = 2^16 - 1) o tener y ajustar al blob de menor tamaño que ajuste al valor que pasemos
+                // https://mariadb.com/kb/en/blob/
+                let re_blob = Regex::new(r"(?i)BLOB\((\d+)\)").unwrap();
+                if let Some(caps) = re_blob.captures(s) {
+                    return match caps.get(1).and_then(|v| v.as_str().parse::<u32>().ok()) {
+                        Some(v) => MySqlType::Blob(v),
+                        None => MySqlType::String, // Match Binary y no sabemos cúal : STRING
                     };
                 }
 

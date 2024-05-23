@@ -47,8 +47,8 @@ pub fn mysqlrow_value_to_string(row: &MySqlRow, idx: usize, col: &MySqlColumn) -
             Ok(v) => v.map_or("NULL".to_string(), |v| format!("{:b}", v)),
             Err(_err) => String::from("ERR parsing"),
         },
-        MySqlType::Blob => value_vecu8_to_utf8_string(row, idx),
-        MySqlType::BlobBinary => value_vecu8_to_utf8_string(row, idx),
+        MySqlType::Blob(_) => value_vecu8_to_utf8_string(row, idx),
+        MySqlType::Text(_) => value_vecu8_to_utf8_string(row, idx),
         MySqlType::Boolean => value_to_string::<bool>(row, idx),
         MySqlType::Date => value_to_string::<chrono::NaiveDate>(row, idx),
         MySqlType::Datetime => value_to_string::<chrono::NaiveDateTime>(row, idx),
@@ -61,11 +61,11 @@ pub fn mysqlrow_value_to_string(row: &MySqlRow, idx: usize, col: &MySqlColumn) -
         MySqlType::Long => value_to_string::<i32>(row, idx),
         MySqlType::LongUnsigned => value_to_string::<u32>(row, idx),
         MySqlType::LongBlob => value_vecu8_to_utf8_string(row, idx),
-        MySqlType::LongBlobBinary => value_vecu8_to_utf8_string(row, idx),
+        MySqlType::LongText => value_vecu8_to_utf8_string(row, idx),
         MySqlType::LongLong => value_to_string::<i64>(row, idx),
         MySqlType::LongLongUnsigned => value_to_string::<u64>(row, idx),
         MySqlType::MediumBlob => value_vecu8_to_utf8_string(row, idx),
-        MySqlType::MediumBlobBinary => value_vecu8_to_utf8_string(row, idx),
+        MySqlType::MediumText => value_vecu8_to_utf8_string(row, idx),
         MySqlType::Null => String::from("NULL"),
         MySqlType::Short => value_to_string::<i16>(row, idx),
         MySqlType::ShortUnsigned => value_to_string::<u16>(row, idx),
@@ -79,7 +79,7 @@ pub fn mysqlrow_value_to_string(row: &MySqlRow, idx: usize, col: &MySqlColumn) -
         MySqlType::Tiny => value_to_string::<i8>(row, idx),
         MySqlType::TinyUnsigned => value_to_string::<u8>(row, idx),
         MySqlType::TinyBlob => value_vecu8_to_utf8_string(row, idx),
-        MySqlType::TinyBlobBinary => value_vecu8_to_utf8_string(row, idx),
+        MySqlType::TinyText => value_vecu8_to_utf8_string(row, idx),
         MySqlType::Uuid => value_to_string::<String>(row, idx),
         MySqlType::VarChar => value_to_string::<String>(row, idx),
         MySqlType::VarBinary(_) => value_vecu8_to_utf8_string(row, idx),
@@ -112,7 +112,7 @@ where
     // Option para poder representar columnas NULLABLE
     match row.try_get::<Option<T>, usize>(idx) {
         Ok(v) => {
-            println!("{v:?}");
+            // println!("{v:?}");
             v.map_or("NULL".to_string(), |v| format!("{}", v))
         }
         Err(_err) => String::from("ERR parsing"),
@@ -126,7 +126,7 @@ fn value_vecu8_to_utf8_string(row: &MySqlRow, idx: usize) -> String {
             String::from_utf8(v).map_or(String::from("ERR parsing Vec<u8>"), |v| v)
         }),
         Err(err) => {
-            println!("{err:?}");
+            // println!("{err:?}");
             String::from("ERR parsing Vec<u8>")
         }
     }

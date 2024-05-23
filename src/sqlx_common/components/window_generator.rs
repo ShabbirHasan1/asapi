@@ -115,7 +115,6 @@ where
                                 .enumerate()
                                 .map(|(idx, t)| {
                                     let is_null = state.data_gen.nullable_column_flags[idx];
-                                    println!("{idx}: {is_null}");
                                     if is_null && GenericGenerator::<bool>::run() {
                                         "NULL".to_string()
                                     } else if state.data_gen.fixed_value_flags[idx] {
@@ -129,6 +128,7 @@ where
                                         }
                                     } else {
                                         println!("generate value for {t:?}");
+
                                         generate_value(t)
                                     }
                                 })
@@ -139,7 +139,6 @@ where
                                 "INSERT INTO {} ({}) VALUES ({})",
                                 t_name, column_names_string, values
                             );
-                            println!("{stmt}");
                             let _ = tx.to_owned().send(SqlxMessage::InsertStatement(stmt));
                         }
 
