@@ -36,13 +36,17 @@ pub fn mysqlrow_value_to_string(row: &MySqlRow, idx: usize, col: &MySqlColumn) -
         return "NULL".to_owned();
     }
 
-    // println!("{} : {}", col.name(), col.type_info());
+    println!("{} : {}", col.name(), col.type_info());
 
     let mysql_type = mysql_type_opt.as_ref().unwrap();
 
     // https://docs.rs/sqlx/latest/sqlx/mysql/types/index.html
     match mysql_type {
-        MySqlType::Bit => value_to_string::<String>(row, idx),
+        // https://github.com/launchbadge/sqlx/issues/2825
+        MySqlType::Bit(_) => match row.try_get::<Option<u64>, usize>(idx) {
+            Ok(v) => v.map_or("NULL".to_string(), |v| format!("{:b}", v)),
+            Err(_err) => String::from("ERR parsing"),
+        },
         MySqlType::Blob => value_vecu8_to_utf8_string(row, idx),
         MySqlType::BlobBinary => value_vecu8_to_utf8_string(row, idx),
         MySqlType::Boolean => value_to_string::<bool>(row, idx),
@@ -103,11 +107,14 @@ pub fn mysqlrow_value_to_string(row: &MySqlRow, idx: usize, col: &MySqlColumn) -
 
 fn value_to_string<'r, T>(row: &'r MySqlRow, idx: usize) -> String
 where
-    T: Decode<'r, MySql> + Type<MySql> + fmt::Display,
+    T: Decode<'r, MySql> + Type<MySql> + fmt::Display + fmt::Debug,
 {
     // Option para poder representar columnas NULLABLE
     match row.try_get::<Option<T>, usize>(idx) {
-        Ok(v) => v.map_or("NULL".to_string(), |v| format!("{}", v)),
+        Ok(v) => {
+            println!("{v:?}");
+            v.map_or("NULL".to_string(), |v| format!("{}", v))
+        }
         Err(_err) => String::from("ERR parsing"),
     }
 }
@@ -118,7 +125,10 @@ fn value_vecu8_to_utf8_string(row: &MySqlRow, idx: usize) -> String {
         Ok(v) => v.map_or("NULL".to_string(), |v| {
             String::from_utf8(v).map_or(String::from("ERR parsing Vec<u8>"), |v| v)
         }),
-        Err(_err) => String::from("ERR parsing Vec<u8>"),
+        Err(err) => {
+            println!("{err:?}");
+            String::from("ERR parsing Vec<u8>")
+        }
     }
 }
 

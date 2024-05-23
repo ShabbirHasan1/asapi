@@ -21,7 +21,7 @@ use std::fmt::Display;
 #[derive(Debug)]
 #[repr(u32)]
 pub enum MySqlType {
-    Bit,
+    Bit(usize),
     Binary(usize),
     Blob,
     BlobBinary, // Lo creo yo.
@@ -75,7 +75,7 @@ impl MySqlType {
             // Esto, que es un poco locura, nos da igual en realidad porque este tipo lo gastamos solamente
             // para representar el valor de lo que hay en la base de datos, no para generar valores.
             "BINARY" => MySqlType::Binary(usize::MAX),
-            "BIT" => MySqlType::Bit,
+            "BIT" => MySqlType::Bit(usize::MAX),
             "BLOB" => MySqlType::BlobBinary,
             "BOOLEAN" => MySqlType::Boolean,
             "CHAR" => MySqlType::String,
@@ -119,7 +119,7 @@ impl MySqlType {
         match s {
             "BIGINT UNSIGNED" => MySqlType::LongLongUnsigned,
             "BIGINT" => MySqlType::LongLong,
-            "BIT" => MySqlType::Bit,
+            // "BIT" => MySqlType::Bit,
             "BLOB" => MySqlType::BlobBinary,
             "BOOLEAN" => MySqlType::Boolean,
             "CHAR" => MySqlType::String,
@@ -160,11 +160,27 @@ impl MySqlType {
                     };
                 }
 
-                let re_binary = Regex::new(r"(?i)VARBINARY\((\d+)\)").unwrap();
-                if let Some(caps) = re_binary.captures(s) {
+                let re_varbinary = Regex::new(r"(?i)VARBINARY\((\d+)\)").unwrap();
+                if let Some(caps) = re_varbinary.captures(s) {
                     return match caps.get(1).and_then(|v| v.as_str().parse::<usize>().ok()) {
                         Some(v) => MySqlType::VarBinary(v),
                         None => MySqlType::String, // Match Binary y no sabemos cúal : STRING
+                    };
+                }
+
+                let re_bit = Regex::new(r"(?i)BIT\((\d+)\)").unwrap();
+                if let Some(caps) = re_bit.captures(s) {
+                    return match caps.get(1).and_then(|v| v.as_str().parse::<usize>().ok()) {
+                        Some(v) => MySqlType::Bit(v),
+                        None => MySqlType::String, // Match Binary y no sabemos cúal : STRING
+                    };
+                }
+
+                let re_year = Regex::new(r"(?i)YEAR\((\d+)\)").unwrap();
+                if let Some(caps) = re_year.captures(s) {
+                    return match caps.get(1).and_then(|v| v.as_str().parse::<usize>().ok()) {
+                        Some(_) => MySqlType::Year, // No usamos ancho, deprecated, siempre 4: https://dev.mysql.com/doc/refman/8.0/en/year.html
+                        None => MySqlType::String,
                     };
                 }
 

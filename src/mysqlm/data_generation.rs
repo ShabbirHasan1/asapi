@@ -11,7 +11,7 @@ use chrono::{NaiveDate, NaiveTime};
 use rust_decimal::Decimal;
 
 use super::mysql_type::MySqlType;
-use crate::common::generator::{Gen, SimpleRGen};
+use crate::common::generator::{random_select_from_pair, Gen, SimpleRGen};
 use crate::common::traits::Runner as _;
 use crate::quote;
 use crate::sqlx_common::data_generation::GenericGenerator;
@@ -39,9 +39,7 @@ pub fn generate_mysql_value(data_type: &MySqlType) -> String {
         MySqlType::Short => GenericGenerator::<i16>::run().to_string(),
         MySqlType::ShortUnsigned => GenericGenerator::<u16>::run().to_string(),
         MySqlType::String => {
-            let tmp = quote!(&Gen::gen_alpha_lower_with_max_len(20).sample(&SimpleRGen::new()));
-            println!("tmp: {tmp}");
-            tmp
+            quote!(&Gen::gen_alpha_lower_with_max_len(20).sample(&SimpleRGen::new()))
         }
         MySqlType::Time => quote!(&NaiveTime::default().to_string()),
         MySqlType::Timestamp => quote!(&GenericGenerator::<DateTime<Utc>>::run()
@@ -54,12 +52,25 @@ pub fn generate_mysql_value(data_type: &MySqlType) -> String {
             quote!(&Gen::gen_random_uuid().sample(&SimpleRGen::new()))
         }
         MySqlType::VarChar => generate_mysql_value(&MySqlType::String),
-        // TODO:
         MySqlType::Binary(len) => {
             quote!(Gen::gen_alpha_lower_with_max_len(*len).sample(&SimpleRGen::new()))
         }
         MySqlType::VarBinary(len) => generate_mysql_value(&MySqlType::Binary(*len)),
-        MySqlType::Bit => todo!(),
+        // TODO:
+        MySqlType::Year => quote!(Gen::gen_in_range(1901, 2156).sample(&SimpleRGen::new())),
+        MySqlType::Bit(len) => {
+            let mut bits = String::with_capacity(*len);
+            let mut s = SimpleRGen::new();
+
+            for _ in 0..*len {
+                let (b, _s) = random_select_from_pair(('0', '1')).run(&s);
+                bits.push(b);
+                s = _s;
+            }
+
+            println!("Bit of {len} chars: {bits}");
+            format!("b{}", quote!(bits))
+        }
         MySqlType::Blob => todo!(),
         MySqlType::BlobBinary => todo!(),
         MySqlType::MediumBlob => todo!(),
@@ -72,7 +83,6 @@ pub fn generate_mysql_value(data_type: &MySqlType) -> String {
         MySqlType::Set => todo!(),
         MySqlType::TinyBlob => todo!(),
         MySqlType::TinyBlobBinary => todo!(),
-        MySqlType::Year => todo!(),
     }
 }
 
