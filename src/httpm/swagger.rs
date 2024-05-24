@@ -49,7 +49,7 @@ pub struct Parameter {
 
 impl Display for Swagger {
     fn fmt(&self, f: &mut Formatter) -> std::fmt::Result {
-        write!(f, "Swagger Paths:\n")?;
+        writeln!(f, "Swagger Paths:")?;
         for (path, item) in &self.paths {
             write!(f, "{}\n{}\n", path, item)?;
         }

@@ -23,6 +23,7 @@ pub enum QuerySort {
 /// Voy con String y ya se verá si necesito cambiar.
 #[derive(Clone, Serialize, Deserialize, Default, Debug)]
 pub struct SqlConnectionDefinition {
+    pub name: String,
     pub host: String,
     pub port: String,
     pub user: String,
@@ -34,7 +35,8 @@ impl PartialEq for SqlConnectionDefinition {
     fn eq(&self, other: &Self) -> bool {
         // No uso password xq no tiene sentido conexiones al mismo sitio
         // con distinto password.
-        self.host == other.host
+        self.name == other.name
+            && self.host == other.host
             && self.port == other.port
             && self.dbname == other.dbname
             && self.user == other.user
@@ -61,9 +63,9 @@ impl Default for SqlAppState {
 #[derive(Default)]
 pub struct SqlLocalState<T: Database> {
     pub pool: Option<Pool<T>>,
-    pub current_connection: SqlConnectionDefinition,
+    // pub current_connection: SqlConnectionDefinition,
     // Datos que almacenamos de forma temporal.
-    pub tmp_pg_connection: SqlConnectionDefinition,
+    // pub tmp_sql_connection: SqlConnectionDefinition,
     pub sql: SqlState,
 }
 
@@ -76,6 +78,8 @@ pub enum SqlxMessage {
     SelectResponse((Vec<Vec<String>>, Vec<(String, String)>, bool)),
     Error(String),
     Empty, // para errores, pero para poder resetear (o cualquier otra cosa que necesitemos).
+    AddConnection(SqlConnectionDefinition),
+    EditConnection((usize, SqlConnectionDefinition)),
 }
 
 #[derive(Default)]
@@ -130,6 +134,7 @@ pub struct SqlState {
     pub sql_statement: String,
     // almacenamos última respuesta a run_statemente para poder enseñar resultado
     pub last_response: Option<String>,
+    pub last_response_error: Option<Result<String, String>>,
     pub first_row_idx: usize,
     pub last_row_idx: usize,
     pub n_rows_to_show: usize, // número de filas a mostrar, para paginar
@@ -147,6 +152,7 @@ impl SqlState {
         self.current_table_rows.clear();
         self.current_table_columns.clear();
         self.last_response = None;
+        self.last_response_error = None;
     }
 }
 
@@ -157,13 +163,14 @@ impl Default for SqlState {
             tables: Default::default(),
             current_connection_idx: usize::MAX,
             current_connection_tables_info: Default::default(),
-            current_table_idx: Default::default(),
+            current_table_idx: usize::MAX,
             hide_connections: Default::default(),
             hide_tables: Default::default(),
             current_table_rows: Default::default(),
             current_table_columns: Default::default(),
             sql_statement: Default::default(),
             last_response: None,
+            last_response_error: None,
             first_row_idx: 0,
             last_row_idx: 0,
             n_rows_to_show: 50,

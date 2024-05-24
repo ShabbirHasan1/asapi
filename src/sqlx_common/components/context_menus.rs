@@ -10,7 +10,7 @@ use eframe::egui;
 use std::sync::mpsc::Sender;
 
 use crate::{
-    common::internationalization::I18n,
+    common::internationalization::I18nSqlx,
     sqlx_common::state::{SqlState, SqlxMessage},
 };
 
@@ -25,14 +25,14 @@ impl TableContextMenu {
         ui: &mut egui::Ui,
         tx: &Sender<SqlxMessage>,
         sql_st: &mut SqlState,
-        i18n: &I18n,
+        i18n: &I18nSqlx,
         t_name: &str,
     ) {
         sql_st.data_gen.table_to_generate_data = Some(String::from(t_name));
         let table_info_opt = sql_st.current_connection_tables_info.get(t_name);
 
         if let Some(t_info) = table_info_opt {
-            if ui.button(&i18n.pg_btn_table_data_generator).clicked() {
+            if ui.button(&i18n.pg.btn_table_data_generator).clicked() {
                 // Primera y segunda columna tienen la representación que me interesa.
                 let name_and_types: Vec<(String, String)> = t_info
                     .iter()
@@ -46,7 +46,7 @@ impl TableContextMenu {
                 sql_st.data_gen.show_generator_window = true;
                 ui.close_menu();
             }
-            if ui.button(&i18n.pg_btn_table_data_insertion).clicked() {
+            if ui.button(&i18n.pg.btn_table_data_insertion).clicked() {
                 let name_and_types: Vec<(String, String)> = t_info
                     .iter()
                     .map(|v| (v[0].clone(), v[2].clone()))
@@ -60,10 +60,11 @@ impl TableContextMenu {
             }
             ui.separator();
             ui.menu_button("Mas Acciones", |ui| {
-                if ui.button(&i18n.pg_btn_clean_table).clicked() {
+                if ui.button(&i18n.pg.btn_clean_table).clicked() {
                     let _ = tx
                         .to_owned()
                         .send(SqlxMessage::DeleteAllStmt(t_name.to_owned()));
+                    ui.close_menu();
                 }
             });
         }

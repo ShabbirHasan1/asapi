@@ -10,7 +10,7 @@ use eframe::egui;
 use tokio;
 use tokio::runtime::Runtime;
 
-use crate::common::fs::append_to_file;
+use crate::common::fs;
 use crate::common::internationalization::I18n;
 use crate::components::result_panel::ui_response_panel;
 
@@ -103,7 +103,7 @@ impl RedisView {
                             }
                         }
                         if let Err(e) =
-                            append_to_file(file_path, &self.state.current_command.to_string())
+                            fs::append_to_file(file_path, &self.state.current_command.to_string())
                         {
                             log::error!("Error al escribir en el archivo: {}", e);
                         }

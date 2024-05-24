@@ -153,7 +153,7 @@ impl HttpView {
                                             self.body.files[idx] = param
                                                 .1
                                                 .split(',')
-                                                .map(|s| PathBuf::from(s))
+                                                .map(PathBuf::from)
                                                 .collect::<Vec<PathBuf>>();
                                         }
                                     }
@@ -173,7 +173,6 @@ impl HttpView {
                     match self.state.selected_request_action {
                         HttpRequestAction::None => (),
                         HttpRequestAction::Rename => {
-                            println!("{} - {:?}", idx, self.state.selected_request_action);
                             let button = &buttons[idx];
                             egui::popup::popup_below_widget(ui, popup_id, button, |ui| {
                                 ui.set_min_width(200.0);

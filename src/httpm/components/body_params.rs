@@ -91,6 +91,14 @@ impl BodyParams {
                 self.files.push(vec![]);
                 has_changed = Some(true);
             }
+            if method == HttpMethod::Post
+                && ui
+                    .checkbox(&mut self.multipart, "Multipart")
+                    .on_hover_text(&i18n.http_multipart_help)
+                    .clicked()
+            {
+                has_changed = Some(true);
+            }
             if method == HttpMethod::Post {
                 if ui
                     .checkbox(&mut self.multipart, "Multipart")
@@ -152,8 +160,7 @@ impl BodyParams {
                                     &self.files[i]
                                         .iter()
                                         .map(|p| p.to_str())
-                                        .filter(|p| p.is_some())
-                                        .map(|p| p.unwrap())
+                                        .flatten()
                                         .collect::<Vec<&str>>()
                                         .join("\n"),
                                 );

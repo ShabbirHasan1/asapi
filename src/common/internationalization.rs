@@ -41,8 +41,76 @@ pub struct I18nHttp {
 }
 
 #[derive(Clone)]
+pub struct I18nPg {
+    pub connection_name: String,
+    pub connection_host: String,
+    pub connection_port: String,
+    pub connection_user: String,
+    pub connection_password: String,
+    pub connection_dbname: String,
+    pub edit_connection_confirm: String,
+    pub edit_connection_cancel: String,
+    pub btn_add_connection: String,
+    pub btn_connect: String,
+    pub btn_connected: String,
+    pub btn_load_tables: String,
+    pub btn_clean_table: String,
+    pub header_connection: String,
+    pub btn_query: String,
+    pub btn_table_data_generator: String,
+    pub btn_table_data_insertion: String,
+    pub impossible_to_connect: String,
+    pub connection: String,
+    pub no_connection: String,
+    pub info_performance_table: String,
+    pub performance_table: String,
+    pub close_connection: String,
+    pub delete_connection: String,
+    pub edit_connection: String,
+    pub reload_tables: String,
+}
+
+#[derive(Clone)]
+pub struct I18nMySql {
+    pub info_performance_table: String,
+    pub performance_table: String,
+    pub close_connection: String,
+    pub delete_connection: String,
+    pub edit_connection: String,
+    pub reload_tables: String,
+}
+
+#[derive(Clone)]
+pub struct I18nSqlite {
+    pub btn_add_connection: String,
+    pub btn_table_data_generator: String,
+    pub btn_clean_table: String,
+    pub btn_table_data_insertion: String,
+    pub info_performance_table: String,
+    pub performance_table: String,
+    pub connection_btn_help: String,
+    pub close_connection: String,
+    pub delete_connection: String,
+    pub edit_connection: String,
+    pub reload_tables: String,
+}
+
+#[derive(Clone)]
+pub struct I18nSqlx {
+    pub connections: String,
+    pub tables: String,
+    pub table_columns: String,
+
+    // Sub-structs para cada `DBMS`.
+    pub pg: I18nPg,
+    pub mysql: I18nMySql,
+    pub sqlite: I18nSqlite,
+}
+
+#[derive(Clone)]
 pub struct I18n {
     pub http: I18nHttp,
+    pub sqlx: I18nSqlx,
 
     // intern: I18nOptions,
     pub debug_json_string: String,
@@ -153,48 +221,13 @@ pub struct I18n {
     pub redis_stream_group_prefix: String,
     pub redis_stream_stream_prefix: String,
     pub redis_stream_block_prefix: String,
-
-    // Postgres
-    pub pg_connection_host: String,
-    pub pg_connection_port: String,
-    pub pg_connection_user: String,
-    pub pg_connection_password: String,
-    pub pg_connection_dbname: String,
-    pub pg_btn_add_connection: String,
-    pub pg_btn_connect: String,
-    pub pg_btn_connected: String,
-    pub pg_btn_load_tables: String,
-    pub pg_btn_clean_table: String,
-    pub pg_header_connection: String,
-    pub pg_btn_query: String,
-    pub pg_btn_table_data_generator: String,
-    pub pg_btn_table_data_insertion: String,
-    pub pg_impossible_to_connect: String,
-    pub pg_connection: String,
-    pub pg_no_connection: String,
-    pub pg_info_performance_table: String,
-    pub pg_performance_table: String,
-
-    // Mysql
-    pub mysql_info_performance_table: String,
-    pub mysql_performance_table: String,
-
-    // Sqlite
-    pub sqlite_btn_add_connection: String,
-    pub sqlite_btn_table_data_generator: String,
-    pub sqlite_btn_clean_table: String,
-    pub sqlite_btn_table_data_insertion: String,
-    pub sqlite_info_performance_table: String,
-    pub sqlite_performance_table: String,
 }
 
 pub fn language_selector(i: I18nOptions) -> I18n {
     match i {
         I18nOptions::ES => I18n {
-            // intern: I18nOptions::ES,
             debug_json_string: "JSON Exportado".to_owned(),
 
-            // Barra superior
             top_menu_config: "Configuración".to_owned(),
             top_http_toggle_sidebar: "Colapsar/Mostrar Menú Lateral".to_owned(),
             top_redis_toggle_sidebar: "Colapsar/Mostrar Menú Lateral".to_owned(),
@@ -228,6 +261,66 @@ pub fn language_selector(i: I18nOptions) -> I18n {
                 http_import_swagger: format!("Importar OpenAPI {}", IconMoon::Letteri),
                 http_swagger_json_limitation: String::from("Solo JSON"),
                 http_request_method: String::from("Método")
+            },
+
+            sqlx: I18nSqlx{
+                connections: String::from("Conexiones"),
+                tables: String::from("Tablas"),
+                table_columns: String::from("Columnas Existentes"),
+
+                pg: I18nPg {
+                    connection_name: String::from("Nombre"),
+                    connection_host: "Host".to_owned(),
+                    connection_port: "Puerto".to_owned(),
+                    connection_user: "Usuario".to_owned(),
+                    connection_password: "Contraseña".to_owned(),
+                    connection_dbname: "Base de Datos".to_owned(),
+                    edit_connection_confirm: String::from("Guardar"),
+                    edit_connection_cancel: String::from("Cancelar"),
+                    btn_add_connection: "Anadir Conexión".to_owned(),
+                    btn_connect: "Conectar".to_owned(),
+                    btn_connected: "Conectado".to_owned(),
+                    btn_load_tables: "Cargar Tablas".to_owned(),
+                    btn_clean_table: "Limpiar Tabla".to_owned(),
+                    btn_query: "Ejecutar".to_owned(),
+                    btn_table_data_generator: "Generación de Datos".to_owned(),
+                    btn_table_data_insertion: "Insertar Fila".to_owned(),
+                    header_connection: "Conexión".to_owned(),
+                    impossible_to_connect: "Imposible conectar con Postgres.".to_owned(),
+                    connection: "Conectado.".to_owned(),
+                    no_connection: "No conectado.".to_owned(),
+                    info_performance_table: "El borrado de filas no es posible con tabla con mejor rendimiento.\nSeleccione esta opción para una cantidad de celdas (celdas x columnas) masiva, del orden de 1e5, o cuando la cantidad de datos dentro de las celdas pueda ser muy grande y tenga centeneras o miles de estas celdas, como puede ser el caso de grandes textos, json, binarios, arrays o datos geográficos.".to_owned(),
+                    performance_table: "Tabla Optimizada".to_owned(),
+                    close_connection: String::from("Cerrar Conexión"),
+                    delete_connection: String::from("Borrar Conexión"),
+                    edit_connection: String::from("Editar Conexión"),
+                    reload_tables: String::from("Recargar Tablas"),
+                },
+
+                mysql: I18nMySql {
+                    info_performance_table: "El borrado de filas no es posible con tabla con mejor rendimiento.\nSeleccione esta opción para una cantidad de celdas (celdas x columnas) masiva, del orden de 1e5, o cuando la cantidad de datos dentro de las celdas pueda ser muy grande y tenga centeneras o miles de estas celdas, como puede ser el caso de grandes textos, json, binarios o datos geográficos.".to_owned(),
+                    performance_table: "Tabla Optimizada".to_owned(),
+                    close_connection: String::from("Cerrar Conexión"),
+                    delete_connection: String::from("Borrar Conexión"),
+                    edit_connection: String::from("Editar Conexión"),
+                    reload_tables: String::from("Recargar Tablas"),
+                },
+
+                sqlite: I18nSqlite {
+                    // Sqlite
+                    btn_add_connection: "Abrir Archivo".to_owned(),
+                    btn_table_data_generator: "Generación de Datos".to_owned(),
+                    btn_clean_table: "Limpiar Tabla".to_owned(),
+                    btn_table_data_insertion: "Insertar Fila".to_owned(),
+                    info_performance_table: "El borrado de filas no es posible con tabla con mejor rendimiento.\nSeleccione esta opción para una cantidad de celdas (celdas x columnas) masiva, del orden de 1e5, o cuando la cantidad de datos dentro de las celdas pueda ser muy grande y tenga centeneras o miles de estas celdas, como puede ser el caso de grandes textos, binarios o datos geográficos.".to_owned(),
+                    performance_table: "Tabla Optimizada".to_owned(),
+                    connection_btn_help: String::from("Para conectar, clicar en definición de la conexión"),
+                    close_connection: String::from("Cerrar Conexión"),
+                    delete_connection: String::from("Borrar Conexión"),
+                    reload_tables: String::from("Recargar Tablas"),
+                    edit_connection: String::from("Editar Nombre de la Conexión"),
+                }
+
             },
 
             // Kafka
@@ -323,42 +416,9 @@ pub fn language_selector(i: I18nOptions) -> I18n {
             redis_stream_stream_prefix: String::from("Stream"),
             redis_stream_block_prefix: String::from("Bloqueado durante"),
 
-            // Postgres
-            pg_connection_host: "Host".to_owned(),
-            pg_connection_port: "Puerto".to_owned(),
-            pg_connection_user: "Usuario".to_owned(),
-            pg_connection_password: "Contraseña".to_owned(),
-            pg_connection_dbname: "Base de Datos".to_owned(),
-            pg_btn_add_connection: "Anadir Conexión".to_owned(),
-            pg_btn_connect: "Conectar".to_owned(),
-            pg_btn_connected: "Conectado".to_owned(),
-            pg_btn_load_tables: "Cargar Tablas".to_owned(),
-            pg_btn_clean_table: "Limpiar Tabla".to_owned(),
-            pg_btn_query: "Ejecutar".to_owned(),
-            pg_btn_table_data_generator: "Generación de Datos".to_owned(),
-            pg_btn_table_data_insertion: "Insertar Fila".to_owned(),
-            pg_header_connection: "Conexión".to_owned(),
-            pg_impossible_to_connect: "Imposible conectar con Postgres.".to_owned(),
-            pg_connection: "Conectado.".to_owned(),
-            pg_no_connection: "No conectado.".to_owned(),
-            pg_info_performance_table: "El borrado de filas no es posible con tabla con mejor rendimiento.\nSeleccione esta opción para una cantidad de celdas (celdas x columnas) masiva, del orden de 1e5, o cuando la cantidad de datos dentro de las celdas pueda ser muy grande y tenga centeneras o miles de estas celdas, como puede ser el caso de grandes textos, json, binarios, arrays o datos geográficos.".to_owned(),
-            pg_performance_table: "Tabla Optimizada".to_owned(),
-
-            // Mysql
-            mysql_info_performance_table: "El borrado de filas no es posible con tabla con mejor rendimiento.\nSeleccione esta opción para una cantidad de celdas (celdas x columnas) masiva, del orden de 1e5, o cuando la cantidad de datos dentro de las celdas pueda ser muy grande y tenga centeneras o miles de estas celdas, como puede ser el caso de grandes textos, json, binarios o datos geográficos.".to_owned(),
-            mysql_performance_table: "Tabla Optimizada".to_owned(),
-
-            // Sqlite
-            sqlite_btn_add_connection: "Abrir Archivo".to_owned(),
-            sqlite_btn_table_data_generator: "Generación de Datos".to_owned(),
-            sqlite_btn_clean_table: "Limpiar Tabla".to_owned(),
-            sqlite_btn_table_data_insertion: "Insertar Fila".to_owned(),
-            sqlite_info_performance_table: "El borrado de filas no es posible con tabla con mejor rendimiento.\nSeleccione esta opción para una cantidad de celdas (celdas x columnas) masiva, del orden de 1e5, o cuando la cantidad de datos dentro de las celdas pueda ser muy grande y tenga centeneras o miles de estas celdas, como puede ser el caso de grandes textos, binarios o datos geográficos.".to_owned(),
-            sqlite_performance_table: "Tabla Optimizada".to_owned(),
         },
 
         I18nOptions::EN => I18n {
-            // intern: I18nOptions::EN,
             debug_json_string: "Exported JSON".to_owned(),
 
             // Barra superior
@@ -396,6 +456,65 @@ pub fn language_selector(i: I18nOptions) -> I18n {
                 http_swagger_json_limitation: String::from("Only JSON allowed"),
                 http_request_method: String::from("Method")
             },
+
+            sqlx: I18nSqlx {
+                connections: String::from("Connections"),
+                tables: String::from("Tables"),
+                table_columns: String::from("Table Columns"),
+
+                pg: I18nPg {
+                    info_performance_table: "Deletion is forbidden for performance table.\nSelect this for massive quantity of cells (rows x columns), order of 1e5, or when massive amount of data inside the cells, like long varchar, big json/binaries/arrays or geographical data.".to_owned(),
+                    connection_name: String::from("Name"),
+                    connection_host: "Host".to_owned(),
+                    connection_port: "Port".to_owned(),
+                    connection_user: "User".to_owned(),
+                    connection_password: "Password".to_owned(),
+                    connection_dbname: "Database".to_owned(),
+                    edit_connection_confirm: String::from("Save"),
+                    edit_connection_cancel: String::from("Cancel"),
+                    btn_add_connection: "Add Connection".to_owned(),
+                    btn_connect: "Connect".to_owned(),
+                    btn_connected: "Connected".to_owned(),
+                    btn_load_tables: "Load Tables".to_owned(),
+                    btn_clean_table: "Clean Table".to_owned(),
+                    btn_query: "Run".to_owned(),
+                    btn_table_data_generator: "Data Generation".to_owned(),
+                    btn_table_data_insertion: "Insert Row".to_owned(),
+                    header_connection: "Connection".to_owned(),
+                    impossible_to_connect: "Impossible to connect with Postgres.".to_owned(),
+                    connection: "Connected.".to_owned(),
+                    no_connection: "No connected.".to_owned(),
+                    performance_table: "Performance Table".to_owned(),
+                    close_connection: String::from("Close Connection"),
+                    delete_connection: String::from("Delete Connection"),
+                    edit_connection: String::from("Edit Connection"),
+                    reload_tables: String::from("Reload Tables"),
+                },
+
+                mysql: I18nMySql {
+                    info_performance_table: "Deletion is forbidden for performance table.\nSelect this for massive quantity of cells (rows x columns), order of 1e5, or when massive amount of data inside the cells, like long texts, big binaries/jsons, or geographical data.".to_owned(),
+                    performance_table: "Performance Table".to_owned(),
+                    close_connection: String::from("Close Connection"),
+                    delete_connection: String::from("Delete Connection"),
+                    edit_connection: String::from("Edit Connection"),
+                    reload_tables: String::from("Reload Tables"),
+                },
+
+                sqlite: I18nSqlite {
+                    btn_add_connection: "Open File".to_owned(),
+                    btn_table_data_generator: "Data Generation".to_owned(),
+                    btn_clean_table: "Clean Table".to_owned(),
+                    btn_table_data_insertion: "Insert Row".to_owned(),
+                    info_performance_table: "Deletion is forbidden for performance table.\nSelect this for massive quantity of cells (rows x columns), order of 1e5, or when massive amount of data inside the cells, like long varchar, big binaries o geographical data.".to_owned(),
+                    performance_table: "Performance Table".to_owned(),
+                    connection_btn_help: String::from("To connect, click connection definition button"),
+                    close_connection: String::from("Close Connection"),
+                    delete_connection: String::from("Delete Connection"),
+                    reload_tables: String::from("Reload Tables"),
+                    edit_connection: String::from("Edit Connection Name"),
+                }
+            },
+
             // Kafka
             kafka_accept: String::from("Accept"),
             kafka_cancel: String::from("Cancel"),
@@ -488,39 +607,6 @@ pub fn language_selector(i: I18nOptions) -> I18n {
             redis_stream_group_prefix: String::from("Group"),
             redis_stream_stream_prefix: String::from("Stream"),
             redis_stream_block_prefix: String::from("Blocking for"),
-
-            // Postgres
-            pg_info_performance_table: "Deletion is forbidden for performance table.\nSelect this for massive quantity of cells (rows x columns), order of 1e5, or when massive amount of data inside the cells, like long varchar, big json/binaries/arrays or geographical data.".to_owned(),
-            pg_connection_host: "Host".to_owned(),
-            pg_connection_port: "Port".to_owned(),
-            pg_connection_user: "User".to_owned(),
-            pg_connection_password: "Password".to_owned(),
-            pg_connection_dbname: "Database".to_owned(),
-            pg_btn_add_connection: "Add Connection".to_owned(),
-            pg_btn_connect: "Connect".to_owned(),
-            pg_btn_connected: "Connected".to_owned(),
-            pg_btn_load_tables: "Load Tables".to_owned(),
-            pg_btn_clean_table: "Clean Table".to_owned(),
-            pg_btn_query: "Run".to_owned(),
-            pg_btn_table_data_generator: "Data Generation".to_owned(),
-            pg_btn_table_data_insertion: "Insert Row".to_owned(),
-            pg_header_connection: "Connection".to_owned(),
-            pg_impossible_to_connect: "Impossible to connect with Postgres.".to_owned(),
-            pg_connection: "Connected.".to_owned(),
-            pg_no_connection: "No connected.".to_owned(),
-            pg_performance_table: "Performance Table".to_owned(),
-
-            // Mysql
-            mysql_info_performance_table: "Deletion is forbidden for performance table.\nSelect this for massive quantity of cells (rows x columns), order of 1e5, or when massive amount of data inside the cells, like long texts, big binaries/jsons, or geographical data.".to_owned(),
-            mysql_performance_table: "Performance Table".to_owned(),
-
-            // Sqlite
-            sqlite_btn_add_connection: "Open File".to_owned(),
-            sqlite_btn_table_data_generator: "Data Generation".to_owned(),
-            sqlite_btn_clean_table: "Clean Table".to_owned(),
-            sqlite_btn_table_data_insertion: "Insert Row".to_owned(),
-            sqlite_info_performance_table: "Deletion is forbidden for performance table.\nSelect this for massive quantity of cells (rows x columns), order of 1e5, or when massive amount of data inside the cells, like long varchar, big binaries o geographical data.".to_owned(),
-            sqlite_performance_table: "Performance Table".to_owned(),
         },
     }
 }

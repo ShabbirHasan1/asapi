@@ -36,7 +36,7 @@ pub struct PostgresState {
     pub pool: Option<PgPool>,
     pub current_connection: SqlConnectionDefinition,
     // Datos que almacenamos de forma temporal.
-    pub tmp_pg_connection: SqlConnectionDefinition,
+    pub tmp_connection: SqlConnectionDefinition,
     pub sql: SqlState,
 }
 

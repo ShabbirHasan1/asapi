@@ -162,16 +162,16 @@ where
         self.run(rng).0
     }
 
-    // pub fn map<B, G>(self, f: G) -> Gen<B, impl Fn(&SimpleRGen) -> (B, SimpleRGen)>
-    // where
-    //     G: Fn(A) -> B + Copy,
-    // {
-    //     Gen::new(move |rng| {
-    //         let (a, s) = self.run(rng);
-    //         let b = f(a);
-    //         (b, s)
-    //     })
-    // }
+    pub fn map<B, G>(self, f: G) -> Gen<B, impl Fn(&SimpleRGen) -> (B, SimpleRGen)>
+    where
+        G: Fn(A) -> B + Copy,
+    {
+        Gen::new(move |rng| {
+            let (a, s) = self.run(rng);
+            let b = f(a);
+            (b, s)
+        })
+    }
 
     // pub fn filter<G>(self, predicate: G) -> Gen<A, impl Fn(&SimpleRGen) -> (A, SimpleRGen)>
     // where
@@ -211,21 +211,21 @@ where
 // Si usamos `where F...` no es capaz al usarla de inferir tipos y por eso
 // mejor hacer inline de la función en Gen en el tercer tipo de Gen
 // que no usar el `where`.
-// impl<A, B> Gen<(A, B), fn(&SimpleRGen) -> ((A, B), SimpleRGen)> {
-//     pub fn gen_tuple(
-//         g: Gen<A, impl Fn(&SimpleRGen) -> (A, SimpleRGen)>,
-//         h: Gen<B, impl Fn(&SimpleRGen) -> (B, SimpleRGen)>,
-//     ) -> Gen<(A, B), impl Fn(&SimpleRGen) -> ((A, B), SimpleRGen)> {
-//         // Mucho mejor pero no puedo solucionar problema
-//         // al mover `h`.
-//         // g.apply_then(move |a| h.map(move |b| (a, b)))
-//         Gen::new(move |rng| {
-//             let (a, s) = (g.func)(rng);
-//             let (b, t) = (h.func)(&s);
-//             ((a, b), t)
-//         })
-//     }
-// }
+impl<A, B> Gen<(A, B), fn(&SimpleRGen) -> ((A, B), SimpleRGen)> {
+    pub fn gen_tuple(
+        g: Gen<A, impl Fn(&SimpleRGen) -> (A, SimpleRGen)>,
+        h: Gen<B, impl Fn(&SimpleRGen) -> (B, SimpleRGen)>,
+    ) -> Gen<(A, B), impl Fn(&SimpleRGen) -> ((A, B), SimpleRGen)> {
+        // Mucho mejor pero no puedo solucionar problema
+        // al mover `h`.
+        // g.apply_then(move |a| h.map(move |b| (a, b)))
+        Gen::new(move |rng| {
+            let (a, s) = (g.func)(rng);
+            let (b, t) = (h.func)(&s);
+            ((a, b), t)
+        })
+    }
+}
 
 // impl<A, B, C> Gen<(A, B, C), fn(&SimpleRGen) -> ((A, B, C), SimpleRGen)> {
 //     pub fn gen_tuple3(
@@ -245,44 +245,44 @@ where
 //     }
 // }
 
-// impl<A, B, C, D> Gen<(A, B, C, D), fn(&SimpleRGen) -> ((A, B, C, D), SimpleRGen)> {
-//     pub fn gen_tuple4(
-//         g: Gen<A, impl Fn(&SimpleRGen) -> (A, SimpleRGen)>,
-//         h: Gen<B, impl Fn(&SimpleRGen) -> (B, SimpleRGen)>,
-//         j: Gen<C, impl Fn(&SimpleRGen) -> (C, SimpleRGen)>,
-//         k: Gen<D, impl Fn(&SimpleRGen) -> (D, SimpleRGen)>,
-//     ) -> Gen<(A, B, C, D), impl Fn(&SimpleRGen) -> ((A, B, C, D), SimpleRGen)> {
-//         // Mucho mejor pero no puedo solucionar problema
-//         // al mover `h`.
-//         // g.apply_then(move |a| h.map(move |b| (a, b)))
-//         Gen::new(move |rng| {
-//             let (a, s) = (g.func)(rng);
-//             let (b, t) = (h.func)(&s);
-//             let (c, u) = (j.func)(&t);
-//             let (d, v) = (k.func)(&u);
-//             ((a, b, c, d), v)
-//         })
-//     }
-// }
+impl<A, B, C, D> Gen<(A, B, C, D), fn(&SimpleRGen) -> ((A, B, C, D), SimpleRGen)> {
+    pub fn gen_tuple4(
+        g: Gen<A, impl Fn(&SimpleRGen) -> (A, SimpleRGen)>,
+        h: Gen<B, impl Fn(&SimpleRGen) -> (B, SimpleRGen)>,
+        j: Gen<C, impl Fn(&SimpleRGen) -> (C, SimpleRGen)>,
+        k: Gen<D, impl Fn(&SimpleRGen) -> (D, SimpleRGen)>,
+    ) -> Gen<(A, B, C, D), impl Fn(&SimpleRGen) -> ((A, B, C, D), SimpleRGen)> {
+        // Mucho mejor pero no puedo solucionar problema
+        // al mover `h`.
+        // g.apply_then(move |a| h.map(move |b| (a, b)))
+        Gen::new(move |rng| {
+            let (a, s) = (g.func)(rng);
+            let (b, t) = (h.func)(&s);
+            let (c, u) = (j.func)(&t);
+            let (d, v) = (k.func)(&u);
+            ((a, b, c, d), v)
+        })
+    }
+}
 
-// impl<A, B, C, D, E> Gen<(A, B, C, D, E), fn(&SimpleRGen) -> ((A, B, C, D, E), SimpleRGen)> {
-//     pub fn gen_tuple5(
-//         g: Gen<A, impl Fn(&SimpleRGen) -> (A, SimpleRGen)>,
-//         h: Gen<B, impl Fn(&SimpleRGen) -> (B, SimpleRGen)>,
-//         j: Gen<C, impl Fn(&SimpleRGen) -> (C, SimpleRGen)>,
-//         k: Gen<D, impl Fn(&SimpleRGen) -> (D, SimpleRGen)>,
-//         l: Gen<E, impl Fn(&SimpleRGen) -> (E, SimpleRGen)>,
-//     ) -> Gen<(A, B, C, D, E), impl Fn(&SimpleRGen) -> ((A, B, C, D, E), SimpleRGen)> {
-//         Gen::new(move |rng| {
-//             let (a, s) = (g.func)(rng);
-//             let (b, t) = (h.func)(&s);
-//             let (c, u) = (j.func)(&t);
-//             let (d, v) = (k.func)(&u);
-//             let (e, w) = (l.func)(&v);
-//             ((a, b, c, d, e), w)
-//         })
-//     }
-// }
+impl<A, B, C, D, E> Gen<(A, B, C, D, E), fn(&SimpleRGen) -> ((A, B, C, D, E), SimpleRGen)> {
+    pub fn gen_tuple5(
+        g: Gen<A, impl Fn(&SimpleRGen) -> (A, SimpleRGen)>,
+        h: Gen<B, impl Fn(&SimpleRGen) -> (B, SimpleRGen)>,
+        j: Gen<C, impl Fn(&SimpleRGen) -> (C, SimpleRGen)>,
+        k: Gen<D, impl Fn(&SimpleRGen) -> (D, SimpleRGen)>,
+        l: Gen<E, impl Fn(&SimpleRGen) -> (E, SimpleRGen)>,
+    ) -> Gen<(A, B, C, D, E), impl Fn(&SimpleRGen) -> ((A, B, C, D, E), SimpleRGen)> {
+        Gen::new(move |rng| {
+            let (a, s) = (g.func)(rng);
+            let (b, t) = (h.func)(&s);
+            let (c, u) = (j.func)(&t);
+            let (d, v) = (k.func)(&u);
+            let (e, w) = (l.func)(&v);
+            ((a, b, c, d, e), w)
+        })
+    }
+}
 
 impl Gen<bool, fn(&SimpleRGen) -> (bool, SimpleRGen)> {
     pub fn gen_bool() -> Gen<bool, fn(&SimpleRGen) -> (bool, SimpleRGen)> {
@@ -318,6 +318,20 @@ impl Gen<i64, fn(&SimpleRGen) -> (i64, SimpleRGen)> {
         end: i64,
     ) -> Gen<i64, impl Fn(&SimpleRGen) -> (i64, SimpleRGen)> {
         Gen::new(move |rng| rng.gen_in_range(start, end))
+    }
+}
+
+impl Gen<u8, fn(&SimpleRGen) -> (u8, SimpleRGen)> {
+    pub fn gen_u8() -> Gen<u8, fn(&SimpleRGen) -> (u8, SimpleRGen)> {
+        Gen::new(|rng| {
+            let (i, r) = rng.gen_i16();
+
+            if i < 0 {
+                (-i as u8, r)
+            } else {
+                (i as u8, r)
+            }
+        })
     }
 }
 
@@ -361,46 +375,45 @@ impl Gen<f64, fn(&SimpleRGen) -> (f64, SimpleRGen)> {
 }
 
 impl Gen<String, fn(&SimpleRGen) -> (String, SimpleRGen)> {
-    //     pub fn gen_string_with_max_len(
-    //         max_len: usize,
-    //     ) -> Gen<String, impl Fn(&SimpleRGen) -> (String, SimpleRGen)> {
-    //         // Podría hacerlo con filter también, llamando gen_string
-    //         // y filtrando si len > max_len, pero creo que bastante más costoso,
-    //         // mayor cuanto menor longitud de cadena.
-    //         Gen::new(move |rng| {
-    //             let (len, n_rng) = Gen::gen_in_range(0, max_len as i64).run(rng);
-    //             Gen::gen_string_with_len(len as usize).run(&n_rng)
-    //         })
-    //     }
+    pub fn gen_string_with_max_len(
+        max_len: usize,
+    ) -> Gen<String, impl Fn(&SimpleRGen) -> (String, SimpleRGen)> {
+        // Podría hacerlo con filter también, llamando gen_string
+        // y filtrando si len > max_len, pero creo que bastante más costoso,
+        // mayor cuanto menor longitud de cadena.
+        Gen::new(move |rng| {
+            let (len, n_rng) = Gen::gen_in_range(0, max_len as i64).run(rng);
+            Gen::gen_string_with_len(len as usize).run(&n_rng)
+        })
+    }
 
-    //     pub fn gen_string_with_len(
-    //         len: usize,
-    //     ) -> Gen<String, impl Fn(&SimpleRGen) -> (String, SimpleRGen)> {
-    //         Gen::new(move |rng| {
-    //             let mut acc = String::default();
-    //             let mut t: Option<SimpleRGen> = None;
-    //             for _ in 0..len {
-    //                 // info!("{idx}");
-    //                 let (a, ri) = match t {
-    //                     Some(t) => t.gen_in_range(0, 255),
-    //                     _ => rng.gen_in_range(0, 255),
-    //                 };
-    //                 t = Some(ri);
-    //                 let c = a as u8 as char;
-    //                 acc.push(c);
-    //             }
+    pub fn gen_string_with_len(
+        len: usize,
+    ) -> Gen<String, impl Fn(&SimpleRGen) -> (String, SimpleRGen)> {
+        Gen::new(move |rng| {
+            let mut acc = String::default();
+            let mut t: Option<SimpleRGen> = None;
+            for _ in 0..len {
+                // info!("{idx}");
+                let (a, ri) = match t {
+                    Some(t) => t.gen_in_range(0, 255),
+                    _ => rng.gen_in_range(0, 255),
+                };
+                t = Some(ri);
+                let c = a as u8 as char;
+                acc.push(c);
+            }
 
-    //             (acc, t.unwrap_or_default())
-    //         })
-    //     }
+            (acc, t.unwrap_or_default())
+        })
+    }
 
-    //     pub fn gen_string() -> Gen<String, fn(&SimpleRGen) -> (String, SimpleRGen)> {
-    //         Gen::new(move |rng| {
-    //             let (a, s) = Gen::gen_in_range(1, 100).run(rng);
-    //             info!("max len {a}");
-    //             Gen::gen_string_with_len(a as usize).run(&s)
-    //         })
-    //     }
+    pub fn gen_string() -> Gen<String, fn(&SimpleRGen) -> (String, SimpleRGen)> {
+        Gen::new(move |rng| {
+            let (a, s) = Gen::gen_in_range(1, 100).run(rng);
+            Gen::gen_string_with_len(a as usize).run(&s)
+        })
+    }
 
     pub fn gen_alpha_lower_16bits(
         len: usize,
@@ -495,7 +508,6 @@ impl Gen<String, fn(&SimpleRGen) -> (String, SimpleRGen)> {
 impl<A, F> Gen<A, F>
 where
     F: Fn(&SimpleRGen) -> (A, SimpleRGen) + 'static,
-    // FV: Fn(&SimpleRGen) -> (Vec<A>, SimpleRGen) + 'static,
 {
     pub fn list_of_n(
         len: usize,
@@ -528,6 +540,7 @@ where
             let (a, s) = rng.gen_in_range(0, 1000);
             let mut acc = Vec::<A>::new();
             let mut t: Option<SimpleRGen> = Some(s); //None;
+
             for _ in 0..a {
                 let (a, ri) = match t {
                     Some(t) => g.run(&t),
@@ -570,3 +583,31 @@ where
 //         })
 //     }
 // }
+
+pub fn random_select_from_pair<T>(p: (T, T)) -> Gen<T, impl Fn(&SimpleRGen) -> (T, SimpleRGen)>
+where
+    T: Clone,
+{
+    Gen::new(move |rng| {
+        let (b, s) = rng.gen_bool();
+        if b {
+            (p.0.clone(), s)
+        } else {
+            (p.1.clone(), s)
+        }
+    })
+}
+
+pub fn random_select_from_vec<T>(p: Vec<T>) -> Gen<T, impl Fn(&SimpleRGen) -> (T, SimpleRGen)>
+where
+    T: Clone,
+{
+    let len = p.len();
+
+    Gen::new(move |rng| {
+        let (u, s) = rng.gen_u32();
+        let i = (u as usize) % len;
+
+        (p[i].clone(), s)
+    })
+}

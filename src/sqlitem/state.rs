@@ -10,7 +10,7 @@ use egui_file_dialog::FileDialog;
 use serde::{Deserialize, Serialize};
 use sqlx::SqlitePool;
 
-use crate::sqlx_common::state::SqlState;
+use crate::sqlx_common::state::{SqlConnectionDefinition, SqlState};
 
 #[derive(Serialize, Clone, Debug, Deserialize)]
 pub struct SQLiteAppState {
@@ -36,6 +36,7 @@ pub struct SQLiteState {
     pub connect_to_file: bool,
     pub current_connection: SQLiteConnectionDefinition,
     pub sql: SqlState,
+    pub tmp_connection: SqlConnectionDefinition, // Aunque no gastemos todo, nos simplifia paso de mensajes de sqlx
 }
 
 /// No tengo muy claro cómo hacerlo mejor.
@@ -45,5 +46,6 @@ pub struct SQLiteState {
 pub struct SQLiteConnectionDefinition {
     // pub path: std::path::Path,
     // pub path: OsStr
+    pub name: String,
     pub path: String,
 }

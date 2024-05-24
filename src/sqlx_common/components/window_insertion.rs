@@ -12,7 +12,7 @@ use std::fmt::Debug;
 use std::marker::PhantomData;
 
 use crate::{
-    common::internationalization::I18n,
+    common::internationalization::I18nSqlx,
     quote,
     sqlx_common::{
         presenter::create_columns_string,
@@ -39,7 +39,7 @@ where
         ctx: &egui::Context,
         state: &mut SqlState,
         table_name: &str,
-        _i18n: &I18n,
+        _i18n: &I18nSqlx,
         should_be_wrapped: impl Fn(&str) -> bool,
     ) {
         egui::Window::new(format!("Insertar Fila {}", table_name))

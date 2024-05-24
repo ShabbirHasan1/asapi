@@ -36,7 +36,7 @@ use sqlitem::view::SQLiteView;
 use std::fs::{self, OpenOptions};
 
 use crate::app_state::{AppState, ViewType};
-use crate::common::fs::load_state;
+use crate::common::fs as asapi_fs;
 use crate::httpm::view::HttpView;
 
 /// Struct con los atributos que podemos pasar a cualquier parte de la apliación.
@@ -82,7 +82,7 @@ impl Asapi {
         }
 
         const FILE_NAME: &str = "asapi_workspaces.json";
-        let state = match load_state(FILE_NAME) {
+        let state = match asapi_fs::load_state(FILE_NAME) {
             Ok(state) => state,
             Err(err) => {
                 log::error!("{err:?}");
@@ -134,13 +134,14 @@ impl eframe::App for Asapi {
             }
             ViewType::Pg => self
                 .pg
-                .update(ctx, _frame, &mut self.app_state, &self.rt, &i18n),
-            ViewType::MySql => self
-                .mysql
-                .update(ctx, _frame, &mut self.app_state, &self.rt, &i18n),
+                .update(ctx, _frame, &mut self.app_state, &self.rt, &i18n.sqlx),
+            ViewType::MySql => {
+                self.mysql
+                    .update(ctx, _frame, &mut self.app_state, &self.rt, &i18n.sqlx)
+            }
             ViewType::SQLite => {
                 self.sqlite
-                    .update(ctx, _frame, &mut self.app_state, &self.rt, &i18n)
+                    .update(ctx, _frame, &mut self.app_state, &self.rt, &i18n.sqlx)
             }
             ViewType::Mongo => {
                 self.mongo

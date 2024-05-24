@@ -6,9 +6,9 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
-use std::collections::HashMap;
 use sqlx::mysql::{MySqlPoolOptions, MySqlRow};
 use sqlx::{MySql, Pool, Row};
+use std::collections::HashMap;
 use tokio::sync::mpsc::Sender;
 
 use crate::sqlx_common::presenter::{self as sqlpresenter, Action, SqlPresenter};
@@ -75,10 +75,7 @@ pub async fn tables_info(
             column_key,
         ];
 
-        result
-            .entry(t_name)
-            .or_default()
-            .push(column_details);
+        result.entry(t_name).or_default().push(column_details);
     }
 
     Ok(result)

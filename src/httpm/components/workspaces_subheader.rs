@@ -83,7 +83,7 @@ impl HttpView {
                                     self.body.files[idx] = param
                                         .1
                                         .split(',')
-                                        .map(|s| PathBuf::from(s))
+                                        .map(PathBuf::from)
                                         .collect::<Vec<PathBuf>>();
                                 }
                             }

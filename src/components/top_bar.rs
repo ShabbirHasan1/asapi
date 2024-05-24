@@ -11,7 +11,7 @@ use tokio;
 use tokio::runtime::Runtime;
 
 use crate::app_state::{AppState, ViewType};
-use crate::common::fs::{async_save_state, load_state, save_state};
+use crate::common::fs;
 use crate::common::internationalization::{I18n, I18nOptions};
 
 #[derive(Default)]
@@ -40,7 +40,7 @@ impl AppTopBar {
                     ui.label(&i18n.top_export_warning);
                     ui.horizontal(|ui| {
                         if ui.button("Exportar").clicked() {
-                            let _ = save_state(app_state, FILE_NAME);
+                            let _ = fs::save_state(app_state, FILE_NAME);
                             self.is_export_confirmation_open = false;
                         }
 
@@ -108,7 +108,7 @@ impl AppTopBar {
                     .add(egui::Button::new(&i18n.top_import_json_state))
                     .clicked()
                 {
-                    *app_state = match load_state(FILE_NAME) {
+                    *app_state = match fs::load_state(FILE_NAME) {
                         Ok(state) => state,
                         Err(_e) => AppState::default(),
                     };
@@ -156,9 +156,9 @@ impl AppTopBar {
                     if ui
                         .checkbox(
                             &mut app_state.pg.performance_table,
-                            &i18n.pg_performance_table,
+                            &i18n.sqlx.pg.performance_table,
                         )
-                        .on_hover_text(&i18n.pg_info_performance_table)
+                        .on_hover_text(&i18n.sqlx.pg.info_performance_table)
                         .clicked()
                     {
                         app_state.pg.show_sidebar = !app_state.pg.show_sidebar;
@@ -184,9 +184,9 @@ impl AppTopBar {
                     if ui
                         .checkbox(
                             &mut app_state.mysql.performance_table,
-                            &i18n.mysql_performance_table,
+                            &i18n.sqlx.mysql.performance_table,
                         )
-                        .on_hover_text(&i18n.mysql_info_performance_table)
+                        .on_hover_text(&i18n.sqlx.mysql.info_performance_table)
                         .clicked()
                     {
                         ui.close_menu();
@@ -208,9 +208,9 @@ impl AppTopBar {
                     if ui
                         .checkbox(
                             &mut app_state.sqlite.performance_table,
-                            &i18n.sqlite_performance_table,
+                            &i18n.sqlx.sqlite.performance_table,
                         )
-                        .on_hover_text(&i18n.sqlite_info_performance_table)
+                        .on_hover_text(&i18n.sqlx.sqlite.info_performance_table)
                         .clicked()
                     {
                         ui.close_menu();
@@ -251,10 +251,11 @@ impl AppTopBar {
                     || redis_btn.clicked()
                     || kafka_btn.clicked()
                 {
-                    let cloned_state = app_state.clone();
-                    rt.spawn(async move {
-                        let _ = async_save_state(&cloned_state, FILE_NAME).await;
-                    });
+                    // No tenemos que grabar cada vez.
+                    // let cloned_state = app_state.clone();
+                    // rt.spawn(async move {
+                    // let _ = async_save_state(&cloned_state, FILE_NAME).await;
+                    // });
                 }
             });
         });

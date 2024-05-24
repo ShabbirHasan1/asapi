@@ -81,13 +81,10 @@ impl RegularTable {
                         for (col_idx, col) in row_data.iter().enumerate() {
                             if state.column_visible[col_idx] {
                                 row.col(|ui| {
-                                    if ui
-                                        .add(
-                                            egui::TextEdit::singleline(&mut col.as_str())
-                                                .desired_width(f32::INFINITY),
-                                        )
-                                        .clicked()
-                                    {}
+                                    ui.add(
+                                        egui::TextEdit::singleline(&mut col.as_str())
+                                            .desired_width(f32::INFINITY),
+                                    );
                                 });
                             }
                         }

@@ -16,6 +16,7 @@
           {
             "name": "/fitosat/api/v1/project",
             "method": "Get",
+            "multipart": false,
             "url": "http://localhost:2015/fitosat/project/api/v1/9c892526-21d4-437d-a49b-ae1eb5414d60",
             "body_params": [],
             "headers_params": [
@@ -386,6 +387,7 @@
     "performance_table": false,
     "connections": [
       {
+        "name": "Pg 1",
         "host": "localhost",
         "port": "5432",
         "user": "postgres",
@@ -393,10 +395,11 @@
         "dbname": "fitosat"
       },
       {
+        "name": "Pg 2 WRONG PASS",
         "host": "localhost",
         "port": "5432",
         "user": "postgres",
-        "password": "password",
+        "password": "foobar",
         "dbname": "fitosat"
       }
     ]
@@ -406,6 +409,7 @@
     "performance_table": false,
     "connections": [
       {
+        "name": "Mariadb 1",
         "host": "localhost",
         "port": "3306",
         "user": "user",
@@ -419,6 +423,7 @@
     "performance_table": false,
     "connections": [
       {
+        "name": "Sqlite 1",
         "path": "/home/nando/projects/asapi/app/sqlite-ddbb/db.sqlite3"
       }
     ]

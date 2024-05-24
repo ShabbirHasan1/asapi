@@ -4,7 +4,7 @@
     "dark_theme": false,
     "language": "ES"
   },
-  "selected_view": "Pg",
+  "selected_view": "Http",
   "show_settings": false,
   "http": {
     "show_sidebar": true,
@@ -138,19 +138,23 @@
             "body_params": [
               [
                 "name",
-                "\"Nombre prueba\"",false
+                "\"Nombre prueba\"",
+                false
               ],
               [
                 "id",
-                "\"cd8dea2d-3b27-4c83-aee3-33ad08c00693\"",false
+                "\"cd8dea2d-3b27-4c83-aee3-33ad08c00693\"",
+                false
               ],
               [
                 "date",
-                "\"2024-01-09\"",false
+                "\"2024-01-09\"",
+                false
               ],
               [
                 "path",
-                "\"foo\"",false
+                "\"foo\"",
+                false
               ]
             ],
             "headers_params": []
@@ -163,19 +167,23 @@
             "body_params": [
               [
                 "name",
-                "\"Nombre prueba\"",false
+                "\"Nombre prueba\"",
+                false
               ],
               [
                 "id",
-                "\"cd8dea2d-3b27-4c83-aee3-33ad08c00693\"",false
+                "\"cd8dea2d-3b27-4c83-aee3-33ad08c00693\"",
+                false
               ],
               [
                 "date",
-                "\"2024-01-09T11:00:00Z\"",false
+                "\"2024-01-09T11:00:00Z\"",
+                false
               ],
               [
                 "path",
-                "\"foo\"",false
+                "\"foo\"",
+                false
               ]
             ],
             "headers_params": [
@@ -193,19 +201,23 @@
             "body_params": [
               [
                 "name",
-                "\"Nombre prueba\"",false
+                "\"Nombre prueba\"",
+                false
               ],
               [
                 "id",
-                "\"aa8dea2d-3b27-4c83-aee3-33ad08c00693\"",false
+                "\"aa8dea2d-3b27-4c83-aee3-33ad08c00693\"",
+                false
               ],
               [
                 "date",
-                "\"2024-01-09T11:00:00Z\"",false
+                "\"2024-01-09T11:00:00Z\"",
+                false
               ],
               [
                 "path",
-                "\"foo\"",false
+                "\"foo\"",
+                false
               ]
             ],
             "headers_params": []
@@ -218,11 +230,13 @@
             "body_params": [
               [
                 "id",
-                "\"cd8dea2d-3b27-4c83-aee3-33ad08c00693\"",false
+                "\"cd8dea2d-3b27-4c83-aee3-33ad08c00693\"",
+                false
               ],
               [
                 "path",
-                "\"/path/to\"",false
+                "\"/path/to\"",
+                false
               ]
             ],
             "headers_params": []
@@ -259,19 +273,23 @@
             "body_params": [
               [
                 "name",
-                "\"Nombre prueba\"",false
+                "\"Nombre prueba\"",
+                false
               ],
               [
                 "id",
-                "\"cd8dea2d-3b27-4c83-aee3-33ad08c00693\"",false
+                "\"cd8dea2d-3b27-4c83-aee3-33ad08c00693\"",
+                false
               ],
               [
                 "date",
-                "\"2024-01-09T11:00:00Z\"",false
+                "\"2024-01-09T11:00:00Z\"",
+                false
               ],
               [
                 "path",
-                "\"foo\"",false
+                "\"foo\"",
+                false
               ]
             ],
             "headers_params": [
@@ -296,19 +314,23 @@
             "body_params": [
               [
                 "id",
-                "\"cd8dea2d-3b27-4c83-aee3-33ad08c0069\"",false
+                "\"cd8dea2d-3b27-4c83-aee3-33ad08c0069\"",
+                false
               ],
               [
                 "name",
-                "\"Nombre de prueba\"",false
+                "\"Nombre de prueba\"",
+                false
               ],
               [
                 "date",
-                "\"2024-01-10\"",false
+                "\"2024-01-10\"",
+                false
               ],
               [
                 "path",
-                "\"foo\"",false
+                "\"foo\"",
+                false
               ]
             ],
             "headers_params": []
@@ -321,15 +343,18 @@
             "body_params": [
               [
                 "id",
-                "\"cd8dea2d-3b27-4c83-aee3-33ad08c0069\"",false
+                "\"cd8dea2d-3b27-4c83-aee3-33ad08c0069\"",
+                false
               ],
               [
                 "name",
-                "\"Nombre de prueba\"",false
+                "\"Nombre de prueba\"",
+                false
               ],
               [
                 "date",
-                "\"2024-01-10\"",false
+                "\"2024-01-10\"",
+                false
               ]
             ],
             "headers_params": []
@@ -379,13 +404,7 @@
             "method": "Post",
             "url": "http://localhost:8082/images/upload",
             "multipart": true,
-            "body_params": [
-              [
-                "files",
-                "\"/home/nando/projects/asapi/app/egui-dynamic/Cargo.lock, /home/nando/projects/asapi/app/egui-dynamic/Cargo.toml\"",
-                true
-              ]
-            ],
+            "body_params": [],
             "headers_params": [
               [
                 "ferlola",
@@ -405,28 +424,6 @@
                 "etsia"
               ]
             ]
-          },
-          {
-            "name": "http://localhost:8082/foo",
-            "method": "Post",
-            "url": "http://localhost:8082/foo",
-            "multipart": false,
-            "body_params": [
-              [
-                "body",
-                "\"value1\"",false
-              ]
-            ],
-            "headers_params": [
-              [
-                "ferlola",
-                "etsia"
-              ],
-              [
-                "header",
-                "value1"
-              ]
-            ]
           }
         ],
         "show_options": false
@@ -439,6 +436,7 @@
     "performance_table": false,
     "connections": [
       {
+        "name": "Pg 1",
         "host": "localhost",
         "port": "5432",
         "user": "postgres",
@@ -446,32 +444,12 @@
         "dbname": "fitosat"
       },
       {
+        "name": "Pg 2 WRONG PASS",
         "host": "localhost",
         "port": "5432",
         "user": "postgres",
-        "password": "password",
+        "password": "foobar",
         "dbname": "fitosat"
-      },
-      {
-        "host": "localhost",
-        "port": "5432",
-        "user": "postgres",
-        "password": "password",
-        "dbname": "spade"
-      },
-      {
-        "host": "localhost",
-        "port": "5433",
-        "user": "postgres",
-        "password": "password",
-        "dbname": "spade"
-      },
-      {
-        "host": "foo",
-        "port": "543",
-        "user": "asfd",
-        "password": "asdfasdf",
-        "dbname": "asdf"
       }
     ]
   },
@@ -480,6 +458,7 @@
     "performance_table": false,
     "connections": [
       {
+        "name": "Mariadb 1",
         "host": "localhost",
         "port": "3306",
         "user": "user",
@@ -493,6 +472,7 @@
     "performance_table": false,
     "connections": [
       {
+        "name": "Sqlite 1",
         "path": "/home/nando/projects/asapi/app/sqlite-ddbb/db.sqlite3"
       }
     ]
@@ -515,44 +495,12 @@
     "performance_table": false,
     "connections": [
       {
-        "name": "Conexión 1",
-        "host": "localhost",
-        "port": "27017",
-        "user": "",
-        "password": "",
-        "is_srv": false
-      },
-      {
-        "name": "Conexión 2",
-        "host": "localhost",
-        "port": "27017",
-        "user": "root",
-        "password": "pass",
-        "is_srv": false
-      },
-      {
-        "name": "Conexión 3",
-        "host": "localhost",
-        "port": "2707",
-        "user": "wrong-user",
-        "password": "pass",
-        "is_srv": false
-      },
-      {
-        "name": "Conexión 4",
+        "name": "Mongo",
         "host": "localhost",
         "port": "27017",
         "user": "root",
         "password": "password",
         "is_srv": false
-      },
-      {
-        "name": "INCORRECTO password",
-        "host": "localhost",
-        "port": "27017",
-        "user": "root",
-        "password": "password",
-        "is_srv": true
       }
     ]
   },

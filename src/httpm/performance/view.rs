@@ -17,7 +17,7 @@ use tokio::sync::mpsc::{self, Receiver, Sender};
 use tokio::sync::Semaphore;
 
 use crate::common::generator::{Gen, SimpleRGen};
-use crate::common::internationalization::{I18n, I18nHttp};
+use crate::common::internationalization::I18nHttp;
 use crate::httpm::methods::HttpMethod;
 use crate::httpm::request::{api_request, Request};
 

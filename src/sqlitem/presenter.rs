@@ -6,8 +6,8 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
-use std::collections::HashMap;
 use sqlx::{sqlite::SqliteRow, Pool, Row, Sqlite};
+use std::collections::HashMap;
 use tokio::sync::mpsc::Sender;
 
 use crate::sqlx_common::presenter::{self as sqlpresenter, Action, SqlPresenter};
@@ -18,24 +18,7 @@ pub async fn connect(url: &str) -> Result<sqlx::Pool<sqlx::Sqlite>, sqlx::Error>
     Pool::<Sqlite>::connect(url).await
 }
 
-// pub async fn list_connection_tables(pool: &Pool<Sqlite>) -> Result<Vec<String>, sqlx::Error> {
-//     let rows = sqlx::query("SELECT name FROM sqlite_master WHERE type='table'")
-//         .fetch_all(pool)
-//         .await?;
-
-//     let mut table_names = vec![String::default(); rows.len()];
-//     for (idx, row) in rows.iter().enumerate() {
-//         let name: String = row.get("name");
-//         table_names[idx] = name;
-//     }
-
-//     Ok(table_names)
-// }
-
-pub async fn tables_info(
-    pool: &Pool<Sqlite>,
-    // t_names: &Vec<String>,
-) -> HashMap<String, Vec<Vec<String>>> {
+pub async fn tables_info(pool: &Pool<Sqlite>) -> HashMap<String, Vec<Vec<String>>> {
     let stmt = "WITH all_tables AS (SELECT name FROM sqlite_master WHERE type = 'table')
            SELECT at.name table_name, pti.*
            FROM all_tables at INNER JOIN pragma_table_info(at.name) pti
@@ -60,10 +43,7 @@ pub async fn tables_info(
                     not_null.to_string(),
                     default_val.map_or(String::default(), |v| v),
                 ];
-                result
-                    .entry(t_name)
-                    .or_default()
-                    .push(column_details);
+                result.entry(t_name).or_default().push(column_details);
             }
             result
         }
@@ -86,7 +66,6 @@ pub async fn select_all_with_column_description(
     table_name: &str,
     sort_order: QuerySort,
 ) {
-    // let data = select_all(pool, table_name, sort_order).await;
     match get_all_with_column_description(pool, table_name, sort_order).await {
         Some(rows) => {
             let _ = tx
@@ -174,28 +153,6 @@ pub async fn select_all(
         Err(_) => Vec::default(),
     }
 }
-
-// pub async fn get_table_info(
-//     pool: &Pool<Sqlite>,
-//     table_name: &str,
-// ) -> Result<Vec<(String, String, bool, Option<String>, i64)>, sqlx::Error> {
-//     let mut list = Vec::new();
-//     let rows = sqlx::query(format!("PRAGMA table_info ({});", table_name).as_ref())
-//         .bind(table_name)
-//         .fetch_all(pool)
-//         .await?;
-
-//     for row in rows {
-//         let name: String = row.get("name");
-//         let type_: String = row.get("type");
-//         let not_null: bool = row.get("notnull");
-//         let default_val: Option<String> = row.get("dflt_value");
-//         let pk: i64 = row.get("pk");
-
-//         list.push((name, type_, not_null, default_val, pk));
-//     }
-//     Ok(list)
-// }
 
 pub async fn run_statement_with_delete_control(
     pool: &Pool<Sqlite>,

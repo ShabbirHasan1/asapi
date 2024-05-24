@@ -58,7 +58,7 @@ impl RedisView {
             });
 
             // --> Abrimos ventana para definir conexión <--
-            ui.menu_button(&i18n.pg_btn_add_connection, |ui| {
+            ui.menu_button(&i18n.sqlx.pg.btn_add_connection, |ui| {
                 ui.set_min_width(200.0);
 
                 ui.horizontal(|ui| {

@@ -16,8 +16,6 @@ use std::str::FromStr;
 use tokio::fs::File;
 use tokio_util::codec::{BytesCodec, FramedRead};
 
-use crate::info;
-
 use crate::httpm::methods::HttpMethod;
 
 #[derive(Clone, Default, Serialize, Deserialize, Debug)]
@@ -61,7 +59,7 @@ pub async fn api_request(
                 .map(|(k, v, _)| (k.clone(), serde_json::from_str(v).unwrap_or_default()))
                 .collect();
             let body = JsonValue::Object(json_map);
-            info!("{:?}", body);
+            log::info!("{:?}", body);
             client
                 .request(method.parse_to_reqwest_method(), url)
                 .headers(headers_map)
@@ -99,11 +97,11 @@ fn get_headers(vs: &Vec<(String, String)>) -> HeaderMap {
                 headers.insert(name, value);
             }
             _ => {
-                info!("Error for {key}: {value}");
+                log::info!("Error for {key}: {value}");
             }
         };
     }
-    info!("{:?}", headers);
+    log::info!("{:?}", headers);
 
     headers
 }

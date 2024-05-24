@@ -90,7 +90,7 @@ impl MongoSideNav {
                 });
 
                 // --> Abrimos ventana para definir conexión <--
-                ui.menu_button(&i18n.pg_btn_add_connection, |ui| {
+                ui.menu_button(&i18n.sqlx.pg.btn_add_connection, |ui| {
                     self.connections_subpanel
                         .edit_connection(rt, tx, ui, local_st, None, i18n);
                 });

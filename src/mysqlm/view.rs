@@ -15,11 +15,12 @@ use super::components::sidenav::MySqlSideNav;
 use super::data_generation::generate_mysql_value;
 use super::mysql_type::MySqlType;
 use super::parser::mysql_type_from_string;
-use super::presenter::run_statement_with_delete_control;
+use super::presenter;
 use super::state::{MySqlAppState, MySqlState};
+
 use crate::app_state::AppState;
-use crate::common::internationalization::I18n;
-use crate::common::syntax_highlighting::{highlight, CodeTheme};
+use crate::common::internationalization::I18nSqlx;
+use crate::components::result_panel::ui_response_panel;
 use crate::quote;
 use crate::sqlx_common::components::window_generator::GeneratorWindow;
 use crate::sqlx_common::components::window_insertion::InsertionWindow;
@@ -30,6 +31,7 @@ use crate::sqlx_common::table::{PerformanceTable, RegularTable};
 use crate::sqlx_common::traits::{Presenter, Show};
 
 pub struct MySqlView {
+    sidenav: MySqlSideNav,
     state: MySqlState,
     tx: tokio::sync::mpsc::Sender<SqlxMessage>,
     rx: tokio::sync::mpsc::Receiver<SqlxMessage>,
@@ -48,7 +50,8 @@ impl Default for MySqlView {
         let ins_window = InsertionWindow::default();
 
         Self {
-            state: MySqlState::default(),
+            sidenav: Default::default(),
+            state: Default::default(),
             tx,
             rx,
             tx_sync,
@@ -66,7 +69,7 @@ impl MySqlView {
         _frame: &mut eframe::Frame,
         app_state: &mut AppState,
         rt: &Runtime,
-        i18n: &I18n,
+        i18n: &I18nSqlx,
     ) {
         // =======================================
         // Acciones iniciales
@@ -111,7 +114,7 @@ impl MySqlView {
         // =======================================
         // Paneles laterales
         // =======================================
-        MySqlSideNav::show(
+        self.sidenav.show(
             ctx,
             rt,
             &self.tx,
@@ -128,8 +131,12 @@ impl MySqlView {
 
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.set_width(ui.available_width());
-            egui::CollapsingHeader::new("Table Columns")
+
+            ui_response_panel(ui, &self.state.sql.last_response_error);
+
+            egui::CollapsingHeader::new(&i18n.table_columns)
                 .default_open(false)
+                .show_background(true)
                 .show(ui, |ui| {
                     ui.horizontal_wrapped(|ui| {
                         for (idx, (c_name, _c_type)) in
@@ -150,9 +157,10 @@ impl MySqlView {
             ui.separator();
 
             // --> Definimos la entrada y lanzar stmt por parte del usuario <--
-            let theme = CodeTheme::from_memory(ctx);
+            let theme = egui_extras::syntax_highlighting::CodeTheme::from_memory(ctx);
             let mut sql_layouter = |ui: &egui::Ui, string: &str, wrap_width: f32| {
-                let mut layout_job = highlight(ui.ctx(), &theme, string, "sql");
+                let mut layout_job =
+                    egui_extras::syntax_highlighting::highlight(ui.ctx(), &theme, string, "sql");
                 layout_job.wrap.max_width = wrap_width;
                 ui.fonts(|f| f.layout_job(layout_job))
             };
@@ -300,6 +308,12 @@ impl MySqlView {
                 let delete_stmt = format!("DELETE FROM {:}", t_name);
                 self.run_statement(ctx, rt, delete_stmt, !app_state.pg.performance_table, true);
             }
+            SqlxMessage::AddConnection(def) => {
+                app_state.mysql.connections.push(def);
+            }
+            SqlxMessage::EditConnection((idx, def)) => {
+                app_state.mysql.connections[idx] = def;
+            }
         }
     }
 
@@ -311,6 +325,12 @@ impl MySqlView {
         delete_allowed: bool,
         make_all_visible: bool,
     ) {
+        println!("=============================\n{stmt}\n==================================");
+        self.state.sql.last_response_error = None;
+        // Me genera error por last_idx first_idx siendo 0 y habiendo valores.
+        // Hasta que no me vuelva a salir el bug dejar estar.
+        // self.state.sql.reset();
+
         // Guarda por si lanzamos query cuando no hay conexión.
         // Poddríamos hacer renderizado condicional, pero así reducimos algo la indentación.
         if self.state.pool.is_none() {
@@ -322,7 +342,7 @@ impl MySqlView {
         let cloned_ctx = ctx.clone();
 
         rt.spawn(async move {
-            run_statement_with_delete_control(
+            presenter::run_statement_with_delete_control(
                 &pool_ref,
                 &tx_cloned,
                 stmt.as_ref(),
