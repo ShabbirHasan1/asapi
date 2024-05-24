@@ -18,19 +18,26 @@ use crate::common::internationalization::{I18n, I18nOptions};
 pub struct AppTopBar {
     show_settings: bool,
     is_export_confirmation_open: bool,
+    file_name: &'static str,
 }
 
 impl AppTopBar {
+    pub fn new(file_name: &'static str) -> Self {
+        AppTopBar {
+            show_settings: Default::default(),
+            is_export_confirmation_open: Default::default(),
+            file_name,
+        }
+    }
+
     pub fn update(
         self: &mut AppTopBar,
         ctx: &egui::Context,
         ui: &mut egui::Ui,
-        rt: &Runtime,
+        _rt: &Runtime,
         app_state: &mut AppState,
         i18n: &I18n,
     ) {
-        const FILE_NAME: &str = "asapi_workspaces.json";
-
         if self.is_export_confirmation_open {
             egui::Window::new("Confirmar Exportación")
                 // .open(&mut self.is_export_confirmation_open)
@@ -40,7 +47,7 @@ impl AppTopBar {
                     ui.label(&i18n.top_export_warning);
                     ui.horizontal(|ui| {
                         if ui.button("Exportar").clicked() {
-                            let _ = fs::save_state(app_state, FILE_NAME);
+                            let _ = fs::save_state(app_state, self.file_name, true);
                             self.is_export_confirmation_open = false;
                         }
 
@@ -108,7 +115,7 @@ impl AppTopBar {
                     .add(egui::Button::new(&i18n.top_import_json_state))
                     .clicked()
                 {
-                    *app_state = match fs::load_state(FILE_NAME) {
+                    *app_state = match fs::load_state(self.file_name) {
                         Ok(state) => state,
                         Err(_e) => AppState::default(),
                     };

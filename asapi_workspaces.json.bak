@@ -16,8 +16,8 @@
           {
             "name": "/fitosat/api/v1/project",
             "method": "Get",
-            "multipart": false,
             "url": "http://localhost:2015/fitosat/project/api/v1/9c892526-21d4-437d-a49b-ae1eb5414d60",
+            "multipart": false,
             "body_params": [],
             "headers_params": [
               [
@@ -30,18 +30,22 @@
             "name": "/pipeline/api/v1",
             "method": "Put",
             "url": "http://localhost:2015/fitosat/pipeline/api/v1",
+            "multipart": false,
             "body_params": [
               [
                 "status",
-                "\"odm.created'"
+                "\"odm.created'",
+                false
               ],
               [
                 "odm_info",
-                "{\"name\":\"3a80144a-a1dc-44c9-ac03-e6e887edbd7c\",\"uuid\":\"3a80144a-a1dc-44c9-ac03-e6e887edbd7c\",\"status\":{\"code\":40},\"options\":[],\"progress\":100,\"dateCreated\":1707152226597,\"imagesCount\":210,\"processingTime\":516572}"
+                "{\"name\":\"3a80144a-a1dc-44c9-ac03-e6e887edbd7c\",\"uuid\":\"3a80144a-a1dc-44c9-ac03-e6e887edbd7c\",\"status\":{\"code\":40},\"options\":[],\"progress\":100,\"dateCreated\":1707152226597,\"imagesCount\":210,\"processingTime\":516572}",
+                false
               ],
               [
                 "pipelineId",
-                "\"3a80144a-a1dc-44c9-ac03-e6e887edbd7c\""
+                "\"3a80144a-a1dc-44c9-ac03-e6e887edbd7c\"",
+                false
               ]
             ],
             "headers_params": [
@@ -55,6 +59,7 @@
             "name": "/fitosat/subplot/api/v1/crop",
             "method": "Get",
             "url": "http://localhost:2015/fitosat/subplot/api/v1/crop",
+            "multipart": false,
             "body_params": [],
             "headers_params": [
               [
@@ -67,6 +72,7 @@
             "name": "/fitosat/subplot/api/v1/soil",
             "method": "Get",
             "url": "http://localhost:2015/fitosat/subplot/api/v1/soil",
+            "multipart": false,
             "body_params": [],
             "headers_params": [
               [
@@ -79,6 +85,7 @@
             "name": "/fitosat/subplot/api/v1/project/:project-id",
             "method": "Get",
             "url": "http://localhost:2015/fitosat/subplot/api/v1/project/2efa8127-fb47-4bd8-a52f-0c14517744d2",
+            "multipart": false,
             "body_params": [],
             "headers_params": [
               [
@@ -98,6 +105,7 @@
             "name": "/products/project/:projectid",
             "method": "Get",
             "url": "http://localhost:8808/products/project/44133baa-77f8-439f-997f-c5c9a9e7a259",
+            "multipart": false,
             "body_params": [],
             "headers_params": []
           },
@@ -105,6 +113,7 @@
             "name": "/sentinel/api/v1/:spId",
             "method": "Get",
             "url": "http://localhost:8808/sentinel/api/v1/45d6addf-598f-4442-8c4b-2b1ba494233a",
+            "multipart": false,
             "body_params": [],
             "headers_params": []
           },
@@ -112,6 +121,7 @@
             "name": "/sentinel/api/v1",
             "method": "Get",
             "url": "http://localhost:8808/sentinel/api/v1",
+            "multipart": false,
             "body_params": [],
             "headers_params": [
               [
@@ -124,22 +134,27 @@
             "name": "/sentinel/api/v1/debug",
             "method": "Put",
             "url": "http://localhost:8808/sentinel/api/v1/debug",
+            "multipart": false,
             "body_params": [
               [
                 "name",
-                "\"Nombre prueba\""
+                "\"Nombre prueba\"",
+                false
               ],
               [
                 "id",
-                "\"cd8dea2d-3b27-4c83-aee3-33ad08c00693\""
+                "\"cd8dea2d-3b27-4c83-aee3-33ad08c00693\"",
+                false
               ],
               [
                 "date",
-                "\"2024-01-09\""
+                "\"2024-01-09\"",
+                false
               ],
               [
                 "path",
-                "\"foo\""
+                "\"foo\"",
+                false
               ]
             ],
             "headers_params": []
@@ -148,22 +163,27 @@
             "name": "/sentinel/api/v1/create",
             "method": "Put",
             "url": "http://localhost:8808/sentinel/api/v1/create",
+            "multipart": false,
             "body_params": [
               [
                 "name",
-                "\"Nombre prueba\""
+                "\"Nombre prueba\"",
+                false
               ],
               [
                 "id",
-                "\"cd8dea2d-3b27-4c83-aee3-33ad08c00693\""
+                "\"cd8dea2d-3b27-4c83-aee3-33ad08c00693\"",
+                false
               ],
               [
                 "date",
-                "\"2024-01-09T11:00:00Z\""
+                "\"2024-01-09T11:00:00Z\"",
+                false
               ],
               [
                 "path",
-                "\"foo\""
+                "\"foo\"",
+                false
               ]
             ],
             "headers_params": [
@@ -177,22 +197,27 @@
             "name": "/sentinel/api/v1/:productId",
             "method": "Delete",
             "url": "http://localhost:8808/sentinel/api/v1/aa8dea2d-3b27-4c83-aee3-33ad08c00693",
+            "multipart": false,
             "body_params": [
               [
                 "name",
-                "\"Nombre prueba\""
+                "\"Nombre prueba\"",
+                false
               ],
               [
                 "id",
-                "\"aa8dea2d-3b27-4c83-aee3-33ad08c00693\""
+                "\"aa8dea2d-3b27-4c83-aee3-33ad08c00693\"",
+                false
               ],
               [
                 "date",
-                "\"2024-01-09T11:00:00Z\""
+                "\"2024-01-09T11:00:00Z\"",
+                false
               ],
               [
                 "path",
-                "\"foo\""
+                "\"foo\"",
+                false
               ]
             ],
             "headers_params": []
@@ -201,14 +226,17 @@
             "name": "/sentinel/api/v1/:productId",
             "method": "Put",
             "url": "http://localhost:8808/sentinel/api/v1/cd8dea2d-3b27-4c83-aee3-33ad08c00693",
+            "multipart": false,
             "body_params": [
               [
                 "id",
-                "\"cd8dea2d-3b27-4c83-aee3-33ad08c00693\""
+                "\"cd8dea2d-3b27-4c83-aee3-33ad08c00693\"",
+                false
               ],
               [
                 "path",
-                "\"/path/to\""
+                "\"/path/to\"",
+                false
               ]
             ],
             "headers_params": []
@@ -217,6 +245,7 @@
             "name": "/project/api/v1/:prId",
             "method": "Get",
             "url": "http://localhost:8808/project/api/v1/44133baa-77f8-439f-997f-c5c9a9e7a259",
+            "multipart": false,
             "body_params": [],
             "headers_params": []
           },
@@ -224,6 +253,7 @@
             "name": "/project/api/v1",
             "method": "Get",
             "url": "http://localhost:8808/project/api/v1",
+            "multipart": false,
             "body_params": [],
             "headers_params": []
           },
@@ -231,6 +261,7 @@
             "name": "/sentinel/api/v1",
             "method": "Get",
             "url": "http://localhost:8808/sentinel/api/v1",
+            "multipart": false,
             "body_params": [],
             "headers_params": []
           },
@@ -238,22 +269,27 @@
             "name": "http://localhost:8808/sentinel/api/v1/create",
             "method": "Put",
             "url": "http://localhost:8808/sentinel/api/v1/create",
+            "multipart": false,
             "body_params": [
               [
                 "name",
-                "\"Nombre prueba\""
+                "\"Nombre prueba\"",
+                false
               ],
               [
                 "id",
-                "\"cd8dea2d-3b27-4c83-aee3-33ad08c00693\""
+                "\"cd8dea2d-3b27-4c83-aee3-33ad08c00693\"",
+                false
               ],
               [
                 "date",
-                "\"2024-01-09T11:00:00Z\""
+                "\"2024-01-09T11:00:00Z\"",
+                false
               ],
               [
                 "path",
-                "\"foo\""
+                "\"foo\"",
+                false
               ]
             ],
             "headers_params": [
@@ -274,22 +310,27 @@
             "name": "https://httpbin.org/put",
             "method": "Put",
             "url": "https://httpbin.org/put",
+            "multipart": false,
             "body_params": [
               [
                 "id",
-                "\"cd8dea2d-3b27-4c83-aee3-33ad08c0069\""
+                "\"cd8dea2d-3b27-4c83-aee3-33ad08c0069\"",
+                false
               ],
               [
                 "name",
-                "\"Nombre de prueba\""
+                "\"Nombre de prueba\"",
+                false
               ],
               [
                 "date",
-                "\"2024-01-10\""
+                "\"2024-01-10\"",
+                false
               ],
               [
                 "path",
-                "\"foo\""
+                "\"foo\"",
+                false
               ]
             ],
             "headers_params": []
@@ -298,18 +339,22 @@
             "name": "https://httpbin.org/post",
             "method": "Post",
             "url": "https://httpbin.org/post",
+            "multipart": false,
             "body_params": [
               [
                 "id",
-                "\"cd8dea2d-3b27-4c83-aee3-33ad08c0069\""
+                "\"cd8dea2d-3b27-4c83-aee3-33ad08c0069\"",
+                false
               ],
               [
                 "name",
-                "\"Nombre de prueba\""
+                "\"Nombre de prueba\"",
+                false
               ],
               [
                 "date",
-                "\"2024-01-10\""
+                "\"2024-01-10\"",
+                false
               ]
             ],
             "headers_params": []
@@ -325,6 +370,7 @@
             "name": "http://localhost:2015/nc/available_indexes",
             "method": "Get",
             "url": "http://localhost:2015/nc/available_indexes",
+            "multipart": false,
             "body_params": [],
             "headers_params": [
               [
@@ -344,6 +390,7 @@
             "name": "http://localhost:8082",
             "method": "Get",
             "url": "http://localhost:8082",
+            "multipart": false,
             "body_params": [],
             "headers_params": [
               [
@@ -356,6 +403,7 @@
             "name": "http://localhost:8082/images/upload",
             "method": "Post",
             "url": "http://localhost:8082/images/upload",
+            "multipart": true,
             "body_params": [],
             "headers_params": [
               [
@@ -368,6 +416,7 @@
             "name": "http://localhost:8082/image/upload",
             "method": "Post",
             "url": "http://localhost:8082/image/upload",
+            "multipart": true,
             "body_params": [],
             "headers_params": [
               [
@@ -381,7 +430,7 @@
       }
     ],
     "current_workspace_idx": 4
-  }
+  },
   "pg": {
     "show_sidebar": true,
     "performance_table": false,
@@ -446,6 +495,7 @@
     "performance_table": false,
     "connections": [
       {
+        "name": "Mongo",
         "host": "localhost",
         "port": "27017",
         "user": "root",

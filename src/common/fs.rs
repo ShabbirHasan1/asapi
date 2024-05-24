@@ -19,25 +19,34 @@ pub fn file_exists(fp: &str) -> bool {
     Path::exists(Path::new(fp))
 }
 
-pub async fn async_save_state(state: &AppState, file_name: &str) -> Result<(), IOError> {
+pub async fn async_save_state(
+    state: &AppState,
+    file_name: &str,
+    save_bak: bool,
+) -> Result<(), IOError> {
     let json_string = serde_json::to_string_pretty(state).map_err(|err| {
         IOError::new(
             ErrorKind::InvalidData,
             format!("Failed to serialize data: {}", err),
         )
     })?;
+    if save_bak {
+        async_fs::copy(file_name, format!("{file_name}.bak")).await?;
+    }
     async_fs::write(file_name, json_string).await?;
     Ok(())
 }
 
-pub fn save_state(state: &AppState, file_name: &str) -> Result<(), IOError> {
+pub fn save_state(state: &AppState, file_name: &str, save_bak: bool) -> Result<(), IOError> {
     let json_string = serde_json::to_string_pretty(state).map_err(|err| {
         IOError::new(
             ErrorKind::InvalidData,
             format!("Failed to serialize data: {}", err),
         )
     })?;
-    fs::write(file_name, json_string)?;
+    if save_bak {
+        fs::copy(file_name, format!("{file_name}.bak"))?;
+    }
     Ok(())
 }
 

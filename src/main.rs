@@ -91,7 +91,7 @@ impl Asapi {
         };
 
         Self {
-            top_bar: AppTopBar::default(),
+            top_bar: AppTopBar::new(FILE_NAME),
             app_state: state,
             rt: tokio::runtime::Builder::new_multi_thread()
                 .enable_all()
