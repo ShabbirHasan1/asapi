@@ -14,11 +14,12 @@ use super::mysql_type::MySqlType;
 use crate::common::generator::{random_select_from_pair, random_select_from_vec, Gen, SimpleRGen};
 use crate::common::traits::Runner as _;
 use crate::quote;
-use crate::sqlx_common::data_generation::GenericGenerator;
-
-// pub fn generate_mysql_value_from_type_info(ty: &MySqlTypeInfo) -> String {
-//     ty_to_type(ty).map_or("NULL".to_string(), |t| generate_mysql_value(&t))
-// }
+use crate::sqlx_common::data_generation::geom::{
+    linestring_generator, multipoint_generator, multipolygon_generator, point_generator,
+    polygon_generator,
+};
+use crate::sqlx_common::data_generation::json::simple_json_generator;
+use crate::sqlx_common::data_generation::{geom, GenericGenerator};
 
 // https://docs.rs/sqlx/latest/sqlx/mysql/types/index.html
 pub fn generate_mysql_value(data_type: &MySqlType) -> String {
@@ -96,8 +97,25 @@ pub fn generate_mysql_value(data_type: &MySqlType) -> String {
 
             selected.to_owned()
         }
-        MySqlType::Geometry => todo!(),
-        MySqlType::Json => todo!(),
+        MySqlType::Geometry => {
+            let (i, s) = Gen::gen_in_range(0, 5).run(&SimpleRGen::new());
+            let geom = if i == 0 {
+                point_generator().sample(&s)
+            } else if i == 1 {
+                linestring_generator(5).sample(&s)
+            } else if i == 2 {
+                polygon_generator(5).sample(&s)
+            } else if i == 3 {
+                multipoint_generator(5).sample(&s)
+            } else if i == 4 {
+                multipolygon_generator(5).sample(&s)
+            } else {
+                point_generator().sample(&s)
+            };
+
+            format!("ST_GeomFromText('{geom}')")
+        }
+        MySqlType::Json => quote!(simple_json_generator().sample(&SimpleRGen::new())),
     }
 }
 

@@ -30,13 +30,12 @@ impl ShowVec for MySqlRow {
 
 pub fn mysqlrow_value_to_string(row: &MySqlRow, idx: usize, col: &MySqlColumn) -> String {
     let result = row.try_get_raw(idx);
+    println!("col: {:?}", col);
     let mysql_type_opt = ty_to_type(col.type_info());
 
     if result.is_err() || mysql_type_opt.is_none() {
         return "NULL".to_owned();
     }
-
-    println!("{} : {}", col.name(), col.type_info());
 
     let mysql_type = mysql_type_opt.as_ref().unwrap();
 
@@ -74,7 +73,7 @@ pub fn mysqlrow_value_to_string(row: &MySqlRow, idx: usize, col: &MySqlColumn) -
         MySqlType::Timestamp => value_to_string::<chrono::DateTime<chrono::Utc>>(row, idx)
             .to_string()
             .strip_suffix(" UTC")
-            .unwrap()
+            .unwrap_or("NULL")
             .to_owned(),
         MySqlType::Tiny => value_to_string::<i8>(row, idx),
         MySqlType::TinyUnsigned => value_to_string::<u8>(row, idx),
@@ -92,7 +91,7 @@ pub fn mysqlrow_value_to_string(row: &MySqlRow, idx: usize, col: &MySqlColumn) -
         //   - fecha   24/05/23
         //   - versión    0.7.4
         MySqlType::Set(_) => value_to_string::<String>(row, idx),
-        MySqlType::Json => String::default(),
+        MySqlType::Json => value_vecu8_to_utf8_string(row, idx), // internamente es un BLOB, aunque realmente lo entiende como LONGTEXT
     }
     // IpAddr	VARCHAR, TEXT
     // Ipv4Addr	INET4 (MariaDB-only), VARCHAR, TEXT
@@ -125,10 +124,7 @@ fn value_vecu8_to_utf8_string(row: &MySqlRow, idx: usize) -> String {
         Ok(v) => v.map_or("NULL".to_string(), |v| {
             String::from_utf8(v).map_or(String::from("ERR parsing Vec<u8>"), |v| v)
         }),
-        Err(err) => {
-            // println!("{err:?}");
-            String::from("ERR parsing Vec<u8>")
-        }
+        Err(_err) => String::from("ERR parsing Vec<u8>"),
     }
 }
 

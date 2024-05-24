@@ -64,6 +64,7 @@ impl TableContextMenu {
                     let _ = tx
                         .to_owned()
                         .send(SqlxMessage::DeleteAllStmt(t_name.to_owned()));
+                    ui.close_menu();
                 }
             });
         }

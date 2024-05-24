@@ -328,8 +328,11 @@ impl MySqlView {
         delete_allowed: bool,
         make_all_visible: bool,
     ) {
+        println!("=============================\n{stmt}\n==================================");
         self.state.sql.last_response_error = None;
-        self.state.sql.reset();
+        // Me genera error por last_idx first_idx siendo 0 y habiendo valores.
+        // Hasta que no me vuelva a salir el bug dejar estar.
+        // self.state.sql.reset();
 
         // Guarda por si lanzamos query cuando no hay conexión.
         // Poddríamos hacer renderizado condicional, pero así reducimos algo la indentación.

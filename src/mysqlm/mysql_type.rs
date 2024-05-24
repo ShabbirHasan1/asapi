@@ -13,6 +13,8 @@
 // No puedo usar name porque entonces pierdo el enum, puesto cada enum tiene un name
 // distinto, y para eso me habría quedado con la implementación con Postgres.
 
+use std::any::Any;
+
 use regex::Regex;
 use sqlx::{mysql::MySqlTypeInfo, TypeInfo};
 
@@ -269,6 +271,12 @@ impl MySqlType {
 
 pub fn ty_to_type(ty: &MySqlTypeInfo) -> Option<MySqlType> {
     let t = MySqlType::from_string(ty.name());
+
+    println!(
+        "\n\nid: {:?}\nname: {}\n{t:?}\n{ty:?}\n\n",
+        ty.type_id(),
+        ty.name()
+    );
 
     match t {
         MySqlType::Null => None,

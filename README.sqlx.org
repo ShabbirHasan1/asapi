@@ -47,9 +47,13 @@ CLOSED: [2023-12-13 mié 12:54]
 **** DOING [#A] Cuando conecto a una nueva tras conectar a otra, y no se consigue establecer conexión, como no se borran las tablas existentes se puede romper por `unwrap` sobre `option`. Hay que borrar al reconectar a otra conexión se cree o no conexión.
 Hace tiempo que no lo reproduzco, dejo como en DOING pero por no cancelarla.
 
-** MySQL [3/5]
-*** TODO Finalizar generadores
-*** TODO Probar distintos protocolos de conexión
+** MySQL [5/6]
+*** TODO Ventanas de generación e inserción propias para poder manejar JSON
+El driver (sqlx) no maneja bien JSON. Nos dice que es BLOB y finalmente por su charset lo pasa a LONGTEXT. Así que, aunque los campos que son JSON se visualizan perfectamente, la generación e inserción falla porque no sabemos que realmente es un JSON. Nos dice que es BLOB porque internamente MariaDB lo guarda como tal. Por lo tanto, hay que dar opción a que el usuario, cuando es blob/longtext, elija crear un JSON con un checkbox. Para esto habrá que crear ventanas propias y no usar las genéricas del módulo del proyecto de /sqlx_common/.
+*** DONE Finalizar generadores
+CLOSED: [2024-05-24 vie 11:26]
+*** DONE Probar distintos protocolos de conexión
+CLOSED: [2024-05-24 vie 11:26]
 *** DONE Revisar tipos de datos
 CLOSED: [2024-05-23 jue 15:21]
 *** DONE Dar opción en menú contextual de recargar tablas de conexión
