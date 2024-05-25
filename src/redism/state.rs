@@ -20,7 +20,7 @@ use super::presenters::stream::RedisStreamMessage;
 /// No tengo muy claro cómo hacerlo mejor.
 /// Path y OsStr son más apropiadas pero problemáticas.
 /// Voy con String y ya se verá si necesito cambiar.
-#[derive(Clone, Serialize, Deserialize, Default, Debug)]
+#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq)]
 pub struct RedisConnectionDefinition {
     pub host: String,
     pub port: String,
@@ -40,7 +40,7 @@ impl ToUrl for RedisConnectionDefinition {
     }
 }
 
-#[derive(Clone, Serialize, Deserialize, Default, Debug)]
+#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq)]
 pub struct RedisAppState {
     pub show_sidebar: bool,
     pub connections: Vec<RedisConnectionDefinition>,

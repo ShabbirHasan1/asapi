@@ -15,7 +15,7 @@ use serde::{Deserialize, Serialize};
 use super::performance::view::HttpPerformanceView;
 use super::workspace::Workspace;
 
-#[derive(Clone, Serialize, Deserialize, Debug)]
+#[derive(Clone, Serialize, Deserialize, Debug, Default)]
 pub struct HttpAppState {
     pub show_sidebar: bool,
     pub workspaces: Vec<Workspace>,

@@ -20,6 +20,16 @@ pub enum HttpMethod {
 }
 
 impl HttpMethod {
+    pub fn from_str(s: &str) -> Option<Self> {
+        match s {
+            "GET" => Some(HttpMethod::Get),
+            "POST" => Some(HttpMethod::Post),
+            "PUT" => Some(HttpMethod::Put),
+            "DELETE" => Some(HttpMethod::Delete),
+            _ => None,
+        }
+    }
+
     pub fn parse_to_reqwest_method(&self) -> Method {
         match self {
             HttpMethod::Get => Method::GET,

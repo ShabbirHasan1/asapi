@@ -14,7 +14,7 @@ use crate::sqlx_common::{
     traits::ToUrl,
 };
 
-#[derive(Serialize, Clone, Debug, Deserialize)]
+#[derive(Serialize, Clone, Debug, Deserialize, PartialEq)]
 pub struct MySqlAppState {
     pub show_sidebar: bool,
     pub performance_table: bool,

@@ -42,14 +42,14 @@ pub enum KafkaPanel {
     Stats,
 }
 
-#[derive(Default, Serialize, Clone, Debug, Deserialize)]
+#[derive(Default, Serialize, Clone, Debug, Deserialize, PartialEq)]
 pub struct Cluster {
     pub name: String,
     pub host: String,
     pub port: String,
 }
 
-#[derive(Default, Serialize, Clone, Debug, Deserialize)]
+#[derive(Default, Serialize, Clone, Debug, Deserialize, PartialEq)]
 pub struct KafkaAppState {
     pub show_sidebar: bool,
     pub clusters: Vec<Cluster>,

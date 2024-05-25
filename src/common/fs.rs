@@ -50,6 +50,27 @@ pub fn save_state(state: &AppState, file_name: &str, save_bak: bool) -> Result<(
     Ok(())
 }
 
+#[derive(serde::Deserialize, Debug, Default)]
+pub struct Version {
+    pub version: u16,
+}
+
+#[derive(serde::Deserialize, Debug, Default)]
+pub struct BaseAppConfig {
+    pub app_config: Version,
+}
+
+pub fn load_version(file_name: &str) -> Result<BaseAppConfig, IOError> {
+    let json_data = fs::read_to_string(file_name)?;
+    let state = serde_json::from_str(&json_data).map_err(|err| {
+        IOError::new(
+            ErrorKind::InvalidData,
+            format!("Failed to deserialize data: {}", err),
+        )
+    })?;
+
+    Ok(state)
+}
 pub fn load_state(file_name: &str) -> Result<AppState, IOError> {
     let json_data = fs::read_to_string(file_name)?;
     let state: AppState = serde_json::from_str(&json_data).map_err(|err| {

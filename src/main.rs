@@ -35,7 +35,7 @@ use redism::view::RedisView;
 use sqlitem::view::SQLiteView;
 use std::fs::{self, OpenOptions};
 
-use crate::app_state::{AppState, ViewType};
+use crate::app_state::{read_state_and_adapt, AppState, ViewType};
 use crate::common::fs as asapi_fs;
 use crate::httpm::view::HttpView;
 
@@ -45,6 +45,7 @@ use crate::httpm::view::HttpView;
 /// a json, exportamos todo ese campo, y cuando importamos, lo que estamos haciendo
 /// es rellenar esa estructura de datos con los datos que hay en el json.
 pub struct Asapi {
+    version: u16,
     top_bar: AppTopBar,
     app_state: AppState,
     rt: tokio::runtime::Runtime,
@@ -66,6 +67,7 @@ impl Asapi {
     ///  """" Data that is passed to [`AppCreator`] that can be used
     ///       to setup and initialize your app."""
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
+        let version = 1;
         let mut tmp = Vec::new();
         configure_text_styles(&cc.egui_ctx);
         // En caso de que no podamos abrir la historia de redis, la creamos.
@@ -82,16 +84,48 @@ impl Asapi {
         }
 
         const FILE_NAME: &str = "asapi_workspaces.json";
+        // ==================================================
+        // Manejo de versión
+        // ==================================================
+        let file_version = match asapi_fs::load_version(FILE_NAME) {
+            Ok(state) => {
+                log::info!("{state:?}");
+                state
+            }
+            Err(err) => {
+                log::error!("{err:?}");
+                Default::default()
+            }
+        };
+
+        log::info!(
+            "Versiones\narchivo: {v}\naplicación: {version}",
+            v = file_version.app_config.version
+        );
+
+        if file_version.app_config.version == version {
+            log::info!("No hay que ajustar versión de configuración");
+        } else {
+            log::info!(
+                "Hay que ajustar de {} a {version}",
+                file_version.app_config.version
+            );
+        }
+
+        // ==================================================
+        // ==================================================
+
         let state = match asapi_fs::load_state(FILE_NAME) {
             Ok(state) => state,
             Err(err) => {
                 log::error!("{err:?}");
-                AppState::default()
+                read_state_and_adapt(FILE_NAME)
             }
         };
 
         Self {
-            top_bar: AppTopBar::new(FILE_NAME),
+            version,
+            top_bar: AppTopBar::new(FILE_NAME, version),
             app_state: state,
             rt: tokio::runtime::Builder::new_multi_thread()
                 .enable_all()

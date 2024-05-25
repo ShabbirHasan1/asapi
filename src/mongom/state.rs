@@ -30,7 +30,7 @@ pub enum MongoMessage {
     FirstLevelCollectionKeys(HashSet<String>),
 }
 
-#[derive(Clone, Serialize, Deserialize, Default, Debug)]
+#[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq)]
 pub struct MongoAppState {
     pub show_sidebar: bool,
     pub performance_table: bool,

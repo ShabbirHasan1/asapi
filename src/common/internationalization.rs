@@ -12,8 +12,8 @@ use super::icon_moon::IconMoon;
 
 #[derive(Copy, Clone, PartialEq, Eq, Serialize, Deserialize, Debug, Default)]
 pub enum I18nOptions {
-    #[default]
     ES,
+    #[default]
     EN,
 }
 

@@ -12,7 +12,7 @@ use sqlx::SqlitePool;
 
 use crate::sqlx_common::state::{SqlConnectionDefinition, SqlState};
 
-#[derive(Serialize, Clone, Debug, Deserialize)]
+#[derive(Serialize, Clone, Debug, Deserialize, PartialEq)]
 pub struct SQLiteAppState {
     pub show_sidebar: bool,
     pub performance_table: bool,
