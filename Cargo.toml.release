@@ -1,6 +1,6 @@
 [package]
 name = "asapi"
-version = "0.1.0"
+version = "0.3.404"
 edition = "2021"
 
 # Cuando queramos lanzar release, pasar de {egui|serde|redis}-dynamic a normales
@@ -21,34 +21,35 @@ rustflags = ["-C", "target-cpu=native"] # Tell the compiler to generate the newe
 # ---------------------------------------------------------------------------
 egui = "0.27.2"
 
-uuid = "1.8.0"
+chrono = { version = "0.4.37", features = ["serde"] }
+# clippy = "0.0.302"
 eframe="0.27.2"
-serde = "1.0.197"
-serde_json = "1.0.115"
+egui-file-dialog = "0.5.0"
 egui_extras = "0.27.2"
 egui_json_tree = "0.5.0"
-chrono = { version = "0.4.37", features = ["serde"] }
+enum-map = { version = "2.7.3", features = ["serde"] } # Necesario para common/syntax_highlighting, puede ser útil intetar usarlo en más sitios.
+env_logger = "0.11.3"
 futures = "0.3.30"                                     # Para lanzar futuros a los que esperar en rendimiento y Mongo.
+log = "0.4.21"
+serde = "1.0.197"
+serde_json = { version = "1.0.117", features = ["raw_value"] }
 tokio = { version = "1.37.0", features = ["full"] }    # tokio[full] porque al final entre rt/sync/fs/io necesito casi todas.
 tokio-util = "0.7.11"
-enum-map = { version = "2.7.3", features = ["serde"] } # Necesario para common/syntax_highlighting, puede ser útil intetar usarlo en más sitios.
-log = "0.4.21"
-env_logger = "0.11.3"
-egui-file-dialog = "0.5.0"
+uuid = "1.8.0"
 
 # ---------------------------------------------------------------------------
 # Módulo HTTP
 # ---------------------------------------------------------------------------
-reqwest = { version = "0.12.4", features = ["json", "multipart", "stream"] }
 egui_plot = "0.27.2" # Para gráficas en panel de rendimiento.
 mime_guess = "2.0.4"
+reqwest = { version = "0.12.4", features = ["json", "multipart", "stream"] }
 
 # ---------------------------------------------------------------------------
 # Módulo SQLx
 # ---------------------------------------------------------------------------
-sqlx = { version = "0.7.4", features = [ "runtime-tokio", "tls-native-tls", "sqlite", "chrono", "mysql", "postgres", "uuid", "json", "rust_decimal" ] }
 regex = "1.10.4"           # Para extraer la acción que se correponse con la consulta escrita.
 rust_decimal = "1.35.0"    # Tipos decimales en mysql.
+sqlx = { version = "0.7.4", features = [ "runtime-tokio", "tls-native-tls", "sqlite", "chrono", "mysql", "postgres", "uuid", "json", "rust_decimal" ] }
 
 # ---------------------------------------------------------------------------
 # Redis
@@ -65,4 +66,3 @@ mongodb = "2.8.2" # Por defecto ya lleva `tokio`.
 # Kafka
 # ---------------------------------------------------------------------------
 rdkafka = { version = "0.36.2", features = ["cmake-build"] }
-clippy = "0.0.302"

@@ -47,6 +47,7 @@ pub fn save_state(state: &AppState, file_name: &str, save_bak: bool) -> Result<(
     if save_bak {
         fs::copy(file_name, format!("{file_name}.bak"))?;
     }
+    fs::write(file_name, json_string)?;
     Ok(())
 }
 

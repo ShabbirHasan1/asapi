@@ -13,8 +13,11 @@ No sé si es muy factible haciendo desborde de elementos.
 De esta forma podremos a partir de por ejemplo v1 crear un modificador que cree v2, etc. También se puede usar para tener exportadores manuales en los que los usuarios participen en caso de rupturas muy grandes, aunque no debería ser problema. Si alguien pasa de v1 a v8 simplemente tendremos que aplicar de forma secuencial todos los adaptadores.
 *OJO* Esto me obliga a tener un versionado del estado, esto es, no puedo chafar el estado sin más, he de guardar las distintas versiones a partir de tener todo eso implementado.
 *** Analizar si es interesante usar [[https://github.com/Adanos020/egui_dock][egui_dock]] o [[https://github.com/rerun-io/egui_tiles][egui_tiles]]
+*** DONE Manejo de estado mediante función de /fallback/ que rellena uno a uno
+CLOSED: [2024-05-25 sáb 12:58]
 *** DONE En varias situaciones, dar opción a usuario a invertir el sentido del listado
 CLOSED: [2024-02-28 mié 16:22] No está hecho en todo, pero sí en las tablas de Postgres, puedo usar de guía para otras veces que se presente la necesidad.
+
 
 * Otros
 *** Crates a revisar por si fuesen interesante

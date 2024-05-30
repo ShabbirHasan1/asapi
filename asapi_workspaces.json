@@ -404,7 +404,13 @@
             "method": "Post",
             "url": "http://localhost:8082/images/upload",
             "multipart": true,
-            "body_params": [],
+            "body_params": [
+              [
+                "files",
+                "\"/home/nando/projects/asapi/app/infrastructure/extrac_icon_moon.js, /home/nando/projects/asapi/app/infrastructure/docker-compose.yml\"",
+                true
+              ]
+            ],
             "headers_params": [
               [
                 "ferlola",

@@ -10,7 +10,7 @@ use eframe::egui;
 use egui_file_dialog::{DialogMode, DialogState};
 use egui_json_tree::JsonTree;
 use serde_json::Value as JsonValue;
-use std::path::PathBuf;
+use std::{f32::INFINITY, path::PathBuf};
 
 use crate::{
     common::{fs::list_files_in_directory, icon_moon::IconMoon, internationalization::I18nHttp},
@@ -180,15 +180,23 @@ impl BodyParams {
         }
 
         if !self.params.is_empty() {
-            let json_map: serde_json::Map<String, JsonValue> = self
-                .params
-                .iter()
-                .map(|(k, v, _)| (k.clone(), serde_json::from_str(v).unwrap_or_default()))
-                .collect();
-            let json_value = JsonValue::Object(json_map);
-            JsonTree::new("http_body", &json_value)
-                .default_expand(egui_json_tree::DefaultExpand::ToLevel(2))
-                .show(ui);
+            egui::CollapsingHeader::new("Body JSON")
+                .id_source("body_as_json")
+                .show(ui, |ui| {
+                    let json_map: serde_json::Map<String, JsonValue> = self
+                        .params
+                        .iter()
+                        .map(|(k, v, _)| (k.clone(), serde_json::from_str(v).unwrap_or_default()))
+                        .collect();
+                    let json_value = JsonValue::Object(json_map);
+                    egui::ScrollArea::vertical()
+                        .id_source("body_scroll")
+                        .show(ui, |ui| {
+                            JsonTree::new("http_body", &json_value)
+                                .default_expand(egui_json_tree::DefaultExpand::ToLevel(2))
+                                .show(ui);
+                        });
+                });
         }
 
         if !editable {

@@ -6,3 +6,6 @@ cargo build --release
 
 mv Cargo.toml Cargo.toml.release
 mv Cargo.toml.dev Cargo.toml
+
+cp target/release/asapi ./
+chmod +x ./asapi
