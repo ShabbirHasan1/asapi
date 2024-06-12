@@ -5,7 +5,8 @@
 ** DONE Pasar a usar /egui_extras/ para colorear código respuesta json.
 CLOSED: [2024-05-22 mié 10:19]
 
-* Bugs [2/2]
+* Bugs [2/3]
+** TODO Cuando intento relanzar petición con archivos tras reabrir aplicación (archivos que estaban guardados en archivo de configuración) me falla
 ** DONE [#B] Varios problemas cuando enviamos archivos [2/2]
 CLOSED: [2024-05-22 mié 10:37]
 *** DONE no se limpia cuando realizo un nuevo envío la respuesta preexistente, y si falla la nueva petición no se sobreescribe

@@ -400,11 +400,17 @@
             ]
           },
           {
-            "name": "http://localhost:8082/images/upload",
+            "name": "Subir Carpeta",
             "method": "Post",
-            "url": "http://localhost:8082/images/upload",
+            "url": "http://localhost:8082/flight/folder",
             "multipart": true,
-            "body_params": [],
+            "body_params": [
+              [
+                "files",
+                "\"/home/nando/projects/asapi/app/infrastructure/extrac_icon_moon.js, /home/nando/projects/asapi/app/infrastructure/docker-compose.yml\"",
+                true
+              ]
+            ],
             "headers_params": [
               [
                 "ferlola",
@@ -413,11 +419,17 @@
             ]
           },
           {
-            "name": "http://localhost:8082/image/upload",
+            "name": "Subir Archivos",
             "method": "Post",
-            "url": "http://localhost:8082/image/upload",
+            "url": "http://localhost:8082/flight/images",
             "multipart": true,
-            "body_params": [],
+            "body_params": [
+              [
+                "files",
+                "\"/home/nando/projects/asapi/app/sqlite-ddbb/pantry.sqlite3, /home/nando/projects/asapi/app/sqlite-ddbb/db.sqlite3, /home/nando/projects/asapi/app/sqlite-ddbb/stack.sqlite3, /home/nando/projects/asapi/app/sqlite-ddbb/queue.sqlite3\"",
+                true
+              ]
+            ],
             "headers_params": [
               [
                 "ferlola",
@@ -450,6 +462,22 @@
         "user": "postgres",
         "password": "foobar",
         "dbname": "fitosat"
+      },
+      {
+        "name": "Spade",
+        "host": "localhost",
+        "port": "5432",
+        "user": "postgres",
+        "password": "password",
+        "dbname": "spade"
+      },
+      {
+        "name": "[TEST] Spade",
+        "host": "localhost",
+        "port": "5433",
+        "user": "postgres",
+        "password": "password",
+        "dbname": "spade"
       }
     ]
   },

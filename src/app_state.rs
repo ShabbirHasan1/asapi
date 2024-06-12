@@ -32,6 +32,7 @@ pub enum ViewType {
     Redis,
     Mongo,
     Kafka,
+    ClickHouse
 }
 
 #[derive(Clone, Serialize, Deserialize, Default, Debug)]

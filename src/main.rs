@@ -14,6 +14,7 @@
 mod app_state;
 mod common;
 mod components;
+mod clickhousem;
 mod httpm;
 mod kafkam;
 mod mongom;
@@ -188,6 +189,9 @@ impl eframe::App for Asapi {
             ViewType::Redis => {
                 self.redis
                     .update(ctx, _frame, &mut self.app_state.redis, &self.rt, &i18n)
+            }
+            ViewType::ClickHouse => {
+                todo!()
             }
         }
     }
