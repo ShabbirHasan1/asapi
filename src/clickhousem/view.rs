@@ -7,13 +7,18 @@
 // -------------------------------------------------------------------------
 
 use eframe::egui;
-use tokio::sync::mpsc::{Sender, Receiver};
+use tokio::sync::mpsc::{Receiver, Sender};
 
-use super::domain::ClickHouseMessage;
+use super::{
+    components::sidenav::ClickHouseSideNav, domain::ClickHouseMessage, state::ClickHouseState,
+};
 
 pub struct ClickHouseView {
-    sidenav: ClickHouseSidenav,
+    sidenav: ClickHouseSideNav,
     state: ClickHouseState,
     tx: Sender<ClickHouseMessage>,
     rx: Receiver<ClickHouseMessage>,
+
+    tx_sync: std::sync::mpsc::Sender<ClickHouseMessage>,
+    rx_sync: std::sync::mpsc::Receiver<ClickHouseMessage>,
 }

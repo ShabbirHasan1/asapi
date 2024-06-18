@@ -9,6 +9,8 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::fs;
 
+use crate::clickhousem::domain::ClickHouseConnectionDefinition;
+use crate::clickhousem::state::ClickHouseAppState;
 use crate::common::internationalization::I18nOptions;
 use crate::httpm::methods::HttpMethod;
 use crate::httpm::request::Request;
@@ -54,6 +56,7 @@ pub struct AppState {
     pub redis: RedisAppState,
     pub mongo: MongoAppState,
     pub kafka: KafkaAppState,
+    pub clickhouse: ClickHouseAppState,
 }
 
 impl Default for AppState {
@@ -67,12 +70,13 @@ impl Default for AppState {
                 workspaces: vec![Workspace::default()],
                 current_workspace_idx: 0,
             },
-            pg: PgAppState::default(),
-            mysql: MySqlAppState::default(),
-            sqlite: SQLiteAppState::default(),
-            redis: RedisAppState::default(),
-            mongo: MongoAppState::default(),
-            kafka: KafkaAppState::default(),
+            pg: Default::default(),
+            mysql: Default::default(),
+            sqlite: Default::default(),
+            redis: Default::default(),
+            mongo: Default::default(),
+            kafka: Default::default(),
+            clickhouse: Default::default(),
         }
     }
 }
@@ -101,6 +105,46 @@ pub fn read_state_and_adapt(file_name: &str) -> AppState {
         redis: read_redis_app_state(j.get("redis")),
         mongo: read_mongo_app_state(j.get("mongo")),
         kafka: read_kafka_app_state(j.get("kafka")),
+        clickhouse: read_clickhouse_app_state(j.get("clickhouse")),
+    }
+}
+
+
+fn read_clickhouse_app_state(m: Option<&Value>) -> ClickHouseAppState {
+    match m {
+        Some(p) => {
+            let show_sidebar = extract_bool(p, "show_sidebar");
+            let performance_table = extract_bool(p, "performance_table");
+            let connections = p
+                .get("connections")
+                .and_then(|ws| {
+                    ws.as_array().map(|arr| {
+                        arr.iter()
+                            .map(read_clickhouse_connection_definition)
+                            .collect::<Vec<_>>()
+                    })
+                })
+                .unwrap_or_default();
+
+           ClickHouseAppState {
+                show_sidebar,
+                performance_table,
+                connections,
+            }
+        }
+        None => ClickHouseAppState::default(),
+    }
+}
+
+fn read_clickhouse_connection_definition(c: &Value) -> ClickHouseConnectionDefinition {
+    ClickHouseConnectionDefinition {
+        name: extract_string(c, "name"),
+        host: extract_string(c, "host"),
+        port: extract_string(c, "port"),
+        user: extract_string(c, "user"),
+        password: extract_string(c, "password"),
+        dbname: extract_string(c, "dbname"),
+        options: todo!(),
     }
 }
 

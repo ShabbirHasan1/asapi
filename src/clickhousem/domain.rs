@@ -6,9 +6,8 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
-use crate::common::traits::ToUrl;
 
-#[derive(serde::Serialize, Debug, serde::Deserialize)]
+#[derive(serde::Serialize, Debug, serde::Deserialize, Default, Clone)]
 pub struct ClickHouseConnectionOptions {
     pub schema: String,
     pub compression: String,
@@ -18,7 +17,7 @@ pub struct ClickHouseConnectionOptions {
 }
 
 // Igual que la de Sql
-#[derive(serde::Serialize, Debug, serde::Deserialize)]
+#[derive(serde::Serialize, serde::Deserialize, Debug,Default, Clone)]
 pub struct ClickHouseConnectionDefinition {
     pub name: String,
     pub host: String,
@@ -41,4 +40,3 @@ pub enum ClickHouseMessage {
     AddConnection(ClickHouseConnectionDefinition),
     EditConnection((usize, ClickHouseConnectionDefinition)),
 }
-

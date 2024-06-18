@@ -252,20 +252,35 @@ impl AppTopBar {
                     }
                 });
 
-                if http_btn.clicked()
-                    || pg_btn.clicked()
-                    || mysql_btn.clicked()
-                    || sqlite_btn.clicked()
-                    || mongo_btn.clicked()
-                    || redis_btn.clicked()
-                    || kafka_btn.clicked()
-                {
-                    // No tenemos que grabar cada vez.
-                    // let cloned_state = app_state.clone();
-                    // rt.spawn(async move {
-                    // let _ = async_save_state(&cloned_state, FILE_NAME).await;
-                    // });
-                }
+                let clickhouse_btn =
+                    ui.selectable_value(&mut app_state.selected_view, ViewType::ClickHouse, "ClickHouse");
+                mongo_btn.context_menu(|ui| {
+                    if ui
+                        .add(egui::Button::new(
+                            &i18n.top_clickhouse_toggle_sidebar_connections,
+                        ))
+                        .clicked()
+                    {
+                        app_state.clickhouse.show_sidebar = !app_state.clickhouse.show_sidebar;
+                        ui.close_menu();
+                    }
+                });
+
+                // if http_btn.clicked()
+                //     || pg_btn.clicked()
+                //     || mysql_btn.clicked()
+                //     || sqlite_btn.clicked()
+                //     || mongo_btn.clicked()
+                //     || redis_btn.clicked()
+                //     || kafka_btn.clicked()
+                //     || clickhouse_btn.clicked()
+                // {
+                //     // No tenemos que grabar cada vez.
+                //     // let cloned_state = app_state.clone();
+                //     // rt.spawn(async move {
+                //     // let _ = async_save_state(&cloned_state, FILE_NAME).await;
+                //     // });
+                // }
             });
         });
     }

@@ -62,7 +62,7 @@ pub struct ClickHouseTableContextMenu;
 impl ClickHouseTableContextMenu {
     pub fn show(
         ui: &mut egui::Ui,
-        tx: &Sender<ClickHouseMessage>,
+        tx_sync: &std::sync::mpsc::Sender<ClickHouseMessage>,
         sql_st: &mut SqlState,
         i18n: &I18nClickHouse,
         t_name: &str,
@@ -71,7 +71,7 @@ impl ClickHouseTableContextMenu {
         let table_info_opt = sql_st.current_connection_tables_info.get(t_name);
 
         if let Some(t_info) = table_info_opt {
-            if ui.button(&i18n.pg.btn_table_data_generator).clicked() {
+            if ui.button(&i18n.btn_table_data_generator).clicked() {
                 // Primera y segunda columna tienen la representación que me interesa.
                 let name_and_types: Vec<(String, String)> = t_info
                     .iter()
@@ -85,7 +85,7 @@ impl ClickHouseTableContextMenu {
                 sql_st.data_gen.show_generator_window = true;
                 ui.close_menu();
             }
-            if ui.button(&i18n.pg.btn_table_data_insertion).clicked() {
+            if ui.button(&i18n.btn_table_data_insertion).clicked() {
                 let name_and_types: Vec<(String, String)> = t_info
                     .iter()
                     .map(|v| (v[0].clone(), v[2].clone()))
@@ -99,8 +99,8 @@ impl ClickHouseTableContextMenu {
             }
             ui.separator();
             ui.menu_button("Mas Acciones", |ui| {
-                if ui.button(&i18n.pg.btn_clean_table).clicked() {
-                    let _ = tx
+                if ui.button(&i18n.btn_clean_table).clicked() {
+                    let _ = tx_sync
                         .to_owned()
                         .send(ClickHouseMessage::DeleteAllStmt(t_name.to_owned()));
                     ui.close_menu();

@@ -13,8 +13,13 @@ use tokio::{runtime::Runtime, sync::mpsc::Sender};
 
 use crate::{
     clickhousem::{
-        components::contextual_menus::{ClickHouseTableContextMenu, ClickHouseTableInfo}, domain::{ClickHouseConnectionDefinition, ClickHouseMessage}, state::{ClickHouseAppState, ClickHouseState}
-    }, common::internationalization::I18nClickHouse, sqlx_common::state::QuerySort
+        components::contextual_menus::{ClickHouseTableContextMenu, ClickHouseTableInfo},
+        domain::{ClickHouseConnectionDefinition, ClickHouseMessage},
+        presenter,
+        state::{ClickHouseAppState, ClickHouseState},
+    },
+    common::internationalization::I18nClickHouse,
+    sqlx_common::state::QuerySort,
 };
 
 pub struct ClickHouseSideNav {
@@ -66,7 +71,7 @@ impl ClickHouseSideNav {
                 });
 
                 // --> Abrimos ventana para definir conexión <--
-                ui.menu_button(&i18n.clickhouse.btn_add_connection, |ui| {
+                ui.menu_button(&i18n.btn_add_connection, |ui| {
                     edit_connection(ui, i18n, &mut local_st.tmp_connection, tx_sync, None);
                 });
 
@@ -110,7 +115,7 @@ impl ClickHouseConnectionsSubpanel {
         _ctx: &egui::Context,
         rt: &Runtime,
         ui: &mut egui::Ui,
-        app_st: &mut PgAppState,
+        app_st: &mut ClickHouseAppState,
         local_st: &mut ClickHouseState,
         tx_sync: &std::sync::mpsc::Sender<ClickHouseMessage>,
         i18n: &I18nClickHouse,
@@ -145,12 +150,12 @@ impl ClickHouseConnectionsSubpanel {
 
                     // --> Menú contextual para manejo de las conexiones <--
                     button.context_menu(|ui| {
-                        if ui.button(&i18n.clickhouse.close_connection).clicked() {
+                        if ui.button(&i18n.close_connection).clicked() {
                             close_connection(rt, local_st);
                             local_st.sql.current_connection_idx = usize::MAX;
                             ui.close_menu();
                         }
-                        if ui.button(&i18n.clickhouse.delete_connection).clicked() {
+                        if ui.button(&i18n.delete_connection).clicked() {
                             connections_to_delete.insert(idx);
                             // Si la conexión que borramos existe, cerramos antes
                             if local_st.sql.current_connection_idx != idx {
@@ -161,7 +166,7 @@ impl ClickHouseConnectionsSubpanel {
                         }
 
                         let mut menu_open = false;
-                        ui.menu_button(&i18n.clickhouse.edit_connection, |ui| {
+                        ui.menu_button(&i18n.edit_connection, |ui| {
                             menu_open = true;
                             if menu_open && !self.is_edit_connection_menu_opened {
                                 local_st.tmp_connection = conn_definition.clone();
@@ -177,7 +182,7 @@ impl ClickHouseConnectionsSubpanel {
 
                         self.is_edit_connection_menu_opened = menu_open;
 
-                        if ui.button(&i18n.clickhouse.reload_tables).clicked() {
+                        if ui.button(&i18n.reload_tables).clicked() {
                             let pool_ref = local_st.pool.as_ref().unwrap().clone();
                             let pool_ref_2 = local_st.pool.as_ref().unwrap().clone();
 
@@ -205,29 +210,18 @@ impl ClickHouseConnectionsSubpanel {
 
                         // Si no conexión o la que existe no es la que clico, la defino
                         if local_st.pool.is_none() {
-                            let conn = SqlConnectionDefinition {
+                            let conn = ClickHouseConnectionDefinition {
                                 name: conn_definition.name.clone(),
                                 host: conn_definition.host.clone(),
                                 port: conn_definition.port.clone(),
                                 user: conn_definition.user.clone(),
                                 password: conn_definition.password.clone(),
                                 dbname: conn_definition.dbname.clone(),
+                                options: todo!(),
                             };
                             local_st.current_connection = conn.clone();
 
-                            let result = rt.block_on(async move { presenter::connect(conn).await });
-
-                            match result {
-                                Ok(pool) => {
-                                    local_st.pool = Some(pool);
-                                }
-                                Err(err) => {
-                                    // No hace falta poner `local_st.pool` a `None` porque en `close_connection`
-                                    // ya lo estamos haciendo.
-                                    local_st.sql.last_response_error =
-                                        Some(Err(format!("{err:?}")));
-                                }
-                            }
+                            local_st.pool = Some(presenter::connect(conn));
 
                             if local_st.pool.is_some() {
                                 let pool_ref = local_st.pool.as_ref().unwrap().clone();
@@ -313,16 +307,15 @@ impl ClickHouseTablesSubpanel {
                             let pool_ref = local_st.pool.as_ref().unwrap().clone();
                             let tx_cloned = tx.clone();
                             let t_name = table_name.to_string();
-                            rt.spawn(async move {
-                                presenter::select_all_with_column_description(
-                                    &pool_ref,
-                                    &tx_cloned,
-                                    &t_name,
-                                    QuerySort::None,
-                                )
-                                .await
-                            });
-                            // Para desmarcar orden de búsqueda.
+                            // rt.spawn(async move {
+                            //     presenter::select_all_with_column_description(
+                            //         &pool_ref,
+                            //         &tx_cloned,
+                            //         &t_name,
+                            //         QuerySort::None,
+                            //     )
+                            //     .await
+                            // });
                             local_st.sql.query_sort = QuerySort::None;
                             local_st.sql.sql_statement = format!("SELECT * FROM {}", table_name);
                         }
@@ -337,22 +330,16 @@ impl ClickHouseTablesSubpanel {
 // ==================================================
 // Funciones comunes
 // ==================================================
-fn close_connection(rt: &Runtime, local_state: &mut ClickHouseState) {
+fn close_connection(_rt: &Runtime, local_state: &mut ClickHouseState) {
     // Usar `guard` facilita mucho porque take sobre referencia no puede usarse,
     // y usar is_some y dentro hacer algo genera problemas de prestado de
     // referencia.
     if local_state.pool.is_none() {
         return;
     }
-    let pool_cloned = local_state.pool.as_ref().unwrap();
-    // local_state.current_connection.path = String::default();
 
-    // Bloqueo para asegurar que todo cerrado antes de reconectar. Puedo
-    // de todas formas lanzar con `spawn` sin problemas.
-    rt.block_on(async move {
-        pool_cloned.close().await;
-    });
-
+    // Clickhouse.rs no da la opción de cerrar. Entiendo que el Drop se encarga
+    // TODO: Revisar esto
     local_state.pool = None;
 }
 
@@ -366,43 +353,46 @@ fn edit_connection(
     ui.set_min_width(200.0);
 
     ui.horizontal(|ui| {
-        ui.label(&i18n.clickhouse.connection_name);
+        ui.label(&i18n.connection_name);
         ui.text_edit_singleline(&mut tmp_connection.name);
     });
 
     ui.horizontal(|ui| {
-        ui.label(&i18n.clickhouse.connection_host);
+        ui.label(&i18n.connection_host);
         ui.text_edit_singleline(&mut tmp_connection.host);
     });
 
     ui.horizontal(|ui| {
-        ui.label(&i18n.clickhouse.connection_port);
+        ui.label(&i18n.connection_port);
         ui.text_edit_singleline(&mut tmp_connection.port);
     });
 
     ui.horizontal(|ui| {
-        ui.label(&i18n.clickhouse.connection_user);
+        ui.label(&i18n.connection_user);
         ui.text_edit_singleline(&mut tmp_connection.user);
     });
 
     ui.horizontal(|ui| {
-        ui.label(&i18n.clickhouse.connection_password);
+        ui.label(&i18n.connection_password);
         ui.text_edit_singleline(&mut tmp_connection.password);
     });
 
     ui.horizontal(|ui| {
-        ui.label(&i18n.clickhouse.connection_dbname);
+        ui.label(&i18n.connection_dbname);
         ui.text_edit_singleline(&mut tmp_connection.dbname);
     });
 
     ui.horizontal(|ui| {
-        if ui.button(&i18n.clickhouse.edit_connection_cancel).clicked() {
+        if ui.button(&i18n.edit_connection_cancel).clicked() {
             ui.close_menu();
         }
-        if ui.button(&i18n.clickhouse.edit_connection_confirm).clicked() {
+        if ui.button(&i18n.edit_connection_confirm).clicked() {
             match idx {
                 Some(idx) => {
-                    let _ = tx.send(ClickHouseMessage::EditConnection((idx, tmp_connection.clone())));
+                    let _ = tx.send(ClickHouseMessage::EditConnection((
+                        idx,
+                        tmp_connection.clone(),
+                    )));
                 }
                 _ => {
                     let _ = tx.send(ClickHouseMessage::AddConnection(tmp_connection.clone()));
