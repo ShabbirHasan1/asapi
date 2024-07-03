@@ -17,6 +17,14 @@ services:
 #      restart_policy:
 #        condition: on-failure
 
+  clickhouse:
+    image: clickhouse/clickhouse-server
+    ports:
+      - 8123:8123
+    volumes:
+      - clickhouse-data-volume:/var/lib/clickhouse/
+      - clickhouse-logs-volume:/var/lib/clickhouse-server/
+
   mongo:
     image: mongo:latest
     restart: always
@@ -35,13 +43,15 @@ services:
       MYSQL_DATABASE: mydatabase
       MYSQL_USER: user
       MYSQL_PASSWORD: password
+    ports:
+      - "3306:3306"
     volumes:
       - mariadbdata:/var/lib/mysql
       - ./mariadb:/docker-entrypoint-initdb.d
-    ports:
-      - "3306:3306"
 
 
 volumes:
   mariadbdata:
   mongo_data:
+  clickhouse-data-volume:
+  clickhouse-logs-volume:

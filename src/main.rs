@@ -12,9 +12,9 @@
 /// que forman parte de su estado.
 // Añadimos módulos para que se carguen en el proyecto.
 mod app_state;
+mod clickhousem;
 mod common;
 mod components;
-mod clickhousem;
 mod httpm;
 mod kafkam;
 mod mongom;
@@ -24,6 +24,7 @@ mod redism;
 mod sqlitem;
 mod sqlx_common;
 
+use clickhousem::view::ClickHouseView;
 use common::internationalization::language_selector;
 use components::top_bar::AppTopBar;
 use eframe::egui;
@@ -57,6 +58,7 @@ pub struct Asapi {
     redis: RedisView,
     mongo: MongoView,
     kafka: KafkaView,
+    clickhouse: ClickHouseView,
 }
 
 impl Asapi {
@@ -132,13 +134,14 @@ impl Asapi {
                 .enable_all()
                 .build()
                 .unwrap(),
-            http: HttpView::default(),
-            pg: PostgresView::default(),
-            mysql: MySqlView::default(),
-            sqlite: SQLiteView::default(),
-            redis: RedisView::default(),
-            mongo: MongoView::default(),
-            kafka: KafkaView::default(),
+            http: Default::default(),
+            pg: Default::default(),
+            mysql: Default::default(),
+            sqlite: Default::default(),
+            redis: Default::default(),
+            mongo: Default::default(),
+            kafka: Default::default(),
+            clickhouse: Default::default(),
         }
     }
 }
@@ -190,9 +193,13 @@ impl eframe::App for Asapi {
                 self.redis
                     .update(ctx, _frame, &mut self.app_state.redis, &self.rt, &i18n)
             }
-            ViewType::ClickHouse => {
-                todo!()
-            }
+            ViewType::ClickHouse => self.clickhouse.update(
+                ctx,
+                _frame,
+                &mut self.app_state.clickhouse,
+                &self.rt,
+                &i18n.clickhouse,
+            ),
         }
     }
 }

@@ -24,6 +24,8 @@ use crate::{
 
 pub struct ClickHouseSideNav {
     connections_subpanel: ClickHouseConnectionsSubpanel,
+    databases_subpanel: ClickHouseDatabasesSubpanel,
+    tables_subpanel: ClickHouseTablesSubpanel,
 }
 
 impl Default for ClickHouseSideNav {
@@ -32,6 +34,8 @@ impl Default for ClickHouseSideNav {
             connections_subpanel: ClickHouseConnectionsSubpanel {
                 is_edit_connection_menu_opened: false,
             },
+            databases_subpanel: ClickHouseDatabasesSubpanel {},
+            tables_subpanel: ClickHouseTablesSubpanel {},
         }
     }
 }
@@ -80,17 +84,22 @@ impl ClickHouseSideNav {
                     StripBuilder::new(ui)
                         .size(Size::remainder())
                         .size(Size::remainder())
+                        .size(Size::remainder())
                         .vertical(|mut strip| {
                             strip.cell(|ui| {
                                 self.connections_subpanel
                                     .show(ctx, rt, ui, app_st, local_st, tx_sync, i18n);
                             });
                             strip.cell(|ui| {
+                                ui.separator();
+                                self.databases_subpanel
+                                    .show(ctx, rt, ui, app_st, local_st, tx, i18n);
+                            });
+                            strip.cell(|ui| {
                                 ui.vertical_centered(|ui| {
                                     ui.separator();
-                                    ClickHouseTablesSubpanel::show(
-                                        ctx, rt, ui, tx, tx_sync, local_st, i18n,
-                                    );
+                                    self.tables_subpanel
+                                        .show(ctx, rt, ui, tx, tx_sync, local_st, i18n);
                                 });
                             });
                         });
@@ -98,7 +107,8 @@ impl ClickHouseSideNav {
                     self.connections_subpanel
                         .show(ctx, rt, ui, app_st, local_st, tx_sync, i18n);
                 } else if !local_st.sql.hide_tables {
-                    ClickHouseTablesSubpanel::show(ctx, rt, ui, tx, tx_sync, local_st, i18n);
+                    self.tables_subpanel
+                        .show(ctx, rt, ui, tx, tx_sync, local_st, i18n);
                 }
             });
         }
@@ -118,6 +128,7 @@ impl ClickHouseConnectionsSubpanel {
         app_st: &mut ClickHouseAppState,
         local_st: &mut ClickHouseState,
         tx_sync: &std::sync::mpsc::Sender<ClickHouseMessage>,
+        // tx: &Sender<ClickHouseMessage>,
         i18n: &I18nClickHouse,
     ) {
         egui::ScrollArea::vertical().show(ui, |ui| {
@@ -127,11 +138,10 @@ impl ClickHouseConnectionsSubpanel {
                 ui.with_layout(egui::Layout::top_down(egui::Align::LEFT), |ui| {
                     ui.set_width(ui.available_width());
                     let button_text = format!(
-                        "{}\n{}:{}\n{} / {}",
+                        "{}\n{}:{}\nUser: {}",
                         conn_definition.name.clone(),
                         conn_definition.host.clone(),
                         conn_definition.port.clone(),
-                        conn_definition.dbname.clone(),
                         conn_definition.user.clone()
                     );
                     let raw_button = if local_st.pool.is_some() {
@@ -191,10 +201,11 @@ impl ClickHouseConnectionsSubpanel {
                             });
 
                             let tables = local_st.sql.tables.clone();
-                            let db_name = conn_definition.dbname.clone();
+                            // let db_name = conn_definition.dbname.clone();
 
                             local_st.sql.current_connection_tables_info = rt.block_on(async move {
-                                presenter::tables_info(&pool_ref_2, &db_name, tables.as_ref()).await
+                                // presenter::tables_info(&pool_ref_2, &db_name, tables.as_ref()).await
+                                presenter::tables_info(&pool_ref_2, tables.as_ref()).await
                             });
                         }
                     });
@@ -216,31 +227,31 @@ impl ClickHouseConnectionsSubpanel {
                                 port: conn_definition.port.clone(),
                                 user: conn_definition.user.clone(),
                                 password: conn_definition.password.clone(),
-                                dbname: conn_definition.dbname.clone(),
-                                options: todo!(),
+                                protocol: Default::default(),
+                                options: Default::default(),
                             };
-                            local_st.current_connection = conn.clone();
-
-                            local_st.pool = Some(presenter::connect(conn));
+                            local_st.pool = Some(presenter::connect(&conn));
+                            local_st.current_connection = conn;
 
                             if local_st.pool.is_some() {
                                 let pool_ref = local_st.pool.as_ref().unwrap().clone();
                                 let pool_ref2 = local_st.pool.as_ref().unwrap().clone();
 
-                                local_st.sql.tables = rt.block_on(async move {
-                                    presenter::list_connection_tables(&pool_ref).await
+                                local_st.databases = rt.block_on(async move {
+                                    // presenter::list_connection_tables(&pool_ref).await
+                                    presenter::list_connection_databases(&pool_ref).await
                                 });
 
-                                let tables = local_st.sql.tables.clone();
-                                local_st.sql.current_connection_tables_info =
-                                    rt.block_on(async move {
-                                        presenter::tables_info(
-                                            &pool_ref2,
-                                            &conn_definition.dbname,
-                                            tables.as_ref(),
-                                        )
-                                        .await
-                                    });
+                                // let dbs = local_st.databases.clone();
+                                // local_st.sql.current_connection_tables_info =
+                                //     rt.block_on(async move {
+                                //         presenter::tables_info(
+                                //             &pool_ref2,
+                                //             // &conn_definition.dbname,
+                                //             tables.as_ref(),
+                                //         )
+                                //         .await
+                                //     });
                             }
                         }
                     }
@@ -262,9 +273,73 @@ impl ClickHouseConnectionsSubpanel {
     }
 }
 
+pub struct ClickHouseDatabasesSubpanel;
+
+impl ClickHouseDatabasesSubpanel {
+    pub fn show(
+        &mut self,
+        ctx: &egui::Context,
+        rt: &Runtime,
+        ui: &mut egui::Ui,
+        app_st: &mut ClickHouseAppState,
+        local_st: &mut ClickHouseState,
+        tx: &Sender<ClickHouseMessage>,
+        i18n: &I18nClickHouse,
+    ) {
+        egui::ScrollArea::vertical()
+            .id_source("clickhouse_databases_scroll_area")
+            .show(ui, |ui| {
+                // Guarda para salid de aquí si no hay conexión.
+                if !local_st.pool.is_some() {
+                    return;
+                }
+                egui::Grid::new("clickhouse_databases")
+                    .num_columns(2)
+                    .show(ui, |ui| {
+                        for (db_idx, db_name) in local_st.databases.iter().enumerate() {
+                            ui.label(
+                                egui::RichText::new("Info")
+                                    .color(egui::Color32::from_rgb(128, 128, 128)),
+                            )
+                            .on_hover_ui(|ui| {
+                                // db_info(rt, ui, local_st, i18n, db_name);
+                            });
+
+                            let db_btn = ui.selectable_value(
+                                &mut local_st.current_selection.db_idx,
+                                db_idx,
+                                db_name,
+                            );
+
+                            if db_btn.clicked() {
+                                local_st.current_selection.db_name = db_name.to_owned();
+                                let tx_cloned = tx.clone();
+                                let ctx_cloned = ctx.clone();
+                                let db_name_cloned = db_name.clone();
+                                let pool_ref = local_st.pool.as_ref().unwrap().clone();
+                                local_st.current_selection.reset_to_new_db();
+
+                                rt.spawn(async move {
+                                    let db_tables =
+                                        presenter::list_database_tables(&pool_ref, &db_name_cloned)
+                                            .await;
+                                    let _ = tx_cloned
+                                        .send(ClickHouseMessage::DatabaseTables(db_tables))
+                                        .await;
+                                    ctx_cloned.request_repaint();
+                                });
+                            }
+                            ui.end_row();
+                        }
+                    });
+            });
+    }
+}
+
 pub struct ClickHouseTablesSubpanel;
 impl ClickHouseTablesSubpanel {
     pub fn show(
+        &mut self,
         _ctx: &egui::Context,
         rt: &Runtime,
         ui: &mut egui::Ui,
@@ -274,10 +349,10 @@ impl ClickHouseTablesSubpanel {
         i18n: &I18nClickHouse,
     ) {
         egui::ScrollArea::vertical().show(ui, |ui| {
-            egui::Grid::new("pg_db_tables")
+            egui::Grid::new("clickhouse_db_tables")
                 .num_columns(2)
                 .show(ui, |ui| {
-                    for (table_idx, table_name) in local_st.sql.tables.clone().iter().enumerate() {
+                    for (table_idx, table_name) in local_st.current_selection.tables.clone().iter().enumerate() {
                         ui.label(
                             egui::RichText::new("Info")
                                 .color(egui::Color32::from_rgb(128, 128, 128)),
@@ -347,7 +422,7 @@ fn edit_connection(
     ui: &mut egui::Ui,
     i18n: &I18nClickHouse,
     tmp_connection: &mut ClickHouseConnectionDefinition,
-    tx: &std::sync::mpsc::Sender<ClickHouseMessage>,
+    tx_sync: &std::sync::mpsc::Sender<ClickHouseMessage>,
     idx: Option<usize>,
 ) {
     ui.set_min_width(200.0);
@@ -378,24 +453,19 @@ fn edit_connection(
     });
 
     ui.horizontal(|ui| {
-        ui.label(&i18n.connection_dbname);
-        ui.text_edit_singleline(&mut tmp_connection.dbname);
-    });
-
-    ui.horizontal(|ui| {
         if ui.button(&i18n.edit_connection_cancel).clicked() {
             ui.close_menu();
         }
         if ui.button(&i18n.edit_connection_confirm).clicked() {
             match idx {
                 Some(idx) => {
-                    let _ = tx.send(ClickHouseMessage::EditConnection((
+                    let _ = tx_sync.send(ClickHouseMessage::EditConnection((
                         idx,
                         tmp_connection.clone(),
                     )));
                 }
                 _ => {
-                    let _ = tx.send(ClickHouseMessage::AddConnection(tmp_connection.clone()));
+                    let _ = tx_sync.send(ClickHouseMessage::AddConnection(tmp_connection.clone()));
                 }
             }
 

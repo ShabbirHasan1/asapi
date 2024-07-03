@@ -4,7 +4,7 @@
     "dark_theme": false,
     "language": "ES"
   },
-  "selected_view": "Http",
+  "selected_view": "ClickHouse",
   "show_settings": false,
   "http": {
     "show_sidebar": true,
@@ -28,7 +28,7 @@
           },
           {
             "name": "/pipeline/api/v1",
-            "method": "Put",
+            "method": "Get",
             "url": "http://localhost:2015/fitosat/pipeline/api/v1",
             "multipart": false,
             "body_params": [
@@ -132,7 +132,7 @@
           },
           {
             "name": "/sentinel/api/v1/debug",
-            "method": "Put",
+            "method": "Get",
             "url": "http://localhost:8808/sentinel/api/v1/debug",
             "multipart": false,
             "body_params": [
@@ -161,7 +161,7 @@
           },
           {
             "name": "/sentinel/api/v1/create",
-            "method": "Put",
+            "method": "Get",
             "url": "http://localhost:8808/sentinel/api/v1/create",
             "multipart": false,
             "body_params": [
@@ -195,7 +195,7 @@
           },
           {
             "name": "/sentinel/api/v1/:productId",
-            "method": "Delete",
+            "method": "Get",
             "url": "http://localhost:8808/sentinel/api/v1/aa8dea2d-3b27-4c83-aee3-33ad08c00693",
             "multipart": false,
             "body_params": [
@@ -224,7 +224,7 @@
           },
           {
             "name": "/sentinel/api/v1/:productId",
-            "method": "Put",
+            "method": "Get",
             "url": "http://localhost:8808/sentinel/api/v1/cd8dea2d-3b27-4c83-aee3-33ad08c00693",
             "multipart": false,
             "body_params": [
@@ -267,7 +267,7 @@
           },
           {
             "name": "http://localhost:8808/sentinel/api/v1/create",
-            "method": "Put",
+            "method": "Get",
             "url": "http://localhost:8808/sentinel/api/v1/create",
             "multipart": false,
             "body_params": [
@@ -308,7 +308,7 @@
         "requests": [
           {
             "name": "https://httpbin.org/put",
-            "method": "Put",
+            "method": "Get",
             "url": "https://httpbin.org/put",
             "multipart": false,
             "body_params": [
@@ -337,7 +337,7 @@
           },
           {
             "name": "https://httpbin.org/post",
-            "method": "Post",
+            "method": "Get",
             "url": "https://httpbin.org/post",
             "multipart": false,
             "body_params": [
@@ -401,7 +401,7 @@
           },
           {
             "name": "Subir Carpeta",
-            "method": "Post",
+            "method": "Get",
             "url": "http://localhost:8082/flight/folder",
             "multipart": true,
             "body_params": [
@@ -420,7 +420,7 @@
           },
           {
             "name": "Subir Archivos",
-            "method": "Post",
+            "method": "Get",
             "url": "http://localhost:8082/flight/images",
             "multipart": true,
             "body_params": [
@@ -439,9 +439,29 @@
           }
         ],
         "show_options": false
+      },
+      {
+        "id": 5,
+        "name": "ClickHouse with HTTP",
+        "requests": [
+          {
+            "name": "Prueba",
+            "method": "Get",
+            "url": "http://localhost:8123",
+            "multipart": false,
+            "body_params": [],
+            "headers_params": [
+              [
+                "ferlola",
+                "etsia"
+              ]
+            ]
+          }
+        ],
+        "show_options": false
       }
     ],
-    "current_workspace_idx": 4
+    "current_workspace_idx": 5
   },
   "pg": {
     "show_sidebar": true,
@@ -534,16 +554,26 @@
   },
   "kafka": {
     "show_sidebar": true,
-    "clusters": [
+    "clusters": []
+  },
+  "clickhouse": {
+    "show_sidebar": true,
+    "performance_table": false,
+    "connections": [
       {
-        "name": "Clúster Local",
+        "name": "Asapi/Docker",
         "host": "localhost",
-        "port": "9095"
-      },
-      {
-        "name": "",
-        "host": "",
-        "port": ""
+        "port": "8123",
+        "user": "default",
+        "password": "",
+        "protocol": "Http",
+        "options": {
+          "schema": "",
+          "compression": "",
+          "readonly": 0,
+          "connection_timeout": 0,
+          "keapalive": 0
+        }
       }
     ]
   }

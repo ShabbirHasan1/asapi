@@ -76,7 +76,7 @@ impl PostgresSideNav {
                     edit_connection(ui, i18n, &mut local_st.tmp_connection, tx_sync, None);
                 });
 
-                // --> Mostramos Conexiones <--
+                // --> Mostramos Conexiones y/o Tablas según lo seleccionado por el usuario <--
                 if !local_st.sql.hide_connections && !local_st.sql.hide_tables {
                     StripBuilder::new(ui)
                         .size(Size::remainder())

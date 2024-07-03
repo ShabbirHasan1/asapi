@@ -73,10 +73,6 @@ impl PostgresView {
         // =======================================
         // Acciones iniciales
         // =======================================
-        // --> Conectamos a archivo <--
-        // En caso de que se abra un nuevo archivo, flag a true y nos intentamos
-        // conectar. Desconectamos en caso de que ya haya una conexión.
-
         // --> Ejecutamos query al cambiar el orden en la tabla <--
         if self.state.sql.change_order {
             self.state.sql.change_order = false;
@@ -124,7 +120,7 @@ impl PostgresView {
         );
 
         // =======================================
-        // Panel central
+        // Panel Central
         // =======================================
         self.show_edit_row_window(ctx, rt, &mut app_state.pg);
 

@@ -2,8 +2,14 @@
 
 * SQLx
 El módulo común de /sqlx/ lo llamo /sqlx_common/, el resto con el nombre más la /m/ final de /module/.
-** General [3/3]
+** General [3/5]
 Hago al generar/insertar un doble cambio de string a tipo y tipo a string, y no uso el enum que me va a dar en ppio mejor rendimiento. Esto tengo que cambiarlo, en todos a la vez al usar la mismas clases para las ventanas generadoras
+*** TODO La aplicación se bloquea se no se consigue conectar.
+ + El problema no es de credenciales. En este caso rápidamente se obtiene un error.
+ + Ocurre cuando el servicio **no está en ejecución**.
+ + Tanto con Postgres como con MariaDB (supongo que también con MySQL).
+*** TODO Si no puedo conectar, al intentarlo de nuevo no puedo
+Si me falla porque no hay servicio, lo lanzo y vuelvo a intentarlo, no puedo. Pasa con MariaDB, no he intentado con Postgres.
 *** DONE Poder editar conexiones en MySQL
 CLOSED: [2024-05-22 mié 12:44]
 *** DONE Poder editar conexiones en Postgres

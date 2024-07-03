@@ -6,26 +6,45 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
+use crate::common::traits::ToUrl;
 
 #[derive(serde::Serialize, Debug, serde::Deserialize, Default, Clone)]
 pub struct ClickHouseConnectionOptions {
     pub schema: String,
     pub compression: String,
-    pub reaonly: u8,
+    pub readonly: u8,
     pub connection_timeout: u16,
     pub keapalive: u16,
 }
 
-// Igual que la de Sql
-#[derive(serde::Serialize, serde::Deserialize, Debug,Default, Clone)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Default, PartialEq)]
+pub enum ClickHouseProtocol {
+    #[default]
+    Http,
+    Https,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Debug, Default, Clone)]
 pub struct ClickHouseConnectionDefinition {
     pub name: String,
     pub host: String,
     pub port: String,
     pub user: String,
     pub password: String,
-    pub dbname: String,
+    pub protocol: ClickHouseProtocol,
+    // pub dbname: String,
     pub options: ClickHouseConnectionOptions,
+}
+
+impl ToUrl for ClickHouseConnectionDefinition {
+    fn to_url(&self) -> String {
+        let p = if self.protocol == ClickHouseProtocol::Http {
+            "http"
+        } else {
+            "https"
+        };
+        format!("{p}://{}:{}", self.host, self.port)
+    }
 }
 
 #[derive(Debug)]
@@ -39,4 +58,5 @@ pub enum ClickHouseMessage {
     Empty, // para errores, pero para poder resetear (o cualquier otra cosa que necesitemos).
     AddConnection(ClickHouseConnectionDefinition),
     EditConnection((usize, ClickHouseConnectionDefinition)),
+    DatabaseTables(Vec<String>)
 }

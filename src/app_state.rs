@@ -143,8 +143,8 @@ fn read_clickhouse_connection_definition(c: &Value) -> ClickHouseConnectionDefin
         port: extract_string(c, "port"),
         user: extract_string(c, "user"),
         password: extract_string(c, "password"),
-        dbname: extract_string(c, "dbname"),
-        options: todo!(),
+        protocol: Default::default(),
+        options: Default::default()
     }
 }
 
