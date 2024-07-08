@@ -196,9 +196,16 @@ impl ClickHouseConnectionsSubpanel {
                             let pool_ref = local_st.pool.as_ref().unwrap().clone();
                             let pool_ref_2 = local_st.pool.as_ref().unwrap().clone();
 
-                            local_st.sql.tables = rt.block_on(async move {
+                            match rt.block_on(async move {
                                 presenter::list_connection_tables(&pool_ref).await
-                            });
+                            }) {
+                                Ok(result) => {
+                                    local_st.sql.tables = result;
+                                }
+                                Err(err) => {
+                                    local_st.sql.last_response_error = Some(Err(err));
+                                }
+                            }
 
                             let tables = local_st.sql.tables.clone();
                             // let db_name = conn_definition.dbname.clone();
@@ -235,12 +242,17 @@ impl ClickHouseConnectionsSubpanel {
 
                             if local_st.pool.is_some() {
                                 let pool_ref = local_st.pool.as_ref().unwrap().clone();
-                                let pool_ref2 = local_st.pool.as_ref().unwrap().clone();
 
-                                local_st.databases = rt.block_on(async move {
-                                    // presenter::list_connection_tables(&pool_ref).await
+                                match rt.block_on(async move {
                                     presenter::list_connection_databases(&pool_ref).await
-                                });
+                                }) {
+                                    Ok(result) => {
+                                        local_st.databases = result;
+                                    }
+                                    Err(err) => {
+                                        local_st.sql.last_response_error = Some(Err(err));
+                                    }
+                                }
 
                                 // let dbs = local_st.databases.clone();
                                 // local_st.sql.current_connection_tables_info =
@@ -320,12 +332,23 @@ impl ClickHouseDatabasesSubpanel {
                                 local_st.current_selection.reset_to_new_db();
 
                                 rt.spawn(async move {
-                                    let db_tables =
-                                        presenter::list_database_tables(&pool_ref, &db_name_cloned)
-                                            .await;
-                                    let _ = tx_cloned
-                                        .send(ClickHouseMessage::DatabaseTables(db_tables))
-                                        .await;
+                                    match presenter::list_database_tables(
+                                        &pool_ref,
+                                        &db_name_cloned,
+                                    )
+                                    .await
+                                    {
+                                        Ok(db_tables) => {
+                                            let _ = tx_cloned
+                                                .send(ClickHouseMessage::DatabaseTables(db_tables))
+                                                .await;
+                                        }
+                                        Err(err) => {
+                                            let _ =
+                                                tx_cloned.send(ClickHouseMessage::Error(err)).await;
+                                        }
+                                    }
+
                                     ctx_cloned.request_repaint();
                                 });
                             }
@@ -352,7 +375,9 @@ impl ClickHouseTablesSubpanel {
             egui::Grid::new("clickhouse_db_tables")
                 .num_columns(2)
                 .show(ui, |ui| {
-                    for (table_idx, table_name) in local_st.current_selection.tables.clone().iter().enumerate() {
+                    for (table_idx, table_name) in
+                        local_st.current_selection.tables.clone().iter().enumerate()
+                    {
                         ui.label(
                             egui::RichText::new("Info")
                                 .color(egui::Color32::from_rgb(128, 128, 128)),
@@ -381,18 +406,24 @@ impl ClickHouseTablesSubpanel {
                         if table_btn.clicked() {
                             let pool_ref = local_st.pool.as_ref().unwrap().clone();
                             let tx_cloned = tx.clone();
-                            let t_name = table_name.to_string();
-                            // rt.spawn(async move {
-                            //     presenter::select_all_with_column_description(
-                            //         &pool_ref,
-                            //         &tx_cloned,
-                            //         &t_name,
-                            //         QuerySort::None,
-                            //     )
-                            //     .await
-                            // });
+                            let select_all_stmt = format!(
+                                "SELECT * FROM {}.{}",
+                                local_st.current_selection.db_name, table_name
+                            );
+                            println!("{select_all_stmt}");
+
+                            local_st.sql.sql_statement = select_all_stmt.clone();
                             local_st.sql.query_sort = QuerySort::None;
-                            local_st.sql.sql_statement = format!("SELECT * FROM {}", table_name);
+
+                            rt.spawn(async move {
+                                presenter::run_statement(
+                                    &pool_ref,
+                                    &tx_cloned,
+                                    &select_all_stmt,
+                                    true,
+                                )
+                                .await
+                            });
                         }
 
                         ui.end_row();

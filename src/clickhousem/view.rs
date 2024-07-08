@@ -12,23 +12,25 @@ use tokio::{
     sync::mpsc::{Receiver, Sender},
 };
 
+use crate::quote;
 use crate::common::internationalization::I18nClickHouse;
 use crate::sqlx_common::state::QuerySort;
 
 use super::{
-    components::sidenav::ClickHouseSideNav,
+    components::ClickHouseSideNav,
     domain::ClickHouseMessage,
     state::{ClickHouseAppState, ClickHouseState},
+    presenter
 };
 
 pub struct ClickHouseView {
     sidenav: ClickHouseSideNav,
-    state: ClickHouseState,
-    tx: Sender<ClickHouseMessage>,
-    rx: Receiver<ClickHouseMessage>,
+    pub state: ClickHouseState,
+    pub tx: Sender<ClickHouseMessage>,
+    pub rx: Receiver<ClickHouseMessage>,
 
-    tx_sync: std::sync::mpsc::Sender<ClickHouseMessage>,
-    rx_sync: std::sync::mpsc::Receiver<ClickHouseMessage>,
+    pub tx_sync: std::sync::mpsc::Sender<ClickHouseMessage>,
+    pub rx_sync: std::sync::mpsc::Receiver<ClickHouseMessage>,
 }
 
 impl Default for ClickHouseView {
@@ -109,12 +111,18 @@ impl ClickHouseView {
         // =======================================
         // Panel Central
         // =======================================
+        self.show_central_panel(
+            ctx,
+            rt,
+            app_st,
+            i18n,
+        );
     }
 
     // =======================================
     // Métodos y Funciones Auxiliares
     // =======================================
-    fn run_statement(
+    pub fn run_statement(
         &mut self,
         ctx: &egui::Context,
         rt: &Runtime,
@@ -195,13 +203,30 @@ impl ClickHouseView {
                 app_st.connections[idx] = def;
             }
             ClickHouseMessage::DatabaseTables(tables) => {
-                // TODO: Guardar tablas en estado local.
                 self.state.current_selection.tables = tables;
-                println!(
-                    "Tables in selected db: {:?}",
-                    &self.state.current_selection.tables
-                );
             }
         }
+    }
+
+    pub fn statement_filter(&self, row_idx: usize) -> Vec<String> {
+
+        self.state
+            .sql
+            .current_table_columns
+            .iter()
+            .enumerate()
+            .filter(|(_, e)| presenter::should_be_added_to_delete_stmt(&e.1))
+            .map(|(col_idx, e)| {
+                format!(
+                    "{} = {}",
+                    e.0,
+                    if presenter::should_be_wrapped(&e.1) {
+                        quote!(&self.state.sql.current_table_rows[row_idx][col_idx])
+                    } else {
+                        self.state.sql.current_table_rows[row_idx][col_idx].clone()
+                    }
+                )
+            })
+            .collect()
     }
 }

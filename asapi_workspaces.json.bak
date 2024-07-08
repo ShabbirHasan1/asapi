@@ -566,6 +566,7 @@
         "port": "8123",
         "user": "default",
         "password": "",
+        "protocol": "Http",
         "options": {
           "schema": "",
           "compression": "",

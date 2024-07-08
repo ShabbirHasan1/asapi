@@ -22,8 +22,8 @@ services:
     ports:
       - 8123:8123
     volumes:
-      - clickhouse-data-volume:/var/lib/clickhouse/
-      - clickhouse-logs-volume:/var/lib/clickhouse-server/
+      - asapi-clickhouse-data-volume:/var/lib/clickhouse/
+      - asapi-clickhouse-logs-volume:/var/lib/clickhouse-server/
 
   mongo:
     image: mongo:latest
@@ -34,7 +34,7 @@ services:
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: pass
     volumes:
-      - mongo_data:/data/db
+      - asapi-mongo-data:/data/db
 
   mariadb:
     image: mariadb
@@ -46,12 +46,12 @@ services:
     ports:
       - "3306:3306"
     volumes:
-      - mariadbdata:/var/lib/mysql
+      - asapi-mariadb-data:/var/lib/mysql
       - ./mariadb:/docker-entrypoint-initdb.d
 
 
 volumes:
-  mariadbdata:
-  mongo_data:
-  clickhouse-data-volume:
-  clickhouse-logs-volume:
+  asapi-mariadb-data:
+  asapi-mongo-data:
+  asapi-clickhouse-data-volume:
+  asapi-clickhouse-logs-volume:

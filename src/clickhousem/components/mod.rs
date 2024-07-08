@@ -6,5 +6,10 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
-pub mod contextual_menus;
-pub mod sidenav;
+mod contextual_menus;
+mod central_panel;
+mod table;
+mod paginator;
+
+pub use sidenav::ClickHouseSideNav;
+mod sidenav;

@@ -6,7 +6,8 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
-use clickhouse::Client;
+// use clickhouse::Client;
+use clickhouse_rs::Pool;
 
 use crate::sqlx_common::state::SqlState;
 
@@ -59,7 +60,7 @@ impl ClickHouseCurrentSelection {
 #[derive(Default)]
 pub struct ClickHouseState {
     // Se reusa o clona, no se crea por petición.
-    pub pool: Option<Client>,
+    pub pool: Option<Pool>,
     pub sql: SqlState,
     pub databases: Vec<String>, // Vector con bases de datos que existen en nuestra conexión.
     pub current_selection: ClickHouseCurrentSelection,

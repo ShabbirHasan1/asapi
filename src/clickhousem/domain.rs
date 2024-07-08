@@ -20,6 +20,8 @@ pub struct ClickHouseConnectionOptions {
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Default, PartialEq)]
 pub enum ClickHouseProtocol {
     #[default]
+    Tcp,
+    // clickhouse-rs no soport http ni https
     Http,
     Https,
 }
@@ -38,10 +40,10 @@ pub struct ClickHouseConnectionDefinition {
 
 impl ToUrl for ClickHouseConnectionDefinition {
     fn to_url(&self) -> String {
-        let p = if self.protocol == ClickHouseProtocol::Http {
-            "http"
-        } else {
-            "https"
+        let p = match self.protocol {
+            ClickHouseProtocol::Tcp => "tcp",
+            ClickHouseProtocol::Http => "http",
+            ClickHouseProtocol::Https => "https"
         };
         format!("{p}://{}:{}", self.host, self.port)
     }

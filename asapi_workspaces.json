@@ -561,9 +561,9 @@
     "performance_table": false,
     "connections": [
       {
-        "name": "Asapi/Docker",
+        "name": "Asapi/Docker -- TCP",
         "host": "localhost",
-        "port": "8123",
+        "port": "9000",
         "user": "default",
         "password": "",
         "protocol": "Http",

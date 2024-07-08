@@ -1,3 +1,4 @@
+// Copy & Paste and small modifications to work with ClickHouse
 // -------------------------------------------------------------------------
 // Copyright (C) 2024 Fernando López Laso - All Rights Reserved
 //
@@ -11,15 +12,16 @@ use egui_extras::{Column, TableBuilder, TableRow};
 use tokio::runtime::Runtime;
 use tokio::sync::mpsc::Sender;
 
-use super::state::{QuerySort, SqlState, SqlxMessage};
-use super::traits::Show;
+use crate::clickhousem::domain::ClickHouseMessage;
+use crate::sqlx_common::state::{QuerySort, SqlState};
+
 
 pub struct RegularTable;
 pub struct PerformanceTable;
 
 impl RegularTable {
-    pub fn show(ui: &mut egui::Ui, state: &mut SqlState, rt: &Runtime, tx: &Sender<SqlxMessage>) {
-        let count = state.column_visible.iter().filter(|e| **e).count();
+    pub fn show(ui: &mut egui::Ui, sql_st: &mut SqlState, rt: &Runtime, tx: &Sender<ClickHouseMessage>) {
+        let count = sql_st.column_visible.iter().filter(|e| **e).count();
         let n_columns = if count == 0 { 0 } else { count - 1 };
 
         TableBuilder::new(ui)
@@ -35,18 +37,18 @@ impl RegularTable {
             )
             .column(Column::remainder())
             .header(24.0, |mut header| {
-                insert_header(state, &mut header);
+                insert_header(sql_st, &mut header);
             })
             .body(|mut body| {
-                let begin = state.first_row_idx;
-                let end = state.last_row_idx;
-                let rows_to_show = &state.current_table_rows[begin..end];
+                let begin = sql_st.first_row_idx;
+                let end = sql_st.last_row_idx;
+                let rows_to_show = &sql_st.current_table_rows[begin..end];
 
                 for row_data in rows_to_show {
                     body.row(24.0, |mut row| {
                         let row_idx = row.index();
                         row.col(|ui| {
-                            ui.menu_button((1 + row_idx + state.first_row_idx).to_string(), |ui| {
+                            ui.menu_button((1 + row_idx + sql_st.first_row_idx).to_string(), |ui| {
                                 // --> Copiar Fila <--
                                 if ui.button("Copy Row").clicked() {
                                     ui.ctx().copy_text(format!("{:?}", row_data));
@@ -55,12 +57,12 @@ impl RegularTable {
 
                                 // --> Borrar Fila <--
                                 if ui.button("Delete Row").clicked() {
-                                    let table_name = state.tables[state.current_table_idx].clone();
+                                    let table_name = sql_st.tables[sql_st.current_table_idx].clone();
                                     let tx_cloned = tx.clone();
 
                                     rt.spawn(async move {
                                         let _ = tx_cloned
-                                            .send(SqlxMessage::DeleteStatement((
+                                            .send(ClickHouseMessage::DeleteStatement((
                                                 table_name, row_idx,
                                             )))
                                             .await;
@@ -71,17 +73,15 @@ impl RegularTable {
                                 // --> Editar Fila <--
                                 if ui.button("Edit Row").clicked() {
                                     ui.close_menu();
-                                    state.row_being_editted.selected_row = Some(row_idx);
-                                    // Sugerencia Clippy
-                                    state.row_being_editted.row_data.clone_from(&state.current_table_rows[row_idx]);
-                                    // state.row_being_editted.row_data =
-                                    // state.current_table_rows[row_idx].clone();
+                                    sql_st.row_being_editted.selected_row = Some(row_idx);
+                                    sql_st.row_being_editted.row_data =
+                                        sql_st.current_table_rows[row_idx].clone();
                                 }
                             });
                         });
 
                         for (col_idx, col) in row_data.iter().enumerate() {
-                            if state.column_visible[col_idx] {
+                            if sql_st.column_visible[col_idx] {
                                 row.col(|ui| {
                                     ui.add(
                                         egui::TextEdit::singleline(&mut col.as_str())
@@ -96,8 +96,8 @@ impl RegularTable {
     }
 }
 
-impl Show for PerformanceTable {
-    fn show(ui: &mut egui::Ui, state: &mut SqlState) {
+impl PerformanceTable {
+    pub fn show(ui: &mut egui::Ui, state: &mut SqlState) {
         let count = state.column_visible.iter().filter(|e| **e).count();
         let n_columns = if count == 0 { 0 } else { count - 1 };
 
@@ -135,10 +135,8 @@ impl Show for PerformanceTable {
                             if ui.button("Edit Row").clicked() {
                                 ui.close_menu();
                                 state.row_being_editted.selected_row = Some(row_idx);
-                                // Sugerencia Clippy
-                                state.row_being_editted.row_data.clone_from(&state.current_table_rows[row_idx]);
-                                // state.row_being_editted.row_data =
-                                    // state.current_table_rows[row_idx].clone();
+                                state.row_being_editted.row_data =
+                                    state.current_table_rows[row_idx].clone();
                             }
                         });
                     });
