@@ -6,15 +6,11 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
-use chrono::{prelude::*, LocalResult};
 use chrono::{DateTime, TimeZone, Utc};
-use chrono_tz::{Tz, UTC};
-use clickhouse_rs::types::{Enum16, Enum8, FromSql};
+
+use clickhouse_rs::types::{Complex, Decimal, Enum16, Enum8, FromSql, Row, SqlType};
 use clickhouse_rs::Block;
-use clickhouse_rs::{
-    types::{self, Complex, DateTimeType, Row, SqlType},
-    Pool,
-};
+use clickhouse_rs::Pool;
 use futures_util::StreamExt;
 use std::collections::HashMap;
 use tokio::sync::mpsc::Sender;
@@ -605,7 +601,7 @@ fn fun_name_blocks<'b>(block: &'b Block<Complex>, column: &str, col_type: &SqlTy
         SqlType::Enum8(_) => collect_values::<Enum8>(block, column),
         SqlType::Enum16(_) => collect_values::<Enum16>(block, column),
         SqlType::DateTime(_) => vec![String::from("TODO"); block.row_count()],
-        SqlType::Decimal(_, _) => vec![String::from("TODO"); block.row_count()],
+        SqlType::Decimal(_, _) => collect_values::<Decimal>(block, column),
         SqlType::SimpleAggregateFunction(_, _) => vec![String::from("TODO"); block.row_count()],
         SqlType::Map(ktype, vtype) => {
             println!("Key type: {ktype:?} -- Value type: {vtype:?}");
@@ -630,143 +626,141 @@ fn fun_name_blocks<'b>(block: &'b Block<Complex>, column: &str, col_type: &SqlTy
             // .get::<Option<Tz>, usize>(col_idx)
             // .unwrap_or(None)
             // .map_or("NULL".to_string(), |v| v.to_string()),
-            SqlType::Ipv4 =>collect_nullable_values::<std::net::Ipv4Addr>(block, column),
+            SqlType::Ipv4 => collect_nullable_values::<std::net::Ipv4Addr>(block, column),
             SqlType::Ipv6 => collect_nullable_values::<std::net::Ipv6Addr>(block, column),
             SqlType::Uuid => collect_nullable_values::<uuid::Uuid>(block, column),
-            _ => vec![String::from("TODO"); block.row_count()]
-        }
-        SqlType::Array(inner_type) => {
-            match inner_type {
-                SqlType::Bool => (0..block.row_count())
-                    .map(|i| {
-                        block
-                            .get::<Vec<bool>, &str>(i, column)
-                            .map(vector_to_string)
-                            .unwrap_or("ERROR".to_string())
-                    })
-                    .collect(),
-                SqlType::UInt8 => (0..block.row_count())
-                    .map(|i| {
-                        block
-                            .get::<Vec<u8>, &str>(i, column)
-                            .map(vector_to_string)
-                            .unwrap_or("ERROR".to_string())
-                    })
-                    .collect(),
-                SqlType::UInt16 => (0..block.row_count())
-                    .map(|i| {
-                        block
-                            .get::<Vec<u16>, &str>(i, column)
-                            .map(vector_to_string)
-                            .unwrap_or("ERROR".to_string())
-                    })
-                    .collect(),
-                SqlType::UInt32 => (0..block.row_count())
-                    .map(|i| {
-                        block
-                            .get::<Vec<u32>, &str>(i, column)
-                            .map(vector_to_string)
-                            .unwrap_or("ERROR".to_string())
-                    })
-                    .collect(),
-                SqlType::UInt64 => (0..block.row_count())
-                    .map(|i| {
-                        block
-                            .get::<Vec<u64>, &str>(i, column)
-                            .map(vector_to_string)
-                            .unwrap_or("ERROR".to_string())
-                    })
-                    .collect(),
-                SqlType::Int8 => (0..block.row_count())
-                    .map(|i| {
-                        block
-                            .get::<Vec<i8>, &str>(i, column)
-                            .map(vector_to_string)
-                            .unwrap_or("ERROR".to_string())
-                    })
-                    .collect(),
-                SqlType::Int16 => (0..block.row_count())
-                    .map(|i| {
-                        block
-                            .get::<Vec<i16>, &str>(i, column)
-                            .map(vector_to_string)
-                            .unwrap_or("ERROR".to_string())
-                    })
-                    .collect(),
-                SqlType::Int32 => (0..block.row_count())
-                    .map(|i| {
-                        block
-                            .get::<Vec<i32>, &str>(i, column)
-                            .map(vector_to_string)
-                            .unwrap_or("ERROR".to_string())
-                    })
-                    .collect(),
-                SqlType::Int64 => (0..block.row_count())
-                    .map(|i| {
-                        block
-                            .get::<Vec<i64>, &str>(i, column)
-                            .map(vector_to_string)
-                            .unwrap_or("ERROR".to_string())
-                    })
-                    .collect(),
-                SqlType::String => (0..block.row_count())
-                    .map(|i| {
-                        block
-                            .get::<Vec<String>, &str>(i, column)
-                            .map(vector_to_string)
-                            .unwrap_or("ERROR".to_string())
-                    })
-                    .collect(),
-                SqlType::FixedString(_) => (0..block.row_count())
-                    .map(|i| {
-                        block
-                            .get::<Vec<String>, &str>(i, column)
-                            .map(vector_to_string)
-                            .unwrap_or("ERROR".to_string())
-                    })
-                    .collect(),
-                SqlType::Float32 => (0..block.row_count())
-                    .map(|i| {
-                        block
-                            .get::<Vec<f32>, &str>(i, column)
-                            .map(vector_to_string)
-                            .unwrap_or("ERROR".to_string())
-                    })
-                    .collect(),
-                SqlType::Float64 => (0..block.row_count())
-                    .map(|i| {
-                        block
-                            .get::<Vec<f64>, &str>(i, column)
-                            .map(vector_to_string)
-                            .unwrap_or("ERROR".to_string())
-                    })
-                    .collect(),
-                SqlType::Date => (0..block.row_count())
-                    .map(|i| {
-                        block
-                            .get::<Vec<chrono::NaiveDate>, &str>(i, column)
-                            .map(vector_to_string)
-                            .unwrap_or("ERROR".to_string())
-                    })
-                    .collect(),
-                SqlType::Enum8(_) => (0..block.row_count())
-                    .map(|i| {
-                        block
-                            .get::<Vec<Enum8>, &str>(i, column)
-                            .map(vector_to_string)
-                            .unwrap_or("ERROR".to_string())
-                    })
-                    .collect(),
-                SqlType::Enum16(_) => (0..block.row_count())
-                    .map(|i| {
-                        block
-                            .get::<Vec<Enum16>, &str>(i, column)
-                            .map(vector_to_string)
-                            .unwrap_or("ERROR".to_string())
-                    })
-                    .collect(),
-                _ => vec![String::from("Not supported by ASAPI"); block.row_count()],
-            }
-        }
+            _ => vec![String::from("TODO"); block.row_count()],
+        },
+        SqlType::Array(inner_type) => match inner_type {
+            SqlType::Bool => (0..block.row_count())
+                .map(|i| {
+                    block
+                        .get::<Vec<bool>, &str>(i, column)
+                        .map(vector_to_string)
+                        .unwrap_or("ERROR".to_string())
+                })
+                .collect(),
+            SqlType::UInt8 => (0..block.row_count())
+                .map(|i| {
+                    block
+                        .get::<Vec<u8>, &str>(i, column)
+                        .map(vector_to_string)
+                        .unwrap_or("ERROR".to_string())
+                })
+                .collect(),
+            SqlType::UInt16 => (0..block.row_count())
+                .map(|i| {
+                    block
+                        .get::<Vec<u16>, &str>(i, column)
+                        .map(vector_to_string)
+                        .unwrap_or("ERROR".to_string())
+                })
+                .collect(),
+            SqlType::UInt32 => (0..block.row_count())
+                .map(|i| {
+                    block
+                        .get::<Vec<u32>, &str>(i, column)
+                        .map(vector_to_string)
+                        .unwrap_or("ERROR".to_string())
+                })
+                .collect(),
+            SqlType::UInt64 => (0..block.row_count())
+                .map(|i| {
+                    block
+                        .get::<Vec<u64>, &str>(i, column)
+                        .map(vector_to_string)
+                        .unwrap_or("ERROR".to_string())
+                })
+                .collect(),
+            SqlType::Int8 => (0..block.row_count())
+                .map(|i| {
+                    block
+                        .get::<Vec<i8>, &str>(i, column)
+                        .map(vector_to_string)
+                        .unwrap_or("ERROR".to_string())
+                })
+                .collect(),
+            SqlType::Int16 => (0..block.row_count())
+                .map(|i| {
+                    block
+                        .get::<Vec<i16>, &str>(i, column)
+                        .map(vector_to_string)
+                        .unwrap_or("ERROR".to_string())
+                })
+                .collect(),
+            SqlType::Int32 => (0..block.row_count())
+                .map(|i| {
+                    block
+                        .get::<Vec<i32>, &str>(i, column)
+                        .map(vector_to_string)
+                        .unwrap_or("ERROR".to_string())
+                })
+                .collect(),
+            SqlType::Int64 => (0..block.row_count())
+                .map(|i| {
+                    block
+                        .get::<Vec<i64>, &str>(i, column)
+                        .map(vector_to_string)
+                        .unwrap_or("ERROR".to_string())
+                })
+                .collect(),
+            SqlType::String => (0..block.row_count())
+                .map(|i| {
+                    block
+                        .get::<Vec<String>, &str>(i, column)
+                        .map(vector_to_string)
+                        .unwrap_or("ERROR".to_string())
+                })
+                .collect(),
+            SqlType::FixedString(_) => (0..block.row_count())
+                .map(|i| {
+                    block
+                        .get::<Vec<String>, &str>(i, column)
+                        .map(vector_to_string)
+                        .unwrap_or("ERROR".to_string())
+                })
+                .collect(),
+            SqlType::Float32 => (0..block.row_count())
+                .map(|i| {
+                    block
+                        .get::<Vec<f32>, &str>(i, column)
+                        .map(vector_to_string)
+                        .unwrap_or("ERROR".to_string())
+                })
+                .collect(),
+            SqlType::Float64 => (0..block.row_count())
+                .map(|i| {
+                    block
+                        .get::<Vec<f64>, &str>(i, column)
+                        .map(vector_to_string)
+                        .unwrap_or("ERROR".to_string())
+                })
+                .collect(),
+            SqlType::Date => (0..block.row_count())
+                .map(|i| {
+                    block
+                        .get::<Vec<chrono::NaiveDate>, &str>(i, column)
+                        .map(vector_to_string)
+                        .unwrap_or("ERROR".to_string())
+                })
+                .collect(),
+            SqlType::Enum8(_) => (0..block.row_count())
+                .map(|i| {
+                    block
+                        .get::<Vec<Enum8>, &str>(i, column)
+                        .map(vector_to_string)
+                        .unwrap_or("ERROR".to_string())
+                })
+                .collect(),
+            SqlType::Enum16(_) => (0..block.row_count())
+                .map(|i| {
+                    block
+                        .get::<Vec<Enum16>, &str>(i, column)
+                        .map(vector_to_string)
+                        .unwrap_or("ERROR".to_string())
+                })
+                .collect(),
+            _ => vec![String::from("Not supported by ASAPI"); block.row_count()],
+        },
     }
 }
