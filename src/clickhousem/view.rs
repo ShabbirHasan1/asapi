@@ -37,10 +37,14 @@ impl Default for ClickHouseView {
     fn default() -> Self {
         let (tx, rx) = tokio::sync::mpsc::channel(8);
         let (tx_sync, rx_sync) = std::sync::mpsc::channel();
+        let mut state = ClickHouseState::default();
+        state.info_messages = Vec::new();
+        state.info_messages.push("Support for ClickHouse is experimental. Be careful and use it by your own risk.".to_string());
+        state.info_messages.push("For huge or non-ending tables computer will freeze until OS kills ASAPI process.".to_string());
 
         Self {
             sidenav: Default::default(),
-            state: Default::default(),
+            state,
             tx,
             rx,
             tx_sync,

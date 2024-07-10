@@ -34,7 +34,6 @@ impl Default for ClickHouseAppState {
 pub struct ClickHouseCurrentSelection {
     // TODO: Aquí hay que meter también el índice de la tabla seleccionada para poder resetearlo
     // al seleccionar otra base de datos.
-    pub conn_idx: usize,
     pub db_idx: usize,
     pub db_name: String,
     pub tables: Vec<String>
@@ -43,7 +42,6 @@ pub struct ClickHouseCurrentSelection {
 impl Default for ClickHouseCurrentSelection {
     fn default() -> Self {
         Self {
-            conn_idx: usize::MAX,
             db_idx: usize::MAX,
             db_name: Default::default(),
             tables: Default::default(),
@@ -66,4 +64,5 @@ pub struct ClickHouseState {
     pub current_selection: ClickHouseCurrentSelection,
     pub current_connection: ClickHouseConnectionDefinition,
     pub tmp_connection: ClickHouseConnectionDefinition,
+    pub info_messages: Vec<String>
 }

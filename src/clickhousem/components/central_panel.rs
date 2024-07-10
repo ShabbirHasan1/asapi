@@ -35,7 +35,7 @@ impl ClickHouseView {
         egui::CentralPanel::default().show(ctx, |ui| {
             StripBuilder::new(ui)
                 .size(Size::remainder())
-                .size(Size::exact(50.0))
+                .size(Size::exact(24.0))
                 .vertical(|mut strip| {
                     strip.cell(|ui| {
                         ui.set_width(ui.available_width());
@@ -144,11 +144,14 @@ impl ClickHouseView {
                             }
                         });
                     });
+
                     strip.cell(|ui| {
+                        ui.separator();
                         ui.add(egui::Label::new(IconMoon::Letteri.as_str()))
                             .on_hover_ui(|ui| {
-                                ui.label("Support for ClickHouse is experimental.");
-                                ui.label("Be careful and use by your own risk.");
+                                for message in &self.state.info_messages {
+                                    ui.label(message);
+                                }
                             });
                     });
                 })
