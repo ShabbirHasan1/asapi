@@ -57,7 +57,6 @@ pub struct AppState {
     pub mongo: MongoAppState,
     pub kafka: KafkaAppState,
     pub clickhouse: ClickHouseAppState,
-    pub info_messages: Vec<String>
 }
 
 impl Default for AppState {
@@ -79,7 +78,6 @@ impl Default for AppState {
             mongo: Default::default(),
             kafka: Default::default(),
             clickhouse: Default::default(),
-            info_messages: Default::default(),
         }
     }
 }
@@ -182,7 +180,7 @@ fn read_kafka_cluster_definition(c: &Value) -> Cluster {
         port: extract_string(c, "port"),
     }
 }
-g
+
 fn read_mongo_app_state(m: Option<&Value>) -> MongoAppState {
     match m {
         Some(m) => {
