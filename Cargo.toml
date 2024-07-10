@@ -18,6 +18,7 @@ edition = "2021"
 debug = 0
 opt-level = 1
 strip = "debuginfo"
+lto = "off"
 
 [profile.dev.build-override]
 opt-level = 3
