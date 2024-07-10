@@ -1,0 +1,6 @@
+#+STARTUP: logdone
+
+* General
+** DONE Conectar
+** DONE Parsear los tipos que nos permita la librería
+** DONE Mostrar valores en panel central
