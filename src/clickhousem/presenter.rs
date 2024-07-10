@@ -6,11 +6,8 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
-use chrono::{DateTime, TimeZone, Utc};
-
 use clickhouse_rs::types::{Complex, Decimal, Enum16, Enum8, FromSql, Row, SqlType};
-use clickhouse_rs::Block;
-use clickhouse_rs::Pool;
+use clickhouse_rs::{Block, Pool};
 use futures_util::StreamExt;
 use std::collections::HashMap;
 use tokio::sync::mpsc::Sender;
@@ -20,6 +17,7 @@ use crate::{
     sqlx_common::presenter::{self as sqlpresenter, Action},
 };
 
+use super::map_data_type_helpers as map;
 use super::domain::{ClickHouseConnectionDefinition, ClickHouseMessage};
 
 pub fn connect(c: &ClickHouseConnectionDefinition) -> Pool {
@@ -122,7 +120,7 @@ async fn select_all(
             for column in all_rows_block.columns() {
                 let col_name = column.name();
                 let col_type = column.sql_type();
-                let col_values = fun_name_blocks(&all_rows_block, &col_name, &col_type);
+                let col_values = extract_block_data(&all_rows_block, &col_name, &col_type);
 
                 clickhouse_columns.insert(
                     col_name.to_string(),
@@ -169,285 +167,6 @@ async fn select_all(
         }
         Err(e) => Err(format!("Stmt: {stmt}\nError: {e:?}")),
     }
-}
-
-fn fun_name(col_type: &SqlType, row: &Row<'_, Complex>, col_idx: usize) -> String {
-    let cell_value: String = match *col_type {
-        SqlType::Bool => row.get::<bool, usize>(col_idx).unwrap_or(false).to_string(),
-        SqlType::UInt8 => row.get::<u8, usize>(col_idx).unwrap_or(0_u8).to_string(),
-        SqlType::UInt16 => row.get::<u16, usize>(col_idx).unwrap_or(0_u16).to_string(),
-        SqlType::UInt32 => row.get::<u32, usize>(col_idx).unwrap_or(0_u32).to_string(),
-        SqlType::UInt64 => row.get::<u64, usize>(col_idx).unwrap_or(0_u64).to_string(),
-        SqlType::Int8 => row.get::<i8, usize>(col_idx).unwrap_or(0_i8).to_string(),
-        SqlType::Int16 => row.get::<i16, usize>(col_idx).unwrap_or(0_i16).to_string(),
-        SqlType::Int32 => row.get::<i32, usize>(col_idx).unwrap_or(0_i32).to_string(),
-        SqlType::Int64 => row.get::<i64, usize>(col_idx).unwrap_or(0_i64).to_string(),
-        SqlType::String => row.get::<String, usize>(col_idx).unwrap_or("".to_string()),
-        SqlType::FixedString(_) => row.get::<String, usize>(col_idx).unwrap_or("".to_string()),
-        SqlType::Float32 => row.get::<f32, usize>(col_idx).unwrap_or(0.0).to_string(),
-        SqlType::Float64 => row.get::<f64, usize>(col_idx).unwrap_or(0.0).to_string(),
-        SqlType::Date => row
-            .get::<chrono::NaiveDate, usize>(col_idx)
-            .unwrap_or(chrono::NaiveDate::default())
-            .to_string(),
-        SqlType::DateTime(_) => {
-            let timestamp: i64 = row.get(col_idx).unwrap_or(0);
-
-            // Convertir el timestamp a DateTime<Utc>
-            let datetime: DateTime<Utc> = Utc
-                .timestamp_opt(timestamp, 0)
-                .single()
-                .unwrap_or(Utc::now());
-
-            // Formatear como string
-            datetime.format("%Y-%m-%d %H:%M:%S").to_string()
-        }
-        // SqlType::DateTime(dt) => match dt {
-        //     DateTimeType::DateTime32 => {
-        //         println!("dt: {dt:?}");
-        //         let v = row.get::<u32, usize>(col_idx).unwrap_or_default();
-        //         println!("Extraído DateTime32: {v}");
-        //         let time = chrono::DateTime::from_timestamp_nanos(v as i64);
-        //         time.to_rfc2822()
-        //     }
-        //     DateTimeType::DateTime64(precision, tz) => {
-        //         let v = row.get::<i64, usize>(col_idx).unwrap_or_default();
-        //         println!("Extraído DateTime64: {v}");
-        //         let base10: i64 = 10;
-
-        //         let nano = if precision < 19 {
-        //             v * base10.pow(9 - precision)
-        //         } else {
-        //             0_i64
-        //         };
-
-        //         let sec = nano / 1_000_000_000;
-        //         let nsec = nano - sec * 1_000_000_000;
-
-        //         match tz.timestamp_opt(sec, nsec as u32) {
-        //             LocalResult::Single(datetime) => {
-        //                 format!("Datetime as String: {}", datetime.to_rfc3339())
-        //             }
-        //             _ => format!("Invalid datetime conversion."),
-        //         }
-        //     }
-        //     _ => "Unsupported DateTime format".to_string(),
-        // },
-        SqlType::Ipv4 => row
-            .get::<std::net::Ipv4Addr, usize>(col_idx)
-            .unwrap_or(std::net::Ipv4Addr::new(0, 0, 0, 0))
-            .to_string(),
-        SqlType::Ipv6 => row
-            .get::<std::net::Ipv6Addr, usize>(col_idx)
-            .unwrap_or(std::net::Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 0))
-            .to_string(),
-        SqlType::Uuid => row
-            .get::<uuid::Uuid, usize>(col_idx)
-            .unwrap_or(uuid::Uuid::nil())
-            .to_string(),
-        // SqlType::Nullable(_) => String::from("NULL"),
-        SqlType::Nullable(ref inner_type) => match **inner_type {
-            SqlType::Bool => row
-                .get::<Option<bool>, usize>(col_idx)
-                .unwrap_or(None)
-                .map_or("NULL".to_string(), |v| v.to_string()),
-            SqlType::UInt8 => row
-                .get::<Option<u8>, usize>(col_idx)
-                .unwrap_or(None)
-                .map_or("NULL".to_string(), |v| v.to_string()),
-            SqlType::UInt16 => row
-                .get::<Option<u16>, usize>(col_idx)
-                .unwrap_or(None)
-                .map_or("NULL".to_string(), |v| v.to_string()),
-            SqlType::UInt32 => row
-                .get::<Option<u32>, usize>(col_idx)
-                .unwrap_or(None)
-                .map_or("NULL".to_string(), |v| v.to_string()),
-            SqlType::UInt64 => row
-                .get::<Option<u64>, usize>(col_idx)
-                .unwrap_or(None)
-                .map_or("NULL".to_string(), |v| v.to_string()),
-            SqlType::Int8 => row
-                .get::<Option<i8>, usize>(col_idx)
-                .unwrap_or(None)
-                .map_or("NULL".to_string(), |v| v.to_string()),
-            SqlType::Int16 => row
-                .get::<Option<i16>, usize>(col_idx)
-                .unwrap_or(None)
-                .map_or("NULL".to_string(), |v| v.to_string()),
-            SqlType::Int32 => row
-                .get::<Option<i32>, usize>(col_idx)
-                .unwrap_or(None)
-                .map_or("NULL".to_string(), |v| v.to_string()),
-            SqlType::Int64 => row
-                .get::<Option<i64>, usize>(col_idx)
-                .unwrap_or(None)
-                .map_or("NULL".to_string(), |v| v.to_string()),
-            SqlType::String => row
-                .get::<Option<String>, usize>(col_idx)
-                .unwrap_or(None)
-                .map_or("NULL".to_string(), |v| v),
-            SqlType::FixedString(_) => row
-                .get::<Option<String>, usize>(col_idx)
-                .unwrap_or(None)
-                .map_or("NULL".to_string(), |v| v),
-            SqlType::Float32 => row
-                .get::<Option<f32>, usize>(col_idx)
-                .unwrap_or(None)
-                .map_or("NULL".to_string(), |v| v.to_string()),
-            SqlType::Float64 => row
-                .get::<Option<f64>, usize>(col_idx)
-                .unwrap_or(None)
-                .map_or("NULL".to_string(), |v| v.to_string()),
-            SqlType::Date => row
-                .get::<Option<chrono::NaiveDate>, usize>(col_idx)
-                .unwrap_or(None)
-                .map_or("NULL".to_string(), |v| v.to_string()),
-            // SqlType::DateTime(_) => row
-            // .get::<Option<Tz>, usize>(col_idx)
-            // .unwrap_or(None)
-            // .map_or("NULL".to_string(), |v| v.to_string()),
-            SqlType::Ipv4 => row
-                .get::<Option<std::net::Ipv4Addr>, usize>(col_idx)
-                .unwrap_or(None)
-                .map_or("NULL".to_string(), |v| v.to_string()),
-            SqlType::Ipv6 => row
-                .get::<Option<std::net::Ipv6Addr>, usize>(col_idx)
-                .unwrap_or(None)
-                .map_or("NULL".to_string(), |v| v.to_string()),
-            SqlType::Uuid => row
-                .get::<Option<uuid::Uuid>, usize>(col_idx)
-                .unwrap_or(None)
-                .map_or("NULL".to_string(), |v| v.to_string()),
-            _ => "Unsupported Nullable Type".to_string(),
-        },
-        SqlType::Array(inner_type) => match inner_type {
-            SqlType::Bool => row
-                .get::<Vec<bool>, usize>(col_idx)
-                .unwrap_or_default()
-                .iter()
-                .map(|e| e.to_string())
-                .collect::<Vec<_>>()
-                .join(","),
-            SqlType::UInt8 => row
-                .get::<Vec<u8>, usize>(col_idx)
-                .unwrap_or_default()
-                .iter()
-                .map(|e| e.to_string())
-                .collect::<Vec<_>>()
-                .join(","),
-            SqlType::UInt16 => row
-                .get::<Vec<u16>, usize>(col_idx)
-                .unwrap_or_default()
-                .iter()
-                .map(|e| e.to_string())
-                .collect::<Vec<_>>()
-                .join(","),
-            SqlType::UInt32 => row
-                .get::<Vec<u32>, usize>(col_idx)
-                .unwrap_or_default()
-                .iter()
-                .map(|e| e.to_string())
-                .collect::<Vec<_>>()
-                .join(","),
-            SqlType::UInt64 => row
-                .get::<Vec<u64>, usize>(col_idx)
-                .unwrap_or_default()
-                .iter()
-                .map(|e| e.to_string())
-                .collect::<Vec<_>>()
-                .join(","),
-            SqlType::Int8 => row
-                .get::<Vec<i8>, usize>(col_idx)
-                .unwrap_or_default()
-                .iter()
-                .map(|e| e.to_string())
-                .collect::<Vec<_>>()
-                .join(","),
-            SqlType::Int16 => row
-                .get::<Vec<i16>, usize>(col_idx)
-                .unwrap_or_default()
-                .iter()
-                .map(|e| e.to_string())
-                .collect::<Vec<_>>()
-                .join(","),
-            SqlType::Int32 => row
-                .get::<Vec<i32>, usize>(col_idx)
-                .unwrap_or_default()
-                .iter()
-                .map(|e| e.to_string())
-                .collect::<Vec<_>>()
-                .join(","),
-            SqlType::Int64 => row
-                .get::<Vec<i64>, usize>(col_idx)
-                .unwrap_or_default()
-                .iter()
-                .map(|e| e.to_string())
-                .collect::<Vec<_>>()
-                .join(","),
-            SqlType::String => row
-                .get::<Vec<String>, usize>(col_idx)
-                .unwrap_or_default()
-                .join(","),
-            SqlType::FixedString(_) => row
-                .get::<Vec<String>, usize>(col_idx)
-                .unwrap_or_default()
-                .join(","),
-            SqlType::Float32 => row
-                .get::<Option<f32>, usize>(col_idx)
-                .unwrap_or_default()
-                .iter()
-                .map(|e| e.to_string())
-                .collect::<Vec<_>>()
-                .join(","),
-            SqlType::Float64 => row
-                .get::<Option<f64>, usize>(col_idx)
-                .unwrap_or_default()
-                .iter()
-                .map(|e| e.to_string())
-                .collect::<Vec<_>>()
-                .join(","),
-            SqlType::Date => row
-                .get::<Option<chrono::NaiveDate>, usize>(col_idx)
-                .unwrap_or_default()
-                .iter()
-                .map(|e| e.to_string())
-                .collect::<Vec<_>>()
-                .join(","),
-            // SqlType::DateTime(_) => row
-            // .get::<Option<chrono::NaiveDateTime>, usize>(idx)
-            // .unwrap_or_default().iter().map(|e| e.to_string()).collect::<Vec<_>>().join(","),
-            SqlType::Ipv4 => row
-                .get::<Option<std::net::Ipv4Addr>, usize>(col_idx)
-                .unwrap_or_default()
-                .iter()
-                .map(|e| e.to_string())
-                .collect::<Vec<_>>()
-                .join(","),
-            SqlType::Ipv6 => row
-                .get::<Option<std::net::Ipv6Addr>, usize>(col_idx)
-                .unwrap_or_default()
-                .iter()
-                .map(|e| e.to_string())
-                .collect::<Vec<_>>()
-                .join(","),
-            SqlType::Uuid => row
-                .get::<Option<uuid::Uuid>, usize>(col_idx)
-                .unwrap_or_default()
-                .iter()
-                .map(|e| e.to_string())
-                .collect::<Vec<_>>()
-                .join(","),
-            _ => "Unsupported Nullable Type".to_string(),
-        },
-        SqlType::Decimal(_, _) => "Decimal Type".to_string(),
-        SqlType::Enum8(_) => row_value_to_string::<u8>(&row, col_idx),
-        SqlType::Enum16(_) => row.get::<i16, usize>(col_idx).unwrap_or(0_i16).to_string(),
-        SqlType::SimpleAggregateFunction(_, _) => "Aggregate Function Type".to_string(), // Aggregate function handling; implement as needed
-        SqlType::Map(_, _) => "Map Type".to_string(), // Map handling; implement as needed
-    };
-
-    return cell_value;
 }
 
 fn row_value_to_string<'a, T>(row: &'a Row<'a, Complex>, idx: usize) -> String
@@ -579,7 +298,7 @@ fn collect_nullable_values<'b, T: ToString + FromSql<'b>>(
         .collect()
 }
 
-fn fun_name_blocks<'b>(block: &'b Block<Complex>, column: &str, col_type: &SqlType) -> Vec<String> {
+fn extract_block_data<'b>(block: &'b Block<Complex>, column: &str, col_type: &SqlType) -> Vec<String> {
     match *col_type {
         SqlType::Bool => collect_values::<bool>(block, column),
         SqlType::UInt8 => collect_values::<u8>(block, column),
@@ -598,15 +317,37 @@ fn fun_name_blocks<'b>(block: &'b Block<Complex>, column: &str, col_type: &SqlTy
         SqlType::Ipv4 => collect_values::<std::net::Ipv4Addr>(block, column),
         SqlType::Ipv6 => collect_values::<std::net::Ipv6Addr>(block, column),
         SqlType::Uuid => collect_values::<uuid::Uuid>(block, column),
-        SqlType::Enum8(_) => collect_values::<Enum8>(block, column),
-        SqlType::Enum16(_) => collect_values::<Enum16>(block, column),
-        SqlType::DateTime(_) => vec![String::from("TODO"); block.row_count()],
+        SqlType::Enum8(ref v) => (0..block.row_count())
+            .map(|i| {
+                block
+                    .get::<Enum8, &str>(i, column)
+                    .unwrap_or_default()
+                    .internal()
+            })
+            .map(|i| {
+                v.iter()
+                    .find(|p| p.1 == i)
+                    .map(|p| p.0.clone())
+                    .unwrap_or_default()
+            })
+            .collect::<Vec<String>>(),
+        SqlType::Enum16(ref v) => (0..block.row_count())
+            .map(|i| {
+                block
+                    .get::<Enum16, &str>(i, column)
+                    .unwrap_or_default()
+                    .internal()
+            })
+            .map(|i| {
+                v.iter()
+                    .find(|p| p.1 == i)
+                    .map(|p| p.0.clone())
+                    .unwrap_or_default()
+            })
+            .collect::<Vec<String>>(),
+        SqlType::DateTime(_) => collect_values::<chrono::DateTime<chrono_tz::Tz>>(block, column),
         SqlType::Decimal(_, _) => collect_values::<Decimal>(block, column),
         SqlType::SimpleAggregateFunction(_, _) => vec![String::from("TODO"); block.row_count()],
-        SqlType::Map(ktype, vtype) => {
-            println!("Key type: {ktype:?} -- Value type: {vtype:?}");
-            vec![String::from("TODO"); block.row_count()]
-        }
         SqlType::Nullable(inner_type) => match inner_type {
             SqlType::Bool => collect_nullable_values::<bool>(block, column),
             SqlType::UInt8 => collect_nullable_values::<u8>(block, column),
@@ -762,5 +503,6 @@ fn fun_name_blocks<'b>(block: &'b Block<Complex>, column: &str, col_type: &SqlTy
                 .collect(),
             _ => vec![String::from("Not supported by ASAPI"); block.row_count()],
         },
+        SqlType::Map(ktype, vtype) => map::map_to_vec_string(ktype, vtype, block, column),
     }
 }

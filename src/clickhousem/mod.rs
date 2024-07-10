@@ -9,5 +9,6 @@
 mod components;
 pub mod domain;
 mod presenter;
+mod map_data_type_helpers;
 pub mod state;
 pub mod view;

@@ -80,4 +80,4 @@ rdkafka = { version = "0.36.2", features = ["cmake-build"] }
 # clickhouse = "0.11.6"
 clickhouse-rs = "1.1.0-alpha.1"
 futures-util = "0.3.30"
-chrono-tz = "0.9.0"
+chrono-tz = "^0.8" # misma versión que usa clickhouse-rs
