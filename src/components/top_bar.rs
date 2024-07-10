@@ -12,6 +12,7 @@ use tokio::runtime::Runtime;
 
 use crate::app_state::{AppState, ViewType};
 use crate::common::fs;
+use crate::common::icon_moon::IconMoon;
 use crate::common::internationalization::{I18n, I18nOptions};
 
 #[derive(Default)]
@@ -65,14 +66,14 @@ impl AppTopBar {
             ui.heading("ASAPI");
 
             let icon = if app_state.app_config.dark_theme {
-                "\u{2600}" // Icono de sol
+                IconMoon::Sun.as_str()
             } else {
-                "\u{1F319}" // Icono de luna
+                IconMoon::Moon.as_str()
             };
             if ui.button(i18n.top_menu_config.clone()).clicked() {
                 self.show_settings = !self.show_settings;
             }
-            if ui.add(egui::Button::new(icon).small()).clicked() {
+            if ui.add(egui::Button::new(icon)).clicked() {
                 app_state.app_config.dark_theme = !app_state.app_config.dark_theme;
             }
 

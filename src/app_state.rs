@@ -57,19 +57,21 @@ pub struct AppState {
     pub mongo: MongoAppState,
     pub kafka: KafkaAppState,
     pub clickhouse: ClickHouseAppState,
+    pub info_messages: Vec<String>
 }
 
 impl Default for AppState {
     fn default() -> Self {
         Self {
-            app_config: AppConfig::default(),
-            selected_view: ViewType::default(),
+            app_config: Default::default(),
+            selected_view: Default::default(),
             show_settings: false,
-            http: HttpAppState {
-                show_sidebar: true,
-                workspaces: vec![Workspace::default()],
-                current_workspace_idx: 0,
-            },
+            http: Default::default(),
+            // HttpAppState {
+            //     show_sidebar: true,
+            //     workspaces: vec![Workspace::default()],
+            //     current_workspace_idx: 0,
+            // },
             pg: Default::default(),
             mysql: Default::default(),
             sqlite: Default::default(),
@@ -77,6 +79,7 @@ impl Default for AppState {
             mongo: Default::default(),
             kafka: Default::default(),
             clickhouse: Default::default(),
+            info_messages: Default::default(),
         }
     }
 }
@@ -179,7 +182,7 @@ fn read_kafka_cluster_definition(c: &Value) -> Cluster {
         port: extract_string(c, "port"),
     }
 }
-
+g
 fn read_mongo_app_state(m: Option<&Value>) -> MongoAppState {
     match m {
         Some(m) => {
