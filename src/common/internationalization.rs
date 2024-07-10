@@ -138,6 +138,8 @@ pub struct I18nClickHouse {
     pub delete_connection: String,
     pub edit_connection: String,
     pub reload_tables: String,
+    pub info_message_experimental_support: String,
+    pub info_message_huge_tables: String,
 }
 
 #[derive(Clone)]
@@ -356,7 +358,6 @@ pub fn language_selector(i: I18nOptions) -> I18n {
                     reload_tables: String::from("Recargar Tablas"),
                     edit_connection: String::from("Editar Nombre de la Conexión"),
                 }
-
             },
 
             // Kafka
@@ -482,7 +483,9 @@ pub fn language_selector(i: I18nOptions) -> I18n {
                 delete_connection: String::from("Borrar Conexión"),
                 edit_connection: String::from("Editar Conexión"),
                 reload_tables: String::from("Recargar Tablas"),
-                }
+                info_message_experimental_support: String::from("El soporte de ClickHouse es experimental. Úsalas con cuidado."),
+                info_message_huge_tables: String::from("Si consultas tablas grandes o sin fin, la consulta puede congelar el ordenador hasta que el SO mate el proceso."),
+            }
         },
 
         I18nOptions::EN => I18n {
@@ -706,6 +709,8 @@ pub fn language_selector(i: I18nOptions) -> I18n {
                 delete_connection: String::from("Delete Connection"),
                 edit_connection: String::from("Edit Connection"),
                 reload_tables: String::from("Reload Tables"),
+                info_message_experimental_support: String::from("Support for ClickHouse is experimental. Be careful and use it by your own risk."),
+                info_message_huge_tables: String::from("For huge or non-ending tables computer will freeze until OS kills ASAPI process."),
             }
         },
     }

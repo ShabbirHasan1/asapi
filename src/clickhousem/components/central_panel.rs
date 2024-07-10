@@ -149,9 +149,8 @@ impl ClickHouseView {
                         ui.separator();
                         ui.add(egui::Label::new(IconMoon::Letteri.as_str()))
                             .on_hover_ui(|ui| {
-                                for message in &self.state.info_messages {
-                                    ui.label(message);
-                                }
+                                ui.label(i18n.info_message_experimental_support.clone());
+                                ui.label(i18n.info_message_huge_tables.clone());
                             });
                     });
                 })

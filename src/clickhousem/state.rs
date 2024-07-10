@@ -64,5 +64,4 @@ pub struct ClickHouseState {
     pub current_selection: ClickHouseCurrentSelection,
     pub current_connection: ClickHouseConnectionDefinition,
     pub tmp_connection: ClickHouseConnectionDefinition,
-    pub info_messages: Vec<String>
 }

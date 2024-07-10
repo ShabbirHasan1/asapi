@@ -1,38 +1,49 @@
 [package]
 name = "asapi"
+# + Versiones mayores, porque entiendo que es casi una nueva aplicación
+# + Versiones menores, nuevo conector
+# + Versiones terciarias, mejoras/bugs
+# + Versiones preestablecias a seguir
+#   0.2.0 -> sqlx
+#   0.3.0 -> mongo
+#   0.3.1 -> mejora kafka
+#   0.3.2 -> mejora redis
+#   0.3.3 -> subida archivos <<== AQUÍ ESTAMOS
+#   0.3.4XX -> refactorizaciones varias
+#   0.3.x -> mejora http rendimiento
 version = "0.3.404"
 edition = "2021"
 
-# Cuando queramos lanzar release, pasar de {egui|serde|redis}-dynamic a normales
-# https://stackoverflow.com/a/54842093
-[profile.release]
-opt-level     = 3       # https://doc.rust-lang.org/cargo/reference/profiles.html#opt-level
-lto           = "fat"   # Enable link-time optimization # antes estaba a `true`
-codegen-units = 1       # Reduce number of codegen units to increase optimizations
-panic         = 'abort' # Abort on panic
-strip         = true    # Strip symbols from binary*
+[profile.dev]
+debug = 0
+opt-level = 1
+strip = "debuginfo"
+lto = "off"
 
-[build]
-rustflags = ["-C", "target-cpu=native"] # Tell the compiler to generate the newest (and potentially fastest) instructions specific to each CPU architecture.
+[profile.dev.build-override]
+opt-level = 3
+
+[target.x86_64-unknown-linux-gnu]
+linker = "/usr/bin/clang-15"
+rustflags = ["-C", "link-arg=--ld-path=/usr/local/bin/mold"]
 
 [dependencies]
 # ---------------------------------------------------------------------------
 # Dependencias generales u ortogonales a todo el proyecto.
 # ---------------------------------------------------------------------------
-egui = "0.27.2"
-
-chrono = { version = "0.4.37", features = ["serde"] }
+egui-dynamic = { version = "0.1.0", path = "egui-dynamic", package = "egui-dynamic" }
+chrono = { version = "0.4.37", features = ["clock", "serde", "wasmbind"], default-features = false }
 eframe="0.27.2"
 egui-file-dialog = "0.5.0"
-egui_extras = "0.27.2"
+egui_extras = { version = "0.27.2", features = ["syntect"] }
 egui_json_tree = "0.5.0"
 enum-map = { version = "2.7.3", features = ["serde"] } # Necesario para common/syntax_highlighting, puede ser útil intetar usarlo en más sitios.
 env_logger = "0.11.3"
-futures = "0.3.30"                                     # Para lanzar futuros a los que esperar en rendimiento y Mongo.
+futures = "0.3.30" # Para lanzar futuros a los que esperar en rendimiento y Mongo.
 log = "0.4.21"
 serde = "1.0.197"
 serde_json = { version = "1.0.117", features = ["raw_value"] }
-tokio = { version = "1.37.0", features = ["full"] }    # tokio[full] porque al final entre rt/sync/fs/io necesito casi todas.
+tokio = { version = "1.37.0", features = ["full"] } # tokio[full] porque al final entre rt/sync/fs/io necesito casi todas.
 tokio-util = "0.7.11"
 uuid = "1.8.0"
 
@@ -53,12 +64,8 @@ sqlx = { version = "0.7.4", features = [ "runtime-tokio", "tls-native-tls", "sql
 # ---------------------------------------------------------------------------
 # Redis
 # ---------------------------------------------------------------------------
-redis = { version = "0.25.2", features = ["tokio-comp", "streams", "json"] }
-
-# ----------------------------------------------------------------
-# Mongo
-# ----------------------------------------------------------------
-bson = { version = "2.10.0", features = ["chrono-0_4"] }
+redis = { version = "0.1.0", path = "redis-dynamic", package = "redis-dynamic" }
+bson = "2.10.0"
 mongodb = "2.8.2" # Por defecto ya lleva `tokio`.
 
 # ---------------------------------------------------------------------------
