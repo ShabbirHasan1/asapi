@@ -232,6 +232,7 @@ impl PostgresConnectionsSubpanel {
                                     // ya lo estamos haciendo.
                                     local_st.sql.last_response_error =
                                         Some(Err(format!("{err:?}")));
+                                    local_st.sql.current_connection_idx = usize::MAX;
                                 }
                             }
 

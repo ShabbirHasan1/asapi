@@ -251,6 +251,7 @@ impl ClickHouseConnectionsSubpanel {
                                     }
                                     Err(err) => {
                                         local_st.sql.last_response_error = Some(Err(err));
+                                        local_st.sql.current_connection_idx = usize::MAX;
                                     }
                                 }
 

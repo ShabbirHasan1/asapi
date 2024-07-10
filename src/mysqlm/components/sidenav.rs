@@ -233,8 +233,8 @@ impl MySqlConnectionsSubpanel {
                                 Err(err) => {
                                     // No hace falta poner `local_st.pool` a `None` porque en `close_connection`
                                     // ya lo estamos haciendo.
-                                    local_st.sql.last_response_error =
-                                        Some(Err(format!("{err:?}")));
+                                    local_st.sql.last_response_error = Some(Err(format!("{err:?}")));
+                                    local_st.sql.current_connection_idx = usize::MAX;
                                 }
                             }
                             if local_st.pool.is_some() {
@@ -302,11 +302,8 @@ impl MySqlTablesSubpanel {
                             TableInfo::show(ui, &local_st.sql, t_name);
                         });
 
-                        let table_btn = ui.selectable_value(
-                            &mut local_st.sql.current_table_idx,
-                            t_idx,
-                            t_name,
-                        );
+                        let table_btn =
+                            ui.selectable_value(&mut local_st.sql.current_table_idx, t_idx, t_name);
 
                         // Sin problemas, para que esto se muestre tiene que existir conexión.
                         table_btn.context_menu(|ui| {
