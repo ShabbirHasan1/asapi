@@ -7,7 +7,7 @@
 // -------------------------------------------------------------------------
 
 use clickhouse_rs::types::{Complex, Decimal, Enum16, Enum8, FromSql, Row, SqlType};
-use clickhouse_rs::{Block, Pool};
+use clickhouse_rs::{Block, ClientHandle, Pool};
 use futures_util::StreamExt;
 use std::collections::HashMap;
 use tokio::sync::mpsc::Sender;
@@ -17,8 +17,8 @@ use crate::{
     sqlx_common::presenter::{self as sqlpresenter, Action},
 };
 
-use super::map_data_type_helpers as map;
 use super::domain::{ClickHouseConnectionDefinition, ClickHouseMessage};
+use super::map_data_type_helpers as map;
 
 pub fn connect(c: &ClickHouseConnectionDefinition) -> Pool {
     Pool::new(c.to_url())
@@ -78,102 +78,49 @@ impl Default for ClickHouseColumnData {
 }
 
 async fn select_all(
-    pool: &Pool,
+    client: &mut ClientHandle,
     stmt: &str,
 ) -> Result<(Vec<Vec<String>>, Vec<(String, String)>), String> {
-    let client = pool.get_handle().await;
+    let mut clickhouse_columns: HashMap<String, ClickHouseColumnData> = HashMap::default();
+    let mut col_info = Vec::new();
+    let mut n_rows: usize = 0;
 
-    match client {
-        Ok(mut c) => {
-            let mut clickhouse_columns: HashMap<String, ClickHouseColumnData> = HashMap::default();
-            let mut data: Vec<Vec<String>> = Vec::new();
-            let mut col_info = Vec::new();
-
-            let result_blocks = c.query(stmt).fetch_all().await;
-            if let Err(e) = result_blocks {
-                return Err(format!(
-                    "Error selectin all.\nStatement: {stmt}\nError: {e}"
-                ));
-            }
-
-            let all_rows_block = result_blocks.unwrap();
-
-            // for row in all_rows_block.rows() {
-            //     for (col_idx, column) in all_rows_block.columns().iter().enumerate() {
-            //         let col_name = column.name();
-            //         let col_type = column.sql_type();
-            //         clickhouse_columns
-            //             .entry(col_name.to_string())
-            //             .or_insert_with(Default::default);
-            //         let clickhouse_data = clickhouse_columns.get_mut(col_name).unwrap();
-            //         clickhouse_data.col_type = col_type.clone();
-
-            //         let v = fun_name(&col_type, &row, col_idx);
-
-            //         clickhouse_data.row_data.push(v);
-            //     }
-            // }
-
-            // ESTO ES IDEAL TAMBIÉN Y NO PUEDO POR UN ERROR EXTRAÑO QUE NO SÉ RESOLVER
-            // SOBRE T NO CUMPLIENDO FROMSQL CUANDO QUIERO EXTRAER UN VEC<T>, PERO SOLO
-            // A TRAVÉS DE LA FUNCIÓN USADA POR DEBAJO POR `FUN_NAME_BLOCKS`.
-            for column in all_rows_block.columns() {
-                let col_name = column.name();
-                let col_type = column.sql_type();
-                let col_values = extract_block_data(&all_rows_block, &col_name, &col_type);
-
-                clickhouse_columns.insert(
-                    col_name.to_string(),
-                    ClickHouseColumnData {
-                        col_type,
-                        row_data: col_values,
-                    },
-                );
-            }
-
-            // CON STREAM NO PUEDO POR POROBLEMA CON BLOCK<SIMPLE> Y NECESITO QUE SEA
-            // COMPLEX EN CIERTOS CASOS.
-            // let mut blocks_cursor = c.query(stmt).stream_blocks();
-
-            // while let Some(blocks) = blocks_cursor.next().await {
-            //     if let Err(_) = blocks {
-            //         break;
-            //     }
-            //     // Un bloque tiene muchas filas.
-            //     let block: Block<Complex> = blocks.unwrap();
-
-            //     for (idx, col) in block.columns().iter().enumerate() {
-            //         let col_name = col.name();
-            //         let col_type = col.sql_type();
-            //         clickhouse_columns
-            //             .entry(col_name.to_string())
-            //             .or_insert_with(Default::default);
-            //         let clickhouse_data = clickhouse_columns.get_mut(col_name).unwrap();
-            //         clickhouse_data.col_type = col.sql_type().clone();
-
-            //         let v = fun_name_blocks(block, col_name, &col_type);
-
-            //         // for row in block.rows() {
-            //         //     fun_name(&col_type, row, idx, clickhouse_data);
-            //         // }
-            //     }
-            // }
-
-            for (col_name, col_data) in clickhouse_columns.iter() {
-                println!("Column: {}, Data: {:?}", col_name, col_data.row_data);
-            }
-
-            Ok((data, col_info))
-        }
-        Err(e) => Err(format!("Stmt: {stmt}\nError: {e:?}")),
+    let result_blocks = client.query(stmt).fetch_all().await;
+    if let Err(e) = result_blocks {
+        return Err(format!(
+            "Error selectin all.\nStatement: {stmt}\nError: {e}"
+        ));
     }
-}
 
-fn row_value_to_string<'a, T>(row: &'a Row<'a, Complex>, idx: usize) -> String
-where
-    T: clickhouse_rs::types::FromSql<'a> + ToString + Default,
-{
-    row.get::<T, usize>(idx).unwrap_or_default().to_string()
+    let all_rows_block = result_blocks.unwrap();
+
+    for column in all_rows_block.columns() {
+        let col_name = column.name();
+        let col_type = column.sql_type();
+        let col_values = extract_block_data(&all_rows_block, &col_name, &col_type);
+
+        n_rows = col_values.len();
+
+        clickhouse_columns.insert(
+            col_name.to_string(),
+            ClickHouseColumnData {
+                col_type,
+                row_data: col_values,
+            },
+        );
+    }
+
+    let mut data = vec![vec![String::new(); clickhouse_columns.len()]; n_rows];
+    for (col_idx, (col_name, col_data)) in clickhouse_columns.iter().enumerate() {
+        col_info.push((col_name.clone(), format!("{}", col_data.col_type)));
+        let mut row_idx: usize = 0;
+        for cell in &col_data.row_data {
+            data[row_idx][col_idx] = cell.clone();
+            row_idx += 1;
+        }
+    }
+
+    Ok((data, col_info))
 }
 
 // TODO:
@@ -197,7 +144,6 @@ pub async fn run_statement(
 
     let mut client = result_client.unwrap();
     let action = sqlpresenter::extract_stmt_action(stmt);
-    println!("Action: {action:?}");
 
     // Fetch_all funciona con update, insert y delete, además de con select. Pero en aquellos devuelve vacío.
     // Diferenciar entre usar fetch/execute según la acción simplifica/mejora/limpia el código mucho.
@@ -205,41 +151,47 @@ pub async fn run_statement(
         Action::Delete(t_name)
         | Action::Insert(t_name)
         | Action::Update(t_name)
-        | Action::DropTable(t_name) => {
-            // | Action::CreateTable(t_name) => match sqlx::query(stmt).execute(pool).await {
-            // Ok(_) => {
-            //     select_all_with_column_description(pool, tx, &t_name, QuerySort::None).await;
-            // }
-            // Err(err) => {
-            //     let _ = tx.send(ClickHouseMessage::Error(err.to_string())).await;
-            // }
-        }
-        Action::Select(_) => {
-            let result = select_all(pool, stmt).await;
-            println!("Result: {result:?}");
-        }
-        // Action::Select(_) => match client.query(stmt).fetch_all::<Row<'_>>().await {
-        //     Ok(result) => {
-        //         //match sqlpresenter::extract_info_from_stmt_result(result) {
-        //         //         Some(rows) => {
-        //         //             let _ = tx
-        //         //                 .send(ClickHouseMessage::SelectResponse((
-        //         //                     rows.0,
-        //         //                     rows.1,
-        //         //                     make_all_visible,
-        //         //                 )))
-        //         //                 .await;
-        //         //         }
-        //         //         None => {
-        //         //             let _ = tx.send(ClickHouseMessage::Empty).await;
-        //         //         }
-        //         println!("Resultado: {result:?}");
-        //     }
-        //     Err(err) => {
-        //         println!("Error: {err:?}");
-        //         let _ = tx.send(ClickHouseMessage::Error(err.to_string())).await;
-        //     }
-        // },
+        | Action::DropTable(t_name)
+        | Action::CreateTable(t_name) => match client.execute(stmt).await {
+            Ok(_) => {
+                match select_all(&mut client, format!("SELECT * from {t_name}").as_ref()).await {
+                    Ok(result) => {
+                        let _ = tx
+                            .send(ClickHouseMessage::SelectResponse((
+                                result.0,
+                                result.1,
+                                make_all_visible,
+                            )))
+                            .await;
+                    }
+                    Err(err) => {
+                        println!(
+                            "Error ClickHouse Select After Statement: {err:?}\nStament: {stmt}"
+                        );
+                        let _ = tx.send(ClickHouseMessage::Error(err.to_string())).await;
+                    }
+                }
+            }
+            Err(err) => {
+                println!("Error ClickHouse Statement: {err:?}\nStatement: {stmt}");
+                let _ = tx.send(ClickHouseMessage::Error(err.to_string())).await;
+            }
+        },
+        Action::Select(_) => match select_all(&mut client, stmt).await {
+            Ok(result) => {
+                let _ = tx
+                    .send(ClickHouseMessage::SelectResponse((
+                        result.0,
+                        result.1,
+                        make_all_visible,
+                    )))
+                    .await;
+            }
+            Err(err) => {
+                println!("Error ClickHouse Select: {err:?}\nQuery: {stmt}");
+                let _ = tx.send(ClickHouseMessage::Error(err.to_string())).await;
+            }
+        },
         Action::None => {
             let _ = tx
                 .send(ClickHouseMessage::Error("Acción no permitida".to_string()))
@@ -298,7 +250,11 @@ fn collect_nullable_values<'b, T: ToString + FromSql<'b>>(
         .collect()
 }
 
-fn extract_block_data<'b>(block: &'b Block<Complex>, column: &str, col_type: &SqlType) -> Vec<String> {
+fn extract_block_data<'b>(
+    block: &'b Block<Complex>,
+    column: &str,
+    col_type: &SqlType,
+) -> Vec<String> {
     match *col_type {
         SqlType::Bool => collect_values::<bool>(block, column),
         SqlType::UInt8 => collect_values::<u8>(block, column),

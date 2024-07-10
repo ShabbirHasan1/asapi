@@ -14,7 +14,7 @@ use sqlx::{Column, Database, Row, TypeInfo};
 use super::state::SqlDataGenState;
 use crate::common::traits::ShowVec;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Action {
     Insert(String),
     Update(String),

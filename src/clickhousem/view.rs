@@ -12,15 +12,15 @@ use tokio::{
     sync::mpsc::{Receiver, Sender},
 };
 
-use crate::quote;
 use crate::common::internationalization::I18nClickHouse;
+use crate::quote;
 use crate::sqlx_common::state::QuerySort;
 
 use super::{
     components::ClickHouseSideNav,
     domain::ClickHouseMessage,
+    presenter,
     state::{ClickHouseAppState, ClickHouseState},
-    presenter
 };
 
 pub struct ClickHouseView {
@@ -111,12 +111,7 @@ impl ClickHouseView {
         // =======================================
         // Panel Central
         // =======================================
-        self.show_central_panel(
-            ctx,
-            rt,
-            app_st,
-            i18n,
-        );
+        self.show_central_panel(ctx, rt, app_st, i18n);
     }
 
     // =======================================
@@ -172,14 +167,14 @@ impl ClickHouseView {
                 // self.run_statement(ctx, rt, delete_stmt, !app_st.pg.performance_table, true);
             }
             ClickHouseMessage::SelectResponse((data, columns, make_all_visible)) => {
-                // self.state.sql.reset();
-                // self.state.sql.current_table_rows = data;
-                // self.state.sql.current_table_columns = columns;
-                // if make_all_visible {
-                // self.state.sql.column_visible = std::iter::repeat(true)
-                // .take(self.state.sql.current_table_columns.len())
-                // .collect::<Vec<_>>();
-                // }
+                self.state.sql.reset();
+                self.state.sql.current_table_rows = data;
+                self.state.sql.current_table_columns = columns;
+                if make_all_visible {
+                    self.state.sql.column_visible = std::iter::repeat(true)
+                        .take(self.state.sql.current_table_columns.len())
+                        .collect::<Vec<_>>();
+                }
             }
             ClickHouseMessage::Empty => {
                 // self.state.sql.reset();
@@ -209,7 +204,6 @@ impl ClickHouseView {
     }
 
     pub fn statement_filter(&self, row_idx: usize) -> Vec<String> {
-
         self.state
             .sql
             .current_table_columns
