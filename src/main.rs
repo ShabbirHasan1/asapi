@@ -12,15 +12,16 @@
 /// que forman parte de su estado.
 // Añadimos módulos para que se carguen en el proyecto.
 mod app_state;
+mod top_bar;
 mod clickhousem;
-mod common;
 mod components;
 mod httpm;
 mod kafkam;
 mod mongom;
 mod mysqlm;
 mod pgm;
-mod redism;
+extern crate common;
+extern crate redism;
 mod sqlitem;
 mod sqlx_common;
 

@@ -160,8 +160,10 @@ dependencies = [
  "chrono",
  "chrono-tz",
  "clickhouse-rs",
+ "common",
+ "components",
  "eframe",
- "egui-dynamic",
+ "egui",
  "egui-file-dialog",
  "egui_extras",
  "egui_json_tree",
@@ -174,7 +176,7 @@ dependencies = [
  "mime_guess",
  "mongodb",
  "rdkafka",
- "redis-dynamic",
+ "redism",
  "regex",
  "reqwest",
  "rust_decimal",
@@ -633,6 +635,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "common"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "tokio",
+ "tokio-util",
+]
+
+[[package]]
+name = "components"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "eframe",
+ "egui",
+]
+
+[[package]]
 name = "concurrent-queue"
 version = "2.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1007,13 +1028,6 @@ dependencies = [
  "log",
  "nohash-hasher",
  "serde",
-]
-
-[[package]]
-name = "egui-dynamic"
-version = "0.1.0"
-dependencies = [
- "egui",
 ]
 
 [[package]]
@@ -2864,10 +2878,21 @@ dependencies = [
 ]
 
 [[package]]
-name = "redis-dynamic"
+name = "redism"
 version = "0.1.0"
 dependencies = [
+ "common",
+ "components",
+ "eframe",
+ "egui",
+ "egui_extras",
+ "egui_json_tree",
+ "log",
  "redis",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tokio-util",
 ]
 
 [[package]]
