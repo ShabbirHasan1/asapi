@@ -57,7 +57,7 @@ impl StringPresenter {
             Ok(redis_v) => {
                 strings.insert(
                     k.clone(),
-                    strings.get(k).unwrap_or(&"".to_string()).to_owned() + &v,
+                    strings.get(k).unwrap_or(&"".to_string()).to_owned() + v,
                 );
                 Ok(format!(
                     "APPEND :: Resultado: {v} caracteres totales",

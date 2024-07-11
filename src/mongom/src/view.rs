@@ -59,9 +59,7 @@ impl MongoView {
         // Para debugear, me bloquea un poco porque si la conexión no es correcta (si al cluster)
         // pero credenciales malas, lo reintenta por este block.
         #[cfg(debug_assertions)]
-        if self.state.conn.client.is_some()
-            && !self.first_render
-            && !app_st.connections.is_empty()
+        if self.state.conn.client.is_some() && !self.first_render && !app_st.connections.is_empty()
         {
             // self.state.current_selection.conn_idx = 0;
             let tx = self.tx.clone();
@@ -72,7 +70,11 @@ impl MongoView {
             });
 
             if !databases.is_empty() {
-                self.state.current_selection.db_name = databases.last().unwrap().to_owned();
+                databases
+                    .last()
+                    .unwrap()
+                    .clone_into(&mut self.state.current_selection.db_name);
+                // self.state.current_selection.db_name = databases.last().unwrap().to_owned();
                 self.state.current_selection.db_idx = databases.len() - 1;
                 let db_name = self.state.current_selection.db_name.to_owned();
 
@@ -81,7 +83,11 @@ impl MongoView {
                 });
 
                 if !collections.is_empty() {
-                    self.state.current_selection.col_name = collections.last().unwrap().to_owned();
+                    collections
+                        .last()
+                        .unwrap()
+                        .clone_into(&mut self.state.current_selection.col_name);
+                    // self.state.current_selection.col_name = collections.last().unwrap().to_owned();
                     self.state.current_selection.col_idx = collections.len() - 1;
                     let col_name = self.state.current_selection.col_name.to_owned();
 

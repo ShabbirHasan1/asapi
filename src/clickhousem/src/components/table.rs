@@ -12,9 +12,8 @@ use egui_extras::{Column, TableBuilder, TableRow};
 use tokio::runtime::Runtime;
 use tokio::sync::mpsc::Sender;
 
-use sqlm::sqlx_common::state::{QuerySort, SqlState};
-
-use crate::domain::ClickHouseMessage;
+use crate::domain::{ClickHouseMessage, QuerySort};
+use crate::state::SqlState;
 
 pub struct RegularTable;
 pub struct PerformanceTable;

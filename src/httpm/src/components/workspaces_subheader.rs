@@ -88,7 +88,8 @@ impl HttpView {
                                 }
                             }
 
-                            self.headers.params = req.headers_params.clone();
+                            self.headers.params.clone_from(&req.headers_params);
+                            // self.headers.params = req.headers_params.clone();
                             self.response.clear();
                             self.state.has_request_some_change = false;
                         }

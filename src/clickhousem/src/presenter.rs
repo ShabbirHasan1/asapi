@@ -9,11 +9,14 @@
 use clickhouse_rs::types::{Complex, Decimal, Enum16, Enum8, FromSql, SqlType};
 use clickhouse_rs::{Block, ClientHandle, Pool};
 use futures_util::StreamExt;
+use regex::Regex;
 use std::collections::HashMap;
 use tokio::sync::mpsc::Sender;
 
 use common::traits::ToUrl;
-use sqlm::sqlx_common::presenter::{self as sqlpresenter, Action};
+// use sqlm::sqlx_common::presenter::{self as sqlpresenter, Action};
+
+use crate::domain::Action;
 
 use super::domain::{ClickHouseConnectionDefinition, ClickHouseMessage};
 use super::map_data_type_helpers as map;
@@ -95,7 +98,7 @@ async fn select_all(
     for column in all_rows_block.columns() {
         let col_name = column.name();
         let col_type = column.sql_type();
-        let col_values = extract_block_data(&all_rows_block, &col_name, &col_type);
+        let col_values = extract_block_data(&all_rows_block, col_name, &col_type);
 
         n_rows = col_values.len();
 
@@ -141,7 +144,7 @@ pub async fn run_statement(
     }
 
     let mut client = result_client.unwrap();
-    let action = sqlpresenter::extract_stmt_action(stmt);
+    let action = extract_stmt_action(stmt);
 
     // Fetch_all funciona con update, insert y delete, además de con select. Pero en aquellos devuelve vacío.
     // Diferenciar entre usar fetch/execute según la acción simplifica/mejora/limpia el código mucho.
@@ -216,9 +219,45 @@ fn vector_to_string<T: ToString>(v: Vec<T>) -> String {
         .join(",")
 }
 
-// lo dejo por interés aunque no gaste
-// No puedo usarla para vectores!!! Ni idea por qué!!!
-// https://github.com/suharev7/clickhouse-rs/blob/e47ba334bd1f28de20dd0c85b9af66fe029a6dea/tests/clickhouse.rs#L48
+pub fn extract_stmt_action(sql: &str) -> Action {
+    use Action::*;
+
+    let re = Regex::new(r"(?i)(INSERT INTO|UPDATE|DELETE FROM|CREATE TABLE|DROP TABLE)\s+(\w+)")
+        .unwrap();
+    let re_select = Regex::new(r"FROM\s+([^\s,]+)").unwrap();
+
+    match re.captures(sql) {
+        Some(caps) => {
+            let action_str = caps.get(1).map_or("", |m| m.as_str()).to_uppercase();
+            let table_str = caps.get(2).map_or("", |m| m.as_str());
+            let table = String::from(table_str);
+
+            if action_str == "INSERT INTO" {
+                Insert(table)
+            } else if action_str == "UPDATE" {
+                Update(table)
+            } else if action_str == "DELETE FROM" {
+                Delete(table)
+            } else if action_str == "CREATE TABLE" {
+                DropTable(table)
+            } else if action_str == "DROP TABLE" {
+                CreateTable(table)
+            } else {
+                None
+            }
+        }
+        _ => match re_select.captures(sql) {
+            Some(caps) => {
+                let table_str = caps.get(1).map_or("", |m| m.as_str());
+                let table = String::from(table_str);
+
+                Select(table)
+            }
+            _ => None,
+        },
+    }
+}
+
 fn collect_values<'b, T: ToString + FromSql<'b>>(
     block: &'b Block<Complex>,
     column: &str,
@@ -247,8 +286,8 @@ fn collect_nullable_values<'b, T: ToString + FromSql<'b>>(
         .collect()
 }
 
-fn extract_block_data<'b>(
-    block: &'b Block<Complex>,
+fn extract_block_data(
+    block: &Block<Complex>,
     column: &str,
     col_type: &SqlType,
 ) -> Vec<String> {

@@ -8,6 +8,25 @@
 
 use common::traits::ToUrl;
 
+#[derive(Debug, PartialEq, Clone)]
+pub enum Action {
+    Insert(String),
+    Update(String),
+    Delete(String),
+    Select(String),
+    CreateTable(String),
+    DropTable(String),
+    None,
+}
+
+#[derive(PartialEq, Debug, Default)]
+pub enum QuerySort {
+    #[default]
+    None,
+    Asc,
+    Desc,
+}
+
 #[derive(serde::Serialize, Debug, serde::Deserialize, Default, Clone)]
 pub struct ClickHouseConnectionOptions {
     pub schema: String,
@@ -43,7 +62,7 @@ impl ToUrl for ClickHouseConnectionDefinition {
         let p = match self.protocol {
             ClickHouseProtocol::Tcp => "tcp",
             ClickHouseProtocol::Http => "http",
-            ClickHouseProtocol::Https => "https"
+            ClickHouseProtocol::Https => "https",
         };
         format!("{p}://{}:{}", self.host, self.port)
     }
@@ -60,5 +79,5 @@ pub enum ClickHouseMessage {
     Empty, // para errores, pero para poder resetear (o cualquier otra cosa que necesitemos).
     AddConnection(ClickHouseConnectionDefinition),
     EditConnection((usize, ClickHouseConnectionDefinition)),
-    DatabaseTables(Vec<String>)
+    DatabaseTables(Vec<String>),
 }

@@ -6,7 +6,7 @@ edition = "2021"
 [dependencies]
 common = { path = "../common" }
 components = { path = "../components" }
-sqlm = { path = "../sqlm" }
+# sqlm = { path = "../sqlm" }
 serde = { version = "1.0.197", default-features = false }
 serde_json = "1.0.117"
 eframe = { version = "0.27.2", features = ["glow"], default-features = false }
@@ -23,3 +23,4 @@ futures-util = { version = "0.3.30", default-features = false }
 chrono = { version = "0.4.37", default-features = false }
 chrono-tz = { version = "0.8", default-features = false }
 uuid = { version = "1.8.0", default-features = false }
+regex = "1.10.4"

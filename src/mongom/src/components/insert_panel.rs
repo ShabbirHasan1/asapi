@@ -19,7 +19,7 @@ impl MongoView {
         let docs: Result<Vec<Document>, String> =
             if self.state.selected_action == MongoAction::InsertMany {
                 serde_json::from_str::<Vec<Document>>(&self.state.current_selection.user_free_input)
-                    .map_or_else(|e| Err(format!("{e:?}")), |d| Ok(d))
+                    .map_or_else(|e| Err(format!("{e:?}")), Ok)
             } else if self.state.selected_action == MongoAction::InsertOne {
                 serde_json::from_str::<Document>(&self.state.current_selection.user_free_input)
                     .map_or_else(|e| Err(format!("{e:?}")), |d| Ok(vec![d]))

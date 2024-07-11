@@ -191,44 +191,19 @@ pub async fn upload_files_in_body_params(
         if *param_with_files {
             // Si el parámetro tiene un archivo, lo metemos como `part` en el `form`.
             let file_path = &files[0];
-            if files.len() == 1 {
-                let file_name = file_path
-                    .file_name()
-                    .and_then(OsStr::to_str)
-                    .map(String::from);
-                if file_name.is_none() {
-                    return Err(UploadError::IOError(String::from(
-                        "El archivo no tiene nombre. Es un directorio?",
-                    )));
-                }
 
-                let file = File::open(file_path)
-                    .await
-                    .map_err(|err| UploadError::IOError(err.to_string()))?;
-                let mime_type = mime_guess::from_path(file_path).first_or_octet_stream();
-                let stream = FramedRead::new(file, BytesCodec::new());
-                let file_body = Body::wrap_stream(stream);
-
-                let part = multipart::Part::stream(file_body)
-                    .file_name(file_name.unwrap())
-                    .mime_str(mime_type.essence_str())
-                    .map_err(|err| UploadError::MultipartError(err.to_string()))?;
-                form = form.part(k.clone(), part);
-            } else if files.len() > 1 {
-                // Si tenemos maś de un archivo, los metemos en el mismo campo del part,
-                // que será el nombre del campo.
-                for file_path in files {
+            match files.len() {
+                1 => {
                     let file_name = file_path
                         .file_name()
                         .and_then(OsStr::to_str)
                         .map(String::from);
-
                     if file_name.is_none() {
                         return Err(UploadError::IOError(String::from(
                             "El archivo no tiene nombre. Es un directorio?",
                         )));
                     }
-                    println!("Uploaing files");
+
                     let file = File::open(file_path)
                         .await
                         .map_err(|err| UploadError::IOError(err.to_string()))?;
@@ -240,9 +215,38 @@ pub async fn upload_files_in_body_params(
                         .file_name(file_name.unwrap())
                         .mime_str(mime_type.essence_str())
                         .map_err(|err| UploadError::MultipartError(err.to_string()))?;
-                    form = form.part("files", part);
+                    form = form.part(k.clone(), part);
                 }
-            }
+                _ => {
+                    // Si tenemos maś de un archivo, los metemos en el mismo campo del part,
+                    // que será el nombre del campo.
+                    for file_path in files {
+                        let file_name = file_path
+                            .file_name()
+                            .and_then(OsStr::to_str)
+                            .map(String::from);
+
+                        if file_name.is_none() {
+                            return Err(UploadError::IOError(String::from(
+                                "El archivo no tiene nombre. Es un directorio?",
+                            )));
+                        }
+                        println!("Uploaing files");
+                        let file = File::open(file_path)
+                            .await
+                            .map_err(|err| UploadError::IOError(err.to_string()))?;
+                        let mime_type = mime_guess::from_path(file_path).first_or_octet_stream();
+                        let stream = FramedRead::new(file, BytesCodec::new());
+                        let file_body = Body::wrap_stream(stream);
+
+                        let part = multipart::Part::stream(file_body)
+                            .file_name(file_name.unwrap())
+                            .mime_str(mime_type.essence_str())
+                            .map_err(|err| UploadError::MultipartError(err.to_string()))?;
+                        form = form.part("files", part);
+                    }
+                }
+            };
         } else {
             // Si no tenemos archivos, metemos el parámetro como texto.
             form = form.text(k.clone(), v.clone());

@@ -376,7 +376,7 @@ fn read_request(v: &Value) -> Request {
     let method = v
         .get("method")
         .and_then(|v| v.as_str())
-        .and_then(HttpMethod::from_str)
+        .and_then(HttpMethod::from_string)
         .unwrap_or_default();
     let url = v.get("url").and_then(|v| v.as_str()).unwrap_or_default();
     let multipart = v

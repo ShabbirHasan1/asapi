@@ -8,9 +8,8 @@
 use eframe::egui;
 
 use common::internationalization::I18nClickHouse;
-use sqlm::sqlx_common::state::SqlState;
 
-use crate::domain::ClickHouseMessage;
+use crate::{domain::ClickHouseMessage, state::SqlState};
 
 pub struct ClickHouseTableInfo;
 

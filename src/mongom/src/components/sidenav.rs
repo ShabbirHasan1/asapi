@@ -446,7 +446,8 @@ impl MongoDatabasesSubpanel {
                                 }
                             });
                             if db_btn.clicked() && local_st.conn.client.is_some() {
-                                local_st.current_selection.db_name = db_name.to_owned();
+                                db_name.clone_into(&mut local_st.current_selection.db_name);
+                                // local_st.current_selection.db_name = db_name.to_owned();
                                 let tx_cloned = tx.clone();
                                 let client_ref = local_st.conn.client.as_ref().unwrap().clone();
                                 let db_name_cloned = db_name.clone();
@@ -532,7 +533,8 @@ impl MongoCollectionsSubpanel {
                                 }
                             });
                             if col_btn.clicked() && local_st.conn.client.is_some() {
-                                local_st.current_selection.col_name = col_name.to_owned();
+                                col_name.clone_into(&mut local_st.current_selection.col_name);
+                                // local_st.current_selection.col_name = col_name.to_owned();
                                 let ctx_cloned = ctx.clone();
                                 let tx_cloned = tx.clone();
                                 let client_ref = local_st.conn.client.as_ref().unwrap().clone();

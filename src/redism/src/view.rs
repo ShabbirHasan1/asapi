@@ -113,8 +113,9 @@ impl RedisView {
                     {
                         self.state.reset_command();
                         self.state.current_history_index -= 1;
-                        self.state.current_command =
-                            self.state.cmd_history[self.state.current_history_index].clone();
+                        self.state.current_command.clone_from(&self.state.cmd_history[self.state.current_history_index]);
+                        // self.state.current_command =
+                            // self.state.cmd_history[self.state.current_history_index].clone();
                         // info!(
                         //     "UP {}  --  {}",
                         //     self.state.current_history_index, self.state.current_command

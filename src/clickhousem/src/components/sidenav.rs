@@ -12,7 +12,8 @@ use std::collections::HashSet;
 use tokio::{runtime::Runtime, sync::mpsc::Sender};
 
 use common::internationalization::I18nClickHouse;
-use sqlm::sqlx_common::state::QuerySort;
+
+use crate::domain::QuerySort;
 
 use crate::{
     components::contextual_menus::{ClickHouseTableContextMenu, ClickHouseTableInfo},
@@ -302,7 +303,7 @@ impl ClickHouseDatabasesSubpanel {
             .id_source("clickhouse_databases_scroll_area")
             .show(ui, |ui| {
                 // Guarda para salid de aquí si no hay conexión.
-                if !local_st.pool.is_some() {
+                if local_st.pool.is_none() {
                     return;
                 }
                 egui::Grid::new("clickhouse_databases")
@@ -412,7 +413,7 @@ impl ClickHouseTablesSubpanel {
                             );
                             println!("{select_all_stmt}");
 
-                            local_st.sql.sql_statement = select_all_stmt.clone();
+                            local_st.sql.sql_statement.clone_from(&select_all_stmt);
                             local_st.sql.query_sort = QuerySort::None;
 
                             rt.spawn(async move {

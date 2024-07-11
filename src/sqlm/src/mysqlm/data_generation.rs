@@ -87,14 +87,14 @@ pub fn generate_mysql_value(data_type: &MySqlType) -> String {
         MySqlType::TinyText => generate_mysql_value(&MySqlType::Text(8)),
         // TODO:
         MySqlType::Set(s) => {
-            let options = s.split(",").collect::<Vec<&str>>();
+            let options = s.split(',').collect::<Vec<&str>>();
             // TODO: Podemos hacer que se seleccionen `n` elementos, con 0 < n < options.len()
             let selected = random_select_from_vec(options).sample(&SimpleRGen::new());
 
             selected.to_owned()
         }
         MySqlType::Enum(s) => {
-            let options = s.split(",").collect::<Vec<&str>>();
+            let options = s.split(',').collect::<Vec<&str>>();
             let selected = random_select_from_vec(options).sample(&SimpleRGen::new());
 
             selected.to_owned()

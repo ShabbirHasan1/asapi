@@ -19,8 +19,9 @@ pub enum HttpMethod {
     Delete,
 }
 
+
 impl HttpMethod {
-    pub fn from_str(s: &str) -> Option<Self> {
+    pub fn from_string(s: &str) -> Option<Self> {
         match s {
             "GET" => Some(HttpMethod::Get),
             "POST" => Some(HttpMethod::Post),

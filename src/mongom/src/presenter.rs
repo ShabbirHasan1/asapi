@@ -30,9 +30,7 @@ pub async fn list_database_names_in_connection(
     i18n: &I18n,
 ) -> Vec<String> {
     let timeout_duration = Duration::from_secs(5);
-    let ls = match tokio::time::timeout(timeout_duration, client.list_database_names(None, None))
-        .await
-    {
+    match tokio::time::timeout(timeout_duration, client.list_database_names(None, None)).await {
         Ok(Ok(database_names)) => {
             let _ = tx
                 .send(MongoMessage::Databases(database_names.to_owned()))
@@ -40,7 +38,7 @@ pub async fn list_database_names_in_connection(
             database_names
         }
         Ok(Err(e)) => {
-                let error_message = format!("{}: {}", &i18n.mongo_connection_timeout, e);
+            let error_message = format!("{}: {}", &i18n.mongo_connection_timeout, e);
             log::error!("{error_message}");
             let _ = tx.send(MongoMessage::Error(error_message)).await;
             vec![]
@@ -51,9 +49,7 @@ pub async fn list_database_names_in_connection(
             let _ = tx.send(MongoMessage::Error(error_message)).await;
             vec![]
         }
-    };
-
-    ls
+    }
 }
 
 pub async fn list_database_collections<'a>(
@@ -62,7 +58,7 @@ pub async fn list_database_collections<'a>(
     db_name: &str,
 ) -> Vec<String> {
     let db = client.database(db_name);
-    let ls = match db.list_collection_names(None).await {
+    match db.list_collection_names(None).await {
         Ok(cs) => {
             let _ = tx.send(MongoMessage::Collections(cs.to_owned())).await;
             cs
@@ -76,9 +72,7 @@ pub async fn list_database_collections<'a>(
             let _ = tx.send(MongoMessage::Error(error_message)).await;
             vec![]
         }
-    };
-
-    ls
+    }
 }
 
 /**

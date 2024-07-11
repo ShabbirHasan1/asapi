@@ -14,7 +14,8 @@ use tokio::{
 
 use common::internationalization::I18nClickHouse;
 use common::quote;
-use sqlm::sqlx_common::state::QuerySort;
+
+use crate::domain::QuerySort;
 
 use super::{
     components::ClickHouseSideNav,

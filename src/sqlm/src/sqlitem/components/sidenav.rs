@@ -55,11 +55,12 @@ impl SQLiteSideNav {
                 let _hover_menu = |ui: &mut egui::Ui| {
                     ui.label("Para conectar, clicar en definición de la conexión.");
                 };
+                let add_contents = |ui: &mut egui::Ui| {
+                    ui.label(&i18n.sqlite.connection_btn_help);
+                };
                 if ui
                     .button(&i18n.sqlite.btn_add_connection)
-                    .on_hover_ui(|ui| {
-                        ui.label(&i18n.sqlite.connection_btn_help);
-                    })
+                    .on_hover_ui(add_contents)
                     .clicked()
                 {
                     local_state.file_dialog.select_file();

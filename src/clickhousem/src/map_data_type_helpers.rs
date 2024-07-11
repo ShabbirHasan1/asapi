@@ -11,10 +11,10 @@ use clickhouse_rs::Block;
 use std::collections::HashMap;
 use std::hash::Hash;
 
-pub fn map_to_vec_string<'a>(
+pub fn map_to_vec_string(
     ktype: &SqlType,
     vtype: &SqlType,
-    block: &'a Block<Complex>,
+    block: &Block<Complex>,
     column: &str,
 ) -> Vec<String> {
     match ktype {
