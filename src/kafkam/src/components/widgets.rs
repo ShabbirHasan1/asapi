@@ -12,7 +12,7 @@ use eframe::{
 };
 use rdkafka::error::KafkaError;
 
-use crate::components::result_panel::job_fn;
+use components::result_panel::job_fn;
 
 pub fn ui_error_panel(ui: &mut egui::Ui, optional_error: &Option<KafkaError>) {
     if let Some(error) = optional_error {

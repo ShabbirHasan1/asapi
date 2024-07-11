@@ -23,7 +23,7 @@ use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use tokio::{runtime::Runtime, sync::mpsc::Sender};
 
-use crate::kafkam::state::KafkaMessage;
+use super::state::KafkaMessage;
 
 /// Recuperamos metadatos, usamos contexto que no registra callback en `stats
 pub fn get_cluster_metadata(

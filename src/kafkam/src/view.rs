@@ -13,7 +13,7 @@ use tokio::runtime::Runtime;
 
 use common::internationalization::I18n;
 
-use crate::kafkam::state::KafkaPanel;
+use super::state::KafkaPanel;
 
 use super::producer::{self as producer_presenter, KafkaStatsProducerPresenter};
 use super::{

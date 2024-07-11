@@ -13,8 +13,6 @@ use rdkafka::error::KafkaError;
 use rdkafka::types::RDKafkaErrorCode;
 use std::time::Duration;
 
-
-
 pub async fn create_topic(
     broker_url: &str,
     name: &str,

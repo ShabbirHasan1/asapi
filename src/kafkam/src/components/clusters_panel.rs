@@ -12,7 +12,7 @@ use rdkafka::metadata::Metadata;
 use common::internationalization::I18n;
 use components::heading_strong;
 
-use crate::kafkam::view::KafkaView;
+use crate::view::KafkaView;
 
 impl KafkaView {}
 

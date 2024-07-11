@@ -6,7 +6,6 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
-
 // Para poder conectarme a señales del sistema.
 // use signal_hook::consts::signal::*;
 // use signal_hook::flag;
@@ -20,18 +19,14 @@ use rdkafka::consumer::{Consumer, ConsumerContext, Rebalance};
 use rdkafka::error::KafkaResult;
 use rdkafka::message::{Headers, Message};
 
-
-
 use rdkafka::statistics::Statistics;
 use rdkafka::topic_partition_list::TopicPartitionList;
 use rdkafka::util::Timeout;
 
-
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
-
-use crate::kafkam::state::KafkaConsumerMessage;
+use super::state::KafkaConsumerMessage;
 
 // =================================
 // Consumidor

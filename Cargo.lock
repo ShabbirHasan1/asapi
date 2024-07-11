@@ -156,7 +156,6 @@ checksum = "175571dd1d178ced59193a6fc02dde1b972eb0bc56c892cde9beeceac5bf0f6b"
 name = "asapi"
 version = "0.3.404"
 dependencies = [
- "bson",
  "chrono",
  "chrono-tz",
  "clickhouse-rs",
@@ -167,25 +166,20 @@ dependencies = [
  "egui-file-dialog",
  "egui_extras",
  "egui_json_tree",
- "egui_plot",
  "enum-map",
  "env_logger",
  "futures",
  "futures-util",
  "httpm",
+ "kafkam",
  "log",
- "mime_guess",
- "mongodb",
  "mongom",
- "rdkafka",
  "redism",
  "regex",
- "reqwest",
  "rust_decimal",
  "serde",
  "serde_json",
  "sqlm",
- "sqlx",
  "tokio",
  "tokio-util",
  "uuid",
@@ -1892,6 +1886,26 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "29c15563dc2726973df627357ce0c9ddddbea194836909d655df6a75d2cf296d"
 dependencies = [
  "wasm-bindgen",
+]
+
+[[package]]
+name = "kafkam"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "common",
+ "components",
+ "eframe",
+ "egui",
+ "egui_extras",
+ "egui_json_tree",
+ "futures",
+ "log",
+ "rdkafka",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tokio-util",
 ]
 
 [[package]]

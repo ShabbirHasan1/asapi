@@ -13,7 +13,7 @@ use tokio::runtime::Runtime;
 
 use common::qk_error;
 
-use crate::kafkam::{
+use crate::{
     presenter::KafkaConsumer,
     state::{Cluster, KafkaConsumerMessage},
     view::KafkaView,

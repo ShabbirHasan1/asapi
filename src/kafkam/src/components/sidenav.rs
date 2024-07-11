@@ -11,7 +11,7 @@ use eframe::egui::{self, Response};
 use std::collections::HashSet;
 use tokio::runtime::Runtime;
 
-use crate::kafkam::{
+use crate::{
     producer::{self as producer_presenter, KafkaStatsProducerPresenter},
     state::{Cluster, KafkaAppState, KafkaPanel},
     view::KafkaView,
