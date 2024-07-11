@@ -12,33 +12,30 @@
 /// que forman parte de su estado.
 // Añadimos módulos para que se carguen en el proyecto.
 mod app_state;
-mod top_bar;
 mod clickhousem;
-mod components;
 mod httpm;
 mod kafkam;
 mod mongom;
-mod mysqlm;
-mod pgm;
+mod top_bar;
 extern crate common;
+extern crate components;
 extern crate redism;
-mod sqlitem;
-mod sqlx_common;
+extern crate sqlm;
 
 use clickhousem::view::ClickHouseView;
 use common::internationalization::language_selector;
-use components::top_bar::AppTopBar;
 use eframe::egui;
 use kafkam::view::KafkaView;
 use log::info;
 use mongom::view::MongoView;
-use mysqlm::view::MySqlView;
-use pgm::view::PostgresView;
 use redism::view::RedisView;
-use sqlitem::view::SQLiteView;
+use sqlm::mysqlm::view::MySqlView;
+use sqlm::pgm::view::PostgresView;
+use sqlm::sqlitem::view::SQLiteView;
 use std::fs::{self, OpenOptions};
+use top_bar::AppTopBar;
 
-use crate::app_state::{read_state_and_adapt, AppState, ViewType};
+use crate::app_state::{load_state, read_state_and_adapt, AppState, ViewType};
 use crate::common::fs as asapi_fs;
 use crate::httpm::view::HttpView;
 
@@ -119,7 +116,7 @@ impl Asapi {
         // ==================================================
         // ==================================================
 
-        let state = match asapi_fs::load_state(FILE_NAME) {
+        let state = match load_state(FILE_NAME) {
             Ok(state) => state,
             Err(err) => {
                 log::error!("{err:?}");
@@ -171,17 +168,21 @@ impl eframe::App for Asapi {
                 self.http
                     .update(ctx, _frame, &mut self.app_state.http, &self.rt, &i18n.http)
             }
-            ViewType::Pg => self
-                .pg
-                .update(ctx, _frame, &mut self.app_state, &self.rt, &i18n.sqlx),
+            ViewType::Pg => {
+                self.pg
+                    .update(ctx, _frame, &mut self.app_state.pg, &self.rt, &i18n.sqlx)
+            }
             ViewType::MySql => {
                 self.mysql
-                    .update(ctx, _frame, &mut self.app_state, &self.rt, &i18n.sqlx)
+                    .update(ctx, _frame, &mut self.app_state.mysql, &self.rt, &i18n.sqlx)
             }
-            ViewType::SQLite => {
-                self.sqlite
-                    .update(ctx, _frame, &mut self.app_state, &self.rt, &i18n.sqlx)
-            }
+            ViewType::SQLite => self.sqlite.update(
+                ctx,
+                _frame,
+                &mut self.app_state.sqlite,
+                &self.rt,
+                &i18n.sqlx,
+            ),
             ViewType::Mongo => {
                 self.mongo
                     .update(ctx, _frame, &mut self.app_state.mongo, &self.rt, &i18n)

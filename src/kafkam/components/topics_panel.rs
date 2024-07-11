@@ -14,13 +14,13 @@ use rdkafka::metadata::Metadata;
 use std::ops::RangeInclusive;
 use tokio::runtime::Runtime;
 
+use common::internationalization::I18n;
+use components::heading_strong;
+use components::widgets::ui_text_edit_singleline_hint;
 
+use crate::kafkam::admin as admin_presenter;
 use crate::kafkam::state::KafkaMessage;
-use crate::kafkam::{admin as admin_presenter};
-use crate::{
-    common::internationalization::I18n, components::widgets::ui_text_edit_singleline_hint,
-    heading_strong, kafkam::view::KafkaView,
-};
+use crate::kafkam::view::KafkaView;
 
 impl KafkaView {
     pub fn topics_admin(&mut self, rt: &Runtime, ui: &mut egui::Ui, i18n: &I18n) {

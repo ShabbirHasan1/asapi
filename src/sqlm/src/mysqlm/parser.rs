@@ -8,13 +8,15 @@
 
 // Basado en type_info.rs de sqlx, extraigo lo que allí es privado.
 
-use crate::{common::traits::ShowVec, mysqlm::mysql_type::MySqlType};
 use rust_decimal::Decimal;
 use sqlx::{
     mysql::{MySqlColumn, MySqlRow},
     Column, Decode, MySql, Row, Type,
 };
 use std::fmt;
+
+use crate::sqlx_common::traits::ShowVec;
+use crate::mysqlm::mysql_type::MySqlType;
 
 use super::mysql_type::ty_to_type;
 

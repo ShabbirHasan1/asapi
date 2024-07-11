@@ -9,7 +9,7 @@
 // use clickhouse::Client;
 use clickhouse_rs::Pool;
 
-use crate::sqlx_common::state::SqlState;
+use sqlm::sqlx_common::state::SqlState;
 
 use super::domain::ClickHouseConnectionDefinition;
 
@@ -36,7 +36,7 @@ pub struct ClickHouseCurrentSelection {
     // al seleccionar otra base de datos.
     pub db_idx: usize,
     pub db_name: String,
-    pub tables: Vec<String>
+    pub tables: Vec<String>,
 }
 
 impl Default for ClickHouseCurrentSelection {
@@ -49,10 +49,8 @@ impl Default for ClickHouseCurrentSelection {
     }
 }
 
-
 impl ClickHouseCurrentSelection {
-    pub fn reset_to_new_db(&mut self) {
-    }
+    pub fn reset_to_new_db(&mut self) {}
 }
 
 #[derive(Default)]

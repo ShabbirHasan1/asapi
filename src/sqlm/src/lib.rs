@@ -6,24 +6,7 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
-// pub trait ShowVec {
-//     fn to_string_vec(&self) -> Vec<String>;
-// }
-
-// pub trait Show {
-//     fn to_string(&self) -> String;
-// }
-
-pub trait Runner<T> {
-    fn run() -> T;
-}
-
-// Para definir cómo se genera la url de conexión a partir
-// de una definición de una conexión.
-pub trait ToUrl {
-    fn to_url(&self) -> String;
-}
-
-pub trait Create {
-    fn create(config: &str) -> Self;
-}
+pub mod sqlx_common;
+pub mod pgm;
+pub mod mysqlm;
+pub mod sqlitem;

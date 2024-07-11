@@ -11,13 +11,12 @@ use egui_extras::{Column, TableBuilder};
 use std::sync::Arc;
 use tokio::runtime::Runtime;
 
-use crate::{
-    kafkam::{
-        presenter::KafkaConsumer,
-        state::{Cluster, KafkaConsumerMessage},
-        view::KafkaView,
-    },
-    qk_error,
+use common::qk_error;
+
+use crate::kafkam::{
+    presenter::KafkaConsumer,
+    state::{Cluster, KafkaConsumerMessage},
+    view::KafkaView,
 };
 
 pub fn show_messages_table(ui: &mut egui::Ui, messages: &[KafkaConsumerMessage]) {

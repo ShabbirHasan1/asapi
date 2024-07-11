@@ -11,10 +11,9 @@ use log::info;
 use std::sync::{Arc, Mutex};
 use tokio::runtime::Runtime;
 
-use crate::{
-    common::{internationalization::I18n, traits::Sidenav as _},
-    kafkam::state::KafkaPanel,
-};
+use common::internationalization::I18n;
+
+use crate::kafkam::state::KafkaPanel;
 
 use super::producer::{self as producer_presenter, KafkaStatsProducerPresenter};
 use super::{

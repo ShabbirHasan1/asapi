@@ -25,3 +25,7 @@ pub trait Presenter {
 
     fn should_be_added_to_delete_stmt(&self, col_type: &str) -> bool;
 }
+
+pub trait ShowVec {
+    fn to_string_vec(&self) -> Vec<String>;
+}

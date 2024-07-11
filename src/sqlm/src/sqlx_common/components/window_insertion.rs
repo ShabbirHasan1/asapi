@@ -11,13 +11,12 @@ use sqlx::Database;
 use std::fmt::Debug;
 use std::marker::PhantomData;
 
-use crate::{
-    common::internationalization::I18nSqlx,
-    quote,
-    sqlx_common::{
-        presenter::create_columns_string,
-        state::{SqlState, SqlxMessage},
-    },
+use common::internationalization::I18nSqlx;
+use common::quote;
+
+use crate::sqlx_common::{
+    presenter::create_columns_string,
+    state::{SqlState, SqlxMessage},
 };
 
 pub struct InsertionWindow<R, DB, T>(PhantomData<R>, PhantomData<DB>, PhantomData<T>);

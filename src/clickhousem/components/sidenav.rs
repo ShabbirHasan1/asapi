@@ -11,6 +11,8 @@ use egui_extras::{Size, StripBuilder};
 use std::collections::HashSet;
 use tokio::{runtime::Runtime, sync::mpsc::Sender};
 
+use sqlm::sqlx_common::state::QuerySort;
+
 use crate::{
     clickhousem::{
         components::contextual_menus::{ClickHouseTableContextMenu, ClickHouseTableInfo},
@@ -19,7 +21,6 @@ use crate::{
         state::{ClickHouseAppState, ClickHouseState},
     },
     common::internationalization::I18nClickHouse,
-    sqlx_common::state::QuerySort,
 };
 
 pub struct ClickHouseSideNav {
@@ -294,10 +295,10 @@ impl ClickHouseDatabasesSubpanel {
         ctx: &egui::Context,
         rt: &Runtime,
         ui: &mut egui::Ui,
-        app_st: &mut ClickHouseAppState,
+        _app_st: &mut ClickHouseAppState,
         local_st: &mut ClickHouseState,
         tx: &Sender<ClickHouseMessage>,
-        i18n: &I18nClickHouse,
+        _i18n: &I18nClickHouse,
     ) {
         egui::ScrollArea::vertical()
             .id_source("clickhouse_databases_scroll_area")
@@ -314,7 +315,7 @@ impl ClickHouseDatabasesSubpanel {
                                 egui::RichText::new("Info")
                                     .color(egui::Color32::from_rgb(128, 128, 128)),
                             )
-                            .on_hover_ui(|ui| {
+                            .on_hover_ui(|_ui| {
                                 // db_info(rt, ui, local_st, i18n, db_name);
                             });
 

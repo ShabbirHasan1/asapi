@@ -6,21 +6,19 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
+use common::{icon_moon::IconMoon, internationalization::I18n};
 use eframe::egui::{self, Response};
 use std::collections::HashSet;
 use tokio::runtime::Runtime;
 
-use crate::{
-    common::{icon_moon::IconMoon, internationalization::I18n, traits::Sidenav},
-    kafkam::{
-        producer::{self as producer_presenter, KafkaStatsProducerPresenter},
-        state::{Cluster, KafkaAppState, KafkaPanel},
-        view::KafkaView,
-    },
+use crate::kafkam::{
+    producer::{self as producer_presenter, KafkaStatsProducerPresenter},
+    state::{Cluster, KafkaAppState, KafkaPanel},
+    view::KafkaView,
 };
 
-impl Sidenav<KafkaAppState> for KafkaView {
-    fn show_sidenav(
+impl KafkaView {
+    pub fn show_sidenav(
         &mut self,
         rt: &Runtime,
         ctx: &egui::Context,

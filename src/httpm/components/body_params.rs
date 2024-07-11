@@ -10,7 +10,7 @@ use eframe::egui;
 use egui_file_dialog::{DialogMode, DialogState};
 use egui_json_tree::JsonTree;
 use serde_json::Value as JsonValue;
-use std::{f32::INFINITY, path::PathBuf};
+use std::path::PathBuf;
 
 use crate::{
     common::{fs::list_files_in_directory, icon_moon::IconMoon, internationalization::I18nHttp},

@@ -10,7 +10,7 @@ use mongodb::{
     options::{ClientOptions, ResolverConfig},
     Client,
 };
-use std::{error::Error, time::Duration};
+use std::time::Duration;
 
 use super::state::{MongoConnectionDefinition, MongoLocalState};
 
@@ -42,11 +42,11 @@ pub async fn connect(
                 Ok(client) => {
                     log::info!("Success with {uri}");
                     Ok(client)
-                },
+                }
                 Err(err) => {
-                    log::error!("{err}", );
+                    log::error!("{err}",);
                     Err(format!("{err:?}"))
-                },
+                }
             }
         }
         Err(err) => {

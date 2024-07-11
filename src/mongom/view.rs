@@ -11,9 +11,9 @@ use eframe::egui;
 use tokio::runtime::Runtime;
 use tokio::sync::mpsc::{Receiver, Sender};
 
-use crate::app_state::{self, AppState};
-use crate::common::internationalization::I18n;
-use crate::components::result_panel::ui_response_panel;
+use common::internationalization::I18n;
+use components::result_panel::ui_response_panel;
+
 use crate::mongom::state::MongoLocalState;
 
 use super::actions::MongoAction;

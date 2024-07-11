@@ -10,16 +10,18 @@ use chrono::{DateTime, Utc};
 use chrono::{NaiveDate, NaiveTime};
 use rust_decimal::Decimal;
 
-use super::mysql_type::MySqlType;
-use crate::common::generator::{random_select_from_pair, random_select_from_vec, Gen, SimpleRGen};
-use crate::common::traits::Runner as _;
-use crate::quote;
+use common::generator::{random_select_from_pair, random_select_from_vec, Gen, SimpleRGen};
+use common::quote;
+use common::traits::Runner as _;
+
 use crate::sqlx_common::data_generation::geom::{
     linestring_generator, multipoint_generator, multipolygon_generator, point_generator,
     polygon_generator,
 };
 use crate::sqlx_common::data_generation::json::simple_json_generator;
-use crate::sqlx_common::data_generation::{geom, GenericGenerator};
+use crate::sqlx_common::data_generation::GenericGenerator;
+
+use super::mysql_type::MySqlType;
 
 // https://docs.rs/sqlx/latest/sqlx/mysql/types/index.html
 pub fn generate_mysql_value(data_type: &MySqlType) -> String {

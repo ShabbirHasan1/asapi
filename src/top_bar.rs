@@ -10,9 +10,10 @@ use eframe::egui;
 use tokio;
 use tokio::runtime::Runtime;
 
-use common::fs;
 use common::icon_moon::IconMoon;
 use common::internationalization::{I18n, I18nOptions};
+
+use crate::app_state::{load_state, save_state};
 
 use super::app_state::{AppState, ViewType};
 
@@ -51,7 +52,7 @@ impl AppTopBar {
                     ui.label(&i18n.top_export_warning);
                     ui.horizontal(|ui| {
                         if ui.button("Exportar").clicked() {
-                            let _ = fs::save_state(app_state, self.file_name, true);
+                            let _ = save_state(app_state, self.file_name, true);
                             self.is_export_confirmation_open = false;
                         }
 
@@ -119,7 +120,7 @@ impl AppTopBar {
                     .add(egui::Button::new(&i18n.top_import_json_state))
                     .clicked()
                 {
-                    *app_state = match fs::load_state(self.file_name) {
+                    *app_state = match load_state(self.file_name) {
                         Ok(state) => state,
                         Err(_e) => AppState::default(),
                     };
@@ -254,9 +255,12 @@ impl AppTopBar {
                     }
                 });
 
-                let clickhouse_btn =
-                    ui.selectable_value(&mut app_state.selected_view, ViewType::ClickHouse, "ClickHouse");
-                mongo_btn.context_menu(|ui| {
+                let clickhouse_btn = ui.selectable_value(
+                    &mut app_state.selected_view,
+                    ViewType::ClickHouse,
+                    "ClickHouse",
+                );
+                clickhouse_btn.context_menu(|ui| {
                     if ui
                         .add(egui::Button::new(
                             &i18n.top_clickhouse_toggle_sidebar_connections,

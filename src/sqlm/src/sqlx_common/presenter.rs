@@ -7,12 +7,12 @@
 // -------------------------------------------------------------------------
 
 use std::marker::PhantomData;
-
 use regex::Regex;
 use sqlx::{Column, Database, Row, TypeInfo};
 
+use crate::sqlx_common::traits::ShowVec;
+
 use super::state::SqlDataGenState;
-use crate::common::traits::ShowVec;
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Action {

@@ -8,11 +8,13 @@
 
 use chrono::{NaiveDate, NaiveDateTime, NaiveTime};
 
-use super::parser::SqliteType;
-use crate::common::generator::{Gen, SimpleRGen};
-use crate::common::traits::Runner as _;
-use crate::quote;
+use common::generator::{Gen, SimpleRGen};
+use common::traits::Runner as _;
+use common::quote;
+
 use crate::sqlx_common::data_generation::GenericGenerator;
+
+use super::parser::SqliteType;
 
 pub trait SQLiteRunner<T> {
     fn run() -> T;

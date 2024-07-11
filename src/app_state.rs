@@ -8,6 +8,13 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::fs;
+use std::io::{Error as IOError, ErrorKind};
+use sqlm::mysqlm::state::MySqlAppState;
+use sqlm::pgm::state::PgAppState;
+use redism::state::{RedisAppState, RedisConnectionDefinition};
+use sqlm::sqlitem::state::{SQLiteAppState, SQLiteConnectionDefinition};
+use sqlm::sqlx_common::state::SqlConnectionDefinition;
+use tokio::fs as async_fs;
 
 use crate::clickhousem::domain::ClickHouseConnectionDefinition;
 use crate::clickhousem::state::ClickHouseAppState;
@@ -18,11 +25,6 @@ use crate::httpm::state::HttpAppState;
 use crate::httpm::workspace::Workspace;
 use crate::kafkam::state::{Cluster, KafkaAppState};
 use crate::mongom::state::{MongoAppState, MongoConnectionDefinition};
-use crate::mysqlm::state::MySqlAppState;
-use crate::pgm::state::PgAppState;
-use crate::redism::state::{RedisAppState, RedisConnectionDefinition};
-use crate::sqlitem::state::{SQLiteAppState, SQLiteConnectionDefinition};
-use crate::sqlx_common::state::SqlConnectionDefinition;
 
 #[derive(Clone, Deserialize, Serialize, Copy, PartialEq, Debug, Default)]
 pub enum ViewType {
@@ -512,6 +514,18 @@ fn extract_string(v: &Value, field: &str) -> String {
         .and_then(|n| n.as_str())
         .unwrap_or_default()
         .to_string()
+}
+
+pub fn load_state(file_name: &str) -> Result<AppState, IOError> {
+    let json_data = fs::read_to_string(file_name)?;
+    let state: AppState = serde_json::from_str(&json_data).map_err(|err| {
+        IOError::new(
+            ErrorKind::InvalidData,
+            format!("Failed to deserialize data: {}", err),
+        )
+    })?;
+
+    Ok(state)
 }
 
 pub async fn async_save_state(

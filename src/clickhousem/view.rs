@@ -12,9 +12,9 @@ use tokio::{
     sync::mpsc::{Receiver, Sender},
 };
 
-use crate::common::internationalization::I18nClickHouse;
-use crate::quote;
-use crate::sqlx_common::state::QuerySort;
+use common::internationalization::I18nClickHouse;
+use common::quote;
+use sqlm::sqlx_common::state::QuerySort;
 
 use super::{
     components::ClickHouseSideNav,
@@ -122,8 +122,8 @@ impl ClickHouseView {
         ctx: &egui::Context,
         rt: &Runtime,
         stmt: String,
-        delete_allowed: bool,
-        make_all_visible: bool,
+        _delete_allowed: bool,
+        _make_all_visible: bool,
     ) {
         // Guarda por si lanzamos query cuando no hay conexión.
         // Poddríamos hacer renderizado condicional, pero así reducimos algo la indentación.
@@ -131,8 +131,8 @@ impl ClickHouseView {
             return;
         }
 
-        let pool_ref = self.state.pool.as_ref().unwrap().clone();
-        let tx_cloned = self.tx.clone();
+        let _pool_ref = self.state.pool.as_ref().unwrap().clone();
+        let _tx_cloned = self.tx.clone();
         let cloned_ctx = ctx.clone();
 
         println!("Statement para ejecutar: {stmt}");

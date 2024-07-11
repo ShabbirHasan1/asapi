@@ -11,10 +11,11 @@ use sqlx::{postgres::PgRow, Pool, Postgres, Row};
 use std::collections::HashMap;
 use tokio::sync::mpsc::Sender;
 
-use super::state::PgConnDefinition;
 use crate::sqlx_common::presenter::{self as sqlpresenter, Action, SqlPresenter};
 use crate::sqlx_common::state::{QuerySort, SqlConnectionDefinition, SqlxMessage};
 use crate::sqlx_common::traits::{Presenter, ToUrl as _};
+
+use super::state::PgConnDefinition;
 
 pub async fn connect(
     conn_definition: SqlConnectionDefinition,

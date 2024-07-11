@@ -9,11 +9,13 @@ use chrono::NaiveDateTime;
 use chrono::{DateTime, Utc};
 use chrono::{NaiveDate, NaiveTime};
 
-use super::pg_type::PgType;
-use crate::common::generator::{Gen, SimpleRGen};
-use crate::common::traits::Runner as _;
-use crate::quote;
+use common::generator::{Gen, SimpleRGen};
+use common::traits::Runner as _;
+use common::quote;
+
 use crate::sqlx_common::data_generation::GenericGenerator;
+
+use super::pg_type::PgType;
 
 pub fn generate_pg_value(data_type: &PgType) -> String {
     match data_type {

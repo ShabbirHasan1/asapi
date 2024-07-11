@@ -11,10 +11,11 @@ use sqlx::Database;
 use std::fmt::Debug;
 use std::{marker::PhantomData, ops::RangeInclusive};
 
-use crate::common::internationalization::I18nSqlx;
-use crate::common::traits::Runner;
-use crate::components::toggle_switch;
-use crate::quote;
+use common::internationalization::I18nSqlx;
+use common::traits::Runner;
+use components::toggle_switch;
+use common::quote;
+
 use crate::sqlx_common::{
     data_generation::GenericGenerator,
     presenter::create_columns_string,

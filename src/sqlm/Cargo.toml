@@ -1,0 +1,23 @@
+[package]
+name = "sqlm"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+common = { path = "../common" }
+components = { path = "../components" }
+serde = { version = "1.0.197", default-features = false }
+serde_json = "1.0.117"
+eframe = { version = "0.27.2", features = ["glow"], default-features = false }
+egui = "0.27.2"
+egui_extras = "0.27.2"
+egui_json_tree = "0.5.0"
+egui-file-dialog = "0.5.0"
+tokio = "1.37.0"
+tokio-util = "0.7.11"
+log = "0.4.21"
+uuid = { version = "1.8.0", default-features = false }
+regex = "1.10.4"
+rust_decimal = { version = "1.35.0", default-features = false }
+sqlx = { version = "0.7.4", features = ["chrono", "mysql", "postgres", "rust_decimal", "sqlite", "uuid"], default-features = false }
+chrono = { version = "0.4.37", default-features = false }

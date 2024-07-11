@@ -10,10 +10,11 @@ use eframe::egui;
 use egui_extras::{Size, StripBuilder};
 use tokio::runtime::Runtime;
 
-use crate::common::icon_moon::IconMoon;
-use crate::common::internationalization::I18nClickHouse;
-use crate::components::result_panel::ui_response_panel;
-use crate::quote;
+use common::icon_moon::IconMoon;
+use common::internationalization::I18nClickHouse;
+use common::quote;
+use components::result_panel::ui_response_panel;
+
 use crate::{
     clickhousem::presenter, clickhousem::state::ClickHouseAppState,
     clickhousem::view::ClickHouseView,

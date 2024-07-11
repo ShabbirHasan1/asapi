@@ -6,13 +6,11 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 use eframe::egui;
-use tokio::sync::mpsc::Sender;
 
-use crate::{
-    clickhousem::domain::ClickHouseMessage,
-    common::internationalization::I18nClickHouse,
-    sqlx_common::state::SqlState,
-};
+use common::internationalization::I18nClickHouse;
+use sqlm::sqlx_common::state::SqlState;
+
+use crate::clickhousem::domain::ClickHouseMessage;
 
 pub struct ClickHouseTableInfo;
 

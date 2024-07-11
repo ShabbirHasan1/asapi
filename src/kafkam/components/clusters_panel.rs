@@ -9,7 +9,10 @@
 use eframe::egui;
 use rdkafka::metadata::Metadata;
 
-use crate::{common::internationalization::I18n, heading_strong, kafkam::view::KafkaView};
+use common::internationalization::I18n;
+use components::heading_strong;
+
+use crate::kafkam::view::KafkaView;
 
 impl KafkaView {}
 

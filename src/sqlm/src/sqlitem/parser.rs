@@ -11,7 +11,7 @@ use sqlx::sqlite::{SqliteColumn, SqliteRow};
 use sqlx::{Column, Decode, Row, Sqlite, Type, TypeInfo};
 use std::fmt;
 
-use crate::common::traits::ShowVec;
+use crate::sqlx_common::traits::ShowVec;
 
 // ==============================================================
 // INFORMACIÓN PRELIMINAR

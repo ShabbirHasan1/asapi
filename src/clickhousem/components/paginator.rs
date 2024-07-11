@@ -9,7 +9,7 @@
 
 use eframe::egui;
 
-use crate::sqlx_common::state::SqlState;
+use sqlm::sqlx_common::state::SqlState;
 
 
 pub struct Paginator {}

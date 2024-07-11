@@ -11,17 +11,10 @@ use sqlx::mysql::MySqlRow;
 use sqlx::MySql;
 use tokio::runtime::Runtime;
 
-use super::components::sidenav::MySqlSideNav;
-use super::data_generation::generate_mysql_value;
-use super::mysql_type::MySqlType;
-use super::parser::mysql_type_from_string;
-use super::presenter;
-use super::state::{MySqlAppState, MySqlState};
+use common::internationalization::I18nSqlx;
+use components::result_panel::ui_response_panel;
+use common::quote;
 
-use crate::app_state::AppState;
-use crate::common::internationalization::I18nSqlx;
-use crate::components::result_panel::ui_response_panel;
-use crate::quote;
 use crate::sqlx_common::components::window_generator::GeneratorWindow;
 use crate::sqlx_common::components::window_insertion::InsertionWindow;
 use crate::sqlx_common::pagination::Paginator;
@@ -29,6 +22,14 @@ use crate::sqlx_common::presenter::SqlPresenter;
 use crate::sqlx_common::state::{QuerySort, SqlxMessage};
 use crate::sqlx_common::table::{PerformanceTable, RegularTable};
 use crate::sqlx_common::traits::{Presenter, Show};
+
+use super::components::sidenav::MySqlSideNav;
+use super::data_generation::generate_mysql_value;
+use super::mysql_type::MySqlType;
+use super::parser::mysql_type_from_string;
+use super::presenter;
+use super::state::{MySqlAppState, MySqlState};
+
 
 pub struct MySqlView {
     sidenav: MySqlSideNav,
@@ -67,7 +68,7 @@ impl MySqlView {
         &mut self,
         ctx: &egui::Context,
         _frame: &mut eframe::Frame,
-        app_state: &mut AppState,
+        app_st: &mut MySqlAppState,
         rt: &Runtime,
         i18n: &I18nSqlx,
     ) {
@@ -99,16 +100,16 @@ impl MySqlView {
 
             // Esto acaba llegando al `while let ... self.rx.try_recv` justo debajo.
             // false porque mantenemos lo que se mostraba
-            self.run_statement(ctx, rt, stmt, !app_state.pg.performance_table, false);
+            self.run_statement(ctx, rt, stmt, !app_st.performance_table, false);
         }
 
         // --> Recibimos resultados de statements async/sync <--
         while let Ok(message) = self.rx.try_recv() {
-            self.process_message(ctx, rt, app_state, message);
+            self.process_message(ctx, rt, app_st, message);
         }
 
         while let Ok(message) = self.rx_sync.try_recv() {
-            self.process_message(ctx, rt, app_state, message);
+            self.process_message(ctx, rt, app_st, message);
         }
 
         // =======================================
@@ -119,7 +120,7 @@ impl MySqlView {
             rt,
             &self.tx,
             &self.tx_sync,
-            &mut app_state.mysql,
+            app_st,
             &mut self.state,
             i18n,
         );
@@ -127,7 +128,7 @@ impl MySqlView {
         // =======================================
         // Panel central
         // =======================================
-        self.show_edit_row_window(ctx, rt, &mut app_state.mysql);
+        self.show_edit_row_window(ctx, rt, app_st);
 
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.set_width(ui.available_width());
@@ -181,7 +182,7 @@ impl MySqlView {
                     ctx,
                     rt,
                     self.state.sql.sql_statement.clone(),
-                    !app_state.pg.performance_table,
+                    !app_st.performance_table,
                     true,
                 );
             }
@@ -202,7 +203,7 @@ impl MySqlView {
                         ctx,
                         rt,
                         self.state.sql.sql_statement.clone(),
-                        !app_state.pg.performance_table,
+                        !app_st.performance_table,
                         true,
                     );
                     sql_stmt_response.request_focus();
@@ -221,7 +222,7 @@ impl MySqlView {
 
             // --> Mostramos resultados de consultas en tabla que ocupa todo el espacio restante <--
             egui::ScrollArea::horizontal().show(ui, |ui| {
-                if app_state.pg.performance_table {
+                if app_st.performance_table {
                     PerformanceTable::show(ui, &mut self.state.sql);
                 } else {
                     RegularTable::show(ui, &mut self.state.sql, rt, &self.tx);
@@ -272,7 +273,7 @@ impl MySqlView {
         &mut self,
         ctx: &egui::Context,
         rt: &Runtime,
-        app_state: &mut AppState,
+        app_st: &mut MySqlAppState,
         message: SqlxMessage,
     ) {
         match message {
@@ -283,7 +284,7 @@ impl MySqlView {
                     table_name,
                     filters.join(" AND ")
                 );
-                self.run_statement(ctx, rt, delete_stmt, !app_state.pg.performance_table, true);
+                self.run_statement(ctx, rt, delete_stmt, !app_st.performance_table, true);
             }
             SqlxMessage::SelectResponse((data, columns, make_all_visible)) => {
                 self.state.sql.reset();
@@ -302,17 +303,17 @@ impl MySqlView {
                 self.state.sql.last_response = Some(msg);
             }
             SqlxMessage::InsertStatement(stmt) => {
-                self.run_statement(ctx, rt, stmt, !app_state.pg.performance_table, true)
+                self.run_statement(ctx, rt, stmt, !app_st.performance_table, true)
             }
             SqlxMessage::DeleteAllStmt(t_name) => {
                 let delete_stmt = format!("DELETE FROM {:}", t_name);
-                self.run_statement(ctx, rt, delete_stmt, !app_state.pg.performance_table, true);
+                self.run_statement(ctx, rt, delete_stmt, !app_st.performance_table, true);
             }
             SqlxMessage::AddConnection(def) => {
-                app_state.mysql.connections.push(def);
+                app_st.connections.push(def);
             }
             SqlxMessage::EditConnection((idx, def)) => {
-                app_state.mysql.connections[idx] = def;
+                app_st.connections[idx] = def;
             }
         }
     }

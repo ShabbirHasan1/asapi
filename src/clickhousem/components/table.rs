@@ -12,15 +12,20 @@ use egui_extras::{Column, TableBuilder, TableRow};
 use tokio::runtime::Runtime;
 use tokio::sync::mpsc::Sender;
 
-use crate::clickhousem::domain::ClickHouseMessage;
-use crate::sqlx_common::state::{QuerySort, SqlState};
+use sqlm::sqlx_common::state::{QuerySort, SqlState};
 
+use crate::clickhousem::domain::ClickHouseMessage;
 
 pub struct RegularTable;
 pub struct PerformanceTable;
 
 impl RegularTable {
-    pub fn show(ui: &mut egui::Ui, sql_st: &mut SqlState, rt: &Runtime, tx: &Sender<ClickHouseMessage>) {
+    pub fn show(
+        ui: &mut egui::Ui,
+        sql_st: &mut SqlState,
+        rt: &Runtime,
+        tx: &Sender<ClickHouseMessage>,
+    ) {
         let count = sql_st.column_visible.iter().filter(|e| **e).count();
         let n_columns = if count == 0 { 0 } else { count - 1 };
 
@@ -48,36 +53,40 @@ impl RegularTable {
                     body.row(24.0, |mut row| {
                         let row_idx = row.index();
                         row.col(|ui| {
-                            ui.menu_button((1 + row_idx + sql_st.first_row_idx).to_string(), |ui| {
-                                // --> Copiar Fila <--
-                                if ui.button("Copy Row").clicked() {
-                                    ui.ctx().copy_text(format!("{:?}", row_data));
-                                    ui.close_menu();
-                                }
+                            ui.menu_button(
+                                (1 + row_idx + sql_st.first_row_idx).to_string(),
+                                |ui| {
+                                    // --> Copiar Fila <--
+                                    if ui.button("Copy Row").clicked() {
+                                        ui.ctx().copy_text(format!("{:?}", row_data));
+                                        ui.close_menu();
+                                    }
 
-                                // --> Borrar Fila <--
-                                if ui.button("Delete Row").clicked() {
-                                    let table_name = sql_st.tables[sql_st.current_table_idx].clone();
-                                    let tx_cloned = tx.clone();
+                                    // --> Borrar Fila <--
+                                    if ui.button("Delete Row").clicked() {
+                                        let table_name =
+                                            sql_st.tables[sql_st.current_table_idx].clone();
+                                        let tx_cloned = tx.clone();
 
-                                    rt.spawn(async move {
-                                        let _ = tx_cloned
-                                            .send(ClickHouseMessage::DeleteStatement((
-                                                table_name, row_idx,
-                                            )))
-                                            .await;
-                                    });
-                                    ui.close_menu();
-                                }
+                                        rt.spawn(async move {
+                                            let _ = tx_cloned
+                                                .send(ClickHouseMessage::DeleteStatement((
+                                                    table_name, row_idx,
+                                                )))
+                                                .await;
+                                        });
+                                        ui.close_menu();
+                                    }
 
-                                // --> Editar Fila <--
-                                if ui.button("Edit Row").clicked() {
-                                    ui.close_menu();
-                                    sql_st.row_being_editted.selected_row = Some(row_idx);
-                                    sql_st.row_being_editted.row_data =
-                                        sql_st.current_table_rows[row_idx].clone();
-                                }
-                            });
+                                    // --> Editar Fila <--
+                                    if ui.button("Edit Row").clicked() {
+                                        ui.close_menu();
+                                        sql_st.row_being_editted.selected_row = Some(row_idx);
+                                        sql_st.row_being_editted.row_data =
+                                            sql_st.current_table_rows[row_idx].clone();
+                                    }
+                                },
+                            );
                         });
 
                         for (col_idx, col) in row_data.iter().enumerate() {

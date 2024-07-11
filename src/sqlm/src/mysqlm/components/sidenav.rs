@@ -8,48 +8,50 @@
 
 use eframe::egui;
 use egui_extras::{Size, StripBuilder};
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use tokio::{runtime::Runtime, sync::mpsc::Sender};
 
+use common::internationalization::I18nSqlx;
+
 use crate::{
-    common::internationalization::I18nSqlx,
-    pgm::{
+    mysqlm::{
         components::contextual_menus::TableInfo,
         presenter,
-        state::{PgAppState, PostgresState},
+        state::{MySqlAppState, MySqlState},
     },
     sqlx_common::{
         components::context_menus::TableContextMenu,
         state::{QuerySort, SqlConnectionDefinition, SqlxMessage},
     },
 };
-pub struct PostgresSideNav {
-    connections_subpanel: PostgresConnectionsSubpanel,
+
+pub struct MySqlSideNav {
+    connections_subpanel: MySqlConnectionsSubpanel,
 }
 
-impl Default for PostgresSideNav {
+impl Default for MySqlSideNav {
     fn default() -> Self {
-        PostgresSideNav {
-            connections_subpanel: PostgresConnectionsSubpanel {
+        MySqlSideNav {
+            connections_subpanel: MySqlConnectionsSubpanel {
                 is_edit_connection_menu_opened: false,
             },
         }
     }
 }
 
-impl PostgresSideNav {
+impl MySqlSideNav {
     pub fn show(
         &mut self,
         ctx: &egui::Context,
         rt: &Runtime,
         tx: &Sender<SqlxMessage>,
         tx_sync: &std::sync::mpsc::Sender<SqlxMessage>,
-        app_st: &mut PgAppState,
-        local_st: &mut PostgresState,
+        app_st: &mut MySqlAppState,
+        local_st: &mut MySqlState,
         i18n: &I18nSqlx,
     ) {
         if app_st.show_sidebar {
-            egui::SidePanel::left("postgres_connections_panel").show(ctx, |ui| {
+            egui::SidePanel::left("mysql_connections_panel").show(ctx, |ui| {
                 // --> Decidimos qué mostrar <--
                 ui.horizontal(|ui| {
                     let s1 = if local_st.sql.hide_connections {
@@ -76,7 +78,7 @@ impl PostgresSideNav {
                     edit_connection(ui, i18n, &mut local_st.tmp_connection, tx_sync, None);
                 });
 
-                // --> Mostramos Conexiones y/o Tablas según lo seleccionado por el usuario <--
+                // --> Mostramos Conexiones <--
                 if !local_st.sql.hide_connections && !local_st.sql.hide_tables {
                     StripBuilder::new(ui)
                         .size(Size::remainder())
@@ -84,41 +86,38 @@ impl PostgresSideNav {
                         .vertical(|mut strip| {
                             strip.cell(|ui| {
                                 self.connections_subpanel
-                                    .show(ctx, rt, ui, app_st, local_st, tx_sync, i18n);
+                                    .show(rt, tx_sync, ui, app_st, local_st, i18n);
                             });
                             strip.cell(|ui| {
                                 ui.vertical_centered(|ui| {
                                     ui.separator();
-                                    PostgresTablesSubpanel::show(
-                                        ctx, rt, ui, tx, tx_sync, local_st, i18n,
-                                    );
+                                    MySqlTablesSubpanel::show(rt, ui, tx, tx_sync, local_st, i18n);
                                 });
                             });
                         });
                 } else if !local_st.sql.hide_connections {
                     self.connections_subpanel
-                        .show(ctx, rt, ui, app_st, local_st, tx_sync, i18n);
+                        .show(rt, tx_sync, ui, app_st, local_st, i18n);
                 } else if !local_st.sql.hide_tables {
-                    PostgresTablesSubpanel::show(ctx, rt, ui, tx, tx_sync, local_st, i18n);
+                    MySqlTablesSubpanel::show(rt, ui, tx, tx_sync, local_st, i18n);
                 }
             });
         }
     }
 }
 
-pub struct PostgresConnectionsSubpanel {
+pub struct MySqlConnectionsSubpanel {
     is_edit_connection_menu_opened: bool,
 }
 
-impl PostgresConnectionsSubpanel {
+impl MySqlConnectionsSubpanel {
     pub fn show(
         &mut self,
-        _ctx: &egui::Context,
         rt: &Runtime,
-        ui: &mut egui::Ui,
-        app_st: &mut PgAppState,
-        local_st: &mut PostgresState,
         tx_sync: &std::sync::mpsc::Sender<SqlxMessage>,
+        ui: &mut egui::Ui,
+        app_st: &mut MySqlAppState,
+        local_st: &mut MySqlState,
         i18n: &I18nSqlx,
     ) {
         egui::ScrollArea::vertical().show(ui, |ui| {
@@ -151,12 +150,12 @@ impl PostgresConnectionsSubpanel {
 
                     // --> Menú contextual para manejo de las conexiones <--
                     button.context_menu(|ui| {
-                        if ui.button(&i18n.pg.close_connection).clicked() {
+                        if ui.button(&i18n.mysql.close_connection).clicked() {
                             close_connection(rt, local_st);
                             local_st.sql.current_connection_idx = usize::MAX;
                             ui.close_menu();
                         }
-                        if ui.button(&i18n.pg.delete_connection).clicked() {
+                        if ui.button(&i18n.mysql.delete_connection).clicked() {
                             connections_to_delete.insert(idx);
                             // Si la conexión que borramos existe, cerramos antes
                             if local_st.sql.current_connection_idx != idx {
@@ -167,7 +166,7 @@ impl PostgresConnectionsSubpanel {
                         }
 
                         let mut menu_open = false;
-                        ui.menu_button(&i18n.pg.edit_connection, |ui| {
+                        ui.menu_button(&i18n.mysql.edit_connection, |ui| {
                             menu_open = true;
                             if menu_open && !self.is_edit_connection_menu_opened {
                                 local_st.tmp_connection = conn_definition.clone();
@@ -183,20 +182,24 @@ impl PostgresConnectionsSubpanel {
 
                         self.is_edit_connection_menu_opened = menu_open;
 
-                        if ui.button(&i18n.pg.reload_tables).clicked() {
+                        if ui.button(&i18n.mysql.reload_tables).clicked() {
                             let pool_ref = local_st.pool.as_ref().unwrap().clone();
                             let pool_ref_2 = local_st.pool.as_ref().unwrap().clone();
+                            let db_name = conn_definition.dbname.clone();
 
                             local_st.sql.tables = rt.block_on(async move {
-                                presenter::list_connection_tables(&pool_ref).await
+                                presenter::list_connection_tables(&pool_ref, &db_name).await
                             });
 
                             let tables = local_st.sql.tables.clone();
-                            let db_name = conn_definition.dbname.clone();
+                            let db_name2 = conn_definition.dbname.clone();
 
                             local_st.sql.current_connection_tables_info = rt.block_on(async move {
-                                presenter::tables_info(&pool_ref_2, &db_name, tables.as_ref()).await
+                                presenter::tables_info(&pool_ref_2, &db_name2, tables.as_ref())
+                                    .await
+                                    .map_or(HashMap::new(), |v| v)
                             });
+                            ui.close_menu();
                         }
                     });
 
@@ -208,6 +211,8 @@ impl PostgresConnectionsSubpanel {
                         close_connection(rt, local_st);
                         local_st.sql.reset();
                         local_st.sql.tables.clear();
+                        local_st.sql.current_table_idx = usize::MAX;
+                        local_st.sql.sql_statement.clear();
 
                         // Si no conexión o la que existe no es la que clico, la defino
                         if local_st.pool.is_none() {
@@ -220,7 +225,6 @@ impl PostgresConnectionsSubpanel {
                                 dbname: conn_definition.dbname.clone(),
                             };
                             local_st.current_connection = conn.clone();
-
                             let result = rt.block_on(async move { presenter::connect(conn).await });
 
                             match result {
@@ -230,18 +234,17 @@ impl PostgresConnectionsSubpanel {
                                 Err(err) => {
                                     // No hace falta poner `local_st.pool` a `None` porque en `close_connection`
                                     // ya lo estamos haciendo.
-                                    local_st.sql.last_response_error =
-                                        Some(Err(format!("{err:?}")));
+                                    local_st.sql.last_response_error = Some(Err(format!("{err:?}")));
                                     local_st.sql.current_connection_idx = usize::MAX;
                                 }
                             }
-
                             if local_st.pool.is_some() {
+                                let name1 = conn_definition.dbname.as_str();
                                 let pool_ref = local_st.pool.as_ref().unwrap().clone();
                                 let pool_ref2 = local_st.pool.as_ref().unwrap().clone();
 
                                 local_st.sql.tables = rt.block_on(async move {
-                                    presenter::list_connection_tables(&pool_ref).await
+                                    presenter::list_connection_tables(&pool_ref, name1).await
                                 });
 
                                 let tables = local_st.sql.tables.clone();
@@ -253,6 +256,7 @@ impl PostgresConnectionsSubpanel {
                                             tables.as_ref(),
                                         )
                                         .await
+                                        .map_or(HashMap::new(), |v| v)
                                     });
                             }
                         }
@@ -275,63 +279,63 @@ impl PostgresConnectionsSubpanel {
     }
 }
 
-pub struct PostgresTablesSubpanel;
-impl PostgresTablesSubpanel {
+pub struct MySqlTablesSubpanel;
+
+impl MySqlTablesSubpanel {
     pub fn show(
-        _ctx: &egui::Context,
         rt: &Runtime,
         ui: &mut egui::Ui,
         tx: &Sender<SqlxMessage>,
         tx_sync: &std::sync::mpsc::Sender<SqlxMessage>,
-        local_st: &mut PostgresState,
+        local_st: &mut MySqlState,
         i18n: &I18nSqlx,
     ) {
         egui::ScrollArea::vertical().show(ui, |ui| {
-            egui::Grid::new("pg_db_tables")
+            egui::Grid::new("mysql_db_tables")
                 .num_columns(2)
                 .show(ui, |ui| {
-                    for (table_idx, table_name) in local_st.sql.tables.clone().iter().enumerate() {
+                    for (t_idx, t_name) in local_st.sql.tables.clone().iter().enumerate() {
                         ui.label(
                             egui::RichText::new("Info")
                                 .color(egui::Color32::from_rgb(128, 128, 128)),
                         )
                         .on_hover_ui(|ui| {
-                            TableInfo::show(ui, &local_st.sql, table_name);
+                            TableInfo::show(ui, &local_st.sql, t_name);
                         });
 
-                        let table_btn = ui.selectable_value(
-                            &mut local_st.sql.current_table_idx,
-                            table_idx,
-                            table_name,
-                        );
+                        let table_btn =
+                            ui.selectable_value(&mut local_st.sql.current_table_idx, t_idx, t_name);
 
                         // Sin problemas, para que esto se muestre tiene que existir conexión.
                         table_btn.context_menu(|ui| {
                             TableContextMenu::show(
+                                // rt,
+                                // &pool_ref.clone(),
                                 ui,
                                 tx_sync,
                                 &mut local_st.sql,
                                 i18n,
-                                table_name,
+                                t_name,
                             );
                         });
 
                         if table_btn.clicked() {
+                            local_st.sql.reset();
                             let pool_ref = local_st.pool.as_ref().unwrap().clone();
                             let tx_cloned = tx.clone();
-                            let t_name = table_name.to_string();
+                            let t_name_string = t_name.to_string();
                             rt.spawn(async move {
                                 presenter::select_all_with_column_description(
                                     &pool_ref,
                                     &tx_cloned,
-                                    &t_name,
+                                    &t_name_string,
                                     QuerySort::None,
                                 )
                                 .await
                             });
                             // Para desmarcar orden de búsqueda.
                             local_st.sql.query_sort = QuerySort::None;
-                            local_st.sql.sql_statement = format!("SELECT * FROM {}", table_name);
+                            local_st.sql.sql_statement = format!("SELECT * FROM {}", t_name);
                         }
 
                         ui.end_row();
@@ -344,7 +348,7 @@ impl PostgresTablesSubpanel {
 // ==================================================
 // Funciones comunes
 // ==================================================
-fn close_connection(rt: &Runtime, local_state: &mut PostgresState) {
+fn close_connection(rt: &Runtime, local_state: &mut MySqlState) {
     // Usar `guard` facilita mucho porque take sobre referencia no puede usarse,
     // y usar is_some y dentro hacer algo genera problemas de prestado de
     // referencia.

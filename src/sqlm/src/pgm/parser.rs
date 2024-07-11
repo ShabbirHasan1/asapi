@@ -8,12 +8,14 @@
 
 // Basado en type_info.rs de sqlx, extraigo lo que allí es privado.
 
-use super::pg_type::ty_to_type;
-use crate::common::traits::ShowVec;
-use crate::pgm::pg_type::PgType;
 use sqlx::postgres::{PgColumn, PgRow};
 use sqlx::{Column, Decode, Postgres, Row, Type};
 use std::fmt;
+
+use crate::sqlx_common::traits::ShowVec;
+use crate::pgm::pg_type::PgType;
+
+use super::pg_type::ty_to_type;
 
 impl ShowVec for PgRow {
     fn to_string_vec(&self) -> Vec<String> {

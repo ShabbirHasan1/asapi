@@ -32,6 +32,7 @@ members = [
     "src/common",
     "src/components",
     "src/redism",
+    "src/sqlm",
 ]
 
 [dependencies]
@@ -70,4 +71,4 @@ chrono-tz = { version = "0.8", default-features = false }
 common = { path = "src/common" }
 components = { path = "src/components" }
 redism = { path = "src/redism" }
-# redis = { version = "0.1.0", path = "redis-dynamic", package = "redis-dynamic" }
+sqlm = { path = "src/sqlm" }

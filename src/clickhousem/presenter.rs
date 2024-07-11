@@ -6,16 +6,14 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
-use clickhouse_rs::types::{Complex, Decimal, Enum16, Enum8, FromSql, Row, SqlType};
+use clickhouse_rs::types::{Complex, Decimal, Enum16, Enum8, FromSql, SqlType};
 use clickhouse_rs::{Block, ClientHandle, Pool};
 use futures_util::StreamExt;
 use std::collections::HashMap;
 use tokio::sync::mpsc::Sender;
 
-use crate::{
-    common::traits::ToUrl,
-    sqlx_common::presenter::{self as sqlpresenter, Action},
-};
+use common::traits::ToUrl;
+use sqlm::sqlx_common::presenter::{self as sqlpresenter, Action};
 
 use super::domain::{ClickHouseConnectionDefinition, ClickHouseMessage};
 use super::map_data_type_helpers as map;
@@ -124,7 +122,7 @@ async fn select_all(
 }
 
 // TODO:
-pub async fn tables_info(pool: &Pool, t_names: &[String]) -> HashMap<String, Vec<Vec<String>>> {
+pub async fn tables_info(_pool: &Pool, _t_names: &[String]) -> HashMap<String, Vec<Vec<String>>> {
     HashMap::default()
 }
 
@@ -197,7 +195,6 @@ pub async fn run_statement(
                 .send(ClickHouseMessage::Error("Acción no permitida".to_string()))
                 .await;
         }
-        _ => (),
     }
 }
 

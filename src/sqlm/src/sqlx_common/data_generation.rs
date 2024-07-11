@@ -10,7 +10,7 @@ use chrono::DateTime;
 use chrono::Utc;
 use std::marker::PhantomData;
 
-use crate::common::{
+use common::{
     generator::{Gen, SimpleRGen},
     traits::Runner,
 };
@@ -151,7 +151,7 @@ impl Runner<bool> for GenericGenerator<bool> {
 }
 
 pub mod json {
-    use crate::common::generator::{Gen, SimpleRGen};
+    use common::generator::{Gen, SimpleRGen};
     type StringGen = Gen<String, fn(&SimpleRGen) -> (String, SimpleRGen)>;
 
     pub fn simple_json_generator() -> StringGen {
@@ -165,7 +165,7 @@ pub mod json {
 }
 
 pub mod geom {
-    use crate::common::generator::{Gen, SimpleRGen};
+    use common::generator::{Gen, SimpleRGen};
 
     type StringGen = Gen<String, fn(&SimpleRGen) -> (String, SimpleRGen)>;
     // Inestable

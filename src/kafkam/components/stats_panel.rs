@@ -9,10 +9,9 @@
 use eframe::egui;
 use rdkafka::{statistics::Window, Statistics};
 
-use crate::{
-    common::internationalization::I18n, ui_title_and_value_grid_row,
-    ui_title_and_value_grid_row_with_hint,
-};
+use common::internationalization::I18n;
+use components::ui_title_and_value_grid_row;
+use components::ui_title_and_value_grid_row_with_hint;
 
 pub fn show_stats(ui: &mut egui::Ui, last_update: &String, stats: &Statistics, i18n: &I18n) {
     ui.label(format!("{}: {last_update}", &i18n.kafka_last_update));
