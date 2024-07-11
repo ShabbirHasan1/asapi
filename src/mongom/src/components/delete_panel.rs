@@ -10,7 +10,7 @@ use bson::Document;
 use eframe::egui;
 use tokio::runtime::Runtime;
 
-use crate::mongom::{actions::MongoAction, presenter, state::MongoMessage, view::MongoView};
+use crate::{actions::MongoAction, presenter, state::MongoMessage, view::MongoView};
 
 impl MongoView {
     pub fn delete(&mut self, rt: &Runtime, ctx: &egui::Context) {

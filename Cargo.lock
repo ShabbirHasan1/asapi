@@ -175,6 +175,7 @@ dependencies = [
  "log",
  "mime_guess",
  "mongodb",
+ "mongom",
  "rdkafka",
  "redism",
  "regex",
@@ -2158,6 +2159,26 @@ dependencies = [
  "typed-builder",
  "uuid",
  "webpki-roots",
+]
+
+[[package]]
+name = "mongom"
+version = "0.1.0"
+dependencies = [
+ "bson",
+ "common",
+ "components",
+ "eframe",
+ "egui",
+ "egui_extras",
+ "egui_json_tree",
+ "futures",
+ "log",
+ "mongodb",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tokio-util",
 ]
 
 [[package]]

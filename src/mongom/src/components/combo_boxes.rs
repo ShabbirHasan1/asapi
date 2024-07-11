@@ -5,11 +5,14 @@
 // This file is confidential and only available to authorized individuals
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
-use crate::{
-    components::toggle_selector::toggle_label,
-    mongom::{actions::MongoAction, bson_type::BsonType, filter::MongoOperator, view::MongoView},
-};
 use eframe::egui;
+
+use components::toggle_selector::toggle_label;
+
+use crate::actions::MongoAction;
+use crate::bson_type::BsonType;
+use crate::filter::MongoOperator;
+use crate::view::MongoView;
 
 /// Para la gestión de como dice el nombre del archivo los combo boxes.
 ///

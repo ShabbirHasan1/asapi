@@ -11,10 +11,9 @@ use eframe::egui;
 use egui_json_tree::JsonTree;
 use tokio::{runtime::Runtime, sync::mpsc::Sender};
 
-use crate::{
-    common::internationalization::I18n,
-    mongom::{actions::MongoAction, presenter, state::MongoMessage, view::MongoView},
-};
+use common::internationalization::I18n;
+
+use crate::{actions::MongoAction, presenter, state::MongoMessage, view::MongoView};
 
 impl MongoView {
     pub fn find_panel(

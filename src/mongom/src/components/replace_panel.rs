@@ -10,7 +10,7 @@ use bson::Document;
 use eframe::egui;
 use tokio::runtime::Runtime;
 
-use crate::mongom::{presenter, state::MongoMessage, view::MongoView};
+use crate::{presenter, state::MongoMessage, view::MongoView};
 
 impl MongoView {
     pub fn replace(&mut self, rt: &Runtime, ctx: &egui::Context) {

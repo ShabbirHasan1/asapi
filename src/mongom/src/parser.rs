@@ -9,7 +9,7 @@
 use bson::{doc, Bson, Document};
 use serde_json::{Map, Value};
 
-use crate::info;
+use log::info;
 
 pub fn _json_value_to_document(value: &Value) -> Document {
     match value {

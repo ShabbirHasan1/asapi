@@ -31,6 +31,7 @@ rustflags = ["-C", "link-arg=--ld-path=/usr/local/bin/mold"]
 members = [
     "src/common",
     "src/components",
+    "src/mongom",
     "src/redism",
     "src/sqlm",
 ]
@@ -70,5 +71,6 @@ chrono-tz = { version = "0.8", default-features = false }
 
 common = { path = "src/common" }
 components = { path = "src/components" }
+mongom = { path = "src/mongom" }
 redism = { path = "src/redism" }
 sqlm = { path = "src/sqlm" }

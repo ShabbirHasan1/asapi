@@ -13,16 +13,13 @@ use std::collections::HashSet;
 use tokio::runtime::Runtime;
 use tokio::sync::mpsc::Sender;
 
+use common::internationalization::I18n;
+use components::toggle_switch::toggle;
+
 use crate::{
-    common::internationalization::I18n,
-    components::toggle_switch::toggle,
-    mongom::{
-        connection::{close_connection, connect_with_default},
-        presenter::{self, list_database_collections, list_database_names_in_connection},
-        state::{
-            MongoAppState, MongoConnectionDefinition, MongoError, MongoLocalState, MongoMessage,
-        },
-    },
+    connection::{close_connection, connect_with_default},
+    presenter::{self, list_database_collections, list_database_names_in_connection},
+    state::{MongoAppState, MongoConnectionDefinition, MongoError, MongoLocalState, MongoMessage},
 };
 
 pub struct MongoSideNav {
@@ -564,7 +561,7 @@ impl MongoCollectionsSubpanel {
 async fn get_db_info(
     local_st: &MongoLocalState,
     db_name: &str,
-) -> Result<bson::Document, crate::mongom::state::MongoError> {
+) -> Result<bson::Document, MongoError> {
     let client_ref = local_st.conn.client.as_ref().unwrap().clone();
 
     presenter::get_db_stats(&client_ref, db_name).await
@@ -605,7 +602,7 @@ fn db_info(
 async fn get_col_info(
     local_st: &MongoLocalState,
     col_name: &str,
-) -> Result<bson::Document, crate::mongom::state::MongoError> {
+) -> Result<bson::Document, MongoError> {
     let client_ref = local_st.conn.client.as_ref().unwrap().clone();
     let db_name = local_st.current_selection.db_name.clone();
 

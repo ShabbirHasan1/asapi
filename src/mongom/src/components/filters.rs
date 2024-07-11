@@ -15,13 +15,14 @@ use serde_json::{json, Value};
 use std::collections::VecDeque;
 use tokio::runtime::Runtime;
 
-use crate::common::internationalization::I18n;
-use crate::components::toggle_selector::toggle_label;
-use crate::mongom::actions::MongoAction;
-use crate::mongom::filter::UserAction;
-use crate::mongom::filter::{MongoFilter, MongoOperator};
-use crate::mongom::parser::doc_to_pretty_string;
-use crate::mongom::view::MongoView;
+use common::internationalization::I18n;
+use components::toggle_selector::toggle_label;
+
+use crate::actions::MongoAction;
+use crate::filter::UserAction;
+use crate::filter::{MongoFilter, MongoOperator};
+use crate::parser::doc_to_pretty_string;
+use crate::view::MongoView;
 
 impl MongoView {
     fn show_filters(

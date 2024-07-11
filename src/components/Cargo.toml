@@ -3,6 +3,19 @@ name = "components"
 version = "0.1.0"
 edition = "2021"
 
+[profile.dev]
+debug = 0
+opt-level = 1
+strip = "debuginfo"
+lto = "off"
+
+[profile.dev.build-override]
+opt-level = 3
+
+[target.x86_64-unknown-linux-gnu]
+linker = "/usr/bin/clang-15"
+rustflags = ["-C", "link-arg=--ld-path=/usr/local/bin/mold"]
+
 [dependencies]
 egui = "0.27.2"
 chrono = { version = "0.4.37", default-features = false }

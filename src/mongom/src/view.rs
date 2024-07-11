@@ -14,7 +14,7 @@ use tokio::sync::mpsc::{Receiver, Sender};
 use common::internationalization::I18n;
 use components::result_panel::ui_response_panel;
 
-use crate::mongom::state::MongoLocalState;
+use crate::state::MongoLocalState;
 
 use super::actions::MongoAction;
 use super::presenter;

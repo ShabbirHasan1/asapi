@@ -57,7 +57,7 @@ use std::{
 use bson::{doc, Bson, Document};
 use serde_json::Value;
 
-use crate::info;
+use log::info;
 
 #[derive(PartialEq, Clone, Debug)]
 pub enum MongoOperator {

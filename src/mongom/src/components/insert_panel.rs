@@ -10,10 +10,9 @@ use bson::Document;
 use eframe::egui;
 use tokio::runtime::Runtime;
 
-use crate::{
-    common::internationalization::I18n,
-    mongom::{actions::MongoAction, presenter, state::MongoMessage, view::MongoView},
-};
+use common::internationalization::I18n;
+
+use crate::{actions::MongoAction, presenter, state::MongoMessage, view::MongoView};
 
 impl MongoView {
     pub fn insert(&mut self, rt: &Runtime, ctx: &egui::Context, i18n: &I18n) {

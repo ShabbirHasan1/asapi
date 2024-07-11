@@ -15,10 +15,10 @@ mod app_state;
 mod clickhousem;
 mod httpm;
 mod kafkam;
-mod mongom;
 mod top_bar;
 extern crate common;
 extern crate components;
+extern crate mongom;
 extern crate redism;
 extern crate sqlm;
 
