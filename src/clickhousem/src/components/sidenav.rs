@@ -325,7 +325,8 @@ impl ClickHouseDatabasesSubpanel {
                             );
 
                             if db_btn.clicked() {
-                                local_st.current_selection.db_name = db_name.to_owned();
+                                db_name.clone_into(&mut local_st.current_selection.db_name);
+                                // local_st.current_selection.db_name = db_name.to_owned();
                                 let tx_cloned = tx.clone();
                                 let ctx_cloned = ctx.clone();
                                 let db_name_cloned = db_name.clone();

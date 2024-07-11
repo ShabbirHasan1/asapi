@@ -7,7 +7,6 @@
 // -------------------------------------------------------------------------
 use bson::{doc, Document};
 use futures::TryStreamExt as _;
-use log;
 use mongodb::error::Result as MongoResult;
 use mongodb::{options::FindOptions, Client};
 use serde_json::Value;

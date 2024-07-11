@@ -46,41 +46,76 @@ impl BodyParams {
 
         // --> Gestión de ventanas para selección archivo / carpeta <--
         if state.files.must_read {
-            match (&state.files.current_state, &state.files.selected_mode) {
-                (Some(st), Some(mode)) => {
-                    match (st, mode) {
-                        (DialogState::Selected(path), DialogMode::SelectDirectory) => {
-                            let files = list_files_in_directory(path.as_path());
-                            self.files[self.selected_idx] = files.clone();
-                            let files_as_str = files
-                                .iter()
-                                .map(|s| s.as_os_str().to_str().unwrap_or_default())
-                                .collect::<Vec<&str>>()
-                                .join(", ");
-                            println!("{files_as_str}");
-                            self.params[self.selected_idx].1 = format!("\"{}\"", files_as_str);
-                            println!(
-                                "{} : {}",
-                                self.params[self.selected_idx].0, self.params[self.selected_idx].1
-                            );
+            if let (Some(st), Some(mode)) = (&state.files.current_state, &state.files.selected_mode)
+            {
+                match (st, mode) {
+                    (DialogState::Selected(path), DialogMode::SelectDirectory) => {
+                        let files = list_files_in_directory(path.as_path());
+                        self.files[self.selected_idx].clone_from(&files);
+                        // self.files[self.selected_idx] = files.clone();
+                        let files_as_str = files
+                            .iter()
+                            .map(|s| s.as_os_str().to_str().unwrap_or_default())
+                            .collect::<Vec<&str>>()
+                            .join(", ");
+                        println!("{files_as_str}");
+                        self.params[self.selected_idx].1 = format!("\"{}\"", files_as_str);
+                        println!(
+                            "{} : {}",
+                            self.params[self.selected_idx].0, self.params[self.selected_idx].1
+                        );
 
-                            // .flat_map(OsStr::to_str)
-                            // .map(String::from);
-                            // self.params[self.selected_idx] =
+                        // .flat_map(OsStr::to_str)
+                        // .map(String::from);
+                        // self.params[self.selected_idx] =
 
-                            state.files.must_read = false;
-                            self.selected_idx = usize::MAX;
-                        }
-                        (DialogState::Selected(path), DialogMode::SelectFile) => {
-                            self.files[self.selected_idx] = vec![path.to_path_buf()];
-                            state.files.must_read = false;
-                            self.selected_idx = usize::MAX;
-                        }
-                        _ => (),
-                    };
-                }
-                _ => (),
+                        state.files.must_read = false;
+                        self.selected_idx = usize::MAX;
+                    }
+                    (DialogState::Selected(path), DialogMode::SelectFile) => {
+                        self.files[self.selected_idx] = vec![path.to_path_buf()];
+                        state.files.must_read = false;
+                        self.selected_idx = usize::MAX;
+                    }
+                    _ => (),
+                };
             }
+            // match (&state.files.current_state, &state.files.selected_mode) {
+            //     (Some(st), Some(mode)) => {
+            //         match (st, mode) {
+            //             (DialogState::Selected(path), DialogMode::SelectDirectory) => {
+            //                 let files = list_files_in_directory(path.as_path());
+            //                 self.files[self.selected_idx].clone_from(&files);
+            //                 // self.files[self.selected_idx] = files.clone();
+            //                 let files_as_str = files
+            //                     .iter()
+            //                     .map(|s| s.as_os_str().to_str().unwrap_or_default())
+            //                     .collect::<Vec<&str>>()
+            //                     .join(", ");
+            //                 println!("{files_as_str}");
+            //                 self.params[self.selected_idx].1 = format!("\"{}\"", files_as_str);
+            //                 println!(
+            //                     "{} : {}",
+            //                     self.params[self.selected_idx].0, self.params[self.selected_idx].1
+            //                 );
+
+            //                 // .flat_map(OsStr::to_str)
+            //                 // .map(String::from);
+            //                 // self.params[self.selected_idx] =
+
+            //                 state.files.must_read = false;
+            //                 self.selected_idx = usize::MAX;
+            //             }
+            //             (DialogState::Selected(path), DialogMode::SelectFile) => {
+            //                 self.files[self.selected_idx] = vec![path.to_path_buf()];
+            //                 state.files.must_read = false;
+            //                 self.selected_idx = usize::MAX;
+            //             }
+            //             _ => (),
+            //         };
+            //     }
+            //     _ => (),
+            // }
         }
 
         ui.horizontal(|ui| {
@@ -98,14 +133,13 @@ impl BodyParams {
             {
                 has_changed = Some(true);
             }
-            if method == HttpMethod::Post {
-                if ui
+            if method == HttpMethod::Post
+                && ui
                     .checkbox(&mut self.multipart, "Multipart")
                     .on_hover_text(&i18n.http_multipart_help)
                     .clicked()
-                {
-                    has_changed = Some(true);
-                }
+            {
+                has_changed = Some(true);
             }
         });
 
@@ -145,6 +179,15 @@ impl BodyParams {
                         }
                         // TODO: Mostrar en hover sobre este botón la lista de archivos. El texto que ponga `Borrar n Seleccionados`.
                         let len = self.files[i].len();
+                        let add_contents = |ui: &mut egui::Ui| {
+                            ui.label(
+                                &self.files[i]
+                                    .iter()
+                                    .filter_map(|p| p.to_str())
+                                    .collect::<Vec<&str>>()
+                                    .join("\n"),
+                            );
+                        };
                         if ui
                             .add(egui::Button::new(format!(
                                 "Borrar {len} archivos {}",
@@ -154,16 +197,7 @@ impl BodyParams {
                                     ""
                                 }
                             )))
-                            .on_hover_ui_at_pointer(|ui| {
-                                ui.label(
-                                    &self.files[i]
-                                        .iter()
-                                        .map(|p| p.to_str())
-                                        .flatten()
-                                        .collect::<Vec<&str>>()
-                                        .join("\n"),
-                                );
-                            })
+                            .on_hover_ui_at_pointer(add_contents)
                             .clicked()
                         {
                             self.files[i].clear();

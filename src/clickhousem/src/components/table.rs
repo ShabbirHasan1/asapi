@@ -81,8 +81,12 @@ impl RegularTable {
                                     if ui.button("Edit Row").clicked() {
                                         ui.close_menu();
                                         sql_st.row_being_editted.selected_row = Some(row_idx);
-                                        sql_st.row_being_editted.row_data =
-                                            sql_st.current_table_rows[row_idx].clone();
+                                        sql_st
+                                            .row_being_editted
+                                            .row_data
+                                            .clone_from(&sql_st.current_table_rows[row_idx])
+                                        // sql_st.row_being_editted.row_data =
+                                        // sql_st.current_table_rows[row_idx].clone();
                                     }
                                 },
                             );
@@ -143,8 +147,12 @@ impl PerformanceTable {
                             if ui.button("Edit Row").clicked() {
                                 ui.close_menu();
                                 state.row_being_editted.selected_row = Some(row_idx);
-                                state.row_being_editted.row_data =
-                                    state.current_table_rows[row_idx].clone();
+                                state
+                                    .row_being_editted
+                                    .row_data
+                                    .clone_from(&state.current_table_rows[row_idx])
+                                // state.row_being_editted.row_data =
+                                // state.current_table_rows[row_idx].clone();
                             }
                         });
                     });

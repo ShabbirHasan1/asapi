@@ -50,7 +50,7 @@ async fn select_name(pool: &Pool, stmt: &str) -> Result<(Vec<String>, Vec<String
             let mut stream = c.query(stmt).stream();
 
             while let Some(row) = stream.next().await {
-                if let Err(_) = row {
+                if row.is_err() {
                     break;
                 }
                 let row = row.unwrap();
@@ -114,10 +114,8 @@ async fn select_all(
     let mut data = vec![vec![String::new(); clickhouse_columns.len()]; n_rows];
     for (col_idx, (col_name, col_data)) in clickhouse_columns.iter().enumerate() {
         col_info.push((col_name.clone(), format!("{}", col_data.col_type)));
-        let mut row_idx: usize = 0;
-        for cell in &col_data.row_data {
-            data[row_idx][col_idx] = cell.clone();
-            row_idx += 1;
+        for (row_idx, cell) in col_data.row_data.iter().enumerate() {
+            data[row_idx][col_idx].clone_from(cell);
         }
     }
 

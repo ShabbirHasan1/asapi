@@ -73,9 +73,11 @@ impl HttpView {
 
                         if let Some(req) = fst_request {
                             self.method = req.method;
-                            self.url = req.url.clone();
+                            self.url.clone_from(&req.url);
+                            // self.url = req.url.clone();
                             self.body.multipart = req.multipart;
-                            self.body.params = req.body_params.clone();
+                            self.body.params.clone_from(&req.body_params);
+                            // self.body.params = req.body_params.clone();
                             self.body.files = vec![vec![]; req.body_params.len()];
                             for (idx, param) in self.body.params.iter().enumerate() {
                                 let has_files = param.2;

@@ -49,11 +49,12 @@ impl HttpView {
 
                 let import_swagger_btn =
                     egui::Button::new(&i18n.http_import_swagger).min_size(egui::vec2(200.0, 16.0));
+                let add_contents = |ui: &mut egui::Ui| {
+                    ui.label(&i18n.http_swagger_json_limitation);
+                };
                 if ui
                     .add(import_swagger_btn)
-                    .on_hover_ui_at_pointer(|ui| {
-                        ui.label(&i18n.http_swagger_json_limitation);
-                    })
+                    .on_hover_ui_at_pointer(add_contents)
                     .clicked()
                 {
                     self.state.files.swagger_file_dialog.select_file();
@@ -69,24 +70,21 @@ impl HttpView {
                     None
                 };
                 if self.state.show_confirmation_window {
-                    match swagger {
-                        Some(ref s) => {
-                            egui::Window::new("Confirm Swagger Import").show(ctx, |ui| {
-                                ui.label(s.to_string());
-                                ui.horizontal(|ui| {
-                                    if ui.button("Cancelar").clicked() {
-                                        self.state.show_confirmation_window = false;
-                                    }
-                                    if ui.button("Aceptar").clicked() {
-                                        self.state.show_confirmation_window = false;
+                    if let Some(ref s) = swagger {
+                        egui::Window::new("Confirm Swagger Import").show(ctx, |ui| {
+                            ui.label(s.to_string());
+                            ui.horizontal(|ui| {
+                                if ui.button("Cancelar").clicked() {
+                                    self.state.show_confirmation_window = false;
+                                }
+                                if ui.button("Aceptar").clicked() {
+                                    self.state.show_confirmation_window = false;
 
-                                        let mut requests = swagger::create_requests(s);
-                                        current_workspace.requests.append(&mut requests);
-                                    }
-                                })
-                            });
-                        }
-                        _ => {}
+                                    let mut requests = swagger::create_requests(s);
+                                    current_workspace.requests.append(&mut requests);
+                                }
+                            })
+                        });
                     }
                 }
 
@@ -143,10 +141,12 @@ impl HttpView {
                                 if button.clicked() {
                                     self.state.selected_request_idx = Some(idx);
                                     self.method = request.method;
-                                    self.url = request.url.clone();
+                                    self.url.clone_from(&request.url);
+                                    // self.url = request.url.clone();
                                     self.body.multipart = request.multipart;
 
-                                    self.body.params = request.body_params.clone();
+                                    self.body.params.clone_from(&request.body_params);
+                                    // self.body.params = request.body_params.clone();
                                     self.body.files = vec![vec![]; request.body_params.len()];
                                     for (idx, param) in self.body.params.iter().enumerate() {
                                         let has_files = param.2;
@@ -159,7 +159,8 @@ impl HttpView {
                                         }
                                     }
 
-                                    self.headers.params = request.headers_params.clone();
+                                    self.headers.params.clone_from(&request.headers_params);
+                                    // self.headers.params = request.headers_params.clone();
                                     self.response.clear();
                                     self.state.has_request_some_change = false;
                                 }
@@ -195,9 +196,12 @@ impl HttpView {
                             let current_req =
                                 &mut current_wsp.requests[self.state.selected_request_idx.unwrap()];
                             current_req.method = self.method;
-                            current_req.url = self.url.clone();
-                            current_req.body_params = self.body.params.clone();
-                            current_req.headers_params = self.headers.params.clone();
+                            current_req.url.clone_from(&self.url);
+                            // current_req.url = self.url.clone();
+                            current_req.body_params.clone_from(&self.body.params);
+                            // current_req.body_params = self.body.params.clone();
+                            current_req.headers_params.clone_from(&self.headers.params);
+                            // current_req.headers_params = self.headers.params.clone();
                             current_req.multipart = self.body.multipart;
                             self.state.has_request_some_change = false;
                             self.state.selected_request_action = HttpRequestAction::None;
