@@ -156,33 +156,24 @@ checksum = "175571dd1d178ced59193a6fc02dde1b972eb0bc56c892cde9beeceac5bf0f6b"
 name = "asapi"
 version = "0.3.404"
 dependencies = [
- "chrono",
- "chrono-tz",
- "clickhouse-rs",
+ "clickhousem",
  "common",
  "components",
  "eframe",
  "egui",
  "egui-file-dialog",
- "egui_extras",
- "egui_json_tree",
  "enum-map",
  "env_logger",
- "futures",
- "futures-util",
  "httpm",
  "kafkam",
  "log",
  "mongom",
  "redism",
  "regex",
- "rust_decimal",
  "serde",
  "serde_json",
  "sqlm",
  "tokio",
- "tokio-util",
- "uuid",
 ]
 
 [[package]]
@@ -570,6 +561,30 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4baf9d4700a28d6cb600e17ed6ae2b43298a5245f1f76b4eab63027ebfd592b9"
 dependencies = [
  "cc",
+]
+
+[[package]]
+name = "clickhousem"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "chrono-tz",
+ "clickhouse-rs",
+ "common",
+ "components",
+ "eframe",
+ "egui",
+ "egui_extras",
+ "egui_json_tree",
+ "futures",
+ "futures-util",
+ "log",
+ "serde",
+ "serde_json",
+ "sqlm",
+ "tokio",
+ "tokio-util",
+ "uuid",
 ]
 
 [[package]]

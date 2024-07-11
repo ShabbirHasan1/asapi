@@ -16,15 +16,15 @@ use sqlm::sqlitem::state::{SQLiteAppState, SQLiteConnectionDefinition};
 use sqlm::sqlx_common::state::SqlConnectionDefinition;
 use tokio::fs as async_fs;
 
-use crate::clickhousem::domain::ClickHouseConnectionDefinition;
-use crate::clickhousem::state::ClickHouseAppState;
-use crate::common::internationalization::I18nOptions;
-use crate::httpm::methods::HttpMethod;
-use crate::httpm::request::Request;
-use crate::httpm::state::HttpAppState;
-use crate::httpm::workspace::Workspace;
-use crate::kafkam::state::{Cluster, KafkaAppState};
-use crate::mongom::state::{MongoAppState, MongoConnectionDefinition};
+use clickhousem::domain::ClickHouseConnectionDefinition;
+use clickhousem::state::ClickHouseAppState;
+use common::internationalization::I18nOptions;
+use httpm::methods::HttpMethod;
+use httpm::request::Request;
+use httpm::state::HttpAppState;
+use httpm::workspace::Workspace;
+use kafkam::state::{Cluster, KafkaAppState};
+use mongom::state::{MongoAppState, MongoConnectionDefinition};
 
 #[derive(Clone, Deserialize, Serialize, Copy, PartialEq, Debug, Default)]
 pub enum ViewType {

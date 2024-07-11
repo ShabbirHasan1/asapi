@@ -14,7 +14,7 @@ use tokio::sync::mpsc::Sender;
 
 use sqlm::sqlx_common::state::{QuerySort, SqlState};
 
-use crate::clickhousem::domain::ClickHouseMessage;
+use crate::domain::ClickHouseMessage;
 
 pub struct RegularTable;
 pub struct PerformanceTable;

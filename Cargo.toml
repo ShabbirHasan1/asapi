@@ -31,6 +31,7 @@ rustflags = ["-C", "link-arg=--ld-path=/usr/local/bin/mold"]
 members = [
     "src/common",
     "src/components",
+    "src/clickhousem",
     "src/httpm",
     "src/kafkam",
     "src/mongom",
@@ -44,35 +45,36 @@ members = [
 # ---------------------------------------------------------------------------
 # egui-dynamic = { version = "0.1.0", path = "egui-dynamic", package = "egui-dynamic" }
 egui = "0.27.2"
-chrono = { version = "0.4.37", default-features = false }
+# chrono = { version = "0.4.37", default-features = false }
 eframe = { version = "0.27.2", features = ["glow"], default-features = false }
 egui-file-dialog = "0.5.0"
-egui_extras = "0.27.2"
-egui_json_tree = "0.5.0"
+# egui_extras = "0.27.2"
+# egui_json_tree = "0.5.0"
 enum-map = "2.7.3"
 env_logger = { version = "0.11.3", default-features = false }
-futures = { version = "0.3.30", default-features = false }
+# futures = { version = "0.3.30", default-features = false }
 log = "0.4.21"
 serde = { version = "1.0.197", default-features = false }
 serde_json = "1.0.117"
 tokio = "1.37.0"
-tokio-util = "0.7.11"
-uuid = { version = "1.8.0", default-features = false }
+# tokio-util = "0.7.11"
+# uuid = { version = "1.8.0", default-features = false }
 # egui_plot = "0.27.2" # Para gráficas en panel de rendimiento.
 # mime_guess = { version = "2.0.4", default-features = false }
 # reqwest = { version = "0.12.4", features = ["json", "multipart", "stream"], default-features = false }
 regex = "1.10.4"
-rust_decimal = { version = "1.35.0", default-features = false }
+# rust_decimal = { version = "1.35.0", default-features = false }
 # sqlx = { version = "0.7.4", features = ["chrono", "mysql", "postgres", "rust_decimal", "sqlite", "uuid"], default-features = false }
 # bson = "2.10.0"
 # mongodb = "2.8.2"
 # rdkafka = { version = "0.36.2", features = ["tokio"], default-features = false }
-clickhouse-rs = "1.1.0-alpha.1"
-futures-util = { version = "0.3.30", default-features = false }
-chrono-tz = { version = "0.8", default-features = false }
+# clickhouse-rs = "1.1.0-alpha.1"
+# futures-util = { version = "0.3.30", default-features = false }
+# chrono-tz = { version = "0.8", default-features = false }
 
 common = { path = "src/common" }
 components = { path = "src/components" }
+clickhousem = { path = "src/clickhousem" }
 httpm = { path = "src/httpm" }
 kafkam = { path = "src/kafkam" }
 mongom = { path = "src/mongom" }

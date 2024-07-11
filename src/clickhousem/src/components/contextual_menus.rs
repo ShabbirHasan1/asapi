@@ -10,7 +10,7 @@ use eframe::egui;
 use common::internationalization::I18nClickHouse;
 use sqlm::sqlx_common::state::SqlState;
 
-use crate::clickhousem::domain::ClickHouseMessage;
+use crate::domain::ClickHouseMessage;
 
 pub struct ClickHouseTableInfo;
 

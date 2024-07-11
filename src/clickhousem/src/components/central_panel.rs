@@ -15,10 +15,7 @@ use common::internationalization::I18nClickHouse;
 use common::quote;
 use components::result_panel::ui_response_panel;
 
-use crate::{
-    clickhousem::presenter, clickhousem::state::ClickHouseAppState,
-    clickhousem::view::ClickHouseView,
-};
+use crate::{presenter, state::ClickHouseAppState, view::ClickHouseView};
 
 use super::paginator::Paginator;
 use super::table::{PerformanceTable, RegularTable};

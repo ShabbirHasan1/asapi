@@ -12,11 +12,11 @@
 /// que forman parte de su estado.
 // Añadimos módulos para que se carguen en el proyecto.
 mod app_state;
-mod clickhousem;
 mod top_bar;
 
 extern crate common;
 extern crate components;
+extern crate clickhousem;
 extern crate httpm;
 extern crate kafkam;
 extern crate mongom;

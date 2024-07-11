@@ -11,16 +11,14 @@ use egui_extras::{Size, StripBuilder};
 use std::collections::HashSet;
 use tokio::{runtime::Runtime, sync::mpsc::Sender};
 
+use common::internationalization::I18nClickHouse;
 use sqlm::sqlx_common::state::QuerySort;
 
 use crate::{
-    clickhousem::{
-        components::contextual_menus::{ClickHouseTableContextMenu, ClickHouseTableInfo},
-        domain::{ClickHouseConnectionDefinition, ClickHouseMessage},
-        presenter,
-        state::{ClickHouseAppState, ClickHouseState},
-    },
-    common::internationalization::I18nClickHouse,
+    components::contextual_menus::{ClickHouseTableContextMenu, ClickHouseTableInfo},
+    domain::{ClickHouseConnectionDefinition, ClickHouseMessage},
+    presenter,
+    state::{ClickHouseAppState, ClickHouseState},
 };
 
 pub struct ClickHouseSideNav {

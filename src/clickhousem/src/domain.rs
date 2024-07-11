@@ -6,7 +6,7 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
-use crate::common::traits::ToUrl;
+use common::traits::ToUrl;
 
 #[derive(serde::Serialize, Debug, serde::Deserialize, Default, Clone)]
 pub struct ClickHouseConnectionOptions {
