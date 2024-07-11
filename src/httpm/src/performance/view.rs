@@ -16,10 +16,11 @@ use tokio::runtime::Runtime;
 use tokio::sync::mpsc::{self, Receiver, Sender};
 use tokio::sync::Semaphore;
 
-use crate::common::generator::{Gen, SimpleRGen};
-use crate::common::internationalization::I18nHttp;
-use crate::httpm::methods::HttpMethod;
-use crate::httpm::request::{api_request, Request};
+use common::generator::{Gen, SimpleRGen};
+use common::internationalization::I18nHttp;
+
+use crate::methods::HttpMethod;
+use crate::request::{api_request, Request};
 
 use super::components::params::Params;
 

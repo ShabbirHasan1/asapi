@@ -6,14 +6,14 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
+use eframe::egui;
 use std::path::PathBuf;
 
-use eframe::egui;
+use common::internationalization::I18nHttp;
 
-use crate::common::internationalization::I18nHttp;
-use crate::httpm::state::HttpAppState;
-use crate::httpm::view::HttpView;
-use crate::httpm::workspace::Workspace;
+use crate::state::HttpAppState;
+use crate::view::HttpView;
+use crate::workspace::Workspace;
 
 impl HttpView {
     pub fn show_ws_subheaders(

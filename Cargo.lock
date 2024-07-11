@@ -172,6 +172,7 @@ dependencies = [
  "env_logger",
  "futures",
  "futures-util",
+ "httpm",
  "log",
  "mime_guess",
  "mongodb",
@@ -1683,6 +1684,28 @@ name = "httparse"
 version = "1.9.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0fcc0b4a115bf80b728eb8ea024ad5bd707b615bfed49e0665b6e0f86fd082d9"
+
+[[package]]
+name = "httpm"
+version = "0.1.0"
+dependencies = [
+ "common",
+ "components",
+ "eframe",
+ "egui",
+ "egui-file-dialog",
+ "egui_extras",
+ "egui_json_tree",
+ "egui_plot",
+ "futures",
+ "log",
+ "mime_guess",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tokio-util",
+]
 
 [[package]]
 name = "hyper"

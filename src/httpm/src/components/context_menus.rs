@@ -8,7 +8,9 @@
 
 use eframe::egui;
 
-use crate::{common::internationalization::I18nHttp, httpm::state::HttpRequestAction};
+use common::internationalization::I18nHttp;
+
+use crate::state::HttpRequestAction;
 
 pub fn request<F>(
     ui: &mut egui::Ui,

@@ -16,7 +16,7 @@ use std::str::FromStr;
 use tokio::fs::File;
 use tokio_util::codec::{BytesCodec, FramedRead};
 
-use crate::httpm::methods::HttpMethod;
+use super::methods::HttpMethod;
 
 #[derive(Clone, Default, Serialize, Deserialize, Debug)]
 pub struct Request {

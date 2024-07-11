@@ -13,11 +13,11 @@
 // Añadimos módulos para que se carguen en el proyecto.
 mod app_state;
 mod clickhousem;
-mod httpm;
 mod kafkam;
 mod top_bar;
 extern crate common;
 extern crate components;
+extern crate httpm;
 extern crate mongom;
 extern crate redism;
 extern crate sqlm;

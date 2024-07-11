@@ -6,6 +6,7 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
+use components::toggle_switch;
 use eframe::egui;
 use egui_json_tree::JsonTree;
 use reqwest::header::HeaderMap;
@@ -13,13 +14,14 @@ use serde_json::Value;
 use tokio::runtime::Runtime;
 use tokio::sync::mpsc::{self, Receiver, Sender};
 
+use common::internationalization::I18nHttp;
+
 use super::components::body_params::BodyParams;
 use super::components::header_params::HeaderParams;
 use super::methods::HttpMethod;
 use super::request::{self, api_request};
 use super::state::{HttpAppState, HttpLocalState, HttpPanel};
 
-use crate::common::internationalization::I18nHttp;
 
 pub struct HttpView {
     tx: Sender<(String, HeaderMap)>,
@@ -213,7 +215,7 @@ impl HttpView {
 
                 ui.horizontal(|ui| {
                     ui.label("Parse JSON Response");
-                    ui.add(crate::components::toggle_switch::toggle(
+                    ui.add(toggle_switch::toggle(
                         &mut self.state.show_hide_json_response,
                     ));
                     if !self.response.is_empty() && ui.button("Copy Response").clicked() {
