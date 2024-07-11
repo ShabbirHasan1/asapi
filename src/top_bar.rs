@@ -7,7 +7,6 @@
 // -------------------------------------------------------------------------
 
 use eframe::egui;
-use tokio;
 use tokio::runtime::Runtime;
 
 use common::icon_moon::IconMoon;

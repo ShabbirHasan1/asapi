@@ -11,7 +11,10 @@ name = "asapi"
 #   0.3.3 -> subida archivos <<== AQUÍ ESTAMOS
 #   0.3.4XX -> refactorizaciones varias
 #   0.3.x -> mejora http rendimiento
-version = "0.3.404"
+#   0.4.0 -> clickhouse
+#   0.5.0 -> uso workspaces para mejora rendimiento
+#   0.5.x -> corrección bugs/pequeñas mejoras
+version = "0.5.0"
 edition = "2021"
 
 [profile.dev]

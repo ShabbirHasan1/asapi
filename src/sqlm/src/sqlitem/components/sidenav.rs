@@ -53,7 +53,7 @@ impl SQLiteSideNav {
             egui::SidePanel::left("sqlite_connections_panel").show(ctx, |ui| {
                 // --> Abrimos archivo sqlite y conectamos <--
                 let _hover_menu = |ui: &mut egui::Ui| {
-                    ui.label("Para conectar, clicar en definición de la conexión");
+                    ui.label("Para conectar, clicar en definición de la conexión.");
                 };
                 if ui
                     .button(&i18n.sqlite.btn_add_connection)

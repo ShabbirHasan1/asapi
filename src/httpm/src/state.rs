@@ -15,11 +15,21 @@ use serde::{Deserialize, Serialize};
 use super::performance::view::HttpPerformanceView;
 use super::workspace::Workspace;
 
-#[derive(Clone, Serialize, Deserialize, Debug, Default)]
+#[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct HttpAppState {
     pub show_sidebar: bool,
     pub workspaces: Vec<Workspace>,
     pub current_workspace_idx: usize,
+}
+
+impl Default for HttpAppState {
+    fn default() -> Self {
+        Self {
+            show_sidebar: true,
+            workspaces: vec![Workspace::default()],
+            current_workspace_idx: 0,
+        }
+    }
 }
 
 #[derive(Eq, PartialEq, Default)]

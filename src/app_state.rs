@@ -46,7 +46,7 @@ pub struct AppConfig {
     pub language: I18nOptions,
 }
 
-#[derive(Clone, Serialize, Deserialize, Debug)]
+#[derive(Clone, Serialize, Deserialize, Debug, Default)]
 pub struct AppState {
     pub app_config: AppConfig,
     pub selected_view: ViewType,
@@ -59,29 +59,6 @@ pub struct AppState {
     pub mongo: MongoAppState,
     pub kafka: KafkaAppState,
     pub clickhouse: ClickHouseAppState,
-}
-
-impl Default for AppState {
-    fn default() -> Self {
-        Self {
-            app_config: Default::default(),
-            selected_view: Default::default(),
-            show_settings: false,
-            http: Default::default(),
-            // HttpAppState {
-            //     show_sidebar: true,
-            //     workspaces: vec![Workspace::default()],
-            //     current_workspace_idx: 0,
-            // },
-            pg: Default::default(),
-            mysql: Default::default(),
-            sqlite: Default::default(),
-            redis: Default::default(),
-            mongo: Default::default(),
-            kafka: Default::default(),
-            clickhouse: Default::default(),
-        }
-    }
 }
 
 pub fn read_state_and_adapt(file_name: &str) -> AppState {
@@ -399,7 +376,7 @@ fn read_request(v: &Value) -> Request {
     let method = v
         .get("method")
         .and_then(|v| v.as_str())
-        .and_then(|m| HttpMethod::from_str(m))
+        .and_then(HttpMethod::from_str)
         .unwrap_or_default();
     let url = v.get("url").and_then(|v| v.as_str()).unwrap_or_default();
     let multipart = v
@@ -486,13 +463,14 @@ fn read_app_config(config: Option<&Value>) -> AppConfig {
                 .get("language")
                 .and_then(|v| v.as_str())
                 .map(|l| {
+                    let mut tmp = I18nOptions::EN;
                     if l == "ES" {
-                        I18nOptions::ES
+                        tmp = I18nOptions::ES;
                     } else if l == "EN" {
-                        I18nOptions::EN
-                    } else {
-                        I18nOptions::EN
-                    }
+                        tmp = I18nOptions::EN;
+                    };
+
+                    tmp
                 })
                 .unwrap_or_default();
             AppConfig {
