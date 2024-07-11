@@ -42,7 +42,7 @@ pub struct Parameter {
     pub name: String,
     #[serde(rename = "in")]
     pub in_field: String,
-    pub description: Option<String>,
+    pub _description: Option<String>,
     pub required: Option<bool>,
     pub type_: Option<String>,
 }

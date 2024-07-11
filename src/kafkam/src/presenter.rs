@@ -62,7 +62,7 @@ pub struct KafkaConsumer {
 }
 
 impl KafkaConsumer {
-    pub fn groups(&self, groups: Option<&str>) -> KafkaResult<()> {
+    pub fn _groups(&self, groups: Option<&str>) -> KafkaResult<()> {
         let group_list = self
             .consumer
             .fetch_group_list(groups, Timeout::After(Duration::from_secs(10)))?;

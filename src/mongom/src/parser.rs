@@ -16,14 +16,14 @@ pub fn _json_value_to_document(value: &Value) -> Document {
         Value::Object(obj) => {
             let doc: Document = obj
                 .iter()
-                .map(|(k, v)| (k.clone(), json_value_to_bson(v)))
+                .map(|(k, v)| (k.clone(), _json_value_to_bson(v)))
                 .collect();
             doc
         }
         _ => doc! {},
     }
 }
-pub fn json_value_to_bson(value: &Value) -> Bson {
+pub fn _json_value_to_bson(value: &Value) -> Bson {
     match value {
         Value::Null => Bson::Null,
         Value::Bool(b) => Bson::Boolean(*b),
@@ -34,13 +34,13 @@ pub fn json_value_to_bson(value: &Value) -> Bson {
         Value::Number(n) if n.is_f64() => Bson::Double(n.as_f64().unwrap()),
         Value::String(s) => Bson::String(s.clone()),
         Value::Array(arr) => {
-            let vec: Vec<Bson> = arr.iter().map(json_value_to_bson).collect();
+            let vec: Vec<Bson> = arr.iter().map(_json_value_to_bson).collect();
             Bson::Array(vec)
         }
         Value::Object(obj) => {
             let doc: Document = obj
                 .iter()
-                .map(|(k, v)| (k.clone(), json_value_to_bson(v)))
+                .map(|(k, v)| (k.clone(), _json_value_to_bson(v)))
                 .collect();
             Bson::Document(doc)
         }

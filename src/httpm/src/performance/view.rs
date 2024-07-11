@@ -24,11 +24,6 @@ use crate::request::{api_request, Request};
 
 use super::components::params::Params;
 
-#[derive(Default)]
-pub struct HttpPerformanceState {
-    pub request: Request,
-}
-
 #[derive(Debug)]
 struct PerformanceRequestMessage {
     pub _msg: String,
@@ -42,7 +37,6 @@ pub struct HttpPerformanceView {
     show_headers: bool,
     show_body: bool,
     params: Params,
-    _state: HttpPerformanceState,
     line_demo: LineDemo,
     n_total_requests: String,
     n_concurrent_requests: String,
@@ -60,7 +54,6 @@ impl Default for HttpPerformanceView {
             params: Params::default(),
             show_headers: true,
             show_body: true,
-            _state: HttpPerformanceState::default(),
             line_demo: LineDemo::default(),
             chart: Vec::new(),
             n_total_requests: String::default(),

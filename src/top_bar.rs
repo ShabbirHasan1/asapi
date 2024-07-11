@@ -22,13 +22,11 @@ pub struct AppTopBar {
     show_settings: bool,
     is_export_confirmation_open: bool,
     file_name: &'static str,
-    version: u16,
 }
 
 impl AppTopBar {
-    pub fn new(file_name: &'static str, version: u16) -> Self {
+    pub fn new(file_name: &'static str) -> Self {
         AppTopBar {
-            version,
             show_settings: Default::default(),
             is_export_confirmation_open: Default::default(),
             file_name,

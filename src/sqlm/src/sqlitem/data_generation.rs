@@ -9,16 +9,12 @@
 use chrono::{NaiveDate, NaiveDateTime, NaiveTime};
 
 use common::generator::{Gen, SimpleRGen};
-use common::traits::Runner as _;
 use common::quote;
+use common::traits::Runner as _;
 
 use crate::sqlx_common::data_generation::GenericGenerator;
 
 use super::parser::SqliteType;
-
-pub trait SQLiteRunner<T> {
-    fn run() -> T;
-}
 
 pub fn generate_sqlite_value(data_type: &SqliteType) -> String {
     match data_type {

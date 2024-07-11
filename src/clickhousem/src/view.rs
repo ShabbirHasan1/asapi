@@ -153,13 +153,13 @@ impl ClickHouseView {
 
     fn process_message(
         &mut self,
-        ctx: &egui::Context,
-        rt: &Runtime,
+        _ctx: &egui::Context,
+        _rt: &Runtime,
         app_st: &mut ClickHouseAppState,
         message: ClickHouseMessage,
     ) {
         match message {
-            ClickHouseMessage::DeleteStatement((table_name, row_idx)) => {
+            ClickHouseMessage::DeleteStatement((_table_name, _row_idx)) => {
                 // let filters = self.statement_filter(row_idx);
                 // let delete_stmt = format!(
                 //     "DELETE FROM {:} WHERE {}",
@@ -181,13 +181,13 @@ impl ClickHouseView {
             ClickHouseMessage::Empty => {
                 // self.state.sql.reset();
             }
-            ClickHouseMessage::Error(msg) => {
+            ClickHouseMessage::Error(_msg) => {
                 // self.state.sql.last_response = Some(msg);
             }
-            ClickHouseMessage::InsertStatement(stmt) => {
+            ClickHouseMessage::InsertStatement(_stmt) => {
                 // self.run_statement(ctx, rt, stmt, !app_st.pg.performance_table, true)
             }
-            ClickHouseMessage::DeleteAllStmt(t_name) => {
+            ClickHouseMessage::DeleteAllStmt(_t_name) => {
                 // log::info!("{t_name}");
                 // let delete_stmt = format!("DELETE FROM {:}", t_name);
                 // log::info!("{delete_stmt}");

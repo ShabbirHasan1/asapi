@@ -528,7 +528,7 @@ pub fn load_state(file_name: &str) -> Result<AppState, IOError> {
     Ok(state)
 }
 
-pub async fn async_save_state(
+pub async fn _async_save_state(
     state: &AppState,
     file_name: &str,
     save_bak: bool,

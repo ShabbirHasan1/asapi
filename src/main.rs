@@ -46,7 +46,6 @@ use crate::httpm::view::HttpView;
 /// a json, exportamos todo ese campo, y cuando importamos, lo que estamos haciendo
 /// es rellenar esa estructura de datos con los datos que hay en el json.
 pub struct Asapi {
-    version: u16,
     top_bar: AppTopBar,
     app_state: AppState,
     rt: tokio::runtime::Runtime,
@@ -69,7 +68,7 @@ impl Asapi {
     ///  """" Data that is passed to [`AppCreator`] that can be used
     ///       to setup and initialize your app."""
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
-        let version = 1;
+        let version = 1; // lo pongo aquí porque no lo necesito en el estado de la aplicación
         let mut tmp = Vec::new();
         configure_text_styles(&cc.egui_ctx);
         // En caso de que no podamos abrir la historia de redis, la creamos.
@@ -126,8 +125,7 @@ impl Asapi {
         };
 
         Self {
-            version,
-            top_bar: AppTopBar::new(FILE_NAME, version),
+            top_bar: AppTopBar::new(FILE_NAME),
             app_state: state,
             rt: tokio::runtime::Builder::new_multi_thread()
                 .enable_all()
