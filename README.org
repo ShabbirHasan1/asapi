@@ -6,6 +6,9 @@
 + Para traerme una carpeta entera de otra rama
 #+begin_src git checkout rama -- relative/path
 #+end_src
+** Construir
+Antes de junio de 2024 usaba dos cargos al tener dependencias dinámicas y no dinámicas, y usaba script para construir.
+A partir de junio de 2024 separo en módulos y no necesito script, hago =cargo build --release==.
 
 * General
 *** TODO Que el menú lateral pueda hacerse más pequeño, incluso ocultando parte de los elementos que tiene dentro.

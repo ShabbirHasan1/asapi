@@ -8,13 +8,14 @@ name = "asapi"
 #   0.3.0 -> mongo
 #   0.3.1 -> mejora kafka
 #   0.3.2 -> mejora redis
-#   0.3.3 -> subida archivos <<== AQUÍ ESTAMOS
+#   0.3.3 -> subida archivos
 #   0.3.4XX -> refactorizaciones varias
 #   0.3.x -> mejora http rendimiento
 #   0.4.0 -> clickhouse
 #   0.5.0 -> uso workspaces para mejora rendimiento
 #   0.5.x -> corrección bugs/pequeñas mejoras
-version = "0.5.0"
+#   0.6.0 -> licencia <<== AQUÍ ESTAMOS
+version = "0.6.0"
 edition = "2021"
 
 [profile.dev]
@@ -37,6 +38,7 @@ opt-level = 3
 members = [
     "src/common",
     "src/components",
+    "src/licensem",
     "src/clickhousem",
     "src/httpm",
     "src/kafkam",
@@ -66,3 +68,4 @@ kafkam = { path = "src/kafkam" }
 mongom = { path = "src/mongom" }
 redism = { path = "src/redism" }
 sqlm = { path = "src/sqlm" }
+license = { path = "src/licensem" }
