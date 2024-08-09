@@ -22,6 +22,7 @@ extern crate kafkam;
 extern crate mongom;
 extern crate redism;
 extern crate sqlm;
+extern crate licensem;
 
 use clickhousem::view::ClickHouseView;
 use common::internationalization::language_selector;

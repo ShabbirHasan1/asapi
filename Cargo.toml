@@ -68,4 +68,4 @@ kafkam = { path = "src/kafkam" }
 mongom = { path = "src/mongom" }
 redism = { path = "src/redism" }
 sqlm = { path = "src/sqlm" }
-license = { path = "src/licensem" }
+licensem = { path = "src/licensem" }

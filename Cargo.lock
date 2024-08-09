@@ -189,7 +189,7 @@ checksum = "175571dd1d178ced59193a6fc02dde1b972eb0bc56c892cde9beeceac5bf0f6b"
 
 [[package]]
 name = "asapi"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "clickhousem",
  "common",
@@ -200,6 +200,7 @@ dependencies = [
  "env_logger",
  "httpm",
  "kafkam",
+ "licensem",
  "log",
  "mongom",
  "redism",
@@ -2154,8 +2155,8 @@ dependencies = [
 ]
 
 [[package]]
-name = "license-verfication"
-version = "0.1.1"
+name = "licensem"
+version = "0.2.1"
 dependencies = [
  "aes-gcm",
  "chrono",
