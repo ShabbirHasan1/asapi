@@ -1,152 +1,63 @@
-use secp256k1::Secp256k1;
-use serde::{Deserialize, Serialize};
-use serde_json;
-use sha2::Sha256;
-use std::error::Error;
-use secp256k1::{SecretKey, PublicKey};
-use k256::ecdsa::{SigningKey, VerifyingKey};
-use k256::elliptic_curve::generic_array::GenericArray;
-use std::num::NonZeroU32;
-use aes_gcm::{Aes256Gcm, Key, Nonce};
-use hex::{self};
-use aes_gcm::aead::{Aead, KeyInit};
-use pbkdf2::pbkdf2_hmac;
+mod check;
 
+use directories::ProjectDirs;
+use log::{error, log};
+use std::fs;
+use std::path::PathBuf;
+use crate::check::{EncryptedSignedLicense, device_info, private_check_license};
 
-#[derive(Serialize, Deserialize, Debug)]
-struct License {
-    computer_name: String,
-    platform: String,
+pub enum LicenseResult {
+    None, // Hay definida carpeta de configuración de usuario pero no está creada. Se crea y ya. El usuario tendrá que activar.
+    Wrong, // Licencia es errónea.
+    Ok,   // Licencia es correcta. Solo este estado permite que se use la aplicación.
+    Error(String), // No hay definida carpeta de configuración de usuario.
+}
+
+pub struct LicenceActivationInfo {
     user_license: String,
-    features: Option<Vec<String>>,
-    expired_at: String,
-    version: String,
+    device_name: String,
+    platform: String,
+    id: String, // Clave pública
 }
 
+pub fn check_license_file() -> LicenseResult {
+    if let Some(proj_dirs) = ProjectDirs::from("es", "qoback", "Asapi") {
+        proj_dirs.config_dir();
+        // Lin: /home/alice/.config/barapp
+        // Win: C:\Users\Alice\AppData\Roaming\Foo Corp\Bar App\config
+        // Mac: /Users/Alice/Library/Application Support/com.Foo-Corp.Bar-App
+        // Obtener el directorio de configuración específico para esta aplicación
+        let config_dir: PathBuf = proj_dirs.config_dir().to_path_buf();
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
-struct EncryptedLicense {
-    iv: String,
-    data: String,
-    tag: String,
-}
+        // Crear el directorio si no existe
+        if !config_dir.exists() {
+            fs::create_dir_all(&config_dir)
+                .expect("No se pudo crear el directorio de configuración");
+            LicenseResult::None
+        } else {
+            let config_file = config_dir.join("license.json");
+            let json_data = fs::read_to_string(config_file);
+            if json_data.is_err() {
+                return LicenseResult::Wrong;
+            }
+            let encrypted_license =
+                serde_json::from_str::<EncryptedSignedLicense>(&json_data.unwrap());
+            if encrypted_license.is_err() {
+                return LicenseResult::Wrong;
+            }
 
-#[derive(Serialize, Deserialize, Debug)]
-struct EncryptedSignedLicense {
-    license: EncryptedLicense,
-    signature: String,
-}
+            let (host, mac, platform) = device_info();
+            let is_valid = private_check_license(&encrypted_license.unwrap(), "saltggg198sd7urf", &format!("{host}__{mac}__{platform}"));
 
-fn create_signature(license: &EncryptedLicense, salt: &str, shared_key: &str) -> String {
-    fn str_to_int(s: &str) -> u32 {
-        s.bytes().map(|b| b as u32).sum()
-    }
-
-    let seed: String = license.data.chars().rev().collect();
-    let mut output = [0u8; 32];
-    let n = str_to_int(shared_key);
-    let s = str_to_int(salt);
-    let n_times = n % s;
-
-    pbkdf2_hmac::<Sha256>(seed.as_bytes(), salt.as_bytes(), n_times as u32, &mut output);
-    output.iter().map(|b| format!("{:02x}", b)).collect()
-}
-
-fn generate_key_pair_from_seed(seed: &str, salt: &[u8]) -> Result<(String, String), Box<dyn std::error::Error>> {
-    // Definir constantes para PBKDF2
-    let iterations = NonZeroU32::new(100_000).unwrap();
-    // let saltd = b"salt";
-    let mut hash = [0u8; 32];
-
-    // Derivar la clave usando PBKDF2
-    ring::pbkdf2::derive(
-        ring::pbkdf2::PBKDF2_HMAC_SHA256,
-        iterations,
-        salt,
-        seed.as_bytes(),
-        &mut hash,
-    );
-
-    // Crear la clave privada desde el hash derivado
-    // let signing_key = SigningKey::from_bytes(&hash)?;
-    // Convertir el array de bytes a GenericArray<u8, U32>
-    let key_bytes = GenericArray::clone_from_slice(&hash);
-
-    // Crear la clave privada desde el hash derivado
-    let signing_key = SigningKey::from_bytes(&key_bytes)?;
-    let private_key_hex = hex::encode(signing_key.to_bytes());
-
-    // Obtener la clave pública correspondiente
-    let verifying_key = VerifyingKey::from(&signing_key);
-    let public_key = verifying_key.to_encoded_point(false);
-    let public_key_hex = hex::encode(public_key.as_bytes());
-
-    Ok((public_key_hex, private_key_hex))
-}
-
-fn decrypt(
-    shared_key_hex: &str,
-    encrypted: &EncryptedLicense,
-) -> Result<License, Box<dyn Error>> {
-    let shared_key = hex::decode(shared_key_hex)?;
-    let iv = hex::decode(&encrypted.iv)?;
-    let encrypted_data = hex::decode(&encrypted.data)?;
-    let tag = hex::decode(&encrypted.tag)?;
-
-    // Combinar los datos encriptados y el tag
-    let mut ciphertext_with_tag = encrypted_data;
-    ciphertext_with_tag.extend_from_slice(&tag);
-
-    let key = Key::<Aes256Gcm>::from_slice(&shared_key[0..32]);
-    let cipher = Aes256Gcm::new(key);
-    let nonce = Nonce::from_slice(&iv);
-
-    match cipher.decrypt(nonce, ciphertext_with_tag.as_ref()) {
-        Ok(decrypted) => {
-            let decrypted_str = String::from_utf8(decrypted)?;
-            let license: License = serde_json::from_str(&decrypted_str)?;
-
-            Ok(license)
+            if is_valid {
+                return LicenseResult::Ok;
+            } else {
+                return LicenseResult::Wrong;
+            }
         }
-        Err(e) => {
-            // eprintln!("Error decrypting license: {:?}", e);
-            Err(format!("Error decrypting license: {:?}", e).into())
-        }
+    } else {
+        let msg = "No se pudo determinar el directorio de configuración.".to_string();
+        error!("{msg}");
+        return LicenseResult::Error(msg);
     }
-}
-
-
-fn derive_shared_key(public_key_hex: &str, private_key_hex: &str) -> Result<String, Box<dyn std::error::Error>> {
-    let private_key_bytes = hex::decode(private_key_hex)?;
-    let public_key_bytes = hex::decode(public_key_hex)?;
-
-    // println!("public_key_bytes {public_key_bytes:?}");
-    // println!("private_key_bytes {private_key_bytes:?}");
-
-    let private_key = SecretKey::from_slice(&private_key_bytes)?;
-    let public_key = PublicKey::from_slice(&public_key_bytes)?;
-
-    let secp = Secp256k1::new();
-
-    let shared_point = public_key.mul_tweak(&secp, &private_key.into())?;
-
-    let shared_secret = shared_point.serialize();
-    let shared_key_hex = hex::encode(&shared_secret[1..33]); // Omitir el primer byte (identificador de compresión) y tomar los siguientes 32 bytes
-
-    Ok(shared_key_hex[0..64].to_string())
-}
-
-fn verify_license(license: &EncryptedSignedLicense, salt: &str, shared_key: &str) -> bool {
-    let signature = create_signature(&license.license, salt, shared_key);
-    if signature != license.signature {
-        return false;
-    }
-
-    let str_datetime = license.expired_at;
-    let dt = chrono::DateTime::parse_from_rfc3339(&str_datetime);
-    if dt.is_err() {
-        return false;
-    }
-    let datetime = dt.unwrap();
-    let now = chrono::Local::now();
 }
