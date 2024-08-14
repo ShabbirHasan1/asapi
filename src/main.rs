@@ -14,20 +14,21 @@
 mod app_state;
 mod top_bar;
 
+extern crate clickhousem;
 extern crate common;
 extern crate components;
-extern crate clickhousem;
 extern crate httpm;
 extern crate kafkam;
+extern crate licensem;
 extern crate mongom;
 extern crate redism;
 extern crate sqlm;
-extern crate licensem;
 
 use clickhousem::view::ClickHouseView;
 use common::internationalization::language_selector;
 use eframe::egui;
 use kafkam::view::KafkaView;
+use licensem::{check_license_file, LicenseResult};
 use log::info;
 use mongom::view::MongoView;
 use redism::view::RedisView;
@@ -58,6 +59,8 @@ pub struct Asapi {
     mongo: MongoView,
     kafka: KafkaView,
     clickhouse: ClickHouseView,
+    user_license: String,
+    license_result: LicenseResult,
 }
 
 impl Asapi {
@@ -114,6 +117,9 @@ impl Asapi {
             );
         }
 
+        // comprobación licencia
+        let license_result = check_license_file();
+
         // ==================================================
         // ==================================================
 
@@ -140,6 +146,8 @@ impl Asapi {
             mongo: Default::default(),
             kafka: Default::default(),
             clickhouse: Default::default(),
+            user_license: Default::default(),
+            license_result,
         }
     }
 }
@@ -157,51 +165,71 @@ impl eframe::App for Asapi {
         // Aquí decido qué lenguage implementamos.
         let i18n = language_selector(self.app_state.app_config.language);
 
+
+        let is_license_valid = self.license_result == LicenseResult::Ok;
+
         egui::TopBottomPanel::top("decoration").show(ctx, |ui| {
             egui::warn_if_debug_build(ui);
             self.top_bar
-                .update(ctx, ui, &self.rt, &mut self.app_state, &i18n);
+                .update(ctx, ui, &self.rt, &mut self.app_state, &i18n, is_license_valid);
         });
 
-        match self.app_state.selected_view {
-            ViewType::Http => {
-                self.http
-                    .update(ctx, _frame, &mut self.app_state.http, &self.rt, &i18n.http)
+
+        if is_license_valid {
+            match self.app_state.selected_view {
+                ViewType::Http => {
+                    self.http
+                        .update(ctx, _frame, &mut self.app_state.http, &self.rt, &i18n.http)
+                }
+                ViewType::Pg => {
+                    self.pg
+                        .update(ctx, _frame, &mut self.app_state.pg, &self.rt, &i18n.sqlx)
+                }
+                ViewType::MySql => {
+                    self.mysql
+                        .update(ctx, _frame, &mut self.app_state.mysql, &self.rt, &i18n.sqlx)
+                }
+                ViewType::SQLite => self.sqlite.update(
+                    ctx,
+                    _frame,
+                    &mut self.app_state.sqlite,
+                    &self.rt,
+                    &i18n.sqlx,
+                ),
+                ViewType::Mongo => {
+                    self.mongo
+                        .update(ctx, _frame, &mut self.app_state.mongo, &self.rt, &i18n)
+                }
+                ViewType::Kafka => {
+                    self.kafka
+                        .update(ctx, _frame, &mut self.app_state.kafka, &self.rt, &i18n)
+                }
+                ViewType::Redis => {
+                    self.redis
+                        .update(ctx, _frame, &mut self.app_state.redis, &self.rt, &i18n)
+                }
+                ViewType::ClickHouse => self.clickhouse.update(
+                    ctx,
+                    _frame,
+                    &mut self.app_state.clickhouse,
+                    &self.rt,
+                    &i18n.clickhouse,
+                ),
             }
-            ViewType::Pg => {
-                self.pg
-                    .update(ctx, _frame, &mut self.app_state.pg, &self.rt, &i18n.sqlx)
-            }
-            ViewType::MySql => {
-                self.mysql
-                    .update(ctx, _frame, &mut self.app_state.mysql, &self.rt, &i18n.sqlx)
-            }
-            ViewType::SQLite => self.sqlite.update(
-                ctx,
-                _frame,
-                &mut self.app_state.sqlite,
-                &self.rt,
-                &i18n.sqlx,
-            ),
-            ViewType::Mongo => {
-                self.mongo
-                    .update(ctx, _frame, &mut self.app_state.mongo, &self.rt, &i18n)
-            }
-            ViewType::Kafka => {
-                self.kafka
-                    .update(ctx, _frame, &mut self.app_state.kafka, &self.rt, &i18n)
-            }
-            ViewType::Redis => {
-                self.redis
-                    .update(ctx, _frame, &mut self.app_state.redis, &self.rt, &i18n)
-            }
-            ViewType::ClickHouse => self.clickhouse.update(
-                ctx,
-                _frame,
-                &mut self.app_state.clickhouse,
-                &self.rt,
-                &i18n.clickhouse,
-            ),
+        } else {
+            egui::CentralPanel::default().show(ctx, |ui| {
+                ui.label(&i18n.insert_license);
+                ui.add(
+                    egui::TextEdit::multiline(&mut self.user_license)
+                        .font(egui::TextStyle::Monospace) // for cursor height
+                        .code_editor()
+                        .desired_rows(5)
+                        .lock_focus(true)
+                        .desired_width(f32::INFINITY),
+                );
+
+                if ui.button(i18n.activate_license_button).clicked() {}
+            });
         }
     }
 }

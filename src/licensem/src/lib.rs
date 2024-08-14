@@ -1,14 +1,15 @@
 mod check;
 
 use directories::ProjectDirs;
-use log::{error, log};
+use log::error;
 use std::fs;
 use std::path::PathBuf;
 use crate::check::{EncryptedSignedLicense, device_info, private_check_license};
 
+#[derive(Debug, PartialEq)]
 pub enum LicenseResult {
     None, // Hay definida carpeta de configuración de usuario pero no está creada. Se crea y ya. El usuario tendrá que activar.
-    Wrong, // Licencia es errónea.
+    Wrong(String), // Licencia es errónea.
     Ok,   // Licencia es correcta. Solo este estado permite que se use la aplicación.
     Error(String), // No hay definida carpeta de configuración de usuario.
 }
@@ -38,12 +39,12 @@ pub fn check_license_file() -> LicenseResult {
             let config_file = config_dir.join("license.json");
             let json_data = fs::read_to_string(config_file);
             if json_data.is_err() {
-                return LicenseResult::Wrong;
+                return LicenseResult::Wrong("Invalid License. No JSON.".to_string());
             }
             let encrypted_license =
                 serde_json::from_str::<EncryptedSignedLicense>(&json_data.unwrap());
             if encrypted_license.is_err() {
-                return LicenseResult::Wrong;
+                return LicenseResult::Wrong("Invalid License. Wrong JSON format.".to_string());
             }
 
             let (host, mac, platform) = device_info();
@@ -52,7 +53,7 @@ pub fn check_license_file() -> LicenseResult {
             if is_valid {
                 return LicenseResult::Ok;
             } else {
-                return LicenseResult::Wrong;
+                return LicenseResult::Wrong("Invalid License.".to_string());
             }
         }
     } else {

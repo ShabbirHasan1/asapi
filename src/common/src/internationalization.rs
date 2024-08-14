@@ -144,6 +144,9 @@ pub struct I18nClickHouse {
 
 #[derive(Clone)]
 pub struct I18n {
+    pub insert_license: String,
+    pub activate_license_button: String,
+
     pub http: I18nHttp,
     pub sqlx: I18nSqlx,
     pub clickhouse: I18nClickHouse,
@@ -263,6 +266,8 @@ pub struct I18n {
 pub fn language_selector(i: I18nOptions) -> I18n {
     match i {
         I18nOptions::ES => I18n {
+            insert_license: String::from("Por favor, introduzca su licencia"),
+            activate_license_button: String::from("Registrar Dispositivo"),
             debug_json_string: "JSON Exportado".to_owned(),
 
             top_menu_config: "Configuración".to_owned(),
@@ -489,6 +494,8 @@ pub fn language_selector(i: I18nOptions) -> I18n {
         },
 
         I18nOptions::EN => I18n {
+            insert_license: String::from("Please, insert your license"),
+            activate_license_button: String::from("Register Device"),
             debug_json_string: "Exported JSON".to_owned(),
 
             // Barra superior
