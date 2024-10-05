@@ -210,7 +210,7 @@ impl RedisView {
 
     fn show_data_structures(&mut self, ui: &mut egui::Ui, i18n: &I18n) {
         egui::ScrollArea::vertical()
-            .id_source("scroll_para_ds")
+            .id_salt("scroll_para_ds")
             .show(ui, |ui| {
                 ui.separator();
 

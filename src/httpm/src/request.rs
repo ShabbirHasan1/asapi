@@ -7,7 +7,7 @@
 // -------------------------------------------------------------------------
 
 use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
-use reqwest::{multipart, Body, Client, ClientBuilder, Response};
+use reqwest::{multipart, Body, Client, ClientBuilder};
 use serde::{Deserialize, Serialize};
 use serde_json::Value as JsonValue;
 use std::ffi::OsStr;

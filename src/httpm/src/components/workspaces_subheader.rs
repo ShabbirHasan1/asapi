@@ -7,6 +7,7 @@
 // -------------------------------------------------------------------------
 
 use eframe::egui;
+use egui::PopupCloseBehavior;
 use std::path::PathBuf;
 
 use common::internationalization::I18nHttp;
@@ -41,14 +42,20 @@ impl HttpView {
                 let mut idx_to_delete: Option<usize> = None;
 
                 if let Some(workspace) = app_st.workspaces.get_mut(app_st.current_workspace_idx) {
-                    egui::popup::popup_below_widget(ui, popup_id, &edit_button, |ui| {
-                        ui.set_min_width(200.0);
-                        ui.label(&i18n.http_btn_edit_ws_name);
-                        ui.text_edit_singleline(&mut workspace.name).request_focus();
-                        if ui.button(&i18n.http_btn_delete_ws).clicked() {
-                            idx_to_delete = Some(app_st.current_workspace_idx);
-                        }
-                    });
+                    egui::popup::popup_below_widget(
+                        ui,
+                        popup_id,
+                        &edit_button,
+                        PopupCloseBehavior::CloseOnClickOutside,
+                        |ui| {
+                            ui.set_min_width(200.0);
+                            ui.label(&i18n.http_btn_edit_ws_name);
+                            ui.text_edit_singleline(&mut workspace.name).request_focus();
+                            if ui.button(&i18n.http_btn_delete_ws).clicked() {
+                                idx_to_delete = Some(app_st.current_workspace_idx);
+                            }
+                        },
+                    );
                 }
 
                 if let Some(idx) = idx_to_delete {

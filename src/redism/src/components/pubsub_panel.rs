@@ -118,7 +118,7 @@ impl RedisView {
             ui.label(&i18n.redis_n_columns);
             ui.add(
                 egui::DragValue::new(&mut self.pubsub.n_columns)
-                    .clamp_range(RangeInclusive::new(min_n_cols, max_n_cols)),
+                    .range(RangeInclusive::new(min_n_cols, max_n_cols)),
             );
         });
         // Necesario para cuando empiezan a haber datos

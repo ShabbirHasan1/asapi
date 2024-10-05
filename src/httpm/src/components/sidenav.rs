@@ -11,6 +11,7 @@ use std::path::PathBuf;
 use eframe::egui;
 
 use common::internationalization::I18nHttp;
+use egui::PopupCloseBehavior;
 
 use crate::request::Request;
 use crate::state::{HttpAppState, HttpRequestAction};
@@ -176,12 +177,20 @@ impl HttpView {
                         HttpRequestAction::None => (),
                         HttpRequestAction::Rename => {
                             let button = &buttons[idx];
-                            egui::popup::popup_below_widget(ui, popup_id, button, |ui| {
-                                ui.set_min_width(200.0);
-                                ui.label(&i18n.http_edit_request_name);
-                                ui.text_edit_singleline(&mut current_workspace.requests[idx].name)
+                            egui::popup::popup_below_widget(
+                                ui,
+                                popup_id,
+                                button,
+                                PopupCloseBehavior::CloseOnClickOutside,
+                                |ui| {
+                                    ui.set_min_width(200.0);
+                                    ui.label(&i18n.http_edit_request_name);
+                                    ui.text_edit_singleline(
+                                        &mut current_workspace.requests[idx].name,
+                                    )
                                     .request_focus();
-                            });
+                                },
+                            );
                         }
                         HttpRequestAction::Delete => {
                             app_st.workspaces[app_st.current_workspace_idx]

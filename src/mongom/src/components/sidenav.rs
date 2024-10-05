@@ -212,7 +212,7 @@ impl MongoConnectionsSubpanel {
         i18n: &I18n,
     ) {
         egui::ScrollArea::vertical()
-            .id_source("connections_scroll_area")
+            .id_salt("connections_scroll_area")
             .show(ui, |ui| {
                 let mut connections_to_delete: HashSet<usize> = HashSet::new();
 
@@ -405,7 +405,7 @@ impl MongoDatabasesSubpanel {
         i18n: &I18n,
     ) {
         egui::ScrollArea::vertical()
-            .id_source("databases_scroll_area")
+            .id_salt("databases_scroll_area")
             .show(ui, |ui| {
                 egui::Grid::new("mongo_databases")
                     .num_columns(2)
@@ -484,7 +484,7 @@ impl MongoCollectionsSubpanel {
         i18n: &I18n,
     ) {
         egui::ScrollArea::vertical()
-            .id_source("collections_scroll_area")
+            .id_salt("collections_scroll_area")
             .show(ui, |ui| {
                 egui::Grid::new("mongo_collections")
                     .num_columns(2)

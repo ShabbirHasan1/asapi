@@ -23,7 +23,7 @@ macro_rules! strip_text_edit {
 macro_rules! strip_combo_box {
     ($strip:expr, $id:expr, $variable:expr, $($options:expr),+) => {{
         $strip.cell(|ui| {
-            egui::ComboBox::from_id_source($id)
+            egui::ComboBox::from_id_salt($id)
                 .selected_text(&$variable)
                 .width(ui.available_width())
                 .show_ui(ui, |ui| {

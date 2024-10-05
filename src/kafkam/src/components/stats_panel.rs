@@ -108,7 +108,6 @@ pub fn show_stats(ui: &mut egui::Ui, last_update: &String, stats: &Statistics, i
     });
 
     egui::ScrollArea::horizontal()
-        .id_source("scroll_brokers")
         .show(ui, |ui| {
 
             // StripBuilder::new(ui)

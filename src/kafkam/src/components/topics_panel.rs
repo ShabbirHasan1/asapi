@@ -49,7 +49,7 @@ impl KafkaView {
             .collapsible(false)
             .show(ui.ctx(), |ui| {
                 ui.horizontal(|ui| {
-                    egui::ComboBox::from_id_source("kafka_delete_topic")
+                    egui::ComboBox::from_id_salt("kafka_delete_topic")
                         .selected_text(&self.state.delete_topic.selected_topic_name)
                         .show_ui(ui, |ui| {
                             self.state
@@ -123,12 +123,12 @@ impl KafkaView {
                 // valores son los más probables.
                 ui.add(
                     egui::DragValue::new(&mut self.state.new_topic.n_partitions)
-                        .clamp_range(RangeInclusive::new(0, 10)),
+                        .range(RangeInclusive::new(0, 10)),
                 );
                 ui.label(&i18n.kafka_topic_replication);
                 ui.add(
                     egui::DragValue::new(&mut self.state.new_topic.fixed_topic_replication)
-                        .clamp_range(RangeInclusive::new(0, 10)),
+                        .range(RangeInclusive::new(0, 10)),
                 );
                 ui_text_edit_singleline_hint(
                     ui,
@@ -223,7 +223,7 @@ impl KafkaView {
 
                 egui::CollapsingHeader::new(&i18n.kafka_topics_info)
                     .default_open(true)
-                    .id_source(format!("Topics-resumen-{}", topic.name()))
+                    .id_salt(format!("Topics-resumen-{}", topic.name()))
                     .show_background(true)
                     .show(ui, |ui| {
                         egui::Grid::new(format!("Topics-resumen-Count-{}", topic.name()))
@@ -255,7 +255,7 @@ impl KafkaView {
 
                 egui::CollapsingHeader::new(&i18n.kafka_partitions_info)
                     .default_open(false)
-                    .id_source(format!("Particiones-{}", topic.name()))
+                    .id_salt(format!("Particiones-{}", topic.name()))
                     .show_background(true)
                     .show(ui, |ui| {
                         egui::Grid::new(topic.name())

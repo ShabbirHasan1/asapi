@@ -47,18 +47,47 @@ members = [
     "src/sqlm",
 ]
 
-[dependencies]
-# ---------------------------------------------------------------------------
-# Dependencias generales u ortogonales a todo el proyecto.
-# ---------------------------------------------------------------------------
-egui = "0.27.2"
-eframe = { version = "0.27.2", features = ["glow"], default-features = false }
-egui-file-dialog = "0.5.0"
+[workspace.dependencies]
+eframe = { version = "0.29.1", features = ["glow"], default-features = false }
+egui = "0.29.1"
+egui-file-dialog = "0.7.0"
+egui_extras = "0.29.1"
+egui_json_tree = "0.7.0"
 env_logger = { version = "0.11.3", default-features = false }
 log = "0.4.21"
 serde = { version = "1.0.197", default-features = false }
 serde_json = "1.0.117"
 tokio = "1.37.0"
+tokio-util = "0.7.11"
+futures = { version = "0.3.30", default-features = false }
+futures-util = { version = "0.3.30", default-features = false }
+chrono = { version = "0.4.37", default-features = false }
+uuid = { version = "1.8.0", default-features = false }
+regex = "1.10.4"
+
+
+
+[dependencies]
+# ---------------------------------------------------------------------------
+# Dependencias generales u ortogonales a todo el proyecto.
+# ---------------------------------------------------------------------------
+# egui = "0.29.1"
+# eframe = { version = "0.29.1", features = ["glow"], default-features = false }
+# egui-file-dialog = "0.7.0"
+# env_logger = { version = "0.11.3", default-features = false }
+# log = "0.4.21"
+# serde = { version = "1.0.197", default-features = false }
+# serde_json = "1.0.117"
+# tokio = "1.37.0"
+
+egui = { workspace = true }
+eframe = { workspace = true }
+egui-file-dialog = { workspace = true }
+env_logger = { workspace = true }
+log = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tokio = { workspace = true }
 
 common = { path = "src/common" }
 components = { path = "src/components" }
@@ -69,8 +98,8 @@ mongom = { path = "src/mongom" }
 redism = { path = "src/redism" }
 sqlm = { path = "src/sqlm" }
 licensem = { path = "src/licensem" }
-
-
+# rabbitmqm = { path = "src/rabbitmqm" }
+# natsm = { path = "src/natsm" }
 
 [package.metadata.scripts]
 run = "cargo run"

@@ -23,7 +23,7 @@ use crate::view::MongoView;
 
 impl MongoView {
     pub fn available_keys_combo(&mut self, ui: &mut egui::Ui) {
-        egui::ComboBox::from_id_source("selected_col_available_keys")
+        egui::ComboBox::from_id_salt("selected_col_available_keys")
             .selected_text(self.state.current_selected_key.as_str())
             .show_ui(ui, |ui| {
                 self.state.current_available_keys.iter().for_each(|k| {
@@ -124,7 +124,7 @@ impl MongoView {
     // al iterar obtengo un `&MongoFindFilter::variante` y me toca
     // clonar para pasar al `selectable_value`, por lo que no ahorro.
     pub fn select_action_options(&mut self, ui: &mut egui::Ui) {
-        egui::ComboBox::from_id_source("MongoAction")
+        egui::ComboBox::from_id_salt("MongoAction")
             .selected_text(self.state.current_operator.as_str())
             .show_ui(ui, |ui| {
                 ui.selectable_value(
@@ -186,7 +186,7 @@ impl MongoView {
     }
 
     pub fn select_bson_data_type(&mut self, ui: &mut egui::Ui) {
-        egui::ComboBox::from_id_source("MongoBsonDateType")
+        egui::ComboBox::from_id_salt("MongoBsonDateType")
             .selected_text(self.state.current_selected_type_bson_type.as_str())
             .show_ui(ui, |ui| {
                 ui.selectable_value(

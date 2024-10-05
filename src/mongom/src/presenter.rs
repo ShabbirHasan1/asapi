@@ -29,7 +29,9 @@ pub async fn list_database_names_in_connection(
     i18n: &I18n,
 ) -> Vec<String> {
     let timeout_duration = Duration::from_secs(5);
-    match tokio::time::timeout(timeout_duration, client.list_database_names(None, None)).await {
+    match tokio::time::timeout(timeout_duration, async {
+        client.list_database_names().await
+    }).await {
         Ok(Ok(database_names)) => {
             let _ = tx
                 .send(MongoMessage::Databases(database_names.to_owned()))
@@ -57,7 +59,7 @@ pub async fn list_database_collections<'a>(
     db_name: &str,
 ) -> Vec<String> {
     let db = client.database(db_name);
-    match db.list_collection_names(None).await {
+    match db.list_collection_names().await {
         Ok(cs) => {
             let _ = tx.send(MongoMessage::Collections(cs.to_owned())).await;
             cs
@@ -107,11 +109,11 @@ pub async fn find(
     let mut docs: Vec<Document> = vec![];
 
     if action == MongoAction::FindOne {
-        if let Some(d) = collection.find_one(filter, None).await? {
+        if let Some(d) = collection.find_one(filter).await? {
             docs.push(d);
         }
     } else {
-        let mut cursor = collection.find(filter, opts).await?;
+        let mut cursor = collection.find(filter).with_options(opts).await?;
         // Acumulo en un vector para no tener que enviar tantos mensajes.
         // Opción si queremos predefinir el tamaño del vector.
         //     let count = collection.count_documents(doc! {}, None).await?;
@@ -155,12 +157,12 @@ pub async fn insert(
     // Esta comprobación es redundante si el cliente es solo MongoView.insert
     if action == MongoAction::InsertOne {
         if docs.len() == 1 {
-            let _ = collection.insert_one(&docs[0], None).await?;
+            let _ = collection.insert_one(&docs[0]).await?;
         } else {
             msg = MongoMessage::Error(i18n.mongo_insert_one_error.clone());
         }
     } else {
-        let _ = collection.insert_many(docs, None).await?;
+        let _ = collection.insert_many(docs).await?;
     };
 
     let _ = tx.send(msg).await;
@@ -185,11 +187,11 @@ pub async fn update(
     // Esta comprobación es redundante si el cliente es solo MongoView.insert
     if action == MongoAction::UpdateOne {
         let _ = collection
-            .update_one(filter, doc! { "$set": doc }, None)
+            .update_one(filter, doc! { "$set": doc })
             .await?;
     } else {
         let _ = collection
-            .update_many(filter, doc! { "$set": doc }, None)
+            .update_many(filter, doc! { "$set": doc })
             .await?;
     };
 
@@ -211,7 +213,7 @@ pub async fn replace(
     let msg = MongoMessage::ReplaceSuccess;
 
     // Esta comprobación es redundante si el cliente es solo MongoView.insert
-    let _ = collection.replace_one(filter, doc, None).await?;
+    let _ = collection.replace_one(filter, doc).await?;
 
     let _ = tx.send(msg).await;
 
@@ -233,9 +235,9 @@ pub async fn delete(
     // Esta comprobación es redundante si el cliente es solo MongoView.insert
     if action == MongoAction::DeleteOne {
         log::info!("Documento a borrar\n{:?}", doc);
-        let _ = collection.delete_one(doc, None).await?;
+        let _ = collection.delete_one(doc).await?;
     } else {
-        let _ = collection.delete_many(doc, None).await?;
+        let _ = collection.delete_many(doc).await?;
     }
 
     let _ = tx.send(msg).await;
@@ -249,7 +251,7 @@ pub async fn run_command(
     query: Document,
 ) -> Result<Document, MongoError> {
     let db = client.database(db_name);
-    let stats = db.run_command(query, None).await;
+    let stats = db.run_command(query).await;
 
     match stats {
         Ok(data) => Ok(data),

@@ -4,7 +4,7 @@
     "dark_theme": false,
     "language": "ES"
   },
-  "selected_view": "ClickHouse",
+  "selected_view": "Http",
   "show_settings": false,
   "http": {
     "show_sidebar": true,
@@ -308,8 +308,8 @@
         "requests": [
           {
             "name": "https://httpbin.org/put",
-            "method": "Get",
-            "url": "https://httpbin.org/put",
+            "method": "Post",
+            "url": "https://httpbin.org/post",
             "multipart": false,
             "body_params": [
               [
@@ -337,8 +337,8 @@
           },
           {
             "name": "https://httpbin.org/post",
-            "method": "Get",
-            "url": "https://httpbin.org/post",
+            "method": "Put",
+            "url": "https://httpbin.org/put",
             "multipart": false,
             "body_params": [
               [
@@ -459,9 +459,129 @@
           }
         ],
         "show_options": false
+      },
+      {
+        "id": 6,
+        "name": "Asapi",
+        "requests": [
+          {
+            "name": "health-check",
+            "method": "Get",
+            "url": "https://asapi.qoback.es/api/v1/health-check/ping",
+            "multipart": false,
+            "body_params": [],
+            "headers_params": []
+          },
+          {
+            "name": "/v1/license/create-device-license",
+            "method": "Post",
+            "url": "https://asapi.qoback.es/api/v1/license/create-device-license",
+            "multipart": false,
+            "body_params": [
+              [
+                "user_license",
+                "\"ef628e0155f7f23f5e33bfd2e86183d8137e47107499ca18980c83dc94ce3a01\"",
+                false
+              ],
+              [
+                "device_name",
+                "\"nando@arch\"",
+                false
+              ],
+              [
+                "platform",
+                "\"linux\"",
+                false
+              ],
+              [
+                "id",
+                "\"2304987213\"",
+                false
+              ]
+            ],
+            "headers_params": [
+              [
+                "id",
+                "\"2304987213\""
+              ]
+            ]
+          }
+        ],
+        "show_options": false
+      },
+      {
+        "id": 7,
+        "name": "clotr",
+        "requests": [
+          {
+            "name": "health-check (ping)",
+            "method": "Get",
+            "url": "http://localhost:3000/ping",
+            "multipart": false,
+            "body_params": [],
+            "headers_params": []
+          },
+          {
+            "name": "Retrieve all logs",
+            "method": "Get",
+            "url": "http://localhost:3000/logs",
+            "multipart": false,
+            "body_params": [],
+            "headers_params": []
+          },
+          {
+            "name": "Search in logs",
+            "method": "Post",
+            "url": "http://localhost:3000/search",
+            "multipart": false,
+            "body_params": [
+              [
+                "search_for",
+                "[\"2\", \"3\"]",
+                false
+              ],
+              [
+                "case_sensitive",
+                "false",
+                false
+              ],
+              [
+                "field",
+                "\"message\"",
+                false
+              ]
+            ],
+            "headers_params": []
+          },
+          {
+            "name": "Search in logs (Query params)",
+            "method": "Get",
+            "url": "http://localhost:3000/search?search_for=2,3&case_sensitive=false",
+            "multipart": false,
+            "body_params": [
+              [
+                "search_for",
+                "[\"2\", \"3\"]",
+                false
+              ],
+              [
+                "case_sensitive",
+                "false",
+                false
+              ],
+              [
+                "field",
+                "\"message\"",
+                false
+              ]
+            ],
+            "headers_params": []
+          }
+        ],
+        "show_options": false
       }
     ],
-    "current_workspace_idx": 5
+    "current_workspace_idx": 7
   },
   "pg": {
     "show_sidebar": true,
@@ -561,9 +681,9 @@
     "performance_table": false,
     "connections": [
       {
-        "name": "Asapi/Docker",
+        "name": "Asapi/Docker -- TCP",
         "host": "localhost",
-        "port": "8123",
+        "port": "9000",
         "user": "default",
         "password": "",
         "protocol": "Http",

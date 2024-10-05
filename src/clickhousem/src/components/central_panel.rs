@@ -65,10 +65,11 @@ impl ClickHouseView {
                         ui.separator();
 
                         // --> Definimos la entrada y lanzar stmt por parte del usuario <--
-                        let theme = egui_extras::syntax_highlighting::CodeTheme::from_memory(ctx);
+                        let theme = egui_extras::syntax_highlighting::CodeTheme::from_memory(ctx, &ui.style());
                         let mut sql_layouter = |ui: &egui::Ui, string: &str, wrap_width: f32| {
                             let mut layout_job = egui_extras::syntax_highlighting::highlight(
                                 ui.ctx(),
+                                ui.style(),
                                 &theme,
                                 string,
                                 "sql",

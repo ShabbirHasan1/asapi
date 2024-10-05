@@ -89,7 +89,7 @@ where
                     ui.label("Number of Rows to Add");
                     ui.add(
                         egui::DragValue::new(&mut state.data_gen.n_rows_to_generate)
-                            .clamp_range(RangeInclusive::new(1, 65535)),
+                            .range(RangeInclusive::new(1, 65535)),
                     );
                 });
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::LEFT), |ui| {

@@ -6,10 +6,7 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
-use mongodb::{
-    options::{ClientOptions, ResolverConfig},
-    Client,
-};
+use mongodb::{options::ClientOptions, Client};
 use std::time::Duration;
 
 use super::state::{MongoConnectionDefinition, MongoLocalState};
@@ -33,8 +30,8 @@ pub async fn connect(
     let protocol = if is_srv { "mongodb+srv" } else { "mongodb" };
     let uri = format!("{protocol}://{user}:{password}@{host}:{port}/?retryWrites=true&w=majority");
     println!("Trying to connect to {uri}");
-    let options: Result<ClientOptions, mongodb::error::Error> =
-        ClientOptions::parse_with_resolver_config(&uri, ResolverConfig::cloudflare()).await;
+    let options: Result<ClientOptions, mongodb::error::Error> = ClientOptions::parse(&uri).await;
+    // ClientOptions::parse_with_resolver_config(&uri, ResolverConfig::cloudflare()).await;
     match options {
         Ok(mut options) => {
             options.connect_timeout = Some(Duration::from_secs(5));

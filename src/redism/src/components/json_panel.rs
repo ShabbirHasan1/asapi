@@ -564,7 +564,7 @@ impl RedisView {
                             });
 
                             strip.cell(|ui| {
-                                egui::ComboBox::from_id_source("json.set_NX_XX")
+                                egui::ComboBox::from_id_salt("json.set_NX_XX")
                                     .selected_text(&self.state.json_st.json_set_nx_xx)
                                     .width(ui.available_width())
                                     .show_ui(ui, |ui| {

@@ -136,7 +136,7 @@ impl HttpView {
                 // --> Elección Verbo HTTP <--
                 ui.horizontal(|ui| {
                     ui.label(&i18n.http_request_method);
-                    let response = egui::ComboBox::from_id_source(&i18n.http_request_method)
+                    let response = egui::ComboBox::from_id_salt(&i18n.http_request_method)
                         .selected_text(self.method.to_string())
                         .show_ui(ui, |ui| {
                             ui.selectable_value(&mut self.method, HttpMethod::Get, "GET");
@@ -237,10 +237,11 @@ impl HttpView {
                             .show(ui);
                     } else {
                         let theme =
-                            egui_extras::syntax_highlighting::CodeTheme::from_memory(ui.ctx());
+                            egui_extras::syntax_highlighting::CodeTheme::from_memory(ctx, &ui.style());
                         let mut json_layouter = |ui: &egui::Ui, string: &str, wrap_width: f32| {
                             let mut layout_job = egui_extras::syntax_highlighting::highlight(
                                 ui.ctx(),
+                                &ui.style(),
                                 &theme,
                                 string,
                                 "json",

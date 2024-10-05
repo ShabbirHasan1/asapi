@@ -9,7 +9,6 @@
 use eframe::egui;
 use tokio::runtime::Runtime;
 
-use common::icon_moon::IconMoon;
 use common::internationalization::{I18n, I18nOptions};
 
 use crate::app_state::{load_state, save_state};
@@ -113,7 +112,7 @@ impl AppTopBar {
             if show_panels {
                 ui.menu_button("File", |ui| {
                     ui.set_min_width(220.0);
-                    ui.style_mut().wrap = Some(false);
+                    ui.style_mut().wrap_mode = Some(egui::TextWrapMode::Extend);
 
                     // On the web the browser controls the zoom
                     #[cfg(not(target_arch = "wasm32"))]

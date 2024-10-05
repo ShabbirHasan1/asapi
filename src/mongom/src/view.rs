@@ -211,7 +211,7 @@ impl MongoView {
             ui.separator();
 
             egui::ScrollArea::vertical()
-                .id_source("mongo_central_panel")
+                .id_salt("mongo_central_panel")
                 .show(ui, |ui| {
                     self.find_panel(rt, &self.tx.clone(), ui, i18n);
                 });

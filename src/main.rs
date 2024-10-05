@@ -271,6 +271,6 @@ fn main() {
     let _result = eframe::run_native(
         "asapi",
         native_options,
-        Box::new(|cc| Box::new(Asapi::new(cc))),
+        Box::new(|cc| Ok(Box::new(Asapi::new(cc)))),
     );
 }

@@ -214,7 +214,7 @@ impl BodyParams {
 
         if !self.params.is_empty() {
             egui::CollapsingHeader::new("Body JSON")
-                .id_source("body_as_json")
+                .id_salt("body_as_json")
                 .show(ui, |ui| {
                     let json_map: serde_json::Map<String, JsonValue> = self
                         .params
@@ -223,7 +223,7 @@ impl BodyParams {
                         .collect();
                     let json_value = JsonValue::Object(json_map);
                     egui::ScrollArea::vertical()
-                        .id_source("body_scroll")
+                        .id_salt("body_scroll")
                         .show(ui, |ui| {
                             JsonTree::new("http_body", &json_value)
                                 .default_expand(egui_json_tree::DefaultExpand::ToLevel(2))

@@ -300,7 +300,7 @@ impl ClickHouseDatabasesSubpanel {
         _i18n: &I18nClickHouse,
     ) {
         egui::ScrollArea::vertical()
-            .id_source("clickhouse_databases_scroll_area")
+            .id_salt("clickhouse_databases_scroll_area")
             .show(ui, |ui| {
                 // Guarda para salid de aquí si no hay conexión.
                 if local_st.pool.is_none() {

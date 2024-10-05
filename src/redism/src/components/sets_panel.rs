@@ -656,7 +656,7 @@ impl RedisView {
                             });
 
                             strip.cell(|ui| {
-                                egui::ComboBox::from_id_source("zpop_min_max")
+                                egui::ComboBox::from_id_salt("zpop_min_max")
                                     .selected_text(&self.state.zsets_st.zmpop_min_max)
                                     .width(ui.available_width())
                                     .show_ui(ui, |ui| {
@@ -1036,7 +1036,7 @@ impl RedisView {
                             });
 
                             strip.cell(|ui| {
-                                egui::ComboBox::from_id_source("zunionstore_min_max")
+                                egui::ComboBox::from_id_salt("zunionstore_min_max")
                                     .selected_text(&self.state.zsets_st.zunionstore_min_max)
                                     .width(ui.available_width())
                                     .show_ui(ui, |ui| {

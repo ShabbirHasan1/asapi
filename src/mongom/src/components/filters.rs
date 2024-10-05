@@ -8,7 +8,6 @@
 
 use bson::Document;
 use eframe::egui::{self, Context};
-use egui_extras::syntax_highlighting as syntax;
 use egui_json_tree::JsonTree;
 use log;
 use serde_json::{json, Value};
@@ -266,9 +265,10 @@ impl MongoView {
     }
 
     pub fn user_defined_filter_input(&mut self, ctx: &Context, ui: &mut egui::Ui, i18n: &I18n) {
-        let theme = syntax::CodeTheme::from_memory(ctx);
+        let theme = egui_extras::syntax_highlighting::CodeTheme::from_memory(ctx, &ui.style());
         let mut layouter = |ui: &egui::Ui, string: &str, wrap_width: f32| {
-            let mut layout_job = syntax::highlight(ui.ctx(), &theme, string, "json");
+            let mut layout_job =
+                egui_extras::syntax_highlighting::highlight(ui.ctx(), &ui.style(), &theme, string, "json");
             layout_job.wrap.max_width = wrap_width;
             ui.fonts(|f| f.layout_job(layout_job))
         };

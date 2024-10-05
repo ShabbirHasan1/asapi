@@ -279,7 +279,7 @@ impl LineDemo {
 
         let mut plot = Plot::new("lines_demo")
             .legend(Legend::default())
-            .y_axis_width(4)
+            .y_axis_min_width(12.0 * 4 as f32)
             .show_axes(self.show_axes)
             .show_grid(self.show_grid);
         if self.square {
