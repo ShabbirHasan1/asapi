@@ -112,9 +112,7 @@ fn decrypt(shared_key_hex: &str, encrypted: &EncryptedLicense) -> Result<License
 
             Ok(license)
         }
-        Err(e) => {
-            Err(format!("Error decrypting license: {:?}", e).into())
-        }
+        Err(e) => Err(format!("Error decrypting license: {:?}", e).into()),
     }
 }
 
@@ -172,6 +170,19 @@ pub fn device_info() -> (String, String, String) {
     (host, mac, platform.to_owned())
 }
 
+//                    device      platform    public-key
+pub struct DeviceInfo(pub String, pub String, pub String);
+
+pub fn get_license_info_for_device_registration() -> Result<DeviceInfo, String> {
+    let (host, mac, platform) = device_info();
+    let seed = format!("{host}__{mac}__{platform}");
+
+    match generate_key_pair_from_seed(&seed, b"saltggg198sd7urf") {
+        Ok((public, _)) => Ok(DeviceInfo(host, platform, public)),
+        Err(err) => Err(format!("{err:?}")),
+    }
+}
+
 pub fn private_check_license(encrypted: &EncryptedSignedLicense, salt: &str, seed: &str) -> bool {
     // Creamos al vuelo claves y derivada.
     let (host, _, platform) = device_info();
@@ -191,7 +202,9 @@ pub fn private_check_license(encrypted: &EncryptedSignedLicense, salt: &str, see
     match decrypt(&shared_key, &encrypted.license) {
         Ok(license) => {
             info!("License: {license:?}");
-            verify_expiration_date(&license) && license.computer_name == host && license.platform == platform
+            verify_expiration_date(&license)
+                && license.computer_name == host
+                && license.platform == platform
         }
         Err(err) => {
             error!("{err:?}");

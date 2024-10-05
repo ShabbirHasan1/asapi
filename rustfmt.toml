@@ -1,2 +1,4 @@
+newline_style = "Unix"
 edition = "2018"
 reorder_imports = true
+reorder_modules = true

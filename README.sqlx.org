@@ -18,10 +18,12 @@ CLOSED: [2024-05-22 mié 12:18]
 *** DONE Refactorizar para usar sqlx
 CLOSED: [2024-03-26 mar 17:34]
 
-** Postgres [11/14]
+** Postgres [11/15]
 *** TODO Revisar tipos de datos
 *** TODO Probar distintos protocolos de conexión
 Cuando hacemos pequeña la ventana no reduce y se acaba tapando el valor sin que se hayan reducido las /keys/.
+*** TODO No puedo crear tipos
+=CREATE TYPE crop_type_enum ('h', 'l')= me da error.
 *** DOING Tamaño de campo de claves en /body/ y /headers/
 Dejo como doing porque ahora mismo no sé a qué me refiero aquí.
 *** DONE Dar opción en menú contextual de recargar tablas de conexión

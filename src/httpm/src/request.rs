@@ -44,6 +44,9 @@ pub async fn api_request(
                 .map(|(k, v, _)| (k.clone(), serde_json::from_str(v).unwrap_or_default()))
                 .collect();
             let body = JsonValue::Object(json_map);
+            log::info!("POST body: {body:?}");
+            log::info!("{url}, {m}", m = method.parse_to_reqwest_method());
+            log::info!("headers map: {headers_map:?}");
 
             client
                 .request(method.parse_to_reqwest_method(), url)
@@ -59,7 +62,7 @@ pub async fn api_request(
                 .map(|(k, v, _)| (k.clone(), serde_json::from_str(v).unwrap_or_default()))
                 .collect();
             let body = JsonValue::Object(json_map);
-            log::info!("{:?}", body);
+            log::info!("PUT body: {body:?}");
             client
                 .request(method.parse_to_reqwest_method(), url)
                 .headers(headers_map)
@@ -70,13 +73,29 @@ pub async fn api_request(
             .headers(headers_map),
     };
 
-    let response: Response = request_builder.send().await?;
-    let status = response.status();
-    let response_headers = response.headers().clone();
+    log::info!("before request_builder");
+    let response = request_builder.send().await;
 
-    match response.text().await {
-        Ok(text) => Ok((text, response_headers)),
-        Err(_) => Ok((status.to_string(), response_headers)),
+    match response {
+        Ok(response) => {
+            log::info!("response: {response:?}");
+            let status = response.status();
+            log::info!("status: {status:?}");
+            let response_headers = response.headers().clone();
+            log::info!("response_headers: {response_headers:?}");
+
+            match response.text().await {
+                Ok(text) => Ok((text, response_headers)),
+                Err(err) => {
+                    log::error!("{err:?}");
+                    Ok((status.to_string(), response_headers))
+                }
+            }
+        }
+        Err(err) => {
+            log::error!("{err:?}");
+            Err(err)
+        }
     }
 }
 

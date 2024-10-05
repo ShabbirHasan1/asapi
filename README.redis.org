@@ -80,6 +80,10 @@ CLOSED: [2024-04-25 jue 08:50]
 *** TODO Streams
 Única forma de introducir valores porque el parseo del comando no es tan sencillo como el resto
 
+
+* Bugs
+** Si hay una conexión errónea, la siguiente ya no se establece aunque sea correcta
+
 * Footnotes
 [fn:2] Igual que nota [1].
 [fn:1] /deprecated/, pero podemos implementarla con /set/ y /get/ como parámetro.

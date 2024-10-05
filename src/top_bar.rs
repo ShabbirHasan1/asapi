@@ -65,17 +65,9 @@ impl AppTopBar {
             // ui.set_width(200.0);
             ui.heading("ASAPI");
 
-            // let icon = if app_state.app_config.dark_theme {
-            //     IconMoon::Sun.as_str()
-            // } else {
-            //     IconMoon::Moon.as_str()
-            // };
             if ui.button(i18n.top_menu_config.clone()).clicked() {
                 self.show_settings = !self.show_settings;
             }
-            // if ui.add(egui::Button::new(icon)).clicked() {
-            //     app_state.app_config.dark_theme = !app_state.app_config.dark_theme;
-            // }
 
             egui::Window::new(&i18n.top_menu_config)
                 .open(&mut self.show_settings)
@@ -93,6 +85,28 @@ impl AppTopBar {
                             "English",
                         );
                     });
+                    // let icon = if app_state.app_config.dark_theme {
+                    //     IconMoon::Sun.as_str()
+                    // } else {
+                    //     IconMoon::Moon.as_str()
+                    // };
+                    // if ui.add(egui::Button::new(icon)).clicked() {
+                    //     app_state.app_config.dark_theme = !app_state.app_config.dark_theme;
+                    // }
+                    ui.horizontal(|ui| {
+                        ui.selectable_value(
+                            &mut app_state.app_config.dark_theme,
+                            false,
+                            "☀ Light",
+                        );
+                        ui.selectable_value(
+                            &mut app_state.app_config.dark_theme,
+                            true,
+                            "🌙 Dark",
+                        );
+                    });
+
+                    #[cfg(debug_assertions)]
                     ctx.settings_ui(ui);
                 });
 

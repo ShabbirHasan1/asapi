@@ -28,7 +28,10 @@ use clickhousem::view::ClickHouseView;
 use common::internationalization::language_selector;
 use eframe::egui;
 use kafkam::view::KafkaView;
-use licensem::{check_license_file, LicenseResult};
+use licensem::{
+    check_license_file, get_license_info_for_device_registration, post_license,
+    LicenseActivationInfo, LicenseResult,
+};
 use log::info;
 use mongom::view::MongoView;
 use redism::view::RedisView;
@@ -165,15 +168,19 @@ impl eframe::App for Asapi {
         // Aquí decido qué lenguage implementamos.
         let i18n = language_selector(self.app_state.app_config.language);
 
-
         let is_license_valid = self.license_result == LicenseResult::Ok;
 
         egui::TopBottomPanel::top("decoration").show(ctx, |ui| {
             egui::warn_if_debug_build(ui);
-            self.top_bar
-                .update(ctx, ui, &self.rt, &mut self.app_state, &i18n, is_license_valid);
+            self.top_bar.update(
+                ctx,
+                ui,
+                &self.rt,
+                &mut self.app_state,
+                &i18n,
+                is_license_valid,
+            );
         });
-
 
         if is_license_valid {
             match self.app_state.selected_view {
@@ -228,7 +235,23 @@ impl eframe::App for Asapi {
                         .desired_width(f32::INFINITY),
                 );
 
-                if ui.button(i18n.activate_license_button).clicked() {}
+                if ui.button(i18n.activate_license_button).clicked() {
+                    match get_license_info_for_device_registration() {
+                        Ok(device_info) => {
+                            let license = LicenseActivationInfo {
+                                user_license: self.user_license.clone(),
+                                device_info,
+                            };
+                            self.rt.block_on(async move {
+                                let _ = post_license(license).await;
+                            });
+                        }
+                        Err(msg) => {
+                            log::error!("{msg}");
+                            self.user_license = i18n.license_info_error.clone();
+                        }
+                    }
+                }
             });
         }
     }

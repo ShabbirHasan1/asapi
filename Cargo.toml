@@ -69,3 +69,11 @@ mongom = { path = "src/mongom" }
 redism = { path = "src/redism" }
 sqlm = { path = "src/sqlm" }
 licensem = { path = "src/licensem" }
+
+
+
+[package.metadata.scripts]
+run = "cargo run"
+check = "cargo check"
+build = "cargo build"
+release = "cargo build --release"

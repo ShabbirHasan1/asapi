@@ -21,6 +21,10 @@ De esta forma podremos a partir de por ejemplo v1 crear un modificador que cree 
 CLOSED: [2024-05-25 sáb 12:58]
 *** DONE En varias situaciones, dar opción a usuario a invertir el sentido del listado
 CLOSED: [2024-02-28 mié 16:22] No está hecho en todo, pero sí en las tablas de Postgres, puedo usar de guía para otras veces que se presente la necesidad.
+*** Conectar con NATS
+*** Conectar con RabbitMQ
+*** DONE Selección de /theme/ en menú de configuración
+CLOSED: [2024-10-05 sáb 10:31]
 
 
 * Otros
