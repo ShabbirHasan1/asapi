@@ -11,6 +11,7 @@ Antes de junio de 2024 usaba dos cargos al tener dependencias dinámicas y no di
 A partir de junio de 2024 separo en módulos y no necesito script, hago =cargo build --release==.
 
 * General
+*** TODO Guardar configuración en directorio de la aplicación
 *** TODO Que el menú lateral pueda hacerse más pequeño, incluso ocultando parte de los elementos que tiene dentro.
 No sé si es muy factible haciendo desborde de elementos.
 *** Crear adaptadores de configuración, y añadir en la configuración un valor que indique la versión que es.
@@ -26,6 +27,9 @@ CLOSED: [2024-02-28 mié 16:22] No está hecho en todo, pero sí en las tablas d
 *** DONE Selección de /theme/ en menú de configuración
 CLOSED: [2024-10-05 sáb 10:31]
 
+* Licencia
+** TODO Guardar el archivo de licencia del dispositivo al registrar.
+** TODO Eliminar el archivo de licencia y de configuración del dispositivo si respuesta de servidor incorrecta.
 
 * Otros
 *** Crates a revisar por si fuesen interesante

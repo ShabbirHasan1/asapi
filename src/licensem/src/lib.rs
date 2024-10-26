@@ -17,11 +17,21 @@ pub enum LicenseResult {
     Error(String), // No hay definida carpeta de configuración de usuario.
 }
 
+#[derive(Debug)]
 pub struct LicenseActivationInfo {
     pub user_license: String,
     pub device_info: DeviceInfo,
 }
 
+pub fn save_license_file(license: &str) -> LicenseResult {
+    if let Some(proj_dirs) = ProjectDirs::from("es", "qoback", "Asapi") {
+        
+    }
+}
+
+pub fn delete_license_file() {
+
+}
 
 pub fn check_license_file() -> LicenseResult {
     if let Some(proj_dirs) = ProjectDirs::from("es", "qoback", "Asapi") {
@@ -69,16 +79,18 @@ pub fn check_license_file() -> LicenseResult {
     }
 }
 
-pub async fn post_license(license: LicenseActivationInfo) {
+pub async fn post_license(license: LicenseActivationInfo) -> Option<String> {
+    let body = vec![
+        ("user_license".to_string(), license.user_license, false),
+        ("device_name".to_string(), license.device_info.0, false),
+        ("platform".to_string(), license.device_info.1, false),
+        ("id".to_string(), license.device_info.2.clone(), false),
+    ];
+
     let result = api_request(
         httpm::methods::HttpMethod::Post,
         "https://asapi.qoback.es/api/v1/license/create-device-license",
-        &vec![
-            ("user_license".to_string(), license.user_license, false),
-            ("device_name".to_string(), license.device_info.0, false),
-            ("platform".to_string(), license.device_info.1, false),
-            ("id".to_string(), license.device_info.2.clone(), false),
-        ],
+        &body,
         &vec![("id".to_string(), license.device_info.2)],
     )
     .await;
@@ -86,9 +98,11 @@ pub async fn post_license(license: LicenseActivationInfo) {
     match result {
         Ok((response, _headers)) => {
             log::info!("{response}");
+            Some(response)
         }
         Err(error) => {
             log::error!("{error}");
+            None
         }
     }
 }

@@ -170,13 +170,13 @@ pub fn device_info() -> (String, String, String) {
     (host, mac, platform.to_owned())
 }
 
+#[derive(Debug)]
 //                    device      platform    public-key
 pub struct DeviceInfo(pub String, pub String, pub String);
 
 pub fn get_license_info_for_device_registration() -> Result<DeviceInfo, String> {
     let (host, mac, platform) = device_info();
     let seed = format!("{host}__{mac}__{platform}");
-
     match generate_key_pair_from_seed(&seed, b"saltggg198sd7urf") {
         Ok((public, _)) => Ok(DeviceInfo(host, platform, public)),
         Err(err) => Err(format!("{err:?}")),

@@ -28,6 +28,15 @@ pub struct Request {
     pub headers_params: Vec<(String, String)>,
 }
 
+fn map_to_json(body_params: &[(String, String, bool)]) -> Result<serde_json::Value, serde_json::Error> {
+    let mut map = serde_json::Map::new();
+    for (key, value, _) in body_params {
+        // println!("{key} -> {value} // {:?}", serde_json::from_str::<>(value) );
+        map.insert(key.clone(),  JsonValue::String(value.to_string())); // serde_json::from_str(value).unwrap());
+    }
+    Ok(serde_json::json!(map))
+}
+
 pub async fn api_request(
     method: HttpMethod,
     url: &str,
@@ -41,9 +50,11 @@ pub async fn api_request(
         HttpMethod::Post => {
             let json_map: serde_json::Map<String, JsonValue> = body_params
                 .iter()
-                .map(|(k, v, _)| (k.clone(), serde_json::from_str(v).unwrap_or_default()))
+                .map(|(k, v, _)| (k.clone(), JsonValue::String(v.to_string())))
                 .collect();
+            log::info!("{json_map:?}");
             let body = JsonValue::Object(json_map);
+            // let body = map_to_json(body_params).unwrap_or_default();
             log::info!("POST body: {body:?}");
             log::info!("{url}, {m}", m = method.parse_to_reqwest_method());
             log::info!("headers map: {headers_map:?}");

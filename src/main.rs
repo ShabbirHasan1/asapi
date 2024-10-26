@@ -29,8 +29,7 @@ use common::internationalization::language_selector;
 use eframe::egui;
 use kafkam::view::KafkaView;
 use licensem::{
-    check_license_file, get_license_info_for_device_registration, post_license,
-    LicenseActivationInfo, LicenseResult,
+    check_license_file, get_license_info_for_device_registration, post_license, save_license_file, LicenseActivationInfo, LicenseResult
 };
 use log::info;
 use mongom::view::MongoView;
@@ -242,9 +241,17 @@ impl eframe::App for Asapi {
                                 user_license: self.user_license.clone(),
                                 device_info,
                             };
-                            self.rt.block_on(async move {
-                                let _ = post_license(license).await;
-                            });
+                            let device_license =
+                                self.rt.block_on(async move { post_license(license).await });
+                            match device_license {
+                                Some(device_license) => {
+                                    // TODO: Aún no implementado
+                                    save_license_file(&device_license);
+                                    self.license_result = check_license_file();
+                                }
+                                // TODO: Mensaje de error genérico
+                                None => todo!(),
+                            }
                         }
                         Err(msg) => {
                             log::error!("{msg}");
