@@ -93,17 +93,14 @@ impl AppTopBar {
                     //     app_state.app_config.dark_theme = !app_state.app_config.dark_theme;
                     // }
                     ui.horizontal(|ui| {
-                        ui.selectable_value(
-                            &mut app_state.app_config.dark_theme,
-                            false,
-                            "☀ Light",
-                        );
-                        ui.selectable_value(
-                            &mut app_state.app_config.dark_theme,
-                            true,
-                            "🌙 Dark",
-                        );
+                        ui.selectable_value(&mut app_state.app_config.dark_theme, false, "☀ Light");
+                        ui.selectable_value(&mut app_state.app_config.dark_theme, true, "🌙 Dark");
                     });
+
+                    ui.checkbox(
+                        &mut app_state.app_config.experimental_features,
+                        &i18n.config_experimental_features,
+                    );
 
                     #[cfg(debug_assertions)]
                     ctx.settings_ui(ui);
@@ -150,18 +147,6 @@ impl AppTopBar {
                             .clicked()
                         {
                             app_state.http.show_sidebar = !app_state.http.show_sidebar;
-                            ui.close_menu();
-                        }
-                    });
-
-                    let kafka_btn =
-                        ui.selectable_value(&mut app_state.selected_view, ViewType::Kafka, "Kafka");
-                    kafka_btn.context_menu(|ui| {
-                        if ui
-                            .add(egui::Button::new(&i18n.top_kafka_toggle_sidebar_cluster))
-                            .clicked()
-                        {
-                            app_state.kafka.show_sidebar = !app_state.kafka.show_sidebar;
                             ui.close_menu();
                         }
                     });
@@ -269,6 +254,22 @@ impl AppTopBar {
                         }
                     });
 
+                    if !app_state.app_config.experimental_features {
+                        return;
+                    }
+
+                    let kafka_btn =
+                        ui.selectable_value(&mut app_state.selected_view, ViewType::Kafka, "Kafka");
+                    kafka_btn.context_menu(|ui| {
+                        if ui
+                            .add(egui::Button::new(&i18n.top_kafka_toggle_sidebar_cluster))
+                            .clicked()
+                        {
+                            app_state.kafka.show_sidebar = !app_state.kafka.show_sidebar;
+                            ui.close_menu();
+                        }
+                    });
+
                     let clickhouse_btn = ui.selectable_value(
                         &mut app_state.selected_view,
                         ViewType::ClickHouse,
@@ -282,6 +283,53 @@ impl AppTopBar {
                             .clicked()
                         {
                             app_state.clickhouse.show_sidebar = !app_state.clickhouse.show_sidebar;
+                            ui.close_menu();
+                        }
+                    });
+
+                    let rabbitmq_btn = ui.selectable_value(
+                        &mut app_state.selected_view,
+                        ViewType::RabbitMQ,
+                        "RabbitMQ",
+                    );
+                    rabbitmq_btn.context_menu(|ui| {
+                        if ui
+                            .add(egui::Button::new(&i18n.top_rabbitmq_toggle_sidebar_connections))
+                            .clicked()
+                        {
+                            app_state.rabbitmq.show_sidebar = !app_state.rabbitmq.show_sidebar;
+                            ui.close_menu();
+                        }
+                    });
+
+                    let nats_btn = ui.selectable_value(
+                        &mut app_state.selected_view,
+                        ViewType::NATS,
+                        "NATS",
+                    );
+                    nats_btn.context_menu(|ui| {
+                        if ui
+                            .add(egui::Button::new(&i18n.top_nats_toggle_sidebar_connections))
+                            .clicked()
+                        {
+                            app_state.nats.show_sidebar = !app_state.nats.show_sidebar;
+                            ui.close_menu();
+                        }
+                    });
+
+                    let docker_btn = ui.selectable_value(
+                        &mut app_state.selected_view,
+                        ViewType::Docker,
+                        "Docker",
+                    );
+                    docker_btn.context_menu(|ui| {
+                        if ui
+                            .add(egui::Button::new(
+                                &i18n.top_docker_toggle_sidebar_connections,
+                            ))
+                            .clicked()
+                        {
+                            app_state.docker.show_sidebar = !app_state.docker.show_sidebar;
                             ui.close_menu();
                         }
                     });

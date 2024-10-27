@@ -222,6 +222,27 @@ impl eframe::App for Asapi {
                     &self.rt,
                     &i18n.clickhouse,
                 ),
+                ViewType::RabbitMQ => self.clickhouse.update(
+                    ctx,
+                    _frame,
+                    &mut self.app_state.rabbitmq,
+                    &self.rt,
+                    &i18n.clickhouse,
+                ),
+                ViewType::NATS => self.clickhouse.update(
+                    ctx,
+                    _frame,
+                    &mut self.app_state.clickhouse,
+                    &self.rt,
+                    &i18n.clickhouse,
+                ),
+                ViewType::Docker => self.clickhouse.update(
+                    ctx,
+                    _frame,
+                    &mut self.app_state.clickhouse,
+                    &self.rt,
+                    &i18n.clickhouse,
+                ),
             }
         } else {
             egui::CentralPanel::default().show(ctx, |ui| {

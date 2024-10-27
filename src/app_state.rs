@@ -36,7 +36,10 @@ pub enum ViewType {
     Redis,
     Mongo,
     Kafka,
-    ClickHouse
+    ClickHouse,
+    RabbitMQ,
+    NATS,
+    Docker
 }
 
 #[derive(Clone, Serialize, Deserialize, Default, Debug)]
@@ -44,6 +47,7 @@ pub struct AppConfig {
     pub version: u8,
     pub dark_theme: bool,
     pub language: I18nOptions,
+    pub experimental_features: bool,
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug, Default)]
@@ -59,6 +63,9 @@ pub struct AppState {
     pub mongo: MongoAppState,
     pub kafka: KafkaAppState,
     pub clickhouse: ClickHouseAppState,
+    pub rabbitmq: ClickHouseAppState,
+    pub nats: ClickHouseAppState,
+    pub docker: ClickHouseAppState,
 }
 
 pub fn read_state_and_adapt(file_name: &str) -> AppState {
@@ -86,6 +93,9 @@ pub fn read_state_and_adapt(file_name: &str) -> AppState {
         mongo: read_mongo_app_state(j.get("mongo")),
         kafka: read_kafka_app_state(j.get("kafka")),
         clickhouse: read_clickhouse_app_state(j.get("clickhouse")),
+        rabbitmq: read_clickhouse_app_state(j.get("clickhouse")),
+        nats: read_clickhouse_app_state(j.get("clickhouse")),
+        docker: read_clickhouse_app_state(j.get("clickhouse")),
     }
 }
 
@@ -459,6 +469,10 @@ fn read_app_config(config: Option<&Value>) -> AppConfig {
                 .get("version")
                 .and_then(|v| v.as_u64().map(|v| v as u8))
                 .unwrap_or_default();
+            let experimental_features = c
+                .get("experimental_features")
+                .and_then(|v| v.as_bool())
+                .unwrap_or_default();
             let language = c
                 .get("language")
                 .and_then(|v| v.as_str())
@@ -477,6 +491,7 @@ fn read_app_config(config: Option<&Value>) -> AppConfig {
                 version,
                 dark_theme: extract_bool(c, "dark_theme"),
                 language,
+                experimental_features
             }
         }
         None => AppConfig::default(),
