@@ -23,17 +23,21 @@ pub struct LicenseActivationInfo {
     pub device_info: DeviceInfo,
 }
 
-pub fn save_license_file(license: &str) -> LicenseResult {
+pub fn save_license_file(device_license: &str, license_fname: &str) -> std::io::Result<()> {
     if let Some(proj_dirs) = ProjectDirs::from("es", "qoback", "Asapi") {
-        
+        proj_dirs.config_dir();
+        let config_dir: PathBuf = proj_dirs.config_dir().to_path_buf();
+        let config_file = config_dir.join(license_fname);
+        fs::write(config_file, device_license)?
     }
+    Ok(())
 }
 
 pub fn delete_license_file() {
 
 }
 
-pub fn check_license_file() -> LicenseResult {
+pub fn check_license_file(license_fname: &str) -> LicenseResult {
     if let Some(proj_dirs) = ProjectDirs::from("es", "qoback", "Asapi") {
         proj_dirs.config_dir();
         // Lin: /home/alice/.config/barapp
@@ -48,7 +52,7 @@ pub fn check_license_file() -> LicenseResult {
                 .expect("No se pudo crear el directorio de configuración");
             LicenseResult::None
         } else {
-            let config_file = config_dir.join("license.json");
+            let config_file = config_dir.join(license_fname);
             let json_data = fs::read_to_string(config_file);
             if json_data.is_err() {
                 return LicenseResult::Wrong("Invalid License. No JSON.".to_string());

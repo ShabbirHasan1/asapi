@@ -29,7 +29,8 @@ use common::internationalization::language_selector;
 use eframe::egui;
 use kafkam::view::KafkaView;
 use licensem::{
-    check_license_file, get_license_info_for_device_registration, post_license, save_license_file, LicenseActivationInfo, LicenseResult
+    check_license_file, get_license_info_for_device_registration, post_license, save_license_file,
+    LicenseActivationInfo, LicenseResult,
 };
 use log::info;
 use mongom::view::MongoView;
@@ -120,7 +121,7 @@ impl Asapi {
         }
 
         // comprobación licencia
-        let license_result = check_license_file();
+        let license_result = check_license_file("license.json");
 
         // ==================================================
         // ==================================================
@@ -246,11 +247,19 @@ impl eframe::App for Asapi {
                             match device_license {
                                 Some(device_license) => {
                                     // TODO: Aún no implementado
-                                    save_license_file(&device_license);
-                                    self.license_result = check_license_file();
+                                    match save_license_file("license.json", &device_license) {
+                                        Ok(()) => {
+                                            self.license_result =
+                                                check_license_file("license.json");
+                                        }
+                                        Err(_) => {
+                                            // TODO: Mensaje de error sobre no poder guardar
+                                        }
+                                    }
                                 }
-                                // TODO: Mensaje de error genérico
-                                None => todo!(),
+                                None => {
+                                    // TODO: Mensaje de error genérico
+                                }
                             }
                         }
                         Err(msg) => {
