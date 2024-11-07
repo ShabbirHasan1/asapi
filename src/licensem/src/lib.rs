@@ -5,7 +5,7 @@ use crate::check::{private_check_license, EncryptedSignedLicense};
 use check::DeviceInfo;
 use directories::ProjectDirs;
 use httpm::request::api_request;
-use log::error;
+use log::{error, info};
 use std::fs;
 use std::path::PathBuf;
 
@@ -18,7 +18,7 @@ pub enum LicenseResult {
 }
 
 #[derive(Debug)]
-pub struct LicenseActivationInfo {
+pub struct LicenseActivationInfo { 
     pub user_license: String,
     pub device_info: DeviceInfo,
 }
@@ -45,6 +45,8 @@ pub fn check_license_file(license_fname: &str) -> LicenseResult {
         // Mac: /Users/Alice/Library/Application Support/com.Foo-Corp.Bar-App
         // Obtener el directorio de configuración específico para esta aplicación
         let config_dir: PathBuf = proj_dirs.config_dir().to_path_buf();
+
+        info!("{config_dir:?}");
 
         // Crear el directorio si no existe
         if !config_dir.exists() {

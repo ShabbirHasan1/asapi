@@ -123,6 +123,8 @@ impl Asapi {
         // comprobación licencia
         let license_result = check_license_file("license.json");
 
+        log::info!("{license_result:?}");
+
         // ==================================================
         // ==================================================
 
