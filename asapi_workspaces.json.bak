@@ -556,7 +556,31 @@
           {
             "name": "Search in logs (Query params)",
             "method": "Get",
-            "url": "http://localhost:3000/search?search_for=2,3&case_sensitive=false",
+            "url": "http://localhost:3000/search-many?search_for=2,3&case_sensitive=true",
+            "multipart": false,
+            "body_params": [
+              [
+                "search_for",
+                "[\"2\", \"3\"]",
+                false
+              ],
+              [
+                "case_sensitive",
+                "false",
+                false
+              ],
+              [
+                "field",
+                "\"message\"",
+                false
+              ]
+            ],
+            "headers_params": []
+          },
+          {
+            "name": "http://localhost:3000/search-many?search_for=2,3&case_sensitive=true",
+            "method": "Get",
+            "url": "http://localhost:3000/search?search_for=2,3&case_sensitive=true",
             "multipart": false,
             "body_params": [
               [

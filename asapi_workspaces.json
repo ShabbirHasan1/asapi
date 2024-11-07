@@ -2,7 +2,8 @@
   "app_config": {
     "version": 0,
     "dark_theme": false,
-    "language": "ES"
+    "language": "ES",
+    "experimental_features": true
   },
   "selected_view": "Http",
   "show_settings": false,
@@ -308,7 +309,7 @@
         "requests": [
           {
             "name": "https://httpbin.org/put",
-            "method": "Post",
+            "method": "Get",
             "url": "https://httpbin.org/post",
             "multipart": false,
             "body_params": [
@@ -337,7 +338,7 @@
           },
           {
             "name": "https://httpbin.org/post",
-            "method": "Put",
+            "method": "Get",
             "url": "https://httpbin.org/put",
             "multipart": false,
             "body_params": [
@@ -474,7 +475,7 @@
           },
           {
             "name": "/v1/license/create-device-license",
-            "method": "Post",
+            "method": "Get",
             "url": "https://asapi.qoback.es/api/v1/license/create-device-license",
             "multipart": false,
             "body_params": [
@@ -531,7 +532,7 @@
           },
           {
             "name": "Search in logs",
-            "method": "Post",
+            "method": "Get",
             "url": "http://localhost:3000/search",
             "multipart": false,
             "body_params": [
@@ -710,7 +711,70 @@
         "port": "9000",
         "user": "default",
         "password": "",
-        "protocol": "Http",
+        "protocol": "Tcp",
+        "options": {
+          "schema": "",
+          "compression": "",
+          "readonly": 0,
+          "connection_timeout": 0,
+          "keapalive": 0
+        }
+      }
+    ]
+  },
+  "rabbitmq": {
+    "show_sidebar": true,
+    "performance_table": false,
+    "connections": [
+      {
+        "name": "Asapi/Docker -- TCP",
+        "host": "localhost",
+        "port": "9000",
+        "user": "default",
+        "password": "",
+        "protocol": "Tcp",
+        "options": {
+          "schema": "",
+          "compression": "",
+          "readonly": 0,
+          "connection_timeout": 0,
+          "keapalive": 0
+        }
+      }
+    ]
+  },
+  "nats": {
+    "show_sidebar": true,
+    "performance_table": false,
+    "connections": [
+      {
+        "name": "Asapi/Docker -- TCP",
+        "host": "localhost",
+        "port": "9000",
+        "user": "default",
+        "password": "",
+        "protocol": "Tcp",
+        "options": {
+          "schema": "",
+          "compression": "",
+          "readonly": 0,
+          "connection_timeout": 0,
+          "keapalive": 0
+        }
+      }
+    ]
+  },
+  "docker": {
+    "show_sidebar": true,
+    "performance_table": false,
+    "connections": [
+      {
+        "name": "Asapi/Docker -- TCP",
+        "host": "localhost",
+        "port": "9000",
+        "user": "default",
+        "password": "",
+        "protocol": "Tcp",
         "options": {
           "schema": "",
           "compression": "",

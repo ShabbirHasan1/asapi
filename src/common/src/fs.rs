@@ -26,18 +26,6 @@ pub struct BaseAppConfig {
     pub app_config: Version,
 }
 
-pub fn load_version(file_name: &str) -> Result<BaseAppConfig, IOError> {
-    let json_data = fs::read_to_string(file_name)?;
-    let state = serde_json::from_str(&json_data).map_err(|err| {
-        IOError::new(
-            ErrorKind::InvalidData,
-            format!("Failed to deserialize data: {}", err),
-        )
-    })?;
-
-    Ok(state)
-}
-
 pub fn append_to_file(file_path: &str, text: &str) -> std::io::Result<()> {
     let mut file = OpenOptions::new()
         // .write(true) // Innecesario por `append`.

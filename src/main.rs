@@ -95,29 +95,25 @@ impl Asapi {
         // ==================================================
         // Manejo de versión
         // ==================================================
-        let file_version = match asapi_fs::load_version(FILE_NAME) {
-            Ok(state) => {
-                log::info!("{state:?}");
-                state
-            }
+        let state = match load_state(FILE_NAME) {
+            Ok(state) => state,
             Err(err) => {
                 log::error!("{err:?}");
-                Default::default()
+                read_state_and_adapt(FILE_NAME)
             }
         };
 
+        let file_version = state.app_config.version;
+
         log::info!(
             "Versiones\narchivo: {v}\naplicación: {version}",
-            v = file_version.app_config.version
+            v = file_version
         );
 
-        if file_version.app_config.version == version {
+        if file_version == version {
             log::info!("No hay que ajustar versión de configuración");
         } else {
-            log::info!(
-                "Hay que ajustar de {} a {version}",
-                file_version.app_config.version
-            );
+            log::info!("Hay que ajustar de {} a {version}", file_version);
         }
 
         // comprobación licencia
@@ -127,14 +123,6 @@ impl Asapi {
 
         // ==================================================
         // ==================================================
-
-        let state = match load_state(FILE_NAME) {
-            Ok(state) => state,
-            Err(err) => {
-                log::error!("{err:?}");
-                read_state_and_adapt(FILE_NAME)
-            }
-        };
 
         Self {
             top_bar: AppTopBar::new(FILE_NAME),

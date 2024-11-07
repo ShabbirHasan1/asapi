@@ -79,10 +79,9 @@ pub fn read_state_and_adapt(file_name: &str) -> AppState {
         return AppState::default();
     }
     let j = json_value.unwrap();
-    let app_config = read_app_config(j.get("app_config"));
 
     AppState {
-        app_config,
+        app_config: read_app_config(j.get("app_config")),
         selected_view: read_selected_view(j.get("selected_view")),
         show_settings: extract_bool(&j, "show_settings"),
         http: read_http_app_state(j.get("http")),
@@ -469,10 +468,12 @@ fn read_app_config(config: Option<&Value>) -> AppConfig {
                 .get("version")
                 .and_then(|v| v.as_u64().map(|v| v as u8))
                 .unwrap_or_default();
+            log::info!("version={version}");
             let experimental_features = c
                 .get("experimental_features")
                 .and_then(|v| v.as_bool())
                 .unwrap_or_default();
+            log::info!("experimental_features={experimental_features}");
             let language = c
                 .get("language")
                 .and_then(|v| v.as_str())
@@ -487,6 +488,7 @@ fn read_app_config(config: Option<&Value>) -> AppConfig {
                     tmp
                 })
                 .unwrap_or_default();
+
             AppConfig {
                 version,
                 dark_theme: extract_bool(c, "dark_theme"),
