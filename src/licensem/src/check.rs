@@ -15,7 +15,7 @@ use std::num::NonZeroU32;
 
 #[derive(Serialize, Deserialize, Debug, Default)]
 struct License {
-    computer_name: String,
+    device_name: String,
     platform: String,
     user_license: String,
     features: Option<Vec<String>>,
@@ -23,14 +23,14 @@ struct License {
     version: String,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
 struct EncryptedLicense {
     iv: String,
     data: String,
     tag: String,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Default)]
 pub struct EncryptedSignedLicense {
     license: EncryptedLicense,
     extra: (String, String),
@@ -203,7 +203,7 @@ pub fn private_check_license(encrypted: &EncryptedSignedLicense, salt: &str, see
         Ok(license) => {
             info!("License: {license:?}");
             verify_expiration_date(&license)
-                && license.computer_name == host
+                && license.device_name == host
                 && license.platform == platform
         }
         Err(err) => {

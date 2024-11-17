@@ -257,11 +257,17 @@ impl eframe::App for Asapi {
                                 self.rt.block_on(async move { post_license(license).await });
                             match device_license {
                                 Some(device_license) => {
-                                    // TODO: Aún no implementado
                                     match save_license_file("license.json", &device_license) {
                                         Ok(()) => {
                                             self.license_result =
                                                 check_license_file("license.json");
+                                            match &self.license_result {
+                                                // TODO: mensaje al usuario
+                                                LicenseResult::None => log::info!("license result none"),
+                                                LicenseResult::Wrong(msg) => log::info!("license result wrong: message {msg:}"),
+                                                LicenseResult::Ok => log::info!("license result ok"),
+                                                LicenseResult::Error(msg) => log::error!("license result error: message {msg}"),
+                                            }
                                         }
                                         Err(_) => {
                                             // TODO: Mensaje de error sobre no poder guardar

@@ -1,11 +1,12 @@
 mod check;
 
-pub use crate::check::{get_license_info_for_device_registration, device_info};
+pub use crate::check::{device_info, get_license_info_for_device_registration};
 use crate::check::{private_check_license, EncryptedSignedLicense};
 use check::DeviceInfo;
 use directories::ProjectDirs;
 use httpm::request::api_request;
 use log::{error, info};
+use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
 
@@ -18,23 +19,28 @@ pub enum LicenseResult {
 }
 
 #[derive(Debug)]
-pub struct LicenseActivationInfo { 
+pub struct LicenseActivationInfo {
     pub user_license: String,
     pub device_info: DeviceInfo,
 }
 
-pub fn save_license_file(device_license: &str, license_fname: &str) -> std::io::Result<()> {
+pub fn save_license_file(license_file_name: &str, device_license: &str) -> std::io::Result<()> {
+    log::info!("Grabando {device_license:}");
+    log::info!("{device_license:}");
     if let Some(proj_dirs) = ProjectDirs::from("es", "qoback", "Asapi") {
         proj_dirs.config_dir();
         let config_dir: PathBuf = proj_dirs.config_dir().to_path_buf();
-        let config_file = config_dir.join(license_fname);
+        let config_file = config_dir.join(license_file_name);
         fs::write(config_file, device_license)?
     }
     Ok(())
 }
 
-pub fn delete_license_file() {
+pub fn delete_license_file() {}
 
+#[derive(Serialize, Deserialize, Debug, Default)]
+struct DataEncryptedSignedLicense {
+    data: EncryptedSignedLicense,
 }
 
 pub fn check_license_file(license_fname: &str) -> LicenseResult {
@@ -50,6 +56,7 @@ pub fn check_license_file(license_fname: &str) -> LicenseResult {
 
         // Crear el directorio si no existe
         if !config_dir.exists() {
+            // TODO: esto tiene sentido? devolver tras expect me refiero...
             fs::create_dir_all(&config_dir)
                 .expect("No se pudo crear el directorio de configuración");
             LicenseResult::None
@@ -59,18 +66,22 @@ pub fn check_license_file(license_fname: &str) -> LicenseResult {
             if json_data.is_err() {
                 return LicenseResult::Wrong("Invalid License. No JSON.".to_string());
             }
-            let encrypted_license =
-                serde_json::from_str::<EncryptedSignedLicense>(&json_data.unwrap());
-            if encrypted_license.is_err() {
-                return LicenseResult::Wrong("Invalid License. Wrong JSON format.".to_string());
-            }
 
-            let (host, mac, platform) = device_info();
-            let is_valid = private_check_license(
-                &encrypted_license.unwrap(),
-                "saltggg198sd7urf",
-                &format!("{host}__{mac}__{platform}"),
-            );
+            let is_valid = json_data
+                .and_then(|data| {
+                    let (host, mac, platform) = device_info();
+                    let encrypted_license =
+                        serde_json::from_str::<DataEncryptedSignedLicense>(&data)?;
+
+                    let is_valid = private_check_license(
+                        &encrypted_license.data,
+                        "saltggg198sd7urf",
+                        &format!("{host}__{mac}__{platform}"),
+                    );
+
+                    return Ok(is_valid);
+                })
+                .unwrap_or(false);
 
             if is_valid {
                 return LicenseResult::Ok;
