@@ -23,9 +23,11 @@ extern crate licensem;
 extern crate mongom;
 extern crate redism;
 extern crate sqlm;
+extern crate dockerm;
 
 use clickhousem::view::ClickHouseView;
 use common::internationalization::language_selector;
+use dockerm::view::DockerView;
 use eframe::egui;
 use kafkam::view::KafkaView;
 use licensem::{
@@ -42,7 +44,6 @@ use std::fs::{self, OpenOptions};
 use top_bar::AppTopBar;
 
 use crate::app_state::{load_state, read_state_and_adapt, AppState, ViewType};
-use crate::common::fs as asapi_fs;
 use crate::httpm::view::HttpView;
 
 /// Struct con los atributos que podemos pasar a cualquier parte de la apliación.
@@ -62,16 +63,17 @@ pub struct Asapi {
     mongo: MongoView,
     kafka: KafkaView,
     clickhouse: ClickHouseView,
+    docker: DockerView,
     user_license: String,
     license_result: LicenseResult,
 }
 
 impl Asapi {
+    ///
     /// Creación de la apliación en si.
     ///
     /// Lo único que necesita para poder configurar la aplicación en sí.
     /// De la documentación de `egui` sobre `CreationContext`:
-    ///
     ///  """" Data that is passed to [`AppCreator`] that can be used
     ///       to setup and initialize your app."""
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
@@ -139,6 +141,7 @@ impl Asapi {
             mongo: Default::default(),
             kafka: Default::default(),
             clickhouse: Default::default(),
+            docker: Default::default(),
             user_license: Default::default(),
             license_result,
         }
@@ -226,12 +229,11 @@ impl eframe::App for Asapi {
                     &self.rt,
                     &i18n.clickhouse,
                 ),
-                ViewType::Docker => self.clickhouse.update(
+                ViewType::Docker => self.docker.update(
                     ctx,
-                    _frame,
-                    &mut self.app_state.clickhouse,
                     &self.rt,
-                    &i18n.clickhouse,
+                    &mut self.app_state.docker,
+                    &i18n,
                 ),
             }
         } else {
@@ -253,6 +255,7 @@ impl eframe::App for Asapi {
                                 user_license: self.user_license.clone(),
                                 device_info,
                             };
+
                             let device_license =
                                 self.rt.block_on(async move { post_license(license).await });
                             match device_license {

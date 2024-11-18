@@ -5,20 +5,21 @@
 // This file is confidential and only available to authorized individuals
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
+use redism::state::{RedisAppState, RedisConnectionDefinition};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use std::fs;
-use std::io::{Error as IOError, ErrorKind};
 use sqlm::mysqlm::state::MySqlAppState;
 use sqlm::pgm::state::PgAppState;
-use redism::state::{RedisAppState, RedisConnectionDefinition};
 use sqlm::sqlitem::state::{SQLiteAppState, SQLiteConnectionDefinition};
 use sqlm::sqlx_common::state::SqlConnectionDefinition;
+use std::fs;
+use std::io::{Error as IOError, ErrorKind};
 use tokio::fs as async_fs;
 
 use clickhousem::domain::ClickHouseConnectionDefinition;
 use clickhousem::state::ClickHouseAppState;
 use common::internationalization::I18nOptions;
+use dockerm::state::DockerAppState;
 use httpm::methods::HttpMethod;
 use httpm::request::Request;
 use httpm::state::HttpAppState;
@@ -39,7 +40,7 @@ pub enum ViewType {
     ClickHouse,
     RabbitMQ,
     NATS,
-    Docker
+    Docker,
 }
 
 #[derive(Clone, Serialize, Deserialize, Default, Debug)]
@@ -65,7 +66,7 @@ pub struct AppState {
     pub clickhouse: ClickHouseAppState,
     pub rabbitmq: ClickHouseAppState,
     pub nats: ClickHouseAppState,
-    pub docker: ClickHouseAppState,
+    pub docker: DockerAppState,
 }
 
 pub fn read_state_and_adapt(file_name: &str) -> AppState {
@@ -82,7 +83,7 @@ pub fn read_state_and_adapt(file_name: &str) -> AppState {
 
     AppState {
         app_config: read_app_config(j.get("app_config")),
-        selected_view: read_selected_view(j.get("selected_view")),
+        selected_view: ViewType::Docker, // read_selected_view(j.get("selected_view")),
         show_settings: extract_bool(&j, "show_settings"),
         http: read_http_app_state(j.get("http")),
         pg: read_pg_app_state(j.get("pg")),
@@ -94,10 +95,23 @@ pub fn read_state_and_adapt(file_name: &str) -> AppState {
         clickhouse: read_clickhouse_app_state(j.get("clickhouse")),
         rabbitmq: read_clickhouse_app_state(j.get("clickhouse")),
         nats: read_clickhouse_app_state(j.get("clickhouse")),
-        docker: read_clickhouse_app_state(j.get("clickhouse")),
+        docker: read_docker_app_state(j.get("docker")),
     }
 }
 
+
+fn read_docker_app_state(m: Option<&Value>) -> DockerAppState {
+    match m {
+        Some(p) => {
+            let show_sidebar = extract_bool(p, "show_sidebar");
+
+            DockerAppState {
+                show_sidebar,
+            }
+        }
+        None => DockerAppState::default(),
+    }
+}
 
 fn read_clickhouse_app_state(m: Option<&Value>) -> ClickHouseAppState {
     match m {
@@ -115,7 +129,7 @@ fn read_clickhouse_app_state(m: Option<&Value>) -> ClickHouseAppState {
                 })
                 .unwrap_or_default();
 
-           ClickHouseAppState {
+            ClickHouseAppState {
                 show_sidebar,
                 performance_table,
                 connections,
@@ -133,7 +147,7 @@ fn read_clickhouse_connection_definition(c: &Value) -> ClickHouseConnectionDefin
         user: extract_string(c, "user"),
         password: extract_string(c, "password"),
         protocol: Default::default(),
-        options: Default::default()
+        options: Default::default(),
     }
 }
 
@@ -445,21 +459,21 @@ fn read_request(v: &Value) -> Request {
 //     s.and_then(|b| b.as_bool()).unwrap_or_default()
 // }
 
-fn read_selected_view(view: Option<&Value>) -> ViewType {
-    match view {
-        Some(v) => match v.as_str().unwrap_or_default() {
-            "Http" => ViewType::Http,
-            "Pg" => ViewType::Pg,
-            "MySql" => ViewType::MySql,
-            "SQLite" => ViewType::SQLite,
-            "Redis" => ViewType::Redis,
-            "Mongo" => ViewType::Mongo,
-            "Kafka" => ViewType::Kafka,
-            _ => ViewType::default(),
-        },
-        None => ViewType::default(),
-    }
-}
+// fn read_selected_view(view: Option<&Value>) -> ViewType {
+//     match view {
+//         Some(v) => match v.as_str().unwrap_or_default() {
+//             "Http" => ViewType::Http,
+//             "Pg" => ViewType::Pg,
+//             "MySql" => ViewType::MySql,
+//             "SQLite" => ViewType::SQLite,
+//             "Redis" => ViewType::Redis,
+//             "Mongo" => ViewType::Mongo,
+//             "Kafka" => ViewType::Kafka,
+//             _ => ViewType::default(),
+//         },
+//         None => ViewType::default(),
+//     }
+// }
 
 fn read_app_config(config: Option<&Value>) -> AppConfig {
     match config {
@@ -493,7 +507,7 @@ fn read_app_config(config: Option<&Value>) -> AppConfig {
                 version,
                 dark_theme: extract_bool(c, "dark_theme"),
                 language,
-                experimental_features
+                experimental_features,
             }
         }
         None => AppConfig::default(),
@@ -845,4 +859,3 @@ mod tests {
         std::fs::remove_file(file_name).expect("Unable to delete test file");
     }
 }
-

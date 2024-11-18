@@ -37,7 +37,7 @@ services:
       - asapi-mongo-data:/data/db
 
   mariadb:
-    image: mariadb
+    image: mariadb:latest
     environment:
       MYSQL_ROOT_PASSWORD: password
       MYSQL_DATABASE: mydatabase
