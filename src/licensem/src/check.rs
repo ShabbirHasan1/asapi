@@ -45,6 +45,8 @@ fn create_signature(license: &EncryptedLicense, salt: &str, shared_key: &str) ->
     let mut output = [0u8; 32];
     let n = str_to_int(shared_key);
     let s = str_to_int(salt);
+
+    log::info!("{n:} % {s:}");
     let n_times = n % s;
 
     pbkdf2_hmac::<Sha256>(
@@ -53,6 +55,7 @@ fn create_signature(license: &EncryptedLicense, salt: &str, shared_key: &str) ->
         n_times as u32,
         &mut output,
     );
+    log::info!("{output:?}");
     output.iter().map(|b| format!("{:02x}", b)).collect()
 }
 
@@ -143,6 +146,7 @@ fn verify_signature(
     shared_key: &str,
 ) -> bool {
     let client_signature = create_signature(&license, salt, shared_key);
+    log::info!("{server_signature:} -- {client_signature:}");
     client_signature == server_signature
 }
 
@@ -185,16 +189,19 @@ pub fn get_license_info_for_device_registration() -> Result<DeviceInfo, String> 
 
 pub fn private_check_license(encrypted: &EncryptedSignedLicense, salt: &str, seed: &str) -> bool {
     // Creamos al vuelo claves y derivada.
-    let (host, _, platform) = device_info();
+    let (host, mac, platform) = device_info();
+    log::info!("{host:}, {mac:}, {platform:}");
     // Calculamos compartida o creamos una errónea que fallará la primera comprobación.
     // let (client_public_key, client_private_key) = generate_key_pair_from_seed(seed, salt.as_bytes()).unwrap();
 
     let shared_key = generate_key_pair_from_seed(seed, salt.as_bytes())
         .and_then(|(_, client_private_key)| {
+            log::info!("{client_private_key:}");
             derive_shared_key(&encrypted.extra.0, &client_private_key)
         })
         .map_or("wrong_shared_key".to_string(), |k| k);
 
+    log::info!("shared_key: {shared_key:}");
     if !verify_signature(&encrypted.license, &encrypted.extra.1, salt, &shared_key) {
         return false;
     }

@@ -9,7 +9,7 @@
 use eframe::egui;
 use rdkafka::metadata::Metadata;
 
-use common::internationalization::I18n;
+use common::I18nKafka as I18n;
 use components::heading_strong;
 
 use crate::view::KafkaView;

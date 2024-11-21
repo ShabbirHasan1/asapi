@@ -10,7 +10,7 @@ use bson::Document;
 use eframe::egui;
 use tokio::runtime::Runtime;
 
-use common::internationalization::I18n;
+use common::I18nMongo as I18n;
 
 use crate::{actions::MongoAction, presenter, state::MongoMessage, view::MongoView};
 

@@ -24,11 +24,11 @@ use crate::{
         view::RedisView,
     },
 };
-use common::internationalization::I18n;
+use common::I18nRedis;
 use components::result_panel::ui_response_panel;
 
 impl RedisView {
-    pub fn show_hashes(&mut self, ui: &mut egui::Ui, i18n: &I18n) {
+    pub fn show_hashes(&mut self, ui: &mut egui::Ui, i18n: &I18nRedis) {
         if self.state.selected_menu == RedisMenu::Hash {
             egui::CollapsingHeader::new(i18n.redis_commands_header.to_ascii_uppercase())
                 .show_background(true)
@@ -353,7 +353,7 @@ impl RedisView {
             });
     }
 
-    fn display_hashes(&mut self, ui: &mut egui::Ui, _i18n: &I18n) {
+    fn display_hashes(&mut self, ui: &mut egui::Ui, _i18n: &I18nRedis) {
         ui.set_width(ui.available_width());
         egui::ScrollArea::vertical().show(ui, |ui| {
             for (h_name, v) in &self.state.hashes {

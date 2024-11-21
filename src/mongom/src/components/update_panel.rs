@@ -10,12 +10,12 @@ use bson::Document;
 use eframe::egui;
 use tokio::runtime::Runtime;
 
-use common::internationalization::I18n;
+use common::I18nMongo;
 
 use crate::{presenter, state::MongoMessage, view::MongoView};
 
 impl MongoView {
-    pub fn update_doc(&mut self, rt: &Runtime, ctx: &egui::Context, _i18n: &I18n) {
+    pub fn update_doc(&mut self, rt: &Runtime, ctx: &egui::Context, _i18n: &I18nMongo) {
         let filter: Result<Document, serde_json::Error> =
             serde_json::from_str(&self.state.current_selection.user_free_input);
         let doc: Result<Document, serde_json::Error> =

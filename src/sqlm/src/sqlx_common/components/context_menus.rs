@@ -9,7 +9,7 @@
 use eframe::egui;
 use std::sync::mpsc::Sender;
 
-use common::internationalization::I18nSqlx;
+use common::I18nSqlx;
 
 use crate::sqlx_common::state::{SqlState, SqlxMessage};
 

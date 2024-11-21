@@ -7,7 +7,7 @@
 // -------------------------------------------------------------------------
 use eframe::egui;
 
-use common::internationalization::I18nClickHouse;
+use common::I18nClickHouse;
 
 use crate::{domain::ClickHouseMessage, state::SqlState};
 

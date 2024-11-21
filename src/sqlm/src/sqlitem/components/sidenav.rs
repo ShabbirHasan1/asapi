@@ -6,7 +6,7 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
-use common::{fs, internationalization::I18nSqlx};
+use common::{fs, I18nSqlx};
 
 use crate::{
     sqlitem::{

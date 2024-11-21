@@ -10,7 +10,7 @@ use eframe::egui;
 use tokio;
 use tokio::runtime::Runtime;
 use common::fs;
-use common::internationalization::I18n;
+use common::I18nRedis;
 use components::result_panel::ui_response_panel;
 
 use super::connection::{self, RedisMenu};
@@ -30,7 +30,7 @@ impl RedisView {
         _frame: &mut eframe::Frame,
         app_st: &mut RedisAppState,
         _rt: &Runtime,
-        i18n: &I18n,
+        i18n: &I18nRedis,
     ) {
         // =======================================
         // Preparación de cada ciclo
@@ -181,7 +181,7 @@ impl RedisView {
         });
     }
 
-    fn show_all(&mut self, ui: &mut egui::Ui, i18n: &I18n) {
+    fn show_all(&mut self, ui: &mut egui::Ui, i18n: &I18nRedis) {
         egui::CollapsingHeader::new("Strings")
             .default_open(true)
             .show(ui, |ui| self.show_strings(ui, i18n));

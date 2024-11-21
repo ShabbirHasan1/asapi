@@ -29,7 +29,6 @@ use mongom::state::{MongoAppState, MongoConnectionDefinition};
 
 #[derive(Clone, Deserialize, Serialize, Copy, PartialEq, Debug, Default)]
 pub enum ViewType {
-    #[default]
     Http,
     Pg,
     MySql,
@@ -40,6 +39,7 @@ pub enum ViewType {
     ClickHouse,
     RabbitMQ,
     NATS,
+    #[default]
     Docker,
 }
 
@@ -77,13 +77,14 @@ pub fn read_state_and_adapt(file_name: &str) -> AppState {
 
     let json_value = serde_json::from_str::<Value>(&string_data.unwrap());
     if json_value.is_err() {
+        log::info!("{:?}", AppState::default());
         return AppState::default();
     }
     let j = json_value.unwrap();
 
     AppState {
         app_config: read_app_config(j.get("app_config")),
-        selected_view: ViewType::Docker, // read_selected_view(j.get("selected_view")),
+        selected_view: read_selected_view(j.get("selected_view")),
         show_settings: extract_bool(&j, "show_settings"),
         http: read_http_app_state(j.get("http")),
         pg: read_pg_app_state(j.get("pg")),
@@ -459,21 +460,21 @@ fn read_request(v: &Value) -> Request {
 //     s.and_then(|b| b.as_bool()).unwrap_or_default()
 // }
 
-// fn read_selected_view(view: Option<&Value>) -> ViewType {
-//     match view {
-//         Some(v) => match v.as_str().unwrap_or_default() {
-//             "Http" => ViewType::Http,
-//             "Pg" => ViewType::Pg,
-//             "MySql" => ViewType::MySql,
-//             "SQLite" => ViewType::SQLite,
-//             "Redis" => ViewType::Redis,
-//             "Mongo" => ViewType::Mongo,
-//             "Kafka" => ViewType::Kafka,
-//             _ => ViewType::default(),
-//         },
-//         None => ViewType::default(),
-//     }
-// }
+fn read_selected_view(view: Option<&Value>) -> ViewType {
+    match view {
+        Some(v) => match v.as_str().unwrap_or_default() {
+            "Http" => ViewType::Http,
+            "Pg" => ViewType::Pg,
+            "MySql" => ViewType::MySql,
+            "SQLite" => ViewType::SQLite,
+            "Redis" => ViewType::Redis,
+            "Mongo" => ViewType::Mongo,
+            "Kafka" => ViewType::Kafka,
+            _ => ViewType::default(),
+        },
+        None => ViewType::default(),
+    }
+}
 
 fn read_app_config(config: Option<&Value>) -> AppConfig {
     match config {

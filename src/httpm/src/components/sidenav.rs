@@ -10,7 +10,7 @@ use std::path::PathBuf;
 
 use eframe::egui;
 
-use common::internationalization::I18nHttp;
+use common::I18nHttp;
 use egui::PopupCloseBehavior;
 
 use crate::request::Request;

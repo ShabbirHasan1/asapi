@@ -11,7 +11,7 @@ use sqlx::Database;
 use std::fmt::Debug;
 use std::{marker::PhantomData, ops::RangeInclusive};
 
-use common::internationalization::I18nSqlx;
+use common::I18nSqlx;
 use common::traits::Runner;
 use components::toggle_switch;
 use common::quote;

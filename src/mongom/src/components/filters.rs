@@ -14,7 +14,7 @@ use serde_json::{json, Value};
 use std::collections::VecDeque;
 use tokio::runtime::Runtime;
 
-use common::internationalization::I18n;
+use common::I18nMongo as I18n;
 use components::toggle_selector::toggle_label;
 
 use crate::actions::MongoAction;

@@ -6,7 +6,7 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
-use common::internationalization::I18n;
+use common::I18nRedis as I18n;
 use components::separators::ui_color_separator;
 use eframe::egui::{self, Context};
 use egui_extras::{Size, StripBuilder};
@@ -56,7 +56,7 @@ impl RedisView {
             });
 
             // --> Abrimos ventana para definir conexión <--
-            ui.menu_button(&i18n.sqlx.pg.btn_add_connection, |ui| {
+            ui.menu_button(&i18n.add_connection, |ui| {
                 ui.set_min_width(200.0);
 
                 ui.horizontal(|ui| {

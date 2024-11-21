@@ -11,7 +11,7 @@ use egui_extras::{Size, StripBuilder};
 use tokio::runtime::Runtime;
 
 use common::icon_moon::IconMoon;
-use common::internationalization::I18nClickHouse;
+use common::I18nClickHouse;
 use common::quote;
 use components::result_panel::ui_response_panel;
 

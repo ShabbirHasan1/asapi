@@ -11,7 +11,7 @@ use eframe::egui;
 use egui_json_tree::JsonTree;
 use tokio::{runtime::Runtime, sync::mpsc::Sender};
 
-use common::internationalization::I18n;
+use common::I18nMongo as I18n;
 
 use crate::{actions::MongoAction, presenter, state::MongoMessage, view::MongoView};
 

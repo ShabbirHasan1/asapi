@@ -10,7 +10,6 @@
 use std::fs::{self, OpenOptions};
 use std::io::Write;
 use std::path::{Path, PathBuf};
-use std::io::{Error as IOError, ErrorKind};
 
 pub fn file_exists(fp: &str) -> bool {
     Path::exists(Path::new(fp))

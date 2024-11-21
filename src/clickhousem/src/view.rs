@@ -12,7 +12,7 @@ use tokio::{
     sync::mpsc::{Receiver, Sender},
 };
 
-use common::internationalization::I18nClickHouse;
+use common::I18nClickHouse;
 use common::quote;
 
 use crate::domain::QuerySort;

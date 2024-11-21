@@ -14,7 +14,7 @@ use std::collections::HashSet;
 use std::time::Duration;
 use tokio::sync::mpsc::Sender;
 
-use common::internationalization::I18n;
+use common::I18nMongo;
 
 use crate::parser::doc_to_serde_value;
 
@@ -26,7 +26,7 @@ use super::{
 pub async fn list_database_names_in_connection(
     tx: &Sender<MongoMessage>,
     client: &Client,
-    i18n: &I18n,
+    i18n: &I18nMongo,
 ) -> Vec<String> {
     let timeout_duration = Duration::from_secs(5);
     match tokio::time::timeout(timeout_duration, async {
@@ -143,7 +143,7 @@ pub async fn find(
 
 pub async fn insert(
     tx: &Sender<MongoMessage>,
-    i18n: &I18n,
+    i18n: &I18nMongo,
     client: &Client,
     db_name: &str,
     col_name: &str,

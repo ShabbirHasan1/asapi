@@ -11,7 +11,7 @@ use eframe::egui;
 use tokio::runtime::Runtime;
 use tokio::sync::mpsc::{Receiver, Sender};
 
-use common::internationalization::I18n;
+use common::I18nMongo;
 use components::result_panel::ui_response_panel;
 
 use crate::state::MongoLocalState;
@@ -50,7 +50,7 @@ impl MongoView {
         _frame: &mut eframe::Frame,
         app_st: &mut MongoAppState,
         rt: &Runtime,
-        i18n: &I18n,
+        i18n: &I18nMongo,
     ) {
         // =======================================
         // Acciones iniciales

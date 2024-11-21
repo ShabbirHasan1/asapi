@@ -13,7 +13,7 @@ use std::collections::HashSet;
 use tokio::runtime::Runtime;
 use tokio::sync::mpsc::Sender;
 
-use common::internationalization::I18n;
+use common::I18nMongo;
 use components::toggle_switch::toggle;
 
 use crate::{
@@ -44,7 +44,7 @@ impl MongoSideNav {
         tx: &Sender<MongoMessage>,
         app_st: &mut MongoAppState,
         local_st: &mut MongoLocalState,
-        i18n: &I18n,
+        i18n: &I18nMongo,
     ) {
         if app_st.show_sidebar {
             egui::SidePanel::left("mongo_sidenav_panel").show(ctx, |ui| {
@@ -87,7 +87,7 @@ impl MongoSideNav {
                 });
 
                 // --> Abrimos ventana para definir conexión <--
-                ui.menu_button(&i18n.sqlx.pg.btn_add_connection, |ui| {
+                ui.menu_button(&i18n.add_connection, |ui| {
                     self.connections_subpanel
                         .edit_connection(rt, tx, ui, local_st, None, i18n);
                 });
@@ -209,7 +209,7 @@ impl MongoConnectionsSubpanel {
         ui: &mut egui::Ui,
         app_st: &mut MongoAppState,
         local_st: &mut MongoLocalState,
-        i18n: &I18n,
+        i18n: &I18nMongo,
     ) {
         egui::ScrollArea::vertical()
             .id_salt("connections_scroll_area")
@@ -345,7 +345,7 @@ impl MongoConnectionsSubpanel {
         ui: &mut egui::Ui,
         local_st: &mut MongoLocalState,
         idx: Option<usize>,
-        i18n: &I18n,
+        i18n: &I18nMongo,
     ) {
         ui.set_min_width(200.0);
         ui.horizontal(|ui| {
@@ -373,10 +373,10 @@ impl MongoConnectionsSubpanel {
             ui.add(toggle(&mut local_st.tmp_conn_definition.is_srv));
         });
         ui.horizontal(|ui| {
-            if ui.button(&i18n.kafka_edit_cluster_cancel).clicked() {
+            if ui.button(&i18n.cancel).clicked() {
                 ui.close_menu();
             }
-            if ui.button(&i18n.kafka_edit_cluster_save).clicked() {
+            if ui.button(&i18n.save).clicked() {
                 let tx_cloned = tx.clone();
                 let tmp = local_st.tmp_conn_definition.clone();
                 rt.spawn(async move {
@@ -402,7 +402,7 @@ impl MongoDatabasesSubpanel {
         ui: &mut egui::Ui,
         _app_st: &mut MongoAppState,
         local_st: &mut MongoLocalState,
-        i18n: &I18n,
+        i18n: &I18nMongo
     ) {
         egui::ScrollArea::vertical()
             .id_salt("databases_scroll_area")
@@ -481,7 +481,7 @@ impl MongoCollectionsSubpanel {
         ui: &mut egui::Ui,
         _app_st: &mut MongoAppState,
         local_st: &mut MongoLocalState,
-        i18n: &I18n,
+        i18n: &I18nMongo
     ) {
         egui::ScrollArea::vertical()
             .id_salt("collections_scroll_area")
@@ -573,7 +573,7 @@ fn db_info(
     rt: &Runtime,
     ui: &mut egui::Ui,
     local_st: &MongoLocalState,
-    i18n: &I18n,
+    i18n: &I18nMongo,
     db_name: &str,
 ) {
     let info = rt.block_on(async move { get_db_info(local_st, db_name).await });
@@ -621,7 +621,7 @@ fn col_info(
     rt: &Runtime,
     ui: &mut egui::Ui,
     local_st: &MongoLocalState,
-    i18n: &I18n,
+    i18n: &I18nMongo,
     col_name: &str,
 ) {
     let info = rt.block_on(async move { get_col_info(local_st, col_name).await });

@@ -6,7 +6,7 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
-use common::internationalization::I18n;
+use common::I18nRedis as I18n;
 use components::result_panel::ui_response_panel;
 use components::ui_button_w100;
 use eframe::egui::{self, Label, Sense};

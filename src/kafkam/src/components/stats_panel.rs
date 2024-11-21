@@ -9,7 +9,7 @@
 use eframe::egui;
 use rdkafka::{statistics::Window, Statistics};
 
-use common::internationalization::I18n;
+use common::I18nKafka as I18n;
 use components::ui_title_and_value_grid_row;
 use components::ui_title_and_value_grid_row_with_hint;
 

@@ -5,7 +5,7 @@
     "language": "ES",
     "experimental_features": true
   },
-  "selected_view": "Http",
+  "selected_view": "Docker",
   "show_settings": false,
   "http": {
     "show_sidebar": true,

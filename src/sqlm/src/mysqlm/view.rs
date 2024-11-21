@@ -11,7 +11,7 @@ use sqlx::mysql::MySqlRow;
 use sqlx::MySql;
 use tokio::runtime::Runtime;
 
-use common::internationalization::I18nSqlx;
+use common::I18nSqlx;
 use components::result_panel::ui_response_panel;
 use common::quote;
 

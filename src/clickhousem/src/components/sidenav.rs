@@ -11,7 +11,7 @@ use egui_extras::{Size, StripBuilder};
 use std::collections::HashSet;
 use tokio::{runtime::Runtime, sync::mpsc::Sender};
 
-use common::internationalization::I18nClickHouse;
+use common::I18nClickHouse;
 
 use crate::domain::QuerySort;
 

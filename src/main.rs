@@ -198,15 +198,15 @@ impl eframe::App for Asapi {
                 ),
                 ViewType::Mongo => {
                     self.mongo
-                        .update(ctx, _frame, &mut self.app_state.mongo, &self.rt, &i18n)
+                        .update(ctx, _frame, &mut self.app_state.mongo, &self.rt, &i18n.mongo)
                 }
                 ViewType::Kafka => {
                     self.kafka
-                        .update(ctx, _frame, &mut self.app_state.kafka, &self.rt, &i18n)
+                        .update(ctx, _frame, &mut self.app_state.kafka, &self.rt, &i18n.kafka)
                 }
                 ViewType::Redis => {
                     self.redis
-                        .update(ctx, _frame, &mut self.app_state.redis, &self.rt, &i18n)
+                        .update(ctx, _frame, &mut self.app_state.redis, &self.rt, &i18n.redis)
                 }
                 ViewType::ClickHouse => self.clickhouse.update(
                     ctx,
@@ -233,12 +233,12 @@ impl eframe::App for Asapi {
                     ctx,
                     &self.rt,
                     &mut self.app_state.docker,
-                    &i18n,
+                    &i18n.docker,
                 ),
             }
         } else {
             egui::CentralPanel::default().show(ctx, |ui| {
-                ui.label(&i18n.insert_license);
+                ui.label(&i18n.config.insert_license);
                 ui.add(
                     egui::TextEdit::multiline(&mut self.user_license)
                         .font(egui::TextStyle::Monospace) // for cursor height
@@ -248,7 +248,7 @@ impl eframe::App for Asapi {
                         .desired_width(f32::INFINITY),
                 );
 
-                if ui.button(i18n.activate_license_button).clicked() {
+                if ui.button(&i18n.config.activate_license_button).clicked() {
                     match get_license_info_for_device_registration() {
                         Ok(device_info) => {
                             let license = LicenseActivationInfo {
@@ -284,7 +284,7 @@ impl eframe::App for Asapi {
                         }
                         Err(msg) => {
                             log::error!("{msg}");
-                            self.user_license = i18n.license_info_error.clone();
+                            self.user_license = i18n.config.license_info_error.clone();
                         }
                     }
                 }

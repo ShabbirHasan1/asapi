@@ -6,7 +6,7 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
-use common::internationalization::I18n;
+use common::I18nRedis as I18n;
 use eframe::egui;
 
 use crate::{

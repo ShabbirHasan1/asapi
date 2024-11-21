@@ -6,7 +6,7 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
-use common::{icon_moon::IconMoon, internationalization::I18n};
+use common::{icon_moon::IconMoon, I18nKafka as I18n};
 use eframe::egui::{self, Response};
 use std::collections::HashSet;
 use tokio::runtime::Runtime;

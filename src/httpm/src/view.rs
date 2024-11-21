@@ -14,7 +14,7 @@ use serde_json::Value;
 use tokio::runtime::Runtime;
 use tokio::sync::mpsc::{self, Receiver, Sender};
 
-use common::internationalization::I18nHttp;
+use common::I18nHttp;
 
 use super::components::body_params::BodyParams;
 use super::components::header_params::HeaderParams;

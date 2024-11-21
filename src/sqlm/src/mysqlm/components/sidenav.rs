@@ -11,7 +11,7 @@ use egui_extras::{Size, StripBuilder};
 use std::collections::{HashMap, HashSet};
 use tokio::{runtime::Runtime, sync::mpsc::Sender};
 
-use common::internationalization::I18nSqlx;
+use common::I18nSqlx;
 
 use crate::{
     mysqlm::{

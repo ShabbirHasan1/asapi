@@ -9,7 +9,7 @@
 use eframe::egui;
 use tokio::runtime::Runtime;
 
-use common::internationalization::{I18n, I18nOptions};
+use common::internationalization::{I18nPack as I18n, I18nOptions};
 
 use crate::app_state::{load_state, save_state};
 
@@ -46,7 +46,7 @@ impl AppTopBar {
                 // .title_bar(false) // Sin botón de cerrar ni título, pero no llamando al método open no se crea
                 .collapsible(false)
                 .show(ctx, |ui| {
-                    ui.label(&i18n.top_export_warning);
+                    ui.label(&i18n.config.top_export_warning);
                     ui.horizontal(|ui| {
                         if ui.button("Exportar").clicked() {
                             let _ = save_state(app_state, self.file_name, true);
@@ -64,11 +64,11 @@ impl AppTopBar {
             // ui.set_width(200.0);
             ui.heading("ASAPI");
 
-            if ui.button(i18n.top_menu_config.clone()).clicked() {
+            if ui.button(i18n.config.top_menu_config.clone()).clicked() {
                 self.show_settings = !self.show_settings;
             }
 
-            egui::Window::new(&i18n.top_menu_config)
+            egui::Window::new(&i18n.config.top_menu_config)
                 .open(&mut self.show_settings)
                 .vscroll(true)
                 .show(ctx, |ui| {
@@ -99,7 +99,7 @@ impl AppTopBar {
 
                     ui.checkbox(
                         &mut app_state.app_config.experimental_features,
-                        &i18n.config_experimental_features,
+                        &i18n.config.config_experimental_features,
                     );
 
                     #[cfg(debug_assertions)]
@@ -119,14 +119,14 @@ impl AppTopBar {
                     }
 
                     if ui
-                        .add(egui::Button::new(&i18n.top_export_json_state))
+                        .add(egui::Button::new(&i18n.config.top_export_json_state))
                         .clicked()
                     {
                         self.is_export_confirmation_open = true;
                         ui.close_menu();
                     }
                     if ui
-                        .add(egui::Button::new(&i18n.top_import_json_state))
+                        .add(egui::Button::new(&i18n.config.top_import_json_state))
                         .clicked()
                     {
                         *app_state = match load_state(self.file_name) {
@@ -143,7 +143,7 @@ impl AppTopBar {
                         ui.selectable_value(&mut app_state.selected_view, ViewType::Http, "Http");
                     http_btn.context_menu(|ui| {
                         if ui
-                            .add(egui::Button::new(&i18n.top_http_toggle_sidebar))
+                            .add(egui::Button::new(&i18n.config.top_http_toggle_sidebar))
                             .clicked()
                         {
                             app_state.http.show_sidebar = !app_state.http.show_sidebar;
@@ -155,7 +155,7 @@ impl AppTopBar {
                         ui.selectable_value(&mut app_state.selected_view, ViewType::Pg, "Postgres");
                     pg_btn.context_menu(|ui| {
                         if ui
-                            .add(egui::Button::new(&i18n.top_pg_toggle_sidebar_connections))
+                            .add(egui::Button::new(&i18n.config.top_pg_toggle_sidebar_connections))
                             .clicked()
                         {
                             app_state.pg.show_sidebar = !app_state.pg.show_sidebar;
@@ -182,7 +182,7 @@ impl AppTopBar {
                     mysql_btn.context_menu(|ui| {
                         if ui
                             .add(egui::Button::new(
-                                &i18n.top_mysql_toggle_sidebar_connections,
+                                &i18n.config.top_mysql_toggle_sidebar_connections,
                             ))
                             .clicked()
                         {
@@ -209,7 +209,7 @@ impl AppTopBar {
                     sqlite_btn.context_menu(|ui| {
                         if ui
                             .add(egui::Button::new(
-                                &i18n.top_sqlite_toggle_sidebar_connections,
+                                &i18n.config.top_sqlite_toggle_sidebar_connections,
                             ))
                             .clicked()
                         {
@@ -232,7 +232,7 @@ impl AppTopBar {
                         ui.selectable_value(&mut app_state.selected_view, ViewType::Redis, "Redis");
                     redis_btn.context_menu(|ui| {
                         if ui
-                            .add(egui::Button::new(&i18n.top_redis_toggle_sidebar))
+                            .add(egui::Button::new(&i18n.config.top_redis_toggle_sidebar))
                             .clicked()
                         {
                             app_state.redis.show_sidebar = !app_state.redis.show_sidebar;
@@ -245,7 +245,7 @@ impl AppTopBar {
                     mongo_btn.context_menu(|ui| {
                         if ui
                             .add(egui::Button::new(
-                                &i18n.top_mongo_toggle_sidebar_connections,
+                                &i18n.config.top_mongo_toggle_sidebar_connections,
                             ))
                             .clicked()
                         {
@@ -262,7 +262,7 @@ impl AppTopBar {
                         ui.selectable_value(&mut app_state.selected_view, ViewType::Kafka, "Kafka");
                     kafka_btn.context_menu(|ui| {
                         if ui
-                            .add(egui::Button::new(&i18n.top_kafka_toggle_sidebar_cluster))
+                            .add(egui::Button::new(&i18n.config.top_kafka_toggle_sidebar_cluster))
                             .clicked()
                         {
                             app_state.kafka.show_sidebar = !app_state.kafka.show_sidebar;
@@ -278,7 +278,7 @@ impl AppTopBar {
                     clickhouse_btn.context_menu(|ui| {
                         if ui
                             .add(egui::Button::new(
-                                &i18n.top_clickhouse_toggle_sidebar_connections,
+                                &i18n.config.top_clickhouse_toggle_sidebar_connections,
                             ))
                             .clicked()
                         {
@@ -294,7 +294,7 @@ impl AppTopBar {
                     );
                     rabbitmq_btn.context_menu(|ui| {
                         if ui
-                            .add(egui::Button::new(&i18n.top_rabbitmq_toggle_sidebar_connections))
+                            .add(egui::Button::new(&i18n.config.top_rabbitmq_toggle_sidebar_connections))
                             .clicked()
                         {
                             app_state.rabbitmq.show_sidebar = !app_state.rabbitmq.show_sidebar;
@@ -309,7 +309,7 @@ impl AppTopBar {
                     );
                     nats_btn.context_menu(|ui| {
                         if ui
-                            .add(egui::Button::new(&i18n.top_nats_toggle_sidebar_connections))
+                            .add(egui::Button::new(&i18n.config.top_nats_toggle_sidebar_connections))
                             .clicked()
                         {
                             app_state.nats.show_sidebar = !app_state.nats.show_sidebar;
@@ -325,7 +325,7 @@ impl AppTopBar {
                     docker_btn.context_menu(|ui| {
                         if ui
                             .add(egui::Button::new(
-                                &i18n.top_docker_toggle_sidebar_connections,
+                                &i18n.config.top_docker_toggle_sidebar_connections,
                             ))
                             .clicked()
                         {

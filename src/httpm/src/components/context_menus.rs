@@ -8,7 +8,7 @@
 
 use eframe::egui;
 
-use common::internationalization::I18nHttp;
+use common::I18nHttp;
 
 use crate::state::HttpRequestAction;
 

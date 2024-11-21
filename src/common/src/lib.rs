@@ -16,5 +16,23 @@ pub mod fs;
 pub mod generator;
 pub mod icon_moon;
 pub mod internationalization;
+mod i18n_clickhouse;
+mod i18n_docker;
+mod i18n_http;
+mod i18n_sqlx;
+mod i18n_kafka;
+mod i18n_mongo;
+mod i18n_redis;
+mod i18n_config;
 pub mod macros;
 pub mod traits;
+
+
+pub use i18n_clickhouse::I18nClickHouse;
+pub use i18n_docker::I18nDocker;
+pub use i18n_http::I18nHttp;
+pub use i18n_sqlx::I18nSqlx;
+pub use i18n_kafka::I18nKafka;
+pub use i18n_redis::I18nRedis;
+pub use i18n_config::I18nConfig;
+pub use i18n_mongo::I18nMongo;

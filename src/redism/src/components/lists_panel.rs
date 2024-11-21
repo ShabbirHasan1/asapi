@@ -7,7 +7,7 @@ use std::collections::HashMap;
 // This file is confidential and only available to authorized individuals
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
-use common::internationalization::I18n;
+use common::I18nRedis as I18n;
 use components::{result_panel::ui_response_panel, widgets::ui_text_edit_singleline_hint};
 use components::{ui_button_w, ui_button_w50};
 use eframe::egui;

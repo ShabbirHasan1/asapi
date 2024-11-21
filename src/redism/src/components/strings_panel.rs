@@ -5,7 +5,8 @@
 // This file is confidential and only available to authorized individuals
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
-use common::internationalization::I18n;
+
+use common::I18nRedis;
 use components::{result_panel::ui_response_panel, widgets::ui_text_edit_singleline_hint};
 use components::{ui_button_w, ui_button_w100, ui_button_w50};
 use eframe::egui;
@@ -39,7 +40,7 @@ use crate::{
 // done - LCS
 // done - STRLEN
 impl RedisView {
-    pub fn show_strings(&mut self, ui: &mut egui::Ui, i18n: &I18n) {
+    pub fn show_strings(&mut self, ui: &mut egui::Ui, i18n: &I18nRedis) {
         if self.state.selected_menu == RedisMenu::String {
             egui::CollapsingHeader::new(i18n.redis_commands_header.to_ascii_uppercase())
                 .show_background(true)
@@ -455,7 +456,7 @@ impl RedisView {
             });
     }
 
-    fn strings_display(&mut self, ui: &mut egui::Ui, i18n: &I18n) {
+    fn strings_display(&mut self, ui: &mut egui::Ui, i18n: &I18nRedis) {
         egui::ScrollArea::vertical().show(ui, |ui| {
             egui::Grid::new("key/value")
                 .spacing(egui::vec2(ui.spacing().item_spacing.x * 2.0, 0.0))

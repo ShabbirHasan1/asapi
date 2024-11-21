@@ -14,7 +14,7 @@ use rdkafka::metadata::Metadata;
 use std::ops::RangeInclusive;
 use tokio::runtime::Runtime;
 
-use common::internationalization::I18n;
+use common::I18nKafka as I18n;
 use components::heading_strong;
 use components::widgets::ui_text_edit_singleline_hint;
 

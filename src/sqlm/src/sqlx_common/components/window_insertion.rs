@@ -11,7 +11,7 @@ use sqlx::Database;
 use std::fmt::Debug;
 use std::marker::PhantomData;
 
-use common::internationalization::I18nSqlx;
+use common::I18nSqlx;
 use common::quote;
 
 use crate::sqlx_common::{

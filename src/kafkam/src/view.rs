@@ -11,7 +11,7 @@ use log::info;
 use std::sync::{Arc, Mutex};
 use tokio::runtime::Runtime;
 
-use common::internationalization::I18n;
+use common::I18nKafka;
 
 use super::state::KafkaPanel;
 
@@ -50,7 +50,7 @@ impl KafkaView {
         _frame: &mut eframe::Frame,
         app_st: &mut KafkaAppState,
         rt: &Runtime,
-        i18n: &I18n,
+        i18n: &I18nKafka,
     ) {
         // =======================================
         // Preparación de cada ciclo

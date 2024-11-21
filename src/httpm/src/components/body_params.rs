@@ -12,7 +12,7 @@ use egui_json_tree::JsonTree;
 use serde_json::Value as JsonValue;
 use std::path::PathBuf;
 
-use common::{fs::list_files_in_directory, icon_moon::IconMoon, internationalization::I18nHttp};
+use common::{fs::list_files_in_directory, icon_moon::IconMoon, I18nHttp};
 
 use crate::{methods::HttpMethod, state::HttpLocalState};
 
