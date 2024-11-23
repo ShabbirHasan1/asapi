@@ -76,6 +76,7 @@ fn generate_key_pair_from_seed(
         seed.as_bytes(),
         &mut hash,
     );
+    log::info!("Hash: {hash:?}");
 
     // Crear la clave privada desde el hash derivado
     // let signing_key = SigningKey::from_bytes(&hash)?;
@@ -85,11 +86,14 @@ fn generate_key_pair_from_seed(
     // Crear la clave privada desde el hash derivado
     let signing_key = SigningKey::from_bytes(&key_bytes)?;
     let private_key_hex = hex::encode(signing_key.to_bytes());
+    log::info!("private_key_hex: {private_key_hex:?}");
 
     // Obtener la clave pública correspondiente
     let verifying_key = VerifyingKey::from(&signing_key);
     let public_key = verifying_key.to_encoded_point(false);
+    log::info!("public_key: {public_key:?}");
     let public_key_hex = hex::encode(public_key.as_bytes());
+    log::info!("public_key_hex: {public_key_hex:?}");
 
     Ok((public_key_hex, private_key_hex))
 }
@@ -196,7 +200,6 @@ pub fn private_check_license(encrypted: &EncryptedSignedLicense, salt: &str, see
 
     let shared_key = generate_key_pair_from_seed(seed, salt.as_bytes())
         .and_then(|(_, client_private_key)| {
-            log::info!("{client_private_key:}");
             derive_shared_key(&encrypted.extra.0, &client_private_key)
         })
         .map_or("wrong_shared_key".to_string(), |k| k);

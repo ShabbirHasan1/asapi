@@ -38,7 +38,7 @@ impl DockerView {
         // =======================================
 
         if app_st.show_sidebar {
-            self.show_sidenav(rt, ctx, app_st, i18n);
+            self.show_sidenav(rt, ctx, i18n);
         }
 
         // =======================================

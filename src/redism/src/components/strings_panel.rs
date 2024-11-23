@@ -8,6 +8,7 @@
 
 use common::I18nRedis;
 use components::{result_panel::ui_response_panel, widgets::ui_text_edit_singleline_hint};
+
 use components::{ui_button_w, ui_button_w100, ui_button_w50};
 use eframe::egui;
 use egui_extras::{Size, StripBuilder};

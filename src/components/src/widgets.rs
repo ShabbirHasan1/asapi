@@ -7,7 +7,7 @@
 // -------------------------------------------------------------------------
 
 use eframe::egui;
-use egui::Ui;
+use egui::{FontId, Ui};
 
 #[inline(always)]
 pub fn text_edit_singleline_w100(ui: &mut Ui, s: &str, v: &mut String) {
@@ -32,4 +32,28 @@ fn text_edit_singleline(ui: &mut Ui, s: &str, v: &mut String, w: f32, h: f32) {
 #[inline(always)]
 pub fn ui_text_edit_singleline_hint(ui: &mut Ui, s: &str, v: &mut String) {
     ui.add(egui::TextEdit::singleline(v).hint_text(s));
+}
+
+#[inline(always)]
+pub fn wrap_text(text: String, color: egui::Color32, size: f32) -> egui::text::LayoutJob {
+    let mut job = egui::text::LayoutJob::single_section(
+        text,
+        egui::TextFormat {
+            font_id: FontId {
+                size,
+                ..Default::default()
+            },
+            color,
+            ..Default::default()
+        }
+    );
+    job.wrap =
+        egui::text::TextWrapping::from_wrap_mode_and_width(egui::TextWrapMode::Truncate, 80.0);
+
+    return job;
+}
+
+#[inline(always)]
+pub fn wrap_dark_gray_text(text: String) -> egui::text::LayoutJob {
+    wrap_text(text, egui::Color32::DARK_GRAY, 12.0)
 }
