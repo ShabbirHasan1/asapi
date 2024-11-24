@@ -9,6 +9,7 @@ serde_json = { workspace = true }
 log = { workspace = true }
 
 httpm = { path = "../httpm" }
+common = { path = "../common" }
 
 hmac = "0.12.1"
 aes-gcm = "0.10.3"

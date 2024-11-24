@@ -357,7 +357,7 @@ impl HttpView {
         let ctx_cloned = ctx.clone();
         rt.spawn(async move {
             let response = match api_request(method, &url, &body, &headers).await {
-                Ok((response, header_map)) => (response, header_map),
+                Ok((response, _, header_map)) => (response, header_map),
                 Err(e) => (
                     format!("Error al realizar la solicitud: {:?}", e),
                     HeaderMap::default(),

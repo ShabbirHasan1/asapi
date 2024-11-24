@@ -42,7 +42,7 @@ use sqlm::pgm::view::PostgresView;
 use sqlm::sqlitem::view::SQLiteView;
 use std::fs::{self, OpenOptions};
 use top_bar::AppTopBar;
-
+use std::io::Write;
 use crate::app_state::{load_state, read_state_and_adapt, AppState, ViewType};
 use crate::httpm::view::HttpView;
 
@@ -298,10 +298,23 @@ fn configure_text_styles(ctx: &egui::Context) {
 }
 
 fn main() {
-    use env_logger::Env;
     let native_options = eframe::NativeOptions::default();
     // TODO: Según producción o build, `debug` o `info`.
-    env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
+    // env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
+    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info"))
+        .format(|buf, record| {
+            // Create a log message with the desired format
+            writeln!(
+                buf,
+                "{}:{} - {}",
+                record.file().unwrap(),
+                record.line().unwrap(),
+                record.args()
+            )
+        })
+        .filter(None, log::LevelFilter::Info) // Set the log level filter here if needed
+        .init();
+
     info!("Inicio ASAPI");
 
     let _result = eframe::run_native(

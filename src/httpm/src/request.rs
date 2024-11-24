@@ -42,7 +42,7 @@ pub async fn api_request(
     url: &str,
     body_params: &[(String, String, bool)],
     headers: &Vec<(String, String)>, // shared: Arc<Mutex<String>>
-) -> Result<(String, HeaderMap), reqwest::Error> {
+) -> Result<(String, u16, HeaderMap), reqwest::Error> {
     let client = Client::new();
     let headers_map = get_headers(headers);
 
@@ -90,16 +90,16 @@ pub async fn api_request(
     match response {
         Ok(response) => {
             log::info!("response: {response:?}");
-            let status = response.status();
+            let status = response.status().as_u16();
             log::info!("status: {status:?}");
             let response_headers = response.headers().clone();
             log::info!("response_headers: {response_headers:?}");
 
             match response.text().await {
-                Ok(text) => Ok((text, response_headers)),
+                Ok(text) => Ok((text, status, response_headers)),
                 Err(err) => {
                     log::error!("{err:?}");
-                    Ok((status.to_string(), response_headers))
+                    Ok((status.to_string(), status, response_headers))
                 }
             }
         }

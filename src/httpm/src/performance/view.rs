@@ -170,7 +170,7 @@ async fn send_request(request: &Request) -> Result<String, String> {
 
     tokio::time::sleep(tokio::time::Duration::from_millis(wait_ms as u64)).await;
     match api_request(method, &url, &body, &headers).await {
-        Ok((response, _header_map)) => Ok(format!("Respuesta exitosa: {:?}", response)),
+        Ok((response, _, _header_map)) => Ok(format!("Respuesta exitosa: {:?}", response)),
         Err(e) => Err(format!("Error al realizar la solicitud: {:?}", e)),
     }
 }

@@ -113,9 +113,14 @@ pub async fn post_license(license: LicenseActivationInfo) -> Option<String> {
     .await;
 
     match result {
-        Ok((response, _headers)) => {
+        Ok((response, code, _headers)) => {
             log::info!("{response}");
-            Some(response)
+            if code > 299 {
+                log::error!("Error, code {code}");
+                None
+            } else {
+                Some(response)
+            }
         }
         Err(error) => {
             log::error!("{error}");
