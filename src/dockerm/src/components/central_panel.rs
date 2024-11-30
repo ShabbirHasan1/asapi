@@ -1,0 +1,202 @@
+// -------------------------------------------------------------------------
+// Copyright (C) 2024 Fernando López - All Rights Reserved
+//
+// Unauthorized copying of this file, via any medium is strictly prohibited.
+// This file is confidential and only available to authorized individuals
+// with the permission of the copyright holders.
+// -------------------------------------------------------------------------
+
+use eframe::egui;
+use egui_extras::{Column, Size, StripBuilder, TableBuilder};
+use tokio::runtime::Runtime;
+
+use crate::{domain::DockerElementSelection, info_table_row, view::DockerView};
+use common::{icon_moon::IconMoon, I18nDocker};
+
+impl DockerView {
+    pub fn show_central_panel(&mut self, rt: &Runtime, ctx: &egui::Context, i18n: &I18nDocker) {
+        egui::CentralPanel::default().show(ctx, |ui| {
+            match self.state.current_selection.as_ref().unwrap().selected_view {
+                DockerElementSelection::Image => {
+                    self.image_info_panel(ui, i18n);
+                }
+                DockerElementSelection::Container => {
+                    self.container_info_panel(ui, i18n);
+                }
+                DockerElementSelection::ContainerAll => {
+                    self.all_containers_table(ui, i18n);
+                }
+                DockerElementSelection::Volume => todo!(),
+                DockerElementSelection::Network => todo!(),
+            }
+        });
+    }
+
+    fn all_containers_table(&self, ui: &mut egui::Ui, i18n: &I18nDocker) {
+        let available_height = ui.available_height();
+
+        egui::ScrollArea::both().show(ui, |ui| {
+            TableBuilder::new(ui)
+                .auto_shrink(true)
+                .striped(true)
+                .column(Column::exact(80.0))
+                .columns(Column::initial(150.0).range(40.0..).resizable(true), 5)
+                .min_scrolled_height(0.0)
+                .max_scroll_height(available_height)
+                .resizable(true)
+                .header(24.0, |mut header| {
+                    header.col(|ui| {});
+                    header.col(|ui| {
+                        ui.strong(&i18n.name);
+                    });
+                    header.col(|ui| {
+                        ui.strong("ID");
+                    });
+                    header.col(|ui| {
+                        ui.strong(&i18n.image);
+                    });
+                    header.col(|ui| {
+                        ui.strong(&i18n.ports);
+                    });
+                    header.col(|ui| {
+                        ui.strong(&i18n.size);
+                    });
+                })
+                .body(|mut body| {
+                    for container in self.state.containers.lock().unwrap().iter() {
+                        body.row(24.0, |mut row| {
+                            row.col(|ui| {
+                                ui.horizontal(|ui| {
+                                    if ui.button(IconMoon::Play.as_str()).clicked() {}
+                                    if ui.button(IconMoon::Stop.as_str()).clicked() {}
+                                    if ui.button(IconMoon::GarbageCan.as_str()).clicked() {}
+                                });
+                            });
+                            row.col(|ui| {
+                                ui.label(&container.name);
+                            });
+                            row.col(|ui| {
+                                ui.label(format!("{}", &container.id[0..15]));
+                            });
+                            row.col(|ui| {
+                                ui.label(&container.image);
+                            });
+                            row.col(|ui| {
+                                ui.label(&container.ports_string);
+                            });
+                            row.col(|ui| {
+                                ui.label(format!("{} MB", container.size_root_fs >> 20));
+                            });
+                        });
+                    }
+                });
+        });
+    }
+
+    fn container_info_panel(&self, ui: &mut egui::Ui, i18n: &I18nDocker) {
+        let info = &self.state.selected_container_info;
+
+        egui::CollapsingHeader::new(format!("{} : {}", i18n.container_info, &info.name))
+            .default_open(true)
+            .show_background(true)
+            .show(ui, |ui| {
+                let available_height = ui.available_height();
+                egui::ScrollArea::horizontal().show(ui, |ui| {
+                    TableBuilder::new(ui)
+                        .auto_shrink(true)
+                        .striped(true)
+                        .columns(Column::initial(150.0).range(40.0..).resizable(true), 1)
+                        .column(Column::remainder())
+                        .min_scrolled_height(0.0)
+                        .max_scroll_height(available_height)
+                        .resizable(true)
+                        .body(|mut body| {
+                            info_table_row!(body, &i18n.name, &info.name);
+                            info_table_row!(body, "ID", &info.id);
+                            info_table_row!(body, &i18n.image, &self.state.selected_image_info.0);
+                            info_table_row!(
+                                body,
+                                &i18n.image_id,
+                                &self.state.selected_image_info.1.id
+                            );
+                            info_table_row!(body, &i18n.image, &info.image);
+                            info_table_row!(body, &i18n.ports, &info.ports_string);
+                        });
+                });
+            });
+    }
+
+    fn image_info_panel(&self, ui: &mut egui::Ui, i18n: &I18nDocker) {
+        let img_name = &self.state.selected_image_info.0;
+        let img_inspect = &self.state.selected_image_info.1;
+        let img_summary = &self.state.selected_image_info.2;
+
+        egui::CollapsingHeader::new(format!(
+            "{} : {}",
+            i18n.image_info, self.state.selected_image_info.0
+        ))
+        .default_open(true)
+        .show_background(true)
+        .show(ui, |ui| {
+            egui::ScrollArea::horizontal().show(ui, |ui| {
+                TableBuilder::new(ui)
+                    .auto_shrink(true)
+                    .striped(true)
+                    .min_scrolled_height(0.0)
+                    .columns(Column::initial(150.0).range(40.0..).resizable(true), 1)
+                    .column(Column::remainder())
+                    .body(|mut body| {
+                        info_table_row!(body, &i18n.name, img_name);
+                        info_table_row!(body, "ID", &img_inspect.id);
+                        info_table_row!(body, "OS", &img_inspect.os);
+                        info_table_row!(body, "Version OS", &img_inspect.os_version);
+                        info_table_row!(body, &i18n.author, &img_inspect.author);
+                        info_table_row!(body, &i18n.architecture, &img_inspect.architecture);
+                        info_table_row!(body, &i18n.parent, &img_inspect.parent);
+                        info_table_row!(body, &i18n.created, &img_inspect.created);
+                        info_table_row!(body, &i18n.size, format!("{} MB", img_summary.size >> 20));
+                        info_table_row!(
+                            body,
+                            &i18n.containers,
+                            &img_summary.containers.to_string()
+                        );
+                    });
+            });
+        });
+
+        egui::CollapsingHeader::new(format!(
+            "foo {} : {}",
+            i18n.image_info, self.state.selected_image_info.0
+        ))
+        .default_open(true)
+        .show_background(true)
+        .show(ui, |ui| {
+            egui::ScrollArea::horizontal().show(ui, |ui| {
+                TableBuilder::new(ui)
+                    .auto_shrink(true)
+                    .striped(true)
+                    .min_scrolled_height(0.0)
+                    .columns(Column::initial(150.0).range(40.0..).resizable(true), 1)
+                    .column(Column::remainder())
+                    .body(|mut body| {
+                        info_table_row!(body, &i18n.name, img_name);
+                        info_table_row!(body, "ID", &img_inspect.id);
+                        info_table_row!(body, "OS", &img_inspect.os);
+                        info_table_row!(body, "Version OS", &img_inspect.os_version);
+                        info_table_row!(body, &i18n.author, &img_inspect.author);
+                        info_table_row!(body, &i18n.architecture, &img_inspect.architecture);
+                        info_table_row!(body, &i18n.parent, &img_inspect.parent);
+                        info_table_row!(body, &i18n.created, &img_inspect.created);
+                        info_table_row!(body, &i18n.size, format!("{} MB", img_summary.size >> 20));
+                        info_table_row!(
+                            body,
+                            &i18n.containers,
+                            &img_summary.containers.to_string()
+                        );
+                    });
+            });
+        });
+        // });
+        // });
+    }
+}

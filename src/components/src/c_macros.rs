@@ -84,3 +84,19 @@ macro_rules! ui_title_and_value_grid_row {
         $ui.end_row();
     }};
 }
+
+
+#[macro_export]
+macro_rules! empty_button_with_gray_stroke {
+    ($ui:expr, $text:expr) => {{
+        $ui.add(
+            egui::Button::new($text)
+                .stroke(Stroke {
+                    width: 1.0,
+                    color: Color32::GRAY,
+                })
+                .frame(true)
+                .fill(Color32::TRANSPARENT),
+        )
+    }};
+}

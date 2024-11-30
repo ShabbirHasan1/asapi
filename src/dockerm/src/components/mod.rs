@@ -5,5 +5,8 @@
 // This file is confidential and only available to authorized individuals
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
+
 pub mod sidenav_panel;
 pub mod widget_macros;
+pub mod image_details;
+pub mod central_panel;

@@ -12,15 +12,29 @@ use tokio::runtime::Runtime;
 use bollard::Docker;
 use common::I18nDocker;
 
-use crate::state::{DockerAppState, DockerLocalState};
+use crate::domain::{
+    DockerAppState, DockerElementSelection, DockerInfo, DockerLocalState, DockerMessage, DockerSelection
+};
 
-#[derive(Default)]
 pub struct DockerView {
     pub state: DockerLocalState,
-    pub flag: bool,
     pub connection: Option<Docker>,
+    pub tx: tokio::sync::mpsc::Sender<DockerMessage>,
+    rx: tokio::sync::mpsc::Receiver<DockerMessage>,
 }
 
+impl Default for DockerView {
+    fn default() -> Self {
+        let (tx, rx) = tokio::sync::mpsc::channel(8);
+
+        Self {
+            state: Default::default(),
+            connection: Default::default(),
+            tx,
+            rx,
+        }
+    }
+}
 impl DockerView {
     pub fn update(
         &mut self,
@@ -32,6 +46,9 @@ impl DockerView {
         // =======================================
         // Preparación de cada ciclo
         // =======================================
+        while let Ok(message) = self.rx.try_recv() {
+            self.process_message(message);
+        }
 
         // =======================================
         // Panel Lateral
@@ -44,11 +61,41 @@ impl DockerView {
         // =======================================
         // Panel Central
         // =======================================
-        // self.show_sidenav(rt, ctx, app_st, i18n.docker);
-        self.flag = true;
+        if self.state.current_selection.is_none() {
+            return;
+        }
 
-        // =======================================
-        // Preparación de cada ciclo
-        // =======================================
+        self.show_central_panel(rt, ctx, i18n);
+    }
+
+    fn process_message(&mut self, message: DockerMessage) {
+        match message {
+            DockerMessage::Error(_) => todo!(),
+            DockerMessage::Loading => {
+                log::info!("Loading");
+            }
+            DockerMessage::Select(info) => match info.1 {
+                DockerInfo::Image(image_info) => {
+                    self.state.selected_image_info = image_info;
+                    self.state.current_selection = Some(DockerSelection {
+                        selected_idx: info.0,
+                        selected_view: DockerElementSelection::Image,
+                    });
+                }
+                DockerInfo::Container(container_info) => {
+                    self.state.selected_container_info = container_info;
+                    self.state.current_selection = Some(DockerSelection {
+                        selected_idx: info.0,
+                        selected_view: DockerElementSelection::Container,
+                    });
+                }
+                DockerInfo::ContainerAll => {
+                    self.state.current_selection = Some(DockerSelection {
+                        selected_idx: info.0,
+                        selected_view: DockerElementSelection::ContainerAll
+                    })
+                }
+            },
+        }
     }
 }

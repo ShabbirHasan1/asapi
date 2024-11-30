@@ -19,7 +19,9 @@ use bollard::image::ListImagesOptions;
 use bollard::models::ContainerSummary;
 use bollard::Docker;
 
-use crate::domain::{ContainerInfo, NetworkInfo};
+use crate::domain::{
+    ContainerInfo, ImageDistributionInspect, ImageInfo, ImageInspectInfo, NetworkInfo,
+};
 
 #[derive(Default)]
 pub struct DockerPresenter {}
@@ -64,9 +66,11 @@ async fn list_containers(docker: Option<Docker>) -> Result<Vec<ContainerSummary>
 async fn list_networks(docker: Option<Docker>) -> Result<Vec<Network>, String> {
     match docker {
         Some(docker) => {
-            let networks = &docker.list_networks(Some(ListNetworksOptions::<String> {
+            let networks = &docker
+                .list_networks(Some(ListNetworksOptions::<String> {
                     ..Default::default()
-                })).await;
+                }))
+                .await;
 
             match networks {
                 Ok(ns) => Ok(ns.to_vec()),
@@ -80,9 +84,11 @@ async fn list_networks(docker: Option<Docker>) -> Result<Vec<Network>, String> {
 async fn list_volumes(docker: Option<Docker>) -> Result<Vec<Volume>, String> {
     match docker {
         Some(docker) => {
-            let volumes = &docker.list_volumes(Some(ListVolumesOptions::<String> {
+            let volumes = &docker
+                .list_volumes(Some(ListVolumesOptions::<String> {
                     ..Default::default()
-                })).await;
+                }))
+                .await;
 
             match volumes {
                 Ok(vs) => Ok(vs.volumes.clone().unwrap_or_default().to_vec()),
@@ -166,7 +172,7 @@ impl DockerPresenter {
         }
     }
 
-     pub async fn populate_networks(docker: Option<Docker>, ns: Arc<Mutex<Vec<NetworkInfo>>>) {
+    pub async fn populate_networks(docker: Option<Docker>, ns: Arc<Mutex<Vec<NetworkInfo>>>) {
         let data = Arc::clone(&ns);
         let result = list_networks(docker).await;
 
@@ -181,7 +187,7 @@ impl DockerPresenter {
                 log::error!("Error trying to list docker networks: {err:?}");
             }
         }
-     }
+    }
 
     pub async fn populate_volumes(docker: Option<Docker>, volumes: Arc<Mutex<Vec<Volume>>>) {
         let data = Arc::clone(&volumes);
@@ -212,82 +218,72 @@ pub fn connect() -> Option<Docker> {
     Docker::connect_with_local_defaults().ok()
 }
 
-// async fn conc(arg: (&Docker, &ContainerSummary)) {
-//     let (docker, container) = arg;
-//     log::info!(
-//         "{:?}",
-//         docker
-//             .inspect_container(
-//                 container.id.as_ref().unwrap(),
-//                 None::<InspectContainerOptions>
-//             )
-//             .await
-//             .unwrap()
-//     )
-// }
+pub struct DockerImagePresenter {}
 
-// // Miucha información por contenedor
-// pub async fn info(docker: &Docker) -> Result<(), Box<dyn std::error::Error + 'static>> {
-//     // let docker = Docker::connect_with_socket_defaults().unwrap();
+impl DockerImagePresenter {
+    pub async fn get_image_info(
+        conn: &Docker,
+        image_summary: ImageSummary,
+        image_name: String,
+    ) -> Result<ImageInfo, String> {
+        let image_inspect = conn.inspect_image(&image_name).await;
+        let image_registry = conn.inspect_registry_image(&image_name, None).await;
+        let image_history = conn.image_history(&image_name).await;
 
-//     let mut list_container_filters = HashMap::new();
-//     list_container_filters.insert("status", vec!["running"]);
+        match (image_inspect, image_registry, image_history) {
+            (Ok(info), Ok(registry), Ok(history)) => Ok(ImageInfo(
+                image_name,
+                ImageInspectInfo::from_image_inspect(info),
+                image_summary,
+                ImageDistributionInspect::from_bollard(registry),
+                history,
+            )),
 
-//     let containers = &docker
-//         .list_containers(Some(ListContainersOptions {
-//             all: true,
-//             filters: list_container_filters,
-//             ..Default::default()
-//         }))
-//         .await?;
+            _ => Err("Error getting image info".to_string()),
+        }
+        // No me está funcionando pero hace toda la petición del tirón.
+        // let c1 = conn.clone();
+        // let c2 = conn.clone();
+        // let c3 = conn.clone();
 
-//     let docker_stream = stream::repeat(docker);
-//     docker_stream
-//         .zip(stream::iter(containers))
-//         .for_each_concurrent(2, conc)
-//         .await;
+        // let in1 = image_name.clone();
+        // let in2 = image_name.clone();
 
-//     Ok(())
-// }
+        // let image_inspect = tokio::spawn(async move { c1.inspect_image(&in1).await });
+        // log::info!("foo");
+        // let image_registry =
+        //     tokio::spawn(async move { c2.inspect_registry_image(&in2, None).await });
+        // log::info!("bar");
+        // let image_history = tokio::spawn(async move { c3.image_history(&image_name).await });
+        // log::info!("baz");
 
-// pub async fn stats(docker: &Docker) -> Result<(), Box<dyn std::error::Error>> {
-//     // loop {
-//     let mut filter = HashMap::new();
-//     filter.insert(String::from("status"), vec![String::from("running")]);
-//     let containers = &docker
-//         .list_containers(Some(ListContainersOptions {
-//             all: true,
-//             filters: filter,
-//             ..Default::default()
-//         }))
-//         .await?;
+        // let (inspect_res, registry_res, history_res) =
+        //     tokio::join!(image_inspect, image_registry, image_history,);
 
-//     if containers.is_empty() {
-//         panic!("no running containers");
-//     } else {
-//         for container in containers {
-//             let container_id = container.id.as_ref().unwrap();
-//             let stream = &mut docker
-//                 .stats(
-//                     container_id,
-//                     Some(StatsOptions {
-//                         stream: false,
-//                         ..Default::default()
-//                     }),
-//                 )
-//                 .take(1);
+        // match (
+        //     inspect_res,  // .map_err(|e| format!("Inspect task error: {}", e)),
+        //     registry_res, // .map_err(|e| format!("Registry task error: {}", e)),
+        //     history_res,  // .map_err(|e| format!("History task error: {}", e)),
+        // ) {
+        //     (Ok(inspect), Ok(registry_info), Ok(history)) => {
+        //         log::info!("{inspect:?}");
+        //         Ok(ImageInfo(
+        //             inspect.unwrap_or_default(),
+        //             registry_info.unwrap_or_default(),
+        //             history.unwrap_or_default(),
+        //         ))
+        //     }
+        //     (_, _, _) => Err("Failed to get image info".to_string()),
+        // }
+    }
+}
 
-//             while let Some(Ok(stats)) = stream.next().await {
-//                 log::info!(
-//                     "{} - {:?}: {:?} {:?}",
-//                     container_id,
-//                     &container.names,
-//                     container.image,
-//                     stats
-//                 );
-//             }
-//         }
+pub struct DockerContainerPresenter {}
+
+// impl DockerContainerPresenter {
+//     pub async fn get_container_info(
+//         conn: &Docker,
+//         container_info: ContainerInfo,
+//     ) -> Result<ImageInfo, String> {
 //     }
-//     Ok(())
-//     // }
 // }

@@ -19,7 +19,7 @@ use tokio::fs as async_fs;
 use clickhousem::domain::ClickHouseConnectionDefinition;
 use clickhousem::state::ClickHouseAppState;
 use common::internationalization::I18nOptions;
-use dockerm::state::DockerAppState;
+use dockerm::domain::DockerAppState;
 use httpm::methods::HttpMethod;
 use httpm::request::Request;
 use httpm::state::HttpAppState;
