@@ -14,7 +14,7 @@ use bollard::secret::{ImageSummary, Network, Volume};
 use bollard::volume::ListVolumesOptions;
 use log;
 
-use bollard::container::ListContainersOptions;
+use bollard::container::{ListContainersOptions, StartContainerOptions};
 use bollard::image::ListImagesOptions;
 use bollard::models::ContainerSummary;
 use bollard::Docker;
@@ -280,10 +280,10 @@ impl DockerImagePresenter {
 
 pub struct DockerContainerPresenter {}
 
-// impl DockerContainerPresenter {
-//     pub async fn get_container_info(
-//         conn: &Docker,
-//         container_info: ContainerInfo,
-//     ) -> Result<ImageInfo, String> {
-//     }
-// }
+impl DockerContainerPresenter {
+    pub async fn start_container(conn: &Docker, name: &str) -> Result<(), String> {
+        conn.start_container(name, None::<StartContainerOptions<String>>)
+            .await
+            .map_err(|err| err.to_string())
+    }
+}

@@ -7,10 +7,10 @@
 // -------------------------------------------------------------------------
 
 use eframe::egui;
-use egui_extras::{Column, Size, StripBuilder, TableBuilder};
+use egui_extras::{Column, TableBuilder};
 use tokio::runtime::Runtime;
 
-use crate::{domain::DockerElementSelection, info_table_row, view::DockerView};
+use crate::{domain::{DockerElementSelection, DockerMessage}, info_table_row, presenter::DockerContainerPresenter, view::DockerView};
 use common::{icon_moon::IconMoon, I18nDocker};
 
 impl DockerView {
@@ -24,7 +24,7 @@ impl DockerView {
                     self.container_info_panel(ui, i18n);
                 }
                 DockerElementSelection::ContainerAll => {
-                    self.all_containers_table(ui, i18n);
+                    self.all_containers_table(rt, ui, i18n);
                 }
                 DockerElementSelection::Volume => todo!(),
                 DockerElementSelection::Network => todo!(),
@@ -32,20 +32,21 @@ impl DockerView {
         });
     }
 
-    fn all_containers_table(&self, ui: &mut egui::Ui, i18n: &I18nDocker) {
+    fn all_containers_table(&self,  rt: &Runtime, ui: &mut egui::Ui, i18n: &I18nDocker) {
         let available_height = ui.available_height();
 
         egui::ScrollArea::both().show(ui, |ui| {
             TableBuilder::new(ui)
                 .auto_shrink(true)
                 .striped(true)
+                .cell_layout(egui::Layout::left_to_right(egui::Align::Center))
                 .column(Column::exact(80.0))
                 .columns(Column::initial(150.0).range(40.0..).resizable(true), 5)
                 .min_scrolled_height(0.0)
                 .max_scroll_height(available_height)
                 .resizable(true)
-                .header(24.0, |mut header| {
-                    header.col(|ui| {});
+                .header(32.0, |mut header| {
+                    header.col(|_ui| {});
                     header.col(|ui| {
                         ui.strong(&i18n.name);
                     });
@@ -64,11 +65,29 @@ impl DockerView {
                 })
                 .body(|mut body| {
                     for container in self.state.containers.lock().unwrap().iter() {
-                        body.row(24.0, |mut row| {
+                        body.row(32.0, |mut row| {
                             row.col(|ui| {
                                 ui.horizontal(|ui| {
-                                    if ui.button(IconMoon::Play.as_str()).clicked() {}
-                                    if ui.button(IconMoon::Stop.as_str()).clicked() {}
+                                    let icon = if container.state == "running" {
+                                        IconMoon::Stop
+                                    } else {
+                                        IconMoon::Play
+                                    }.as_str();
+                                    if ui.button(icon).clicked() {
+                                        if container.state != "running" {
+                                            let tx_cloned = self.tx.clone();
+                                            let name = container.name.clone();
+                                            let conn = self.connection.clone().unwrap();
+                                            rt.spawn(async move {
+                                                match DockerContainerPresenter::start_container(&conn, &name).await {
+                                                    Ok(_) => todo!(),
+                                                    Err(err) => {
+                                                        let _ = tx_cloned.send(DockerMessage::Error(err)).await;
+                                                    }
+                                                }
+                                            });
+                                        }
+                                    }
                                     if ui.button(IconMoon::GarbageCan.as_str()).clicked() {}
                                 });
                             });
