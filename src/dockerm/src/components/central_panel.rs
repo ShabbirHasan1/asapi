@@ -8,9 +8,15 @@
 
 use eframe::egui;
 use egui_extras::{Column, TableBuilder};
+use futures_util::StreamExt;
 use tokio::runtime::Runtime;
 
-use crate::{domain::{DockerElementSelection, DockerMessage}, info_table_row, presenter::DockerContainerPresenter, view::DockerView};
+use crate::{
+    domain::{DockerElementSelection, DockerMessage},
+    info_table_row,
+    presenter::DockerContainerPresenter,
+    view::DockerView,
+};
 use common::{icon_moon::IconMoon, I18nDocker};
 
 impl DockerView {
@@ -22,6 +28,7 @@ impl DockerView {
                 }
                 DockerElementSelection::Container => {
                     self.container_info_panel(ui, i18n);
+                    self.container_logs_panel(rt, ui, i18n);
                 }
                 DockerElementSelection::ContainerAll => {
                     self.all_containers_table(rt, ui, i18n);
@@ -32,7 +39,7 @@ impl DockerView {
         });
     }
 
-    fn all_containers_table(&self,  rt: &Runtime, ui: &mut egui::Ui, i18n: &I18nDocker) {
+    fn all_containers_table(&self, rt: &Runtime, ui: &mut egui::Ui, i18n: &I18nDocker) {
         let available_height = ui.available_height();
 
         egui::ScrollArea::both().show(ui, |ui| {
@@ -72,23 +79,65 @@ impl DockerView {
                                         IconMoon::Stop
                                     } else {
                                         IconMoon::Play
-                                    }.as_str();
+                                    }
+                                    .as_str();
                                     if ui.button(icon).clicked() {
+                                        let tx_cloned = self.tx.clone();
+                                        let name = container.name.clone();
+                                        let conn = self.connection.clone().unwrap();
+
                                         if container.state != "running" {
-                                            let tx_cloned = self.tx.clone();
-                                            let name = container.name.clone();
-                                            let conn = self.connection.clone().unwrap();
                                             rt.spawn(async move {
-                                                match DockerContainerPresenter::start_container(&conn, &name).await {
-                                                    Ok(_) => todo!(),
+                                                match DockerContainerPresenter::start_container(
+                                                    &conn, &name,
+                                                )
+                                                .await
+                                                {
+                                                    Ok(_) => {}
                                                     Err(err) => {
-                                                        let _ = tx_cloned.send(DockerMessage::Error(err)).await;
+                                                        let _ = tx_cloned
+                                                            .send(DockerMessage::Error(err))
+                                                            .await;
+                                                    }
+                                                }
+                                            });
+                                        } else if container.state == "running" {
+                                            rt.spawn(async move {
+                                                match DockerContainerPresenter::stop_container(
+                                                    &conn, &name,
+                                                )
+                                                .await
+                                                {
+                                                    Ok(_) => {}
+                                                    Err(err) => {
+                                                        let _ = tx_cloned
+                                                            .send(DockerMessage::Error(err))
+                                                            .await;
                                                     }
                                                 }
                                             });
                                         }
                                     }
-                                    if ui.button(IconMoon::GarbageCan.as_str()).clicked() {}
+                                    if ui.button(IconMoon::GarbageCan.as_str()).clicked() {
+                                        let tx_cloned = self.tx.clone();
+                                        let name = container.name.clone();
+                                        let conn = self.connection.clone().unwrap();
+
+                                        rt.spawn(async move {
+                                            match DockerContainerPresenter::remove_container(
+                                                &conn, &name,
+                                            )
+                                            .await
+                                            {
+                                                Ok(_) => {}
+                                                Err(err) => {
+                                                    let _ = tx_cloned
+                                                        .send(DockerMessage::Error(err))
+                                                        .await;
+                                                }
+                                            }
+                                        });
+                                    }
                                 });
                             });
                             row.col(|ui| {
@@ -110,6 +159,39 @@ impl DockerView {
                     }
                 });
         });
+    }
+
+    fn container_logs_panel(&self, rt: &Runtime, ui: &mut egui::Ui, i18n: &I18nDocker) {
+        let value = true;
+        if ui.selectable_label(value, "Logs").clicked() {
+            log::info!("clicked");
+            // toggle
+            let name = self.state.selected_container_info.name.clone();
+            let conn = self.connection.clone().unwrap();
+
+            rt.spawn(async move {
+                let stream = &mut DockerContainerPresenter::stream_logs(&conn, &name);
+                while let Some(Ok(logs)) = stream.next().await {
+                    log::info!("{logs:?}");
+                }
+                // while let Some(line) = stream.next().await {
+                // match line {
+                // Ok(l) => {
+                // println!("{l:}");
+                // }
+                // Err(e) => {
+                // println!("error {e:?}");
+                // }
+                // }
+                // if let Some(message) = line.stdout.as_deref() {
+                // print!("{}", String::from_utf8_lossy(message));
+                // }
+                // if let Some(message) = line.stderr.as_deref() {
+                // eprint!("{}", String::from_utf8_lossy(message));
+                // }
+                // }
+            });
+        }
     }
 
     fn container_info_panel(&self, ui: &mut egui::Ui, i18n: &I18nDocker) {

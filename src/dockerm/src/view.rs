@@ -70,7 +70,9 @@ impl DockerView {
 
     fn process_message(&mut self, message: DockerMessage) {
         match message {
-            DockerMessage::Error(_) => todo!(),
+            DockerMessage::Error(err) => {
+                log::error!("{err:}");
+            }
             DockerMessage::Loading => {
                 log::info!("Loading");
             }

@@ -12,9 +12,12 @@ use std::sync::{Arc, Mutex};
 use bollard::network::ListNetworksOptions;
 use bollard::secret::{ImageSummary, Network, Volume};
 use bollard::volume::ListVolumesOptions;
+use futures_util::Stream;
 use log;
 
-use bollard::container::{ListContainersOptions, StartContainerOptions};
+use bollard::container::{
+    ListContainersOptions, LogsOptions, RemoveContainerOptions, StartContainerOptions, StopContainerOptions
+};
 use bollard::image::ListImagesOptions;
 use bollard::models::ContainerSummary;
 use bollard::Docker;
@@ -285,5 +288,37 @@ impl DockerContainerPresenter {
         conn.start_container(name, None::<StartContainerOptions<String>>)
             .await
             .map_err(|err| err.to_string())
+    }
+
+    pub async fn stop_container(conn: &Docker, name: &str) -> Result<(), String> {
+        conn.stop_container(name, Some(StopContainerOptions { t: 40 }))
+            .await
+            .map_err(|err| err.to_string())
+    }
+
+    pub async fn remove_container(conn: &Docker, name: &str) -> Result<(), String> {
+        conn.remove_container(
+            name,
+            Some(RemoveContainerOptions {
+                v: false,
+                force: true,
+                link: false,
+            }),
+        )
+        .await
+        .map_err(|err| err.to_string())
+    }
+
+    pub fn stream_logs(conn: &Docker, name: &str) -> impl Stream<Item = Result<bollard::container::LogOutput, bollard::errors::Error>>  {
+        let options = Some(LogsOptions::<String>{
+            stdout: true,
+            stderr: true,
+            follow: true,
+            timestamps: true,
+            ..Default::default()
+        });
+
+        conn.logs(name, options)
+        // docker.logs("hello-world", options);
     }
 }
