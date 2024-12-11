@@ -6,6 +6,7 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
+use bollard::container::LogOutput;
 use eframe::egui;
 use egui_extras::{Column, TableBuilder};
 use futures_util::StreamExt;
@@ -161,41 +162,52 @@ impl DockerView {
         });
     }
 
-    fn container_logs_panel(&self, rt: &Runtime, ui: &mut egui::Ui, i18n: &I18nDocker) {
+    fn container_logs_panel(&mut self, rt: &Runtime, ui: &mut egui::Ui, i18n: &I18nDocker) {
         let value = true;
         if ui.selectable_label(value, "Logs").clicked() {
             log::info!("clicked");
             // toggle
-            let name = self.state.selected_container_info.name.clone();
+            let name = self.state.container.info.name.clone();
             let conn = self.connection.clone().unwrap();
+            let tx = self.tx.clone();
+            self.state.container.logs.clear();
 
             rt.spawn(async move {
                 let stream = &mut DockerContainerPresenter::stream_logs(&conn, &name);
                 while let Some(Ok(logs)) = stream.next().await {
-                    log::info!("{logs:?}");
+                    // log::info!("{logs:?}");
+                    let message = match logs {
+                        LogOutput::StdErr { message } => DockerMessage::LogStdErr(format!(
+                            "{}",
+                            String::from_utf8_lossy(&message)
+                        )),
+                        LogOutput::StdOut { message } => DockerMessage::LogStdErr(format!(
+                            "{}",
+                            String::from_utf8_lossy(&message)
+                        )),
+                        LogOutput::StdIn { message } => DockerMessage::LogStdErr(format!(
+                            "{}",
+                            String::from_utf8_lossy(&message)
+                        )),
+                        LogOutput::Console { message } => DockerMessage::LogStdErr(format!(
+                            "{}",
+                            String::from_utf8_lossy(&message)
+                        )),
+                    };
+                    let _ = tx.send(message).await;
                 }
-                // while let Some(line) = stream.next().await {
-                // match line {
-                // Ok(l) => {
-                // println!("{l:}");
-                // }
-                // Err(e) => {
-                // println!("error {e:?}");
-                // }
-                // }
-                // if let Some(message) = line.stdout.as_deref() {
-                // print!("{}", String::from_utf8_lossy(message));
-                // }
-                // if let Some(message) = line.stderr.as_deref() {
-                // eprint!("{}", String::from_utf8_lossy(message));
-                // }
-                // }
             });
         }
+
+        egui::ScrollArea::vertical().show(ui, |ui| {
+            for log in self.state.container.logs.iter() {
+                ui.label(log);
+            }
+        });
     }
 
     fn container_info_panel(&self, ui: &mut egui::Ui, i18n: &I18nDocker) {
-        let info = &self.state.selected_container_info;
+        let info = &self.state.container.info;
 
         egui::CollapsingHeader::new(format!("{} : {}", i18n.container_info, &info.name))
             .default_open(true)

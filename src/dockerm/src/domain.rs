@@ -8,9 +8,12 @@
 
 use std::collections::HashMap;
 
-use bollard::secret::{
-    BollardDate, ContainerSummary, ContainerSummaryHostConfig, ContainerSummaryNetworkSettings,
-    ImageConfig as BollardImageConfig, MountPoint, Network, NetworkContainer, PeerInfo, Port,
+use bollard::{
+    container::LogOutput,
+    secret::{
+        BollardDate, ContainerSummary, ContainerSummaryHostConfig, ContainerSummaryNetworkSettings,
+        ImageConfig as BollardImageConfig, MountPoint, Network, NetworkContainer, PeerInfo, Port,
+    },
 };
 use serde::{Deserialize, Serialize};
 
@@ -28,7 +31,13 @@ pub struct DockerLocalState {
     pub networks: Arc<Mutex<Vec<NetworkInfo>>>,
     pub current_selection: Option<DockerSelection>,
     pub selected_image_info: ImageInfo,
-    pub selected_container_info: ContainerInfo,
+    pub container: DockerContainerState,
+}
+
+#[derive(Default)]
+pub struct DockerContainerState {
+    pub info: ContainerInfo,
+    pub logs: Vec<String>,
 }
 
 #[derive(Default, Serialize, Clone, Debug, Deserialize)]
@@ -48,6 +57,10 @@ pub enum DockerMessage {
     Error(String),
     Loading,
     Select((usize, DockerInfo)),
+    LogStdIn(String),
+    LogStdOut(String),
+    LogStdErr(String),
+    LogConsole(String),
 }
 
 #[derive(Debug)]

@@ -13,7 +13,8 @@ use bollard::Docker;
 use common::I18nDocker;
 
 use crate::domain::{
-    DockerAppState, DockerElementSelection, DockerInfo, DockerLocalState, DockerMessage, DockerSelection
+    DockerAppState, DockerElementSelection, DockerInfo, DockerLocalState, DockerMessage,
+    DockerSelection,
 };
 
 pub struct DockerView {
@@ -47,6 +48,7 @@ impl DockerView {
         // Preparación de cada ciclo
         // =======================================
         while let Ok(message) = self.rx.try_recv() {
+            log::info!("New message");
             self.process_message(message);
         }
 
@@ -85,7 +87,7 @@ impl DockerView {
                     });
                 }
                 DockerInfo::Container(container_info) => {
-                    self.state.selected_container_info = container_info;
+                    self.state.container.info = container_info;
                     self.state.current_selection = Some(DockerSelection {
                         selected_idx: info.0,
                         selected_view: DockerElementSelection::Container,
@@ -94,10 +96,22 @@ impl DockerView {
                 DockerInfo::ContainerAll => {
                     self.state.current_selection = Some(DockerSelection {
                         selected_idx: info.0,
-                        selected_view: DockerElementSelection::ContainerAll
+                        selected_view: DockerElementSelection::ContainerAll,
                     })
                 }
             },
+            DockerMessage::LogStdIn(msg) => {
+                self.state.container.logs.push(msg);
+            }
+            DockerMessage::LogStdOut(msg) => {
+                self.state.container.logs.push(msg);
+            }
+            DockerMessage::LogStdErr(message) => {
+                self.state.container.logs.push(message);
+            }
+            DockerMessage::LogConsole(message) => {
+                self.state.container.logs.push(message);
+            }
         }
     }
 }
