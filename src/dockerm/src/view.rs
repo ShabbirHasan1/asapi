@@ -48,7 +48,6 @@ impl DockerView {
         // Preparación de cada ciclo
         // =======================================
         while let Ok(message) = self.rx.try_recv() {
-            log::info!("New message");
             self.process_message(message);
         }
 

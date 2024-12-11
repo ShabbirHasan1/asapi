@@ -192,7 +192,6 @@ fn container_item(
                 )
                 .clicked()
             {
-                let dc = docker.to_owned();
                 let tx_cloned = tx.clone();
                 let cont_cloned = container.clone();
 

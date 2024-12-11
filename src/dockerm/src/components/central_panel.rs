@@ -199,10 +199,25 @@ impl DockerView {
             });
         }
 
-        egui::ScrollArea::vertical().show(ui, |ui| {
-            for log in self.state.container.logs.iter() {
-                ui.label(log);
-            }
+        egui::ScrollArea::both().show(ui, |ui| {
+            // TODO: Esta tabla puede almanacenarse de inicio y no tener que crearla cada vez?
+            let table = TableBuilder::new(ui)
+                .striped(true)
+                .resizable(false)
+                .cell_layout(egui::Layout::left_to_right(egui::Align::Center))
+                .column(Column::remainder())
+                .min_scrolled_height(0.0)
+                .max_scroll_height(f32::INFINITY) ;
+
+            table.body(|mut body| {
+                for log in self.state.container.logs.iter() {
+                    body.row(32.0, |mut row| {
+                        row.col(|ui| {
+                            ui.label(log);
+                        });
+                    });
+                }
+            });
         });
     }
 
