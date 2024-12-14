@@ -1,5 +1,5 @@
 use aes_gcm::aead::{Aead, KeyInit};
-use aes_gcm::{Aes256Gcm, Key, Nonce};
+use aes_gcm::{Aes128Gcm, Aes256Gcm, Key, Nonce};
 use hex::{self};
 use k256::ecdsa::{SigningKey, VerifyingKey};
 use k256::elliptic_curve::generic_array::GenericArray;
@@ -108,8 +108,8 @@ fn decrypt(shared_key_hex: &str, encrypted: &EncryptedLicense) -> Result<License
     let mut ciphertext_with_tag = encrypted_data;
     ciphertext_with_tag.extend_from_slice(&tag);
 
-    let key = Key::<Aes256Gcm>::from_slice(&shared_key[0..32]);
-    let cipher = Aes256Gcm::new(key);
+    let key = Key::<Aes128Gcm>::from_slice(&shared_key[0..16]);
+    let cipher = Aes128Gcm::new(key);
     let nonce = Nonce::from_slice(&iv);
 
     match cipher.decrypt(nonce, ciphertext_with_tag.as_ref()) {
@@ -193,8 +193,8 @@ pub fn get_license_info_for_device_registration() -> Result<DeviceInfo, String> 
 
 pub fn private_check_license(encrypted: &EncryptedSignedLicense, salt: &str, seed: &str) -> bool {
     // Creamos al vuelo claves y derivada.
-    let (host, mac, platform) = device_info();
-    log::info!("{host:}, {mac:}, {platform:}");
+    let (host, extra, platform) = device_info();
+    log::info!("{host:}, {extra:}, {platform:}");
     // Calculamos compartida o creamos una errónea que fallará la primera comprobación.
     // let (client_public_key, client_private_key) = generate_key_pair_from_seed(seed, salt.as_bytes()).unwrap();
 
@@ -208,6 +208,8 @@ pub fn private_check_license(encrypted: &EncryptedSignedLicense, salt: &str, see
     if !verify_signature(&encrypted.license, &encrypted.extra.1, salt, &shared_key) {
         return false;
     }
+
+    log::info!("encrypted: ${encrypted:?}");
 
     match decrypt(&shared_key, &encrypted.license) {
         Ok(license) => {

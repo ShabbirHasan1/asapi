@@ -69,14 +69,14 @@ pub fn check_license_file(license_fname: &str) -> LicenseResult {
 
             let is_valid = json_data
                 .and_then(|data| {
-                    let (host, mac, platform) = device_info();
+                    let (host, extra, platform) = device_info();
                     let encrypted_license =
                         serde_json::from_str::<DataEncryptedSignedLicense>(&data)?;
 
                     let is_valid = private_check_license(
                         &encrypted_license.data,
                         "saltggg198sd7urf",
-                        &format!("{host}__{mac}__{platform}"),
+                        &format!("{host}__{extra}__{platform}"),
                     );
 
                     return Ok(is_valid);
@@ -106,7 +106,7 @@ pub async fn post_license(license: LicenseActivationInfo) -> Option<String> {
 
     let result = api_request(
         httpm::methods::HttpMethod::Post,
-        "https://asapi.qoback.es/api/v1/license/create-device-license",
+        "https://asapi.qoback.es/api/v1/check-license/create-device-license",
         &body,
         &vec![("id".to_string(), license.device_info.2)],
     )
