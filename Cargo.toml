@@ -62,6 +62,7 @@ egui = "0.29.1"
 egui-file-dialog = "0.7.0"
 egui_extras = "0.29.1"
 egui_json_tree = "0.7.0"
+egui_plot = "0.29.0"
 env_logger = { version = "0.11.3", default-features = false }
 log = "0.4.21"
 serde = { version = "1.0.197", default-features = false, features = ["derive"]}

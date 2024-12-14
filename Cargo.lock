@@ -1041,6 +1041,7 @@ dependencies = [
  "egui-file-dialog",
  "egui_extras",
  "egui_json_tree",
+ "egui_plot",
  "futures-util",
  "log",
  "regex",

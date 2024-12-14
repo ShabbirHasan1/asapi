@@ -24,6 +24,8 @@ pub struct I18nDocker {
     pub container_info: String,
     pub parent: String,
     pub created: String,
+    pub logs: String,
+    pub stats: String
 }
 
 impl I18nDocker {
@@ -45,6 +47,8 @@ impl I18nDocker {
             container_info: String::from("Container Information"),
             parent: String::from("Parent"),
             created: String::from("Creado"),
+            logs: String::from("Logs"),
+            stats: String::from("Stats"),
         }
     }
 
@@ -66,6 +70,8 @@ impl I18nDocker {
             container_info: String::from("Información de Contenedor"),
             parent: String::from("Padre"),
             created: String::from("Creado"),
+            logs: String::from("Logs"),
+            stats: String::from("Estadísticas"),
         }
     }
 }

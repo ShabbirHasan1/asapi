@@ -7,19 +7,24 @@
 // -------------------------------------------------------------------------
 
 use eframe::egui;
+use futures_util::StreamExt;
 use tokio::runtime::Runtime;
 
 use bollard::Docker;
 use common::I18nDocker;
 
-use crate::domain::{
-    DockerAppState, DockerElementSelection, DockerInfo, DockerLocalState, DockerMessage,
-    DockerSelection,
+use crate::{
+    domain::{
+        DockerAppState, DockerContainerStats, DockerElementSelection, DockerInfo, DockerLocalState,
+        DockerMessage, DockerSelection, DockerViewMode,
+    },
+    presenter::DockerContainerPresenter,
 };
 
 pub struct DockerView {
     pub state: DockerLocalState,
     pub connection: Option<Docker>,
+    pub view_mode: DockerViewMode,
     pub tx: tokio::sync::mpsc::Sender<DockerMessage>,
     rx: tokio::sync::mpsc::Receiver<DockerMessage>,
 }
@@ -31,6 +36,7 @@ impl Default for DockerView {
         Self {
             state: Default::default(),
             connection: Default::default(),
+            view_mode: Default::default(),
             tx,
             rx,
         }
@@ -48,13 +54,16 @@ impl DockerView {
         // Preparación de cada ciclo
         // =======================================
         while let Ok(message) = self.rx.try_recv() {
-            self.process_message(message);
+            self.process_message(rt, message);
+            ctx.request_repaint();
+        }
+        if self.state.container.show_stats {
+            ctx.request_repaint();
         }
 
         // =======================================
         // Panel Lateral
         // =======================================
-
         if app_st.show_sidebar {
             self.show_sidenav(rt, ctx, i18n);
         }
@@ -62,14 +71,12 @@ impl DockerView {
         // =======================================
         // Panel Central
         // =======================================
-        if self.state.current_selection.is_none() {
-            return;
+        if self.state.current_selection.is_some() {
+            self.show_central_panel(rt, ctx, i18n);
         }
-
-        self.show_central_panel(rt, ctx, i18n);
     }
 
-    fn process_message(&mut self, message: DockerMessage) {
+    fn process_message(&mut self, rt: &Runtime, message: DockerMessage) {
         match message {
             DockerMessage::Error(err) => {
                 log::error!("{err:}");
@@ -110,6 +117,59 @@ impl DockerView {
             }
             DockerMessage::LogConsole(message) => {
                 self.state.container.logs.push(message);
+            }
+            DockerMessage::StatsReady => {
+                let names = self
+                    .state
+                    .containers
+                    .lock()
+                    .unwrap()
+                    .iter()
+                    .map(|cont| cont.name.clone())
+                    .collect::<Vec<_>>();
+
+                for name in names {
+                    log::info!("nombre: {name:}");
+                    let conn = self.connection.clone().unwrap();
+                    self.state.container.logs.clear();
+                    let tx = self.tx.clone();
+
+                    rt.spawn(async move {
+                        let stream = &mut DockerContainerPresenter::stream_stats(&conn, &name);
+                        while let Some(Ok(stats)) = stream.next().await {
+                            stats.blkio_stats
+                            let msg = DockerMessage::Stats((
+                                stats.cpu_stats,
+                                stats.memory_stats,
+                                stats.storage_stats,
+                                stats.read,
+                            ));
+                            let _ = tx.send(msg).await;
+                        }
+                    });
+                }
+            }
+            DockerMessage::Stats(msg) => {
+                let (cpu, mem, disk, date) = msg;
+                let name = &self.state.container.info.name;
+                match self.state.container.stats.get_mut(name) {
+                    None => {
+                        self.state.container.stats.insert(
+                            name.to_owned(),
+                            DockerContainerStats {
+                                cpu: vec![cpu],
+                                mem: vec![mem],
+                                disk: vec![disk],
+                            },
+                        );
+                    }
+                    Some(st) => {
+                        log::info!("{:}", date);
+                        st.cpu.push(cpu);
+                        st.mem.push(mem);
+                        st.disk.push(disk);
+                    }
+                }
             }
         }
     }

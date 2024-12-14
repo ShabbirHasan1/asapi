@@ -12,14 +12,15 @@ use bollard::secret::ImageSummary;
 use bollard::Docker;
 use components::empty_button_with_gray_stroke;
 use eframe::egui;
-use egui::{Color32, Stroke, Vec2};
+use egui::{Color32, Stroke};
+use futures_util::StreamExt;
 use tokio::{runtime::Runtime, sync::mpsc};
 
 use common::I18nDocker;
 use components::widgets::wrap_dark_gray_text;
 
-use crate::domain::{ContainerInfo, DockerInfo, DockerMessage};
-use crate::presenter::{self, DockerImagePresenter, DockerPresenter};
+use crate::domain::{ContainerInfo, DockerContainerStats, DockerInfo, DockerMessage};
+use crate::presenter::{self, DockerContainerPresenter, DockerImagePresenter, DockerPresenter};
 use crate::view::DockerView;
 use crate::{network_item, volume_item};
 
@@ -27,7 +28,7 @@ impl DockerView {
     pub fn show_sidenav(&mut self, rt: &Runtime, ctx: &egui::Context, i18n: &I18nDocker) {
         egui::SidePanel::left("docker_sidenav_panel").show(ctx, |ui| {
             egui::ScrollArea::vertical().show(ui, |ui| {
-                if ui.button(&i18n.btn_connect).clicked() {
+                if self.connection.is_none() && ui.button(&i18n.btn_connect).clicked() {
                     let data_images = Arc::clone(&self.state.images);
                     let data_containers = Arc::clone(&self.state.containers);
                     let data_networks = Arc::clone(&self.state.networks);
@@ -44,6 +45,7 @@ impl DockerView {
 
                     let conn = self.connection.clone();
 
+                    let tx = self.tx.clone();
                     rt.spawn(async move {
                         DockerPresenter::populate_state(
                             conn,
@@ -52,7 +54,8 @@ impl DockerView {
                             data_networks,
                             data_volumes,
                         )
-                        .await;
+                            .await;
+                        let _ = tx.send(DockerMessage::StatsReady).await;
                     });
                 }
 
@@ -72,11 +75,15 @@ impl DockerView {
                     egui::CollapsingHeader::new(egui::RichText::new(&i18n.containers))
                         .show_background(true)
                         .show(ui, |ui| {
-
                             if empty_button_with_gray_stroke!(ui, "Show All").clicked() {
                                 let tx_cloned = tx.clone();
                                 rt.spawn(async move {
-                                    let _ = tx_cloned.send(DockerMessage::Select((usize::MAX, DockerInfo::ContainerAll))).await;
+                                    let _ = tx_cloned
+                                        .send(DockerMessage::Select((
+                                            usize::MAX,
+                                            DockerInfo::ContainerAll,
+                                        )))
+                                        .await;
                                 });
                             }
 
@@ -160,15 +167,13 @@ fn image_item(
     }
 }
 
-
-
 #[inline(always)]
 fn container_item(
     ui: &mut egui::Ui,
     position: usize,
     container: &ContainerInfo,
     i18n: &I18nDocker,
-    docker: &Docker,
+    _docker: &Docker,
     rt: &Runtime,
     tx: &mpsc::Sender<DockerMessage>,
 ) {

@@ -16,8 +16,10 @@ use futures_util::Stream;
 use log;
 
 use bollard::container::{
-    ListContainersOptions, LogsOptions, RemoveContainerOptions, StartContainerOptions, StopContainerOptions
+    ListContainersOptions, LogOutput, LogsOptions, RemoveContainerOptions, StartContainerOptions,
+    Stats, StatsOptions, StopContainerOptions,
 };
+use bollard::errors::Error as BollardError;
 use bollard::image::ListImagesOptions;
 use bollard::models::ContainerSummary;
 use bollard::Docker;
@@ -200,13 +202,12 @@ impl DockerPresenter {
             Ok(docker_volumes) => {
                 let mut volumes = data.lock().unwrap();
                 for vlm in docker_volumes {
-                    log::info!("===========================");
-                    log::info!("{:?}", vlm.usage_data);
-                    log::info!("{:?}", vlm.options);
-                    log::info!("{:?}", vlm.labels);
-                    log::info!("{:?}", vlm.status);
-                    log::info!("{:?}", vlm.usage_data);
-
+                    // log::info!("===========================");
+                    // log::info!("{:?}", vlm.usage_data);
+                    // log::info!("{:?}", vlm.options);
+                    // log::info!("{:?}", vlm.labels);
+                    // log::info!("{:?}", vlm.status);
+                    // log::info!("{:?}", vlm.usage_data);
                     volumes.push(vlm);
                 }
             }
@@ -309,8 +310,11 @@ impl DockerContainerPresenter {
         .map_err(|err| err.to_string())
     }
 
-    pub fn stream_logs(conn: &Docker, name: &str) -> impl Stream<Item = Result<bollard::container::LogOutput, bollard::errors::Error>>  {
-        let options = Some(LogsOptions::<String>{
+    pub fn stream_logs(
+        conn: &Docker,
+        name: &str,
+    ) -> impl Stream<Item = Result<LogOutput, BollardError>> {
+        let options = Some(LogsOptions::<String> {
             stdout: true,
             stderr: true,
             follow: true,
@@ -320,5 +324,17 @@ impl DockerContainerPresenter {
 
         conn.logs(name, options)
         // docker.logs("hello-world", options);
+    }
+
+    pub fn stream_stats(
+        conn: &Docker,
+        container: &str,
+    ) -> impl Stream<Item = Result<Stats, BollardError>> {
+        let stats_options = StatsOptions {
+            stream: true,
+            one_shot: false,
+        };
+        let options = Some(stats_options);
+        conn.stats(container, options)
     }
 }

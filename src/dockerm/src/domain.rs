@@ -9,7 +9,7 @@
 use std::collections::HashMap;
 
 use bollard::{
-    container::LogOutput,
+    container::{CPUStats, LogOutput, MemoryStats, MemoryStatsStats, StorageStats},
     secret::{
         BollardDate, ContainerSummary, ContainerSummaryHostConfig, ContainerSummaryNetworkSettings,
         ImageConfig as BollardImageConfig, MountPoint, Network, NetworkContainer, PeerInfo, Port,
@@ -23,6 +23,14 @@ use bollard::secret::{
     DistributionInspect, HistoryResponseItem, ImageInspect, ImageSummary, Volume,
 };
 
+
+#[derive(Default, PartialEq)]
+pub enum DockerViewMode {
+    #[default]
+    Default,
+    Chart,
+}
+
 #[derive(Default)]
 pub struct DockerLocalState {
     pub images: Arc<Mutex<Vec<ImageSummary>>>,
@@ -34,10 +42,19 @@ pub struct DockerLocalState {
     pub container: DockerContainerState,
 }
 
+#[derive(Default, Debug)]
+pub struct DockerContainerStats {
+    pub cpu: Vec<CPUStats>,
+    pub mem: Vec<MemoryStats>,
+    pub disk: Vec<StorageStats>,
+}
+
 #[derive(Default)]
 pub struct DockerContainerState {
     pub info: ContainerInfo,
     pub logs: Vec<String>,
+    pub show_stats: bool,
+    pub stats: HashMap<String, DockerContainerStats>,
 }
 
 #[derive(Default, Serialize, Clone, Debug, Deserialize)]
@@ -61,6 +78,8 @@ pub enum DockerMessage {
     LogStdOut(String),
     LogStdErr(String),
     LogConsole(String),
+    StatsReady, // podemos leer estadísticas porque ya tenemos nombres de contenedores.
+    Stats((CPUStats, MemoryStats, StorageStats, chrono::DateTime<chrono::Utc>)),
 }
 
 #[derive(Debug)]

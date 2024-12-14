@@ -15,10 +15,11 @@ tokio-util = { workspace = true }
 log = { workspace = true }
 futures = { workspace = true }
 egui-file-dialog = { workspace = true }
+egui_plot = { workspace = true }
 
 common = { path = "../common" }
 components = { path = "../components" }
 
-egui_plot = "0.29.0"
+
 reqwest = { version = "0.12.5", features = ["json", "multipart", "stream", "default-tls"], default-features = false }
 mime_guess = { version = "2.0.4", default-features = false }
