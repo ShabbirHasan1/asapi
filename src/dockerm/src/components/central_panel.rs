@@ -6,6 +6,8 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
+use std::{collections::HashMap, ops::RangeInclusive};
+
 use bollard::container::LogOutput;
 use eframe::egui;
 use egui::Color32;
@@ -220,27 +222,77 @@ impl DockerView {
             }
 
             let stats = statsopt.unwrap();
-            let points: PlotPoints = stats
+            let cpu_total_usage: PlotPoints = stats
                 .cpu
                 .iter()
-                .zip(stats.dates.into_iter())
-                .map(|(c, d)| [d.to_rfc2822(), c.cpu_usage.total_usage as f64])
+                .enumerate()
+                .map(|(idx, c)| [idx as f64, c.cpu_usage.total_usage as f64])
                 .collect();
-            // log::info!("{:?}", points.points());
-            let mut plot = Plot::new("docker_cpu_stats")
+            let cpu_line = Line::new(cpu_total_usage)
+                .color(Color32::from_rgb(100, 200, 100))
+                .style(LineStyle::Solid)
+                .name("cpu total usage");
+
+            let labels: HashMap<usize, String> = stats
+                .dates
+                .iter()
+                .enumerate()
+                .map(|(i, &label)| (i, label.to_rfc2822()))
+                .collect();
+
+            let mem_total_usage: PlotPoints = stats
+                .mem
+                .iter()
+                .enumerate()
+                .map(|(idx, c)| [idx as f64, c.usage.unwrap_or_default() as f64])
+                .collect();
+            let mem_line = Line::new(mem_total_usage)
+                .color(Color32::from_rgb(200, 0, 100))
+                .style(LineStyle::Solid)
+                .name("mem total usage");
+
+            let len = labels.len();
+
+            let cpu_plot = Plot::new("docker_cpu_stats")
                 .legend(Legend::default())
                 .y_axis_min_width(12.0 * 4 as f32)
                 .show_axes(true)
-                .show_grid(true);
-            let line = Line::new(points)
-                .color(Color32::from_rgb(100, 200, 100))
-                .style(LineStyle::Solid)
-                .name("circle");
+                .show_grid(true)
+                .x_axis_formatter({
+                    |grid_mark, _range: &RangeInclusive<f64>| {
+                        let idx = grid_mark.value as usize;
+                        if idx < len {
+                            labels[&idx].to_string()
+                        } else {
+                            "".to_string()
+                        }
+                    }
+                });
 
-            plot = plot.coordinates_formatter(Corner::LeftBottom, CoordinatesFormatter::default());
-            let _ = plot
+            let mem_plot = Plot::new("docker_mem_stats")
+                .legend(Legend::default())
+                .y_axis_min_width(12.0 * 4 as f32)
+                .show_axes(true)
+                .show_grid(true)
+                .x_axis_formatter({
+                    |grid_mark, _range: &RangeInclusive<f64>| {
+                        let idx = grid_mark.value as usize;
+                        if idx < len {
+                            labels[&idx].to_string()
+                        } else {
+                            "".to_string()
+                        }
+                    }
+                });
+
+            let _ = cpu_plot
                 .show(ui, |plot_ui| {
-                    plot_ui.line(line);
+                    plot_ui.line(cpu_line);
+                })
+                .response;
+            let _ = mem_plot
+                .show(ui, |plot_ui| {
+                    plot_ui.line(mem_line);
                 })
                 .response;
         } else {
@@ -340,18 +392,17 @@ impl DockerView {
     }
 }
 
-
 // fn main() {
 //     // Example data
 //     let labels = vec!["A", "B", "C", "D"];
 //     let values = vec![10.0, 20.0, 30.0, 40.0];
 
 //     // Create a mapping from labels to indices
-//     let label_to_index: std::collections::HashMap<&str, f64> = 
+//     let label_to_index: std::collections::HashMap<&str, f64> =
 //         labels.iter().enumerate().map(|(i, &label)| (label, i as f64)).collect();
 
 //     // Convert string labels to indices for plotting
-//     let plot_data: Vec<(f64, f64)> = 
+//     let plot_data: Vec<(f64, f64)> =
 //         labels.iter().zip(&values).map(|(&label, &value)| (label_to_index[label], value)).collect();
 
 //     // Create a plot with custom axis configuration

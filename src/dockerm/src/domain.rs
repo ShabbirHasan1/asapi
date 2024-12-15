@@ -58,6 +58,7 @@ pub struct DockerLocalState {
     pub container: DockerContainerState,
 }
 
+
 #[derive(Default, Debug)]
 pub struct DockerContainerStats {
     pub dates: Vec<DateTime<Utc>>,
