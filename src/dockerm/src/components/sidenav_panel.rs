@@ -13,14 +13,13 @@ use bollard::Docker;
 use components::empty_button_with_gray_stroke;
 use eframe::egui;
 use egui::{Color32, Stroke};
-use futures_util::StreamExt;
 use tokio::{runtime::Runtime, sync::mpsc};
 
 use common::I18nDocker;
 use components::widgets::wrap_dark_gray_text;
 
-use crate::domain::{ContainerInfo, DockerContainerStats, DockerInfo, DockerMessage};
-use crate::presenter::{self, DockerContainerPresenter, DockerImagePresenter, DockerPresenter};
+use crate::domain::{ContainerInfo, DockerInfo, DockerMessage};
+use crate::presenter::{self, DockerImagePresenter, DockerPresenter};
 use crate::view::DockerView;
 use crate::{network_item, volume_item};
 
@@ -54,7 +53,7 @@ impl DockerView {
                             data_networks,
                             data_volumes,
                         )
-                            .await;
+                        .await;
                         let _ = tx.send(DockerMessage::StatsReady).await;
                     });
                 }

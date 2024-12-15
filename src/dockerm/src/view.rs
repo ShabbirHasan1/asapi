@@ -6,22 +6,22 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
+use bollard::Docker;
+use common::I18nDocker;
 use eframe::egui;
 use futures_util::StreamExt;
 use tokio::runtime::Runtime;
 
-use bollard::Docker;
-use common::I18nDocker;
-
 use crate::{
     domain::{
-        DockerAppState, DockerContainerStats, DockerElementSelection, DockerInfo, DockerLocalState,
-        DockerMessage, DockerSelection, DockerViewMode,
+        DockerAppState, DockerContainerStats, DockerDefaults, DockerElementSelection, DockerInfo,
+        DockerLocalState, DockerMessage, DockerSelection, DockerViewMode,
     },
     presenter::DockerContainerPresenter,
 };
 
 pub struct DockerView {
+    pub defaults: DockerDefaults,
     pub state: DockerLocalState,
     pub connection: Option<Docker>,
     pub view_mode: DockerViewMode,
@@ -34,6 +34,7 @@ impl Default for DockerView {
         let (tx, rx) = tokio::sync::mpsc::channel(8);
 
         Self {
+            defaults: Default::default(),
             state: Default::default(),
             connection: Default::default(),
             view_mode: Default::default(),
@@ -128,6 +129,8 @@ impl DockerView {
                     .map(|cont| cont.name.clone())
                     .collect::<Vec<_>>();
 
+                let empty_dt = self.defaults.empty_dt.clone();
+
                 for name in names {
                     log::info!("nombre: {name:}");
                     let conn = self.connection.clone().unwrap();
@@ -137,14 +140,15 @@ impl DockerView {
                     rt.spawn(async move {
                         let stream = &mut DockerContainerPresenter::stream_stats(&conn, &name);
                         while let Some(Ok(stats)) = stream.next().await {
-                            stats.blkio_stats
-                            let msg = DockerMessage::Stats((
-                                stats.cpu_stats,
-                                stats.memory_stats,
-                                stats.storage_stats,
-                                stats.read,
-                            ));
-                            let _ = tx.send(msg).await;
+                            if stats.read != empty_dt {
+                                let msg = DockerMessage::Stats((
+                                    stats.cpu_stats,
+                                    stats.memory_stats,
+                                    stats.storage_stats,
+                                    stats.read,
+                                ));
+                                let _ = tx.send(msg).await;
+                            }
                         }
                     });
                 }
@@ -157,6 +161,7 @@ impl DockerView {
                         self.state.container.stats.insert(
                             name.to_owned(),
                             DockerContainerStats {
+                                dates: vec![date],
                                 cpu: vec![cpu],
                                 mem: vec![mem],
                                 disk: vec![disk],
@@ -164,7 +169,8 @@ impl DockerView {
                         );
                     }
                     Some(st) => {
-                        log::info!("{:}", date);
+                        log::info!("{date:}");
+                        st.dates.push(date);
                         st.cpu.push(cpu);
                         st.mem.push(mem);
                         st.disk.push(disk);

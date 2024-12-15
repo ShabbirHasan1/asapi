@@ -1,5 +1,5 @@
 use aes_gcm::aead::{Aead, KeyInit};
-use aes_gcm::{Aes128Gcm, Aes256Gcm, Key, Nonce};
+use aes_gcm::{Aes128Gcm, Key, Nonce};
 use hex::{self};
 use k256::ecdsa::{SigningKey, VerifyingKey};
 use k256::elliptic_curve::generic_array::GenericArray;

@@ -212,7 +212,38 @@ impl DockerView {
             }
         });
 
-        if !self.state.container.show_stats {
+        if self.state.container.show_stats {
+            let selected_container = self.state.container.info.name.clone();
+            let statsopt = self.state.container.stats.get(&selected_container);
+            if statsopt.is_none() {
+                return;
+            }
+
+            let stats = statsopt.unwrap();
+            let points: PlotPoints = stats
+                .cpu
+                .iter()
+                .zip(stats.dates.into_iter())
+                .map(|(c, d)| [d.to_rfc2822(), c.cpu_usage.total_usage as f64])
+                .collect();
+            // log::info!("{:?}", points.points());
+            let mut plot = Plot::new("docker_cpu_stats")
+                .legend(Legend::default())
+                .y_axis_min_width(12.0 * 4 as f32)
+                .show_axes(true)
+                .show_grid(true);
+            let line = Line::new(points)
+                .color(Color32::from_rgb(100, 200, 100))
+                .style(LineStyle::Solid)
+                .name("circle");
+
+            plot = plot.coordinates_formatter(Corner::LeftBottom, CoordinatesFormatter::default());
+            let _ = plot
+                .show(ui, |plot_ui| {
+                    plot_ui.line(line);
+                })
+                .response;
+        } else {
             egui::ScrollArea::both().show(ui, |ui| {
                 // TODO: Esta tabla puede almanacenarse de inicio y no tener que crearla cada vez?
                 let table = TableBuilder::new(ui)
@@ -233,39 +264,6 @@ impl DockerView {
                     }
                 });
             });
-        } else {
-            let selected_container = self.state.container.info.name.clone();
-            let statsopt = self.state.container.stats.get(&selected_container);
-            if statsopt.is_none() {
-                return;
-            }
-            let stats = statsopt.unwrap();
-            let points: PlotPoints = stats
-                .cpu
-                .iter()
-                .enumerate()
-                .map(|(idx, el)| {
-                    [
-                        idx as f64, // r * t.cos() + self.circle_center.x as f64,
-                        el.cpu_usage.total_usage as f64,
-                    ]
-                })
-                .collect();
-            // log::info!("{:?}", points.points());
-            let mut plot = Plot::new("lines_demo")
-                .legend(Legend::default())
-                .y_axis_min_width(12.0 * 4 as f32)
-                .show_axes(true)
-                .show_grid(true);
-            let line = Line::new(points)
-                .color(Color32::from_rgb(100, 200, 100))
-                .style(LineStyle::Solid)
-                .name("circle");
-
-            plot = plot.coordinates_formatter(Corner::LeftBottom, CoordinatesFormatter::default());
-            let _ = plot.show(ui, |plot_ui| {
-                plot_ui.line(line);
-            }).response;
         }
     }
 
@@ -341,3 +339,41 @@ impl DockerView {
         });
     }
 }
+
+
+// fn main() {
+//     // Example data
+//     let labels = vec!["A", "B", "C", "D"];
+//     let values = vec![10.0, 20.0, 30.0, 40.0];
+
+//     // Create a mapping from labels to indices
+//     let label_to_index: std::collections::HashMap<&str, f64> = 
+//         labels.iter().enumerate().map(|(i, &label)| (label, i as f64)).collect();
+
+//     // Convert string labels to indices for plotting
+//     let plot_data: Vec<(f64, f64)> = 
+//         labels.iter().zip(&values).map(|(&label, &value)| (label_to_index[label], value)).collect();
+
+//     // Create a plot with custom axis configuration
+//     let mut plot = Plot::new("string_plot")
+//         .data_label("Values")
+//         .x_axis_formatter(move |v| labels[v as usize].to_string());
+
+//     // Add data to the plot
+//     for (label, value) in plot_data.iter() {
+//         plot = plot.add(PlotLine::new(vec![(*label, *value)]));
+//     }
+
+//     // Use egui to create a window and display the plot
+//     let mut app = App { plot };
+//     eframe::run_simple(
+//         "String X-Axis Plot",
+//         Default::default(),
+//         move |ctx: &Context, _frame: &mut eframe::Frame| {
+//             CentralPanel::default().show(ctx, |ui| {
+//                 ui.heading("String X-Axis Plot Example");
+//                 ui.add(app.plot);
+//             });
+//         },
+//     );
+// }

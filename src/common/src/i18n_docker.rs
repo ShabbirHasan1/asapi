@@ -25,7 +25,7 @@ pub struct I18nDocker {
     pub parent: String,
     pub created: String,
     pub logs: String,
-    pub stats: String
+    pub stats: String,
 }
 
 impl I18nDocker {

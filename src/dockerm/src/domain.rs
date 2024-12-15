@@ -9,12 +9,13 @@
 use std::collections::HashMap;
 
 use bollard::{
-    container::{CPUStats, LogOutput, MemoryStats, MemoryStatsStats, StorageStats},
+    container::{CPUStats, MemoryStats, StorageStats},
     secret::{
         BollardDate, ContainerSummary, ContainerSummaryHostConfig, ContainerSummaryNetworkSettings,
         ImageConfig as BollardImageConfig, MountPoint, Network, NetworkContainer, PeerInfo, Port,
     },
 };
+use chrono::{DateTime, NaiveDate, Utc};
 use serde::{Deserialize, Serialize};
 
 use std::sync::{Arc, Mutex};
@@ -23,12 +24,27 @@ use bollard::secret::{
     DistributionInspect, HistoryResponseItem, ImageInspect, ImageSummary, Volume,
 };
 
-
 #[derive(Default, PartialEq)]
 pub enum DockerViewMode {
     #[default]
     Default,
     Chart,
+}
+
+// Guardo valores que hay que implementar cada iteración iguales
+pub struct DockerDefaults {
+    pub empty_dt: DateTime<Utc>,
+}
+
+impl Default for DockerDefaults {
+    fn default() -> Self {
+        let and_hms_opt = NaiveDate::from_ymd_opt(1, 1, 1)
+            .unwrap()
+            .and_hms_opt(0, 0, 0);
+        Self {
+            empty_dt: DateTime::<Utc>::from_naive_utc_and_offset(and_hms_opt.unwrap(), Utc),
+        }
+    }
 }
 
 #[derive(Default)]
@@ -44,6 +60,7 @@ pub struct DockerLocalState {
 
 #[derive(Default, Debug)]
 pub struct DockerContainerStats {
+    pub dates: Vec<DateTime<Utc>>,
     pub cpu: Vec<CPUStats>,
     pub mem: Vec<MemoryStats>,
     pub disk: Vec<StorageStats>,
@@ -79,7 +96,14 @@ pub enum DockerMessage {
     LogStdErr(String),
     LogConsole(String),
     StatsReady, // podemos leer estadísticas porque ya tenemos nombres de contenedores.
-    Stats((CPUStats, MemoryStats, StorageStats, chrono::DateTime<chrono::Utc>)),
+    Stats(
+        (
+            CPUStats,
+            MemoryStats,
+            StorageStats,
+            chrono::DateTime<chrono::Utc>,
+        ),
+    ),
 }
 
 #[derive(Debug)]
