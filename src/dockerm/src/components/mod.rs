@@ -6,7 +6,7 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
+pub mod central_panel;
+pub mod image_details;
 pub mod sidenav_panel;
 pub mod widget_macros;
-pub mod image_details;
-pub mod central_panel;

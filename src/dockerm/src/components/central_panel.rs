@@ -10,7 +10,7 @@ use std::{collections::HashMap, ops::RangeInclusive};
 
 use bollard::container::LogOutput;
 use eframe::egui;
-use egui::Color32;
+use egui::{Color32, Grid};
 use egui_extras::{Column, TableBuilder};
 use egui_plot::{CoordinatesFormatter, Corner, Legend, Line, LineStyle, Plot, PlotPoints};
 
@@ -285,16 +285,22 @@ impl DockerView {
                     }
                 });
 
-            let _ = cpu_plot
-                .show(ui, |plot_ui| {
-                    plot_ui.line(cpu_line);
-                })
-                .response;
-            let _ = mem_plot
-                .show(ui, |plot_ui| {
-                    plot_ui.line(mem_line);
-                })
-                .response;
+            ui.columns(2, |columns| {
+                columns[0].vertical(|ui| {
+                    let _ = cpu_plot
+                        .show(ui, |plot_ui| {
+                            plot_ui.line(cpu_line);
+                        })
+                        .response;
+                });
+                columns[1].vertical(|ui| {
+                    let _ = mem_plot
+                        .show(ui, |plot_ui| {
+                            plot_ui.line(mem_line);
+                        })
+                        .response;
+                });
+            });
         } else {
             egui::ScrollArea::both().show(ui, |ui| {
                 // TODO: Esta tabla puede almanacenarse de inicio y no tener que crearla cada vez?

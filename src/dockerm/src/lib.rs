@@ -7,6 +7,6 @@
 // -------------------------------------------------------------------------
 
 mod components;
+pub mod domain;
 mod presenter;
 pub mod view;
-pub mod domain;
