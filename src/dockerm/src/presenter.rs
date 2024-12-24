@@ -323,7 +323,6 @@ impl DockerContainerPresenter {
         });
 
         conn.logs(name, options)
-        // docker.logs("hello-world", options);
     }
 
     pub fn stream_stats(

@@ -8,7 +8,11 @@
 
 use std::collections::HashMap;
 
-use bollard::Docker;
+use bollard::{
+    container::{CPUStats, MemoryStats, MemoryStatsStats},
+    Docker,
+};
+use chrono::Timelike;
 use common::I18nDocker;
 use eframe::egui;
 use futures_util::StreamExt;
@@ -33,7 +37,7 @@ pub struct DockerView {
 
 impl Default for DockerView {
     fn default() -> Self {
-        let (tx, rx) = tokio::sync::mpsc::channel(8);
+        let (tx, rx) = tokio::sync::mpsc::channel(1024);
 
         Self {
             defaults: Default::default(),
@@ -142,10 +146,23 @@ impl DockerView {
                     rt.spawn(async move {
                         let stream = &mut DockerContainerPresenter::stream_stats(&conn, &name);
                         while let Some(Ok(stats)) = stream.next().await {
+                            // Primer filtro -- filtramos estadísticas sin fecha real.
                             if stats.read != empty_dt {
+                                // Segundo filtro -- filtramos y solo enviamos cada 5 segundos;
+                                //                   podría ser configurable pero no le veo utilidad.
+                                let seconds = stats.read.second();
+                                if seconds % 5 != 0 {
+                                    continue;
+                                }
+
+                                let cpu_usage =
+                                    compute_cpu_usage(&stats.precpu_stats, &stats.cpu_stats);
+                                log::info!("CPU usage to insert: {cpu_usage:}");
+                                let mem_usage = compute_mem_usage(&stats.memory_stats);
+
                                 let msg = DockerMessage::Stats((
-                                    stats.cpu_stats,
-                                    stats.memory_stats,
+                                    cpu_usage,
+                                    mem_usage,
                                     stats.storage_stats,
                                     stats.read,
                                 ));
@@ -158,31 +175,59 @@ impl DockerView {
             DockerMessage::Stats(msg) => {
                 let (cpu, mem, disk, date) = msg;
                 let name = &self.state.container.info.name;
+
                 match self.state.container.stats.get_mut(name) {
                     None => {
                         self.state.container.stats.insert(
                             name.to_owned(),
                             DockerContainerStats {
                                 dates: HashMap::from([(0, date.to_rfc2822())]),
-                                cpu: vec![(0, cpu.cpu_usage.total_usage as f64)],
-                                mem: vec![mem],
+                                cpu: vec![[0.0, cpu]],
+                                mem: vec![[0.0, mem.0]],
                                 disk: vec![disk],
                             },
                         );
                     }
                     Some(st) => {
-                        log::info!("{date:}");
-                        let previous_cpu = st.cpu.last().unwrap();
                         let len = st.cpu.len();
-                        let current_cpu = cpu.cpu_usage.total_usage;
-                        let new_cpu_entry = (len, current_cpu as f64 - previous_cpu.1 as f64);
                         st.dates.insert(len, date.to_rfc2822());
-                        st.cpu.push(new_cpu_entry);
-                        st.mem.push(mem);
+                        st.cpu.push([len as f64, cpu]);
+                        st.mem.push([len as f64, mem.0]);
                         st.disk.push(disk);
                     }
                 }
             }
         }
     }
+}
+
+fn compute_cpu_usage(prev_cpu: &CPUStats, cpu: &CPUStats) -> f64 {
+    if prev_cpu.cpu_usage.total_usage == 0 {
+        return 0.0
+    }
+
+    let cpu_delta = cpu.cpu_usage.total_usage - prev_cpu.cpu_usage.total_usage;
+    let system_cpu_delta = cpu
+        .system_cpu_usage
+        .and_then(|v| prev_cpu.system_cpu_usage.map(|p| v - p))
+        .unwrap_or(1);
+    let number_cpus = cpu.online_cpus.unwrap_or(1);
+
+    ((cpu_delta * number_cpus) as f64) * 100.0 / system_cpu_delta as f64
+}
+
+fn compute_mem_usage(mem: &MemoryStats) -> (f64, f64, f64) {
+    let used_mem = mem
+        .usage
+        .and_then(|v| {
+            mem.stats.map(|s| match s {
+                MemoryStatsStats::V1(v1) => (v - v1.cache) >> 20,
+                MemoryStatsStats::V2(_) => v >> 20,
+            })
+        })
+        .unwrap_or(1) as f64;
+
+    let limit = mem.limit.map_or(1, |v| v >> 20) as f64;
+
+    (used_mem, limit, used_mem / limit * 100.0)
 }

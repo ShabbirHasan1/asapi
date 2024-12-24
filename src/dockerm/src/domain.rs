@@ -9,7 +9,7 @@
 use std::collections::HashMap;
 
 use bollard::{
-    container::{CPUStats, MemoryStats, StorageStats},
+    container::StorageStats,
     secret::{
         BollardDate, ContainerSummary, ContainerSummaryHostConfig, ContainerSummaryNetworkSettings,
         ImageConfig as BollardImageConfig, MountPoint, Network, NetworkContainer, PeerInfo, Port,
@@ -61,8 +61,8 @@ pub struct DockerLocalState {
 #[derive(Default, Debug)]
 pub struct DockerContainerStats {
     pub dates: HashMap<usize, String>, // Vec<DateTime<Utc>>,
-    pub cpu: Vec<(usize, f64)>, // (índice valor) -- Quiero solo el que uso. Si quiero más cosas las extraigo pero no uso la clase que me da bollard.
-    pub mem: Vec<MemoryStats>,
+    pub cpu: Vec<[f64; 2]>, // (índice valor) -- Quiero solo el que uso. Si quiero más cosas las extraigo pero no uso la clase que me da bollard.
+    pub mem: Vec<[f64; 2]>, // (índice valor) -- valor de uso en bits
     pub disk: Vec<StorageStats>,
 }
 
@@ -98,8 +98,8 @@ pub enum DockerMessage {
     StatsReady, // podemos leer estadísticas porque ya tenemos nombres de contenedores.
     Stats(
         (
-            CPUStats,
-            MemoryStats,
+            f64,             // Porcentage de uso, antes `CPUStats`
+            (f64, f64, f64), // usada / límite / porcentage de uso respecto de límite, antes `MemoryStats`
             StorageStats,
             chrono::DateTime<chrono::Utc>,
         ),
