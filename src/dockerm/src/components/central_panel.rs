@@ -12,7 +12,7 @@ use bollard::container::LogOutput;
 use eframe::egui;
 use egui::Color32;
 use egui_extras::{Column, Size, StripBuilder, TableBuilder};
-use egui_plot::{Legend, Line, LineStyle, Plot, PlotPoints};
+use egui_plot::{Legend, Line, LineStyle, Plot};
 
 use futures_util::StreamExt;
 use tokio::runtime::Runtime;
@@ -174,7 +174,7 @@ impl DockerView {
                 .clicked()
             {
                 self.state.container.show_stats = false;
-                let name = self.state.container.info.name.clone();
+                let name = self.state.container.current_info.name.clone();
                 let conn = self.connection.clone().unwrap();
                 let tx = self.tx.clone();
                 self.state.container.logs.clear();
@@ -184,21 +184,21 @@ impl DockerView {
                     let stream = &mut DockerContainerPresenter::stream_logs(&conn, &name);
                     while let Some(Ok(logs)) = stream.next().await {
                         let message = match logs {
-                            LogOutput::StdErr { message } => DockerMessage::LogStdErr(format!(
-                                "{}",
-                                String::from_utf8_lossy(&message)
+                            LogOutput::StdErr { message } => DockerMessage::LogStdErr((
+                                name.clone(),
+                                format!("{}", String::from_utf8_lossy(&message)),
                             )),
-                            LogOutput::StdOut { message } => DockerMessage::LogStdErr(format!(
-                                "{}",
-                                String::from_utf8_lossy(&message)
+                            LogOutput::StdOut { message } => DockerMessage::LogStdErr((
+                                name.clone(),
+                                format!("{}", String::from_utf8_lossy(&message)),
                             )),
-                            LogOutput::StdIn { message } => DockerMessage::LogStdErr(format!(
-                                "{}",
-                                String::from_utf8_lossy(&message)
+                            LogOutput::StdIn { message } => DockerMessage::LogStdErr((
+                                name.clone(),
+                                format!("{}", String::from_utf8_lossy(&message)),
                             )),
-                            LogOutput::Console { message } => DockerMessage::LogStdErr(format!(
-                                "{}",
-                                String::from_utf8_lossy(&message)
+                            LogOutput::Console { message } => DockerMessage::LogStdErr((
+                                name.clone(),
+                                format!("{}", String::from_utf8_lossy(&message)),
                             )),
                         };
                         let _ = tx.send(message).await;
@@ -215,7 +215,7 @@ impl DockerView {
         });
 
         if self.state.container.show_stats {
-            let selected_container = self.state.container.info.name.clone();
+            let selected_container = self.state.container.current_info.name.clone();
             let statsopt = self.state.container.stats.get(&selected_container);
             if statsopt.is_none() {
                 return;
@@ -346,12 +346,22 @@ impl DockerView {
                     .max_scroll_height(f32::INFINITY);
 
                 table.body(|mut body| {
-                    for log in self.state.container.logs.iter() {
-                        body.row(32.0, |mut row| {
-                            row.col(|ui| {
-                                ui.label(log);
-                            });
-                        });
+                    match self
+                        .state
+                        .container
+                        .logs
+                        .get(&self.state.container.current_info.name)
+                    {
+                        Some(logs) => {
+                            for log in logs.iter() {
+                                body.row(32.0, |mut row| {
+                                    row.col(|ui| {
+                                        ui.label(log);
+                                    });
+                                });
+                            }
+                        }
+                        None => {}
                     }
                 });
             });
@@ -359,7 +369,7 @@ impl DockerView {
     }
 
     fn container_info_panel(&self, ui: &mut egui::Ui, i18n: &I18nDocker) {
-        let info = &self.state.container.info;
+        let info = &self.state.container.current_info;
 
         egui::CollapsingHeader::new(format!("{} : {}", i18n.container_info, &info.name))
             .default_open(true)

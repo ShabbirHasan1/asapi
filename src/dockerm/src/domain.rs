@@ -68,10 +68,10 @@ pub struct DockerContainerStats {
 
 #[derive(Default)]
 pub struct DockerContainerState {
-    pub info: ContainerInfo,
-    pub logs: Vec<String>,
     pub show_stats: bool,
-    pub stats: HashMap<String, DockerContainerStats>,
+    pub current_info: ContainerInfo,
+    pub logs: HashMap<String,Vec<String>>, // container_name -> logs
+    pub stats: HashMap<String, DockerContainerStats>, // container_name -> stats
 }
 
 #[derive(Default, Serialize, Clone, Debug, Deserialize)]
@@ -91,13 +91,15 @@ pub enum DockerMessage {
     Error(String),
     Loading,
     Select((usize, DockerInfo)),
-    LogStdIn(String),
-    LogStdOut(String),
-    LogStdErr(String),
-    LogConsole(String),
-    StatsReady, // podemos leer estadísticas porque ya tenemos nombres de contenedores.
+    LogStdIn((String, String)),  // nombre-contenedor, mensaje
+    LogStdOut((String, String)),  // nombre-contenedor, mensaje
+    LogStdErr((String, String)),  // nombre-contenedor, mensaje
+    LogConsole((String, String)),  // nombre-contenedor, mensaje
+    // StatsReady, // podemos leer estadísticas porque ya tenemos nombres de contenedores.
+    ContainerStatsRequest(String), // contenedor del que queremos obtener estadísticas
     Stats(
         (
+            String, // nombre del contenedor
             f64,             // Porcentage de uso, antes `CPUStats`
             (f64, f64, f64), // usada / límite / porcentage de uso respecto de límite, antes `MemoryStats`
             StorageStats,

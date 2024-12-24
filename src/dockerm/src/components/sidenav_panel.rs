@@ -44,7 +44,7 @@ impl DockerView {
 
                     let conn = self.connection.clone();
 
-                    let tx = self.tx.clone();
+                    // let tx = self.tx.clone();
                     rt.spawn(async move {
                         DockerPresenter::populate_state(
                             conn,
@@ -54,7 +54,7 @@ impl DockerView {
                             data_volumes,
                         )
                         .await;
-                        let _ = tx.send(DockerMessage::StatsReady).await;
+                        // let _ = tx.send(DockerMessage::StatsReady).await;
                     });
                 }
 

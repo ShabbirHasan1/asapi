@@ -100,7 +100,7 @@ impl DockerView {
                     });
                 }
                 DockerInfo::Container(container_info) => {
-                    self.state.container.info = container_info;
+                    self.state.container.current_info = container_info;
                     self.state.current_selection = Some(DockerSelection {
                         selected_idx: info.0,
                         selected_view: DockerElementSelection::Container,
@@ -113,89 +113,144 @@ impl DockerView {
                     })
                 }
             },
-            DockerMessage::LogStdIn(msg) => {
-                self.state.container.logs.push(msg);
+            DockerMessage::LogStdIn((cont_name, msg))
+            | DockerMessage::LogStdOut((cont_name, msg))
+            | DockerMessage::LogStdErr((cont_name, msg))
+            | DockerMessage::LogConsole((cont_name, msg)) => {
+                self.state
+                    .container
+                    .logs
+                    .entry(cont_name)
+                    .and_modify(|v| v.push(msg.clone()))
+                    .or_insert(vec![msg]);
             }
-            DockerMessage::LogStdOut(msg) => {
-                self.state.container.logs.push(msg);
-            }
-            DockerMessage::LogStdErr(message) => {
-                self.state.container.logs.push(message);
-            }
-            DockerMessage::LogConsole(message) => {
-                self.state.container.logs.push(message);
-            }
-            DockerMessage::StatsReady => {
-                let names = self
-                    .state
-                    .containers
-                    .lock()
-                    .unwrap()
-                    .iter()
-                    .map(|cont| cont.name.clone())
-                    .collect::<Vec<_>>();
+            DockerMessage::ContainerStatsRequest(container_name) => {
+                // Si ya está en el hashmap de estadísticas, no lanzamos el proceso para manejarlas.
+                if self.state.container.stats.contains_key(&container_name) {
+                    return;
+                }
 
                 let empty_dt = self.defaults.empty_dt.clone();
+                let conn = self.connection.clone().unwrap();
+                let tx = self.tx.clone();
 
-                for name in names {
-                    log::info!("nombre: {name:}");
-                    let conn = self.connection.clone().unwrap();
-                    self.state.container.logs.clear();
-                    let tx = self.tx.clone();
-
-                    rt.spawn(async move {
-                        let stream = &mut DockerContainerPresenter::stream_stats(&conn, &name);
-                        while let Some(Ok(stats)) = stream.next().await {
-                            // Primer filtro -- filtramos estadísticas sin fecha real.
-                            if stats.read != empty_dt {
-                                // Segundo filtro -- filtramos y solo enviamos cada 5 segundos;
-                                //                   podría ser configurable pero no le veo utilidad.
-                                let seconds = stats.read.second();
-                                if seconds % 5 != 0 {
-                                    continue;
-                                }
-
-                                let cpu_usage =
-                                    compute_cpu_usage(&stats.precpu_stats, &stats.cpu_stats);
-                                log::info!("CPU usage to insert: {cpu_usage:}");
-                                let mem_usage = compute_mem_usage(&stats.memory_stats);
-
-                                let msg = DockerMessage::Stats((
-                                    cpu_usage,
-                                    mem_usage,
-                                    stats.storage_stats,
-                                    stats.read,
-                                ));
-                                let _ = tx.send(msg).await;
+                rt.spawn(async move {
+                    let stream =
+                        &mut DockerContainerPresenter::stream_stats(&conn, &container_name);
+                    while let Some(Ok(stats)) = stream.next().await {
+                        // Primer filtro -- filtramos estadísticas sin fecha real.
+                        if stats.read != empty_dt {
+                            // Segundo filtro -- filtramos y solo enviamos cada 5 segundos;
+                            //                   podría ser configurable pero no le veo utilidad.
+                            let seconds = stats.read.second();
+                            if seconds % 5 != 0 {
+                                continue;
                             }
-                        }
-                    });
-                }
-            }
-            DockerMessage::Stats(msg) => {
-                let (cpu, mem, disk, date) = msg;
-                let name = &self.state.container.info.name;
 
-                match self.state.container.stats.get_mut(name) {
-                    None => {
-                        self.state.container.stats.insert(
-                            name.to_owned(),
-                            DockerContainerStats {
-                                dates: HashMap::from([(0, date.to_rfc2822())]),
-                                cpu: vec![[0.0, cpu]],
-                                mem: vec![[0.0, mem.0]],
-                                disk: vec![disk],
-                            },
-                        );
+                            let cpu_usage =
+                                compute_cpu_usage(&stats.precpu_stats, &stats.cpu_stats);
+                            log::info!("CPU usage to insert: {cpu_usage:}");
+                            let mem_usage = compute_mem_usage(&stats.memory_stats);
+
+                            let msg = DockerMessage::Stats((
+                                container_name.clone(),
+                                cpu_usage,
+                                mem_usage,
+                                stats.storage_stats,
+                                stats.read,
+                            ));
+                            let _ = tx.send(msg).await;
+                        }
                     }
-                    Some(st) => {
+                });
+            }
+            // DockerMessage::StatsReady => {
+            //     let names = self
+            //         .state
+            //         .containers
+            //         .lock()
+            //         .unwrap()
+            //         .iter()
+            //         .map(|cont| cont.name.clone())
+            //         .collect::<Vec<_>>();
+
+            //     let empty_dt = self.defaults.empty_dt.clone();
+
+            //     for name in names {
+            //         log::info!("nombre: {name:}");
+            //         let conn = self.connection.clone().unwrap();
+            //         self.state.container.logs.clear();
+            //         let tx = self.tx.clone();
+
+            //         rt.spawn(async move {
+            //             let stream = &mut DockerContainerPresenter::stream_stats(&conn, &name);
+            //             while let Some(Ok(stats)) = stream.next().await {
+            //                 // Primer filtro -- filtramos estadísticas sin fecha real.
+            //                 if stats.read != empty_dt {
+            //                     // Segundo filtro -- filtramos y solo enviamos cada 5 segundos;
+            //                     //                   podría ser configurable pero no le veo utilidad.
+            //                     let seconds = stats.read.second();
+            //                     if seconds % 5 != 0 {
+            //                         continue;
+            //                     }
+
+            //                     let cpu_usage =
+            //                         compute_cpu_usage(&stats.precpu_stats, &stats.cpu_stats);
+            //                     log::info!("CPU usage to insert: {cpu_usage:}");
+            //                     let mem_usage = compute_mem_usage(&stats.memory_stats);
+
+            //                     let msg = DockerMessage::Stats((
+            //                         cpu_usage,
+            //                         mem_usage,
+            //                         stats.storage_stats,
+            //                         stats.read,
+            //                     ));
+            //                     let _ = tx.send(msg).await;
+            //                 }
+            //             }
+            //         });
+            //     }
+            // }
+            DockerMessage::Stats(msg) => {
+                let (name, cpu, mem, disk, date) = msg;
+                self.state
+                    .container
+                    .stats
+                    .entry(name)
+                    .and_modify(|st| {
                         let len = st.cpu.len();
                         st.dates.insert(len, date.to_rfc2822());
                         st.cpu.push([len as f64, cpu]);
                         st.mem.push([len as f64, mem.0]);
                         st.disk.push(disk);
-                    }
-                }
+                    })
+                    .or_insert(DockerContainerStats {
+                        dates: HashMap::from([(0, date.to_rfc2822())]),
+                        cpu: vec![[0.0, cpu]],
+                        mem: vec![[0.0, mem.0]],
+                        disk: vec![disk],
+                    });
+
+                // match self.state.container.stats.get_mut(&name) {
+                //     None => {
+                //         self.state.container.stats.insert(
+                //             name,
+                //             DockerContainerStats {
+                //                 dates: HashMap::from([(0, date.to_rfc2822())]),
+                //                 cpu: vec![[0.0, cpu]],
+                //                 mem: vec![[0.0, mem.0]],
+                //                 disk: vec![disk],
+                //             },
+                //         );
+                //     }
+                //     Some(st) => {
+                //         let len = st.cpu.len();
+                //         st.dates.insert(len, date.to_rfc2822());
+                //         st.cpu.push([len as f64, cpu]);
+                //         st.mem.push([len as f64, mem.0]);
+                //         st.disk.push(disk);
+                //     }
+                // }
             }
         }
     }
@@ -203,7 +258,7 @@ impl DockerView {
 
 fn compute_cpu_usage(prev_cpu: &CPUStats, cpu: &CPUStats) -> f64 {
     if prev_cpu.cpu_usage.total_usage == 0 {
-        return 0.0
+        return 0.0;
     }
 
     let cpu_delta = cpu.cpu_usage.total_usage - prev_cpu.cpu_usage.total_usage;
