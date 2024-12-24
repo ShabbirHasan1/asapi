@@ -6,13 +6,13 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
-use std::{collections::HashMap, ops::RangeInclusive};
+use std::ops::RangeInclusive;
 
 use bollard::container::LogOutput;
 use eframe::egui;
-use egui::{Color32, Grid};
+use egui::Color32;
 use egui_extras::{Column, TableBuilder};
-use egui_plot::{CoordinatesFormatter, Corner, Legend, Line, LineStyle, Plot, PlotPoints};
+use egui_plot::{Legend, Line, LineStyle, Plot, PlotPoints};
 
 use futures_util::StreamExt;
 use tokio::runtime::Runtime;
@@ -226,19 +226,19 @@ impl DockerView {
                 .cpu
                 .iter()
                 .enumerate()
-                .map(|(idx, c)| [idx as f64, c.cpu_usage.total_usage as f64])
+                .map(|(idx, c)| [idx as f64, c.1 as f64])
                 .collect();
             let cpu_line = Line::new(cpu_total_usage)
                 .color(Color32::from_rgb(100, 200, 100))
                 .style(LineStyle::Solid)
                 .name("cpu total usage");
 
-            let labels: HashMap<usize, String> = stats
-                .dates
-                .iter()
-                .enumerate()
-                .map(|(i, &label)| (i, label.to_rfc2822()))
-                .collect();
+            // let labels: HashMap<usize, String> = stats
+            //     .dates
+            //     .iter()
+            //     .enumerate()
+            //     .map(|(i, &label)| (i, label.to_rfc2822()))
+            //     .collect();
 
             let mem_total_usage: PlotPoints = stats
                 .mem
@@ -251,7 +251,7 @@ impl DockerView {
                 .style(LineStyle::Solid)
                 .name("mem total usage");
 
-            let len = labels.len();
+            let len = stats.dates.len();
 
             let cpu_plot = Plot::new("docker_cpu_stats")
                 .legend(Legend::default())
@@ -262,7 +262,7 @@ impl DockerView {
                     |grid_mark, _range: &RangeInclusive<f64>| {
                         let idx = grid_mark.value as usize;
                         if idx < len {
-                            labels[&idx].to_string()
+                            stats.dates[&idx].to_string()
                         } else {
                             "".to_string()
                         }
@@ -278,7 +278,7 @@ impl DockerView {
                     |grid_mark, _range: &RangeInclusive<f64>| {
                         let idx = grid_mark.value as usize;
                         if idx < len {
-                            labels[&idx].to_string()
+                            stats.dates[&idx].to_string()
                         } else {
                             "".to_string()
                         }
@@ -397,40 +397,3 @@ impl DockerView {
         });
     }
 }
-
-// fn main() {
-//     // Example data
-//     let labels = vec!["A", "B", "C", "D"];
-//     let values = vec![10.0, 20.0, 30.0, 40.0];
-
-//     // Create a mapping from labels to indices
-//     let label_to_index: std::collections::HashMap<&str, f64> =
-//         labels.iter().enumerate().map(|(i, &label)| (label, i as f64)).collect();
-
-//     // Convert string labels to indices for plotting
-//     let plot_data: Vec<(f64, f64)> =
-//         labels.iter().zip(&values).map(|(&label, &value)| (label_to_index[label], value)).collect();
-
-//     // Create a plot with custom axis configuration
-//     let mut plot = Plot::new("string_plot")
-//         .data_label("Values")
-//         .x_axis_formatter(move |v| labels[v as usize].to_string());
-
-//     // Add data to the plot
-//     for (label, value) in plot_data.iter() {
-//         plot = plot.add(PlotLine::new(vec![(*label, *value)]));
-//     }
-
-//     // Use egui to create a window and display the plot
-//     let mut app = App { plot };
-//     eframe::run_simple(
-//         "String X-Axis Plot",
-//         Default::default(),
-//         move |ctx: &Context, _frame: &mut eframe::Frame| {
-//             CentralPanel::default().show(ctx, |ui| {
-//                 ui.heading("String X-Axis Plot Example");
-//                 ui.add(app.plot);
-//             });
-//         },
-//     );
-// }

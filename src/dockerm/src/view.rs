@@ -6,6 +6,8 @@
 // with the permission of the copyright holders.
 // -------------------------------------------------------------------------
 
+use std::collections::HashMap;
+
 use bollard::Docker;
 use common::I18nDocker;
 use eframe::egui;
@@ -161,8 +163,8 @@ impl DockerView {
                         self.state.container.stats.insert(
                             name.to_owned(),
                             DockerContainerStats {
-                                dates: vec![date],
-                                cpu: vec![cpu],
+                                dates: HashMap::from([(0, date.to_rfc2822())]),
+                                cpu: vec![(0, cpu.cpu_usage.total_usage as f64)],
                                 mem: vec![mem],
                                 disk: vec![disk],
                             },
@@ -170,8 +172,12 @@ impl DockerView {
                     }
                     Some(st) => {
                         log::info!("{date:}");
-                        st.dates.push(date);
-                        st.cpu.push(cpu);
+                        let previous_cpu = st.cpu.last().unwrap();
+                        let len = st.cpu.len();
+                        let current_cpu = cpu.cpu_usage.total_usage;
+                        let new_cpu_entry = (len, current_cpu as f64 - previous_cpu.1 as f64);
+                        st.dates.insert(len, date.to_rfc2822());
+                        st.cpu.push(new_cpu_entry);
                         st.mem.push(mem);
                         st.disk.push(disk);
                     }

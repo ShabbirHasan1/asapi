@@ -60,8 +60,8 @@ pub struct DockerLocalState {
 
 #[derive(Default, Debug)]
 pub struct DockerContainerStats {
-    pub dates: Vec<DateTime<Utc>>,
-    pub cpu: Vec<CPUStats>,
+    pub dates: HashMap<usize, String>, // Vec<DateTime<Utc>>,
+    pub cpu: Vec<(usize, f64)>, // (índice valor) -- Quiero solo el que uso. Si quiero más cosas las extraigo pero no uso la clase que me da bollard.
     pub mem: Vec<MemoryStats>,
     pub disk: Vec<StorageStats>,
 }
