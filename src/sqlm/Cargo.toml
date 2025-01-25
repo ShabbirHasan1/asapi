@@ -22,4 +22,4 @@ common = { path = "../common" }
 components = { path = "../components" }
 
 rust_decimal = { version = "1.35.0", default-features = false }
-sqlx = { version = "0.7.4", features = ["chrono", "mysql", "postgres", "rust_decimal", "sqlite", "uuid", "runtime-tokio"], default-features = false }
+sqlx = { version = "0.8.3", features = ["chrono", "mysql", "postgres", "rust_decimal", "sqlite", "uuid", "runtime-tokio"], default-features = false }

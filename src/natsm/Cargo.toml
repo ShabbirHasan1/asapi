@@ -19,5 +19,5 @@ futures = { workspace = true }
 common = { path = "../common" }
 components = { path = "../components" }
 
-async-nats = "0.37.0"
+async-nats = "0.38.0"
 
