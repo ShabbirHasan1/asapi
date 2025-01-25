@@ -28,14 +28,14 @@ pub struct Request {
     pub headers_params: Vec<(String, String)>,
 }
 
-fn map_to_json(body_params: &[(String, String, bool)]) -> Result<serde_json::Value, serde_json::Error> {
-    let mut map = serde_json::Map::new();
-    for (key, value, _) in body_params {
-        // println!("{key} -> {value} // {:?}", serde_json::from_str::<>(value) );
-        map.insert(key.clone(),  JsonValue::String(value.to_string())); // serde_json::from_str(value).unwrap());
-    }
-    Ok(serde_json::json!(map))
-}
+// fn map_to_json(body_params: &[(String, String, bool)]) -> Result<serde_json::Value, serde_json::Error> {
+//     let mut map = serde_json::Map::new();
+//     for (key, value, _) in body_params {
+//         // println!("{key} -> {value} // {:?}", serde_json::from_str::<>(value) );
+//         map.insert(key.clone(),  JsonValue::String(value.to_string())); // serde_json::from_str(value).unwrap());
+//     }
+//     Ok(serde_json::json!(map))
+// }
 
 pub async fn api_request(
     method: HttpMethod,

@@ -15,7 +15,7 @@ use rdkafka::client::ClientContext;
 
 use rdkafka::config::{ClientConfig, RDKafkaLogLevel};
 use rdkafka::consumer::stream_consumer::StreamConsumer;
-use rdkafka::consumer::{Consumer, ConsumerContext, Rebalance};
+use rdkafka::consumer::{BaseConsumer, Consumer, ConsumerContext, Rebalance};
 use rdkafka::error::KafkaResult;
 use rdkafka::message::{Headers, Message};
 
@@ -43,12 +43,12 @@ impl ClientContext for CustomConsumerContext {
 }
 
 impl ConsumerContext for CustomConsumerContext {
-    fn pre_rebalance(&self, _rebalance: &Rebalance) {
+    fn pre_rebalance(&self, _base_consumer: &BaseConsumer<Self>, _rebalance: &Rebalance<'_>) {
 
         // println!("Pre rebalance {:?}", rebalance);
     }
 
-    fn post_rebalance(&self, _rebalance: &Rebalance) {
+    fn post_rebalance(&self, _base_consumer: &BaseConsumer<Self>, _rebalance: &Rebalance<'_>) {
         // println!("Post rebalance {:?}", rebalance);
     }
 

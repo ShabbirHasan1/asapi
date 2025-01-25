@@ -58,13 +58,13 @@ impl HttpView {
                     .on_hover_ui_at_pointer(add_contents)
                     .clicked()
                 {
-                    self.state.files.swagger_file_dialog.select_file();
+                    self.state.files.swagger_file_dialog.pick_file();
                     self.state.show_confirmation_window = true;
                 }
 
                 // --> Gestión de la ventana de diálogo para seleccionar swagger <--
                 let swagger = if let Some(file) =
-                    self.state.files.swagger_file_dialog.update(ctx).selected()
+                    self.state.files.swagger_file_dialog.update(ctx).picked()
                 {
                     file.as_os_str().to_str().and_then(swagger::load_file_opt)
                 } else {

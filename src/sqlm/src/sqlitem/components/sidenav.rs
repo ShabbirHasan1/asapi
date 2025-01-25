@@ -63,7 +63,7 @@ impl SQLiteSideNav {
                     .on_hover_ui(add_contents)
                     .clicked()
                 {
-                    local_state.file_dialog.select_file();
+                    local_state.file_dialog.pick_file();
                 }
 
                 // --> Decidimos qué mostrar <--
@@ -95,7 +95,7 @@ impl SQLiteSideNav {
                 // Por cómo trabaja FileDialog, es mucho más fácil crear al abrir y luego
                 // conectar que no conectar nada más abrir.
                 local_state.file_dialog.update(ctx);
-                let opt_conn_definition = local_state.file_dialog.selected().and_then(|path| {
+                let opt_conn_definition = local_state.file_dialog.picked().and_then(|path| {
                     path.to_str().map(|p| SQLiteConnectionDefinition {
                         name: p.to_string(),
                         path: p.to_string(),

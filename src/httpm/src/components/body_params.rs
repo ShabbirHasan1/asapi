@@ -169,12 +169,14 @@ impl BodyParams {
                     if self.params[i].2 {
                         if ui.button(&i18n.http_select_folder).clicked() {
                             self.selected_idx = i;
-                            state.files.file_dialog.select_directory();
+                            // state.files.file_dialog.select_directory(); // DEPRECATED
+                            state.files.file_dialog.pick_directory();
                             state.files.must_read = true;
                         }
                         if ui.button(&i18n.http_select_file).clicked() {
                             self.selected_idx = i;
-                            state.files.file_dialog.select_file();
+                            // state.files.file_dialog.select_file(); // DEPRECATED
+                            state.files.file_dialog.pick_file();
                             state.files.must_read = true;
                         }
                         // TODO: Mostrar en hover sobre este botón la lista de archivos. El texto que ponga `Borrar n Seleccionados`.
