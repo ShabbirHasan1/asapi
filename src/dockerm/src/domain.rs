@@ -88,6 +88,7 @@ pub enum DockerInfo {
 
 #[derive(Debug)]
 pub enum DockerMessage {
+    Connected,
     Error(String),
     Loading,
     Select((usize, DockerInfo)),

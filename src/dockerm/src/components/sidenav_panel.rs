@@ -28,34 +28,7 @@ impl DockerView {
         egui::SidePanel::left("docker_sidenav_panel").show(ctx, |ui| {
             egui::ScrollArea::vertical().show(ui, |ui| {
                 if self.connection.is_none() && ui.button(&i18n.btn_connect).clicked() {
-                    let data_images = Arc::clone(&self.state.images);
-                    let data_containers = Arc::clone(&self.state.containers);
-                    let data_networks = Arc::clone(&self.state.networks);
-                    let data_volumes = Arc::clone(&self.state.volumes);
-
-                    data_images.lock().unwrap().clear();
-                    data_containers.lock().unwrap().clear();
-                    data_networks.lock().unwrap().clear();
-                    data_volumes.lock().unwrap().clear();
-
-                    if self.connection.is_none() {
-                        self.connection = presenter::connect();
-                    }
-
-                    let conn = self.connection.clone();
-
-                    // let tx = self.tx.clone();
-                    rt.spawn(async move {
-                        DockerPresenter::populate_state(
-                            conn,
-                            data_images,
-                            data_containers,
-                            data_networks,
-                            data_volumes,
-                        )
-                        .await;
-                        // let _ = tx.send(DockerMessage::StatsReady).await;
-                    });
+                    self.verify_connection(rt);
                 }
 
                 let tx = self.tx.clone();
@@ -111,6 +84,43 @@ impl DockerView {
                 }
             });
         });
+    }
+
+    fn verify_connection(&mut self, rt: &Runtime) {
+        if let Some(docker) = presenter::connect() {
+            let tx_clone = self.tx.clone();
+
+            let data_images = Arc::clone(&self.state.images);
+            let data_containers = Arc::clone(&self.state.containers);
+            let data_networks = Arc::clone(&self.state.networks);
+            let data_volumes = Arc::clone(&self.state.volumes);
+
+            data_images.lock().unwrap().clear();
+            data_containers.lock().unwrap().clear();
+            data_networks.lock().unwrap().clear();
+            data_volumes.lock().unwrap().clear();
+
+            rt.spawn(async move {
+                if presenter::verify_connection(&docker).await {
+                    let conn = Some(docker);
+                    let _ = tx_clone.send(DockerMessage::Connected).await;
+                    DockerPresenter::populate_state(
+                        conn,
+                        data_images,
+                        data_containers,
+                        data_networks,
+                        data_volumes,
+                    )
+                    .await;
+                } else {
+                    let _ = tx_clone
+                        .send(DockerMessage::Error(
+                            "Failed to connect to Docker daemon. Is Docker running?".to_string(),
+                        ))
+                        .await;
+                }
+            });
+        }
     }
 }
 

@@ -31,10 +31,12 @@ use common::internationalization::language_selector;
 use dockerm::view::DockerView;
 use eframe::egui;
 use kafkam::view::KafkaView;
+
 use licensem::{
     check_license_file, get_license_info_for_device_registration, post_license, save_license_file,
     LicenseActivationInfo, LicenseResult,
 };
+
 use log::info;
 use mongom::view::MongoView;
 use redism::view::RedisView;
@@ -120,7 +122,8 @@ impl Asapi {
         }
 
         // comprobación licencia
-        let license_result = check_license_file("license.json");
+
+        let license_result = LicenseResult::Ok;//check_license_file("license.json");
 
         log::info!("{license_result:?}");
 

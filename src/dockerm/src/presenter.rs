@@ -218,6 +218,16 @@ impl DockerPresenter {
     }
 }
 
+pub async fn verify_connection(docker: &Docker) -> bool {
+    match docker.ping().await {
+        Ok(_) => true,
+        Err(e) => {
+            log::error!("Failed to connect to Docker daemon: {}", e);
+            false
+        }
+    }
+}
+
 pub fn connect() -> Option<Docker> {
     Docker::connect_with_local_defaults().ok()
 }

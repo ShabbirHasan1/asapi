@@ -23,7 +23,7 @@ use crate::{
         DockerAppState, DockerContainerStats, DockerDefaults, DockerElementSelection, DockerInfo,
         DockerLocalState, DockerMessage, DockerSelection, DockerViewMode,
     },
-    presenter::DockerContainerPresenter,
+    presenter::{self, DockerContainerPresenter},
 };
 
 pub struct DockerView {
@@ -85,6 +85,9 @@ impl DockerView {
 
     fn process_message(&mut self, rt: &Runtime, message: DockerMessage) {
         match message {
+            DockerMessage::Connected => {
+                self.connection = presenter::connect();
+            }
             DockerMessage::Error(err) => {
                 log::error!("{err:}");
             }

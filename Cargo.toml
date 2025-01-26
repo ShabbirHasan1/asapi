@@ -94,8 +94,8 @@ kafkam = { path = "src/kafkam" }
 mongom = { path = "src/mongom" }
 redism = { path = "src/redism" }
 sqlm = { path = "src/sqlm" }
-licensem = { path = "src/licensem" }
 dockerm = { path = "src/dockerm" }
+licensem = { path = "src/licensem" }
 
 # rabbitmqm = { path = "src/rabbitmqm" }
 # natsm = { path = "src/natsm" }
