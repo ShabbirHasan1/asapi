@@ -77,6 +77,8 @@ regex = "1.11.1"
 
 
 [dependencies]
+cryptify = "3.1.1"
+
 egui = { workspace = true }
 eframe = { workspace = true }
 egui-file-dialog = { workspace = true }
